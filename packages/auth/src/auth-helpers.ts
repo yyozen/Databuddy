@@ -43,7 +43,7 @@ export async function loginWithEmail(
 export async function registerWithEmail(
   email: string,
   password: string,
-  name?: string,
+  name: string,
   options?: {
     redirectUrl?: string;
     router?: any; // Next.js router

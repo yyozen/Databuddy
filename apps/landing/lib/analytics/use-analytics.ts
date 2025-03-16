@@ -1,14 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { 
-  AnalyticsEvent, 
-  PageViewEvent, 
-  ClickEvent, 
-  CustomEvent, 
-  FormSubmitEvent 
-} from './types';
-
 /**
  * React hook for using analytics in client components
  * 

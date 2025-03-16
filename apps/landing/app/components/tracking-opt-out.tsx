@@ -10,28 +10,6 @@ export function TrackingOptOut() {
   const [isOptedOut, setIsOptedOut] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
-  // Check localStorage on component mount
-  useEffect(() => {
-    const optOutStatus = localStorage.getItem("databuddy_opt_out");
-    setIsOptedOut(optOutStatus === "true");
-  }, []);
-
-  const handleOptOutChange = (checked: boolean) => {
-    if (checked) {
-      // Opt out
-      localStorage.setItem("databuddy_opt_out", "true");
-      if (window.databuddy && typeof window.databuddy.optOut === "function") {
-        window.databuddy.optOut();
-      }
-    } else {
-      // Opt in
-      localStorage.removeItem("databuddy_opt_out");
-      if (window.databuddy && typeof window.databuddy.optIn === "function") {
-        window.databuddy.optIn();
-      }
-    }
-    setIsOptedOut(checked);
-  };
 
   return (
     <Card className="w-full max-w-md bg-slate-900 border-slate-800 text-slate-200">
@@ -56,7 +34,7 @@ export function TrackingOptOut() {
           </div>
           <Switch
             checked={isOptedOut}
-            onCheckedChange={handleOptOutChange}
+            // onCheckedChange={handleOptOutChange}
             aria-label="Toggle analytics tracking"
           />
         </div>
@@ -98,14 +76,3 @@ export function TrackingOptOut() {
     </Card>
   );
 }
-
-// Add TypeScript declaration for the databuddy global object
-declare global {
-  interface Window {
-    databuddy?: {
-      trackEvent: (eventName: string, eventData?: Record<string, any>) => void;
-      optOut: () => void;
-      optIn: () => void;
-    };
-  }
-} 
