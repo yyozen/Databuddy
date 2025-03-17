@@ -12,6 +12,7 @@
         "postinstall": "prisma generate",
         "db:generate": "prisma generate",
         "db:push": "prisma db push --skip-generate",
-        "db:studio": "prisma studio"
+        "db:studio": "prisma studio",
+        "vercel-build": "prisma generate"
     }
 }
