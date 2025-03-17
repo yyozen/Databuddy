@@ -20,6 +20,7 @@ const Contact = dynamic(() => import("./components/contact"), { ssr: true });
 const SocialProof = dynamic(() => import("./components/social-proof"), { ssr: true });
 const Footer = dynamic(() => import("./components/footer"), { ssr: true });
 const EarlyAccessPopup = dynamic(() => import("./components/EarlyAccessPopup"), { ssr: true });
+const DataOS = dynamic(() => import("./components/data-os"), { ssr: true });
 
 export default function Home() {
   return (
@@ -57,6 +58,11 @@ export default function Home() {
         <FadeIn delay={100}>
           <div id="performance">
             <Performance />
+          </div>
+        </FadeIn>
+        <FadeIn delay={100}>
+          <div id="data-os">
+            <DataOS />
           </div>
         </FadeIn>
         {/* <FadeIn delay={100}>

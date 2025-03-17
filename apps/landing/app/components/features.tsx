@@ -52,6 +52,7 @@ const categories = [
   { id: "privacy", label: "Privacy", icon: <Shield className="h-5 w-5" /> },
   { id: "performance", label: "Performance", icon: <Gauge className="h-5 w-5" /> },
   { id: "advanced", label: "Advanced", icon: <Sparkles className="h-5 w-5" /> },
+  { id: "dataos", label: "Data OS", icon: <Boxes className="h-5 w-5" /> },
 ]
 
 // Define features for each category
@@ -135,6 +136,12 @@ const features = {
       title: "Webhooks",
       description: "Real-time data streaming via webhooks for event-driven applications",
       icon: <RefreshCw className="h-6 w-6" />,
+      status: "coming",
+    },
+    {
+      title: "No-Code Integrations",
+      description: "Zapier & Make.com connectors for triggering workflows without coding",
+      icon: <Boxes className="h-6 w-6" />,
       status: "roadmap",
     },
   ],
@@ -174,6 +181,12 @@ const features = {
       description: "Configurable data retention policies to comply with regulations",
       icon: <Timer className="h-6 w-6" />,
       status: "coming",
+    },
+    {
+      title: "Self-Hosting Option",
+      description: "Deploy on your own infrastructure for maximum control of sensitive data",
+      icon: <Server className="h-6 w-6" />,
+      status: "roadmap",
     },
   ],
   performance: [
@@ -222,6 +235,18 @@ const features = {
       status: "coming",
     },
     {
+      title: "AI Insights",
+      description: "Automated anomaly detection and actionable recommendations",
+      icon: <Cpu className="h-6 w-6" />,
+      status: "coming",
+    },
+    {
+      title: "Natural Language Queries",
+      description: "Ask questions about your data in plain English and get instant answers",
+      icon: <Sparkles className="h-6 w-6" />,
+      status: "roadmap",
+    },
+    {
       title: "Heatmaps",
       description: "Visualize user interactions with click, move, and scroll heatmaps",
       icon: <MousePointer className="h-6 w-6" />,
@@ -239,10 +264,42 @@ const features = {
       icon: <Smartphone className="h-6 w-6" />,
       status: "roadmap",
     },
+  ],
+  dataos: [
     {
-      title: "AI Insights",
-      description: "Automated anomaly detection and actionable recommendations",
-      icon: <Cpu className="h-6 w-6" />,
+      title: "Event Streaming",
+      description: "Real-time event streaming via WebSockets for live data processing",
+      icon: <RefreshCw className="h-6 w-6" />,
+      status: "coming",
+    },
+    {
+      title: "Developer API",
+      description: "GraphQL API for efficient, type-safe access to your analytics data",
+      icon: <Code className="h-6 w-6" />,
+      status: "coming",
+    },
+    {
+      title: "Plugin Ecosystem",
+      description: "Extend functionality with plugins or create your own custom extensions",
+      icon: <Boxes className="h-6 w-6" />,
+      status: "roadmap",
+    },
+    {
+      title: "Unified Monitoring",
+      description: "Combine user behavior with backend performance in a single view",
+      icon: <Activity className="h-6 w-6" />,
+      status: "roadmap",
+    },
+    {
+      title: "Edge Computing",
+      description: "Run analytics logic at the edge for minimal latency and maximum privacy",
+      icon: <Globe className="h-6 w-6" />,
+      status: "roadmap",
+    },
+    {
+      title: "Data Warehouse Sync",
+      description: "Seamlessly connect to your existing data infrastructure",
+      icon: <Database className="h-6 w-6" />,
       status: "roadmap",
     },
   ],

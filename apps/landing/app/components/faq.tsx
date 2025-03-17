@@ -1,4 +1,3 @@
-
 import {
   Accordion,
   AccordionContent,
@@ -7,6 +6,7 @@ import {
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { MessageSquareText } from "lucide-react"
+import Link from "next/link"
 
 const faqs = [
   {
@@ -20,6 +20,14 @@ const faqs = [
   {
     question: "How accurate is cookieless analytics compared to traditional methods?",
     answer: "Our cookieless analytics are 95-98% accurate compared to cookie-based solutions. For most businesses, this slight difference is far outweighed by the benefits: higher conversion rates (no consent banners), better data collection (no blocked cookies), and simplified compliance. Many customers report more accurate data overall since we aren't blocked by ad-blockers or privacy browsers."
+  },
+  {
+    question: "What is Databuddy's Data OS approach and how does it benefit me?",
+    answer: "Databuddy functions as a complete Data Operating System, not just an analytics tool. This means you can use our platform as an interoperable data layer that powers your entire digital ecosystem. Benefits include: real-time event streaming for instant reactions to user behavior, a plugin ecosystem for custom extensions, self-hosting options for maximum control, and seamless integration with your existing data infrastructure. This approach gives you more flexibility and value than traditional analytics platforms."
+  },
+  {
+    question: "How does Databuddy use AI to enhance analytics?",
+    answer: "Our AI capabilities transform raw data into actionable insights through several key features: natural language queries that let you ask questions about your data in plain English, anomaly detection that automatically identifies unusual patterns, predictive analytics that forecast future trends, and automated reports that summarize findings in clear business language. This means less time interpreting data and more time acting on insights."
   },
   {
     question: "Can I migrate my historical data from another analytics platform?",
@@ -90,10 +98,12 @@ export default function FAQ() {
           </Accordion>
           
           <div className="mt-10 sm:mt-12 text-center">
-            <Button variant="outline" className="group border-slate-700 hover:border-sky-500 text-slate-300 hover:text-sky-400">
-              <MessageSquareText className="mr-2 h-4 w-4 group-hover:text-sky-400" />
-              Ask a different question
-            </Button>
+            <Link href="/contact">
+              <Button variant="outline" className="group border-slate-700 hover:border-sky-500 text-slate-300 hover:text-sky-400">
+                <MessageSquareText className="mr-2 h-4 w-4 group-hover:text-sky-400" />
+                Ask a different question
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

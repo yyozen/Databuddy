@@ -14,7 +14,8 @@ import {
   MessageSquare,
   ChevronRight,
   ChevronLeft,
-  ArrowUp
+  ArrowUp,
+  Boxes
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -25,6 +26,7 @@ const navigationSections = [
   { name: "Mission", id: "mission", icon: <Zap className="h-4 w-4" /> },
   { name: "Compare", id: "compare", icon: <Layers className="h-4 w-4" /> },
   { name: "Performance", id: "performance", icon: <LineChart className="h-4 w-4" /> },
+  { name: "Data OS", id: "data-os", icon: <Boxes className="h-4 w-4" /> },
   { name: "Pricing", id: "pricing", icon: <DollarSign className="h-4 w-4" /> },
   { name: "FAQ", id: "faq", icon: <HelpCircle className="h-4 w-4" /> },
   { name: "Contact", id: "contact", icon: <Mail className="h-4 w-4" /> },
