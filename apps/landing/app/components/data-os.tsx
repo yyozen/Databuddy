@@ -12,7 +12,7 @@ export default function DataOS() {
             More than analytics: A complete <span className="text-sky-400">Data OS</span>
           </h2>
           <p className="text-slate-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
-            Databuddy isn't just an analytics tool—it's an interoperable data layer that powers your entire digital ecosystem.
+            Databuddy isn&apos;t just an analytics tool—it&apos;s an interoperable data layer that powers your entire digital ecosystem.
           </p>
         </div>
 
@@ -67,7 +67,7 @@ export default function DataOS() {
               </div>
               <h3 className="text-xl font-semibold mb-2 tracking-tight">Plugin Ecosystem</h3>
               <p className="text-slate-300 text-sm leading-relaxed mb-4">
-                Extend Databuddy's capabilities with plugins created by our team or build your own custom extensions.
+                Extend Databuddy&apos;s capabilities with plugins created by our team or build your own custom extensions.
               </p>
               <div className="flex items-center text-xs font-medium">
                 <span className="bg-indigo-600/20 text-indigo-400 py-1 px-2 rounded-full">On Roadmap</span>
