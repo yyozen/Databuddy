@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { getAllPosts, getAllCategories, getAllTags } from '@/app/lib/blog-api'
+import { competitors } from '@/app/(main)/compare/data'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.databuddy.cc'
@@ -64,7 +65,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     },
+    {
+      url: `${baseUrl}/careers`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    },
   ]
+  
+  // Comparison routes for each competitor
+  const comparisonRoutes = competitors
+    .filter(competitor => competitor.id !== "Databuddy") // Filter out Databuddy itself
+    .map((competitor) => ({
+      url: `${baseUrl}/compare/${competitor.id}`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    }))
   
   // Blog post routes
   const postRoutes = posts.map((post) => ({
@@ -91,5 +108,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
   
   // Combine all routes
-  return [...staticRoutes, ...postRoutes, ...categoryRoutes, ...tagRoutes]
+  return [...staticRoutes, ...comparisonRoutes, ...postRoutes, ...categoryRoutes, ...tagRoutes]
 } 
