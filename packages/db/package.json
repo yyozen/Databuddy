@@ -5,7 +5,6 @@
     "types": "./src/index.ts",
     "dependencies": {
         "@prisma/client": "^6.5.0",
-        "prism": "^4.1.2",
         "prisma": "^6.5.0"
     },
     "scripts": {
@@ -13,6 +12,7 @@
         "db:generate": "prisma generate",
         "db:push": "prisma db push --skip-generate",
         "db:studio": "prisma studio",
-        "vercel-build": "prisma generate"
+        "vercel-build": "prisma generate",
+        "generate": "prisma generate"
     }
 }
