@@ -1,7 +1,7 @@
 import { 
   Sparkles, Shield, Zap, LineChart, 
   Layers, HelpCircle, Mail, Info, 
-  Lightbulb, DollarSign
+  Lightbulb, DollarSign, FileText, Briefcase, Play
 } from "lucide-react"
 
 export const homeNavGroups = [
@@ -12,6 +12,8 @@ export const homeNavGroups = [
       { name: "Privacy", href: "#privacy", id: "privacy", icon: <Shield className="h-4 w-4" /> },
       { name: "Mission", href: "#mission", id: "mission", icon: <Zap className="h-4 w-4" /> },
       { name: "Pricing", href: "#pricing", id: "pricing", icon: <DollarSign className="h-4 w-4" /> },
+      { name: "About Us", href: "/about", icon: <Info className="h-4 w-4" /> },
+      { name: "Careers", href: "/careers", icon: <Briefcase className="h-4 w-4" /> },
     ]
   },
   {
@@ -19,6 +21,16 @@ export const homeNavGroups = [
     items: [
       { name: "Comparison", href: "#compare", id: "compare", icon: <LineChart className="h-4 w-4" /> },
       { name: "Performance", href: "#performance", id: "performance", icon: <Layers className="h-4 w-4" /> },
+      { name: "Full Comparison", href: "/compare", icon: <Layers className="h-4 w-4" /> },
+    ]
+  },
+  {
+    name: "Resources",
+    items: [
+      { name: "Demo", href: "/demo", icon: <Play className="h-4 w-4" /> },
+      { name: "Blog", href: "/blog", icon: <Lightbulb className="h-4 w-4" /> },
+      { name: "Privacy Policy", href: "/privacy", icon: <Shield className="h-4 w-4" /> },
+      { name: "Terms of Service", href: "/terms", icon: <FileText className="h-4 w-4" /> },
     ]
   },
   {
@@ -26,6 +38,7 @@ export const homeNavGroups = [
     items: [
       { name: "FAQ", href: "#faq", id: "faq", icon: <HelpCircle className="h-4 w-4" /> },
       { name: "Contact", href: "#contact", id: "contact", icon: <Mail className="h-4 w-4" /> },
+      { name: "Contact Page", href: "/contact", icon: <Mail className="h-4 w-4" /> },
     ]
   }
 ];
@@ -34,23 +47,27 @@ export const blogNavGroups = [
   {
     name: "About",
     items: [
-      { name: "About Us", href: "/#mission", icon: <Info className="h-4 w-4" /> },
       { name: "Features", href: "/#features", icon: <Sparkles className="h-4 w-4" /> },
       { name: "Privacy", href: "/#privacy", icon: <Shield className="h-4 w-4" /> },
+      { name: "Mission", href: "/#mission", icon: <Zap className="h-4 w-4" /> },
+      { name: "About Us", href: "/about", icon: <Info className="h-4 w-4" /> },
+      { name: "Careers", href: "/careers", icon: <Briefcase className="h-4 w-4" /> },
     ]
   },
   {
     name: "Resources",
     items: [
+      { name: "Demo", href: "/demo", icon: <Play className="h-4 w-4" /> },
       { name: "Blog", href: "/blog", icon: <Lightbulb className="h-4 w-4" /> },
-      { name: "Pricing", href: "/#pricing", icon: <DollarSign className="h-4 w-4" /> },
+      { name: "Privacy Policy", href: "/privacy", icon: <Shield className="h-4 w-4" /> },
+      { name: "Terms of Service", href: "/terms", icon: <FileText className="h-4 w-4" /> },
     ]
   },
   {
     name: "Help",
     items: [
       { name: "FAQ", href: "/#faq", icon: <HelpCircle className="h-4 w-4" /> },
-      { name: "Contact", href: "/#contact", icon: <Mail className="h-4 w-4" /> },
+      { name: "Contact", href: "/contact", icon: <Mail className="h-4 w-4" /> },
     ]
   }
 ];
@@ -62,20 +79,23 @@ export const demoNavGroups = [
       { name: "Features", href: "/#features", icon: <Sparkles className="h-4 w-4" /> },
       { name: "Privacy", href: "/#privacy", icon: <Shield className="h-4 w-4" /> },
       { name: "Mission", href: "/#mission", icon: <Zap className="h-4 w-4" /> },
+      { name: "About Us", href: "/about", icon: <Info className="h-4 w-4" /> },
+      { name: "Careers", href: "/careers", icon: <Briefcase className="h-4 w-4" /> },
     ]
   },
   {
-    name: "Compare",
+    name: "Resources",
     items: [
-      { name: "Comparison", href: "/#compare", icon: <LineChart className="h-4 w-4" /> },
-      { name: "Performance", href: "/#performance", icon: <Layers className="h-4 w-4" /> },
+      { name: "Blog", href: "/blog", icon: <Lightbulb className="h-4 w-4" /> },
+      { name: "Privacy Policy", href: "/privacy", icon: <Shield className="h-4 w-4" /> },
+      { name: "Terms of Service", href: "/terms", icon: <FileText className="h-4 w-4" /> },
     ]
   },
   {
     name: "Help",
     items: [
       { name: "FAQ", href: "/#faq", icon: <HelpCircle className="h-4 w-4" /> },
-      { name: "Contact", href: "/#contact", icon: <Mail className="h-4 w-4" /> },
+      { name: "Contact", href: "/contact", icon: <Mail className="h-4 w-4" /> },
     ]
   }
 ];
@@ -87,20 +107,24 @@ export const compareNavGroups = [
       { name: "Features", href: "/#features", icon: <Sparkles className="h-4 w-4" /> },
       { name: "Privacy", href: "/#privacy", icon: <Shield className="h-4 w-4" /> },
       { name: "Mission", href: "/#mission", icon: <Zap className="h-4 w-4" /> },
+      { name: "About Us", href: "/about", icon: <Info className="h-4 w-4" /> },
+      { name: "Careers", href: "/careers", icon: <Briefcase className="h-4 w-4" /> },
     ]
   },
   {
-    name: "Compare",
+    name: "Resources",
     items: [
-      { name: "Comparison", href: "/compare", icon: <LineChart className="h-4 w-4" /> },
-      { name: "Performance", href: "/#performance", icon: <Layers className="h-4 w-4" /> },
+      { name: "Demo", href: "/demo", icon: <Play className="h-4 w-4" /> },
+      { name: "Blog", href: "/blog", icon: <Lightbulb className="h-4 w-4" /> },
+      { name: "Privacy Policy", href: "/privacy", icon: <Shield className="h-4 w-4" /> },
+      { name: "Terms of Service", href: "/terms", icon: <FileText className="h-4 w-4" /> },
     ]
   },
   {
     name: "Help",
     items: [
       { name: "FAQ", href: "/#faq", icon: <HelpCircle className="h-4 w-4" /> },
-      { name: "Contact", href: "/#contact", icon: <Mail className="h-4 w-4" /> },
+      { name: "Contact", href: "/contact", icon: <Mail className="h-4 w-4" /> },
     ]
   }
 ];
@@ -112,20 +136,23 @@ export const contactNavGroups = [
       { name: "Features", href: "/#features", icon: <Sparkles className="h-4 w-4" /> },
       { name: "Privacy", href: "/#privacy", icon: <Shield className="h-4 w-4" /> },
       { name: "Mission", href: "/#mission", icon: <Zap className="h-4 w-4" /> },
+      { name: "About Us", href: "/about", icon: <Info className="h-4 w-4" /> },
+      { name: "Careers", href: "/careers", icon: <Briefcase className="h-4 w-4" /> },
     ]
   },
   {
-    name: "Compare",
+    name: "Resources",
     items: [
-      { name: "Comparison", href: "/#compare", icon: <LineChart className="h-4 w-4" /> },
-      { name: "Performance", href: "/#performance", icon: <Layers className="h-4 w-4" /> },
+      { name: "Demo", href: "/demo", icon: <Play className="h-4 w-4" /> },
+      { name: "Blog", href: "/blog", icon: <Lightbulb className="h-4 w-4" /> },
+      { name: "Privacy Policy", href: "/privacy", icon: <Shield className="h-4 w-4" /> },
+      { name: "Terms of Service", href: "/terms", icon: <FileText className="h-4 w-4" /> },
     ]
   },
   {
     name: "Help",
     items: [
       { name: "FAQ", href: "/#faq", icon: <HelpCircle className="h-4 w-4" /> },
-      { name: "Contact", href: "/contact", icon: <Mail className="h-4 w-4" /> },
     ]
   }
 ];
