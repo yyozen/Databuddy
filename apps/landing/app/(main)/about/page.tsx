@@ -1,11 +1,9 @@
-"use client";
 
 import Background from "@/app/components/background";
 import Navbar from "@/app/components/navbar";
 import Footer from "@/app/components/footer";
 import Mission from "@/app/components/mission";
 import FadeIn from "@/app/components/FadeIn";
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Metadata } from "next";
@@ -14,8 +12,6 @@ import {
   Shield, 
   Lightbulb, 
   Target, 
-  ArrowRight,
-  CheckCircle,
   Heart
 } from "lucide-react";
 
@@ -180,10 +176,10 @@ export default function AboutPage() {
               
               <div className="bg-slate-900/30 border border-slate-800 rounded-2xl p-8">
                 <p className="text-slate-300 mb-6 leading-relaxed">
-                  Databuddy was founded in 2023 by a team of developers and data scientists who were frustrated with the state of web analytics. We saw that existing solutions either compromised user privacy or were too complex and slow.
+                  Databuddy was founded in 2024 by Issa Nassar, a full-stack engineer and entrepreneur who was frustrated with the state of web analytics. He saw that existing solutions either compromised user privacy or were too complex and slow.
                 </p>
                 <p className="text-slate-300 mb-6 leading-relaxed">
-                  We believed there had to be a better way—analytics that respect user privacy while still providing valuable insights, without slowing down websites or requiring complex configurations.
+                  He believed there had to be a better way—analytics that respect user privacy while still providing valuable insights, without slowing down websites or requiring complex configurations.
                 </p>
                 <p className="text-slate-300 leading-relaxed">
                   Today, Databuddy Analytics is helping businesses of all sizes understand their audience and improve their digital experiences, all while maintaining the highest standards of privacy and performance.
@@ -228,14 +224,14 @@ export default function AboutPage() {
                 "url": "https://databuddy.cc",
                 "logo": "https://databuddy.cc/logo.png",
                 "description": "Privacy-first web analytics that doesn't compromise on features or performance.",
-                "foundingDate": "2023",
+                "foundingDate": "2024",
                 "founders": [{
                   "@type": "Person",
-                  "name": "Databuddy Team"
+                  "name": "Issa Nassar"
                 }],
                 "sameAs": [
                   "https://twitter.com/databuddyps",
-                  "https://github.com/databuddy-analytics"
+                  "https://github.com/izadoesdev"
                 ]
               })
             }}
