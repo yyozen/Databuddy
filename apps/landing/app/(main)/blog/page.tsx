@@ -8,6 +8,11 @@ import { Metadata } from "next";
 import { 
   BookOpen,
   ArrowRight,
+  FileText,
+  Pencil,
+  PenTool,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 import { getAllPublishedPosts, getAllCategories, getAllTags, getRecentPosts } from "./actions";
 import { PostGrid } from "@/app/components/blog/post-grid";
@@ -40,6 +45,37 @@ export const metadata: Metadata = {
 // Set ISR revalidation
 export const revalidate = 3600; // Revalidate every hour
 
+// Empty State Component
+function EmptyState({ type }: { type: "featured" | "recent" }) {
+  return (
+    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-8 text-center">
+      <div className="flex justify-center mb-4">
+        {type === "featured" ? (
+          <FileText className="h-12 w-12 text-slate-500" />
+        ) : (
+          <Clock className="h-12 w-12 text-slate-500" />
+        )}
+      </div>
+      <h3 className="text-xl font-semibold mb-2 text-slate-300">
+        {type === "featured" ? "No Featured Articles Yet" : "No Recent Posts Yet"}
+      </h3>
+      <p className="text-slate-400 max-w-md mx-auto mb-6">
+        {type === "featured" 
+          ? "We're working on our first featured articles. Check back soon for insightful content about privacy-first analytics." 
+          : "We're crafting new articles. Check back soon for fresh content about analytics, privacy, and web performance."}
+      </p>
+      <div className="flex flex-wrap gap-3 justify-center">
+        <Button variant="outline" className="border-slate-700 bg-slate-800/50 hover:bg-slate-800">
+          <Link href="/features" className="flex items-center gap-2">
+            Explore Our Features
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // Dynamic blog page
 export default async function BlogPage() {
   // Fetch data
@@ -57,6 +93,11 @@ export default async function BlogPage() {
   // Filter out featured posts from recent posts list
   const featuredIds = new Set(featuredPosts.map(post => post.id));
   const nonFeaturedPosts = allPosts.filter(post => !featuredIds.has(post.id)).slice(0, 6);
+  
+  // Check if we have any posts
+  const hasPosts = allPosts.length > 0;
+  const hasFeaturedPosts = featuredPosts.length > 0;
+  const hasNonFeaturedPosts = nonFeaturedPosts.length > 0;
   
   return (
     <div className="fixed inset-0 overflow-hidden">
@@ -90,15 +131,21 @@ export default async function BlogPage() {
             <div className="container mx-auto px-4 py-12 max-w-6xl">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl md:text-3xl font-bold">Featured Articles</h2>
-                <Button asChild variant="ghost" className="flex items-center gap-1 text-sky-400 hover:text-sky-300 hover:bg-sky-500/10">
-                  <Link href="#all-posts">
-                    All posts
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Link>
-                </Button>
+                {hasPosts && (
+                  <Button asChild variant="ghost" className="flex items-center gap-1 text-sky-400 hover:text-sky-300 hover:bg-sky-500/10">
+                    <Link href="#all-posts">
+                      All posts
+                      <ArrowRight className="h-4 w-4 ml-1" />
+                    </Link>
+                  </Button>
+                )}
               </div>
               
-              <PostGrid posts={featuredPosts} />
+              {hasFeaturedPosts ? (
+                <PostGrid posts={featuredPosts} />
+              ) : (
+                <EmptyState type="featured" />
+              )}
             </div>
           </FadeIn>
 
@@ -112,17 +159,21 @@ export default async function BlogPage() {
               <div className="grid grid-cols-1 lg:grid-cols-16 gap-8 lg:gap-16">
                 {/* Main content - posts */}
                 <div className="lg:col-span-11">
-                  <PostGrid posts={nonFeaturedPosts} />
-                  
-                  {nonFeaturedPosts.length > 0 && (
-                    <div className="flex justify-center mt-12">
-                      <Button asChild className="bg-sky-500 hover:bg-sky-600 text-white">
-                        <Link href="/blog/archive" className="flex items-center gap-2">
-                          View All Posts
-                          <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </div>
+                  {hasNonFeaturedPosts ? (
+                    <>
+                      <PostGrid posts={nonFeaturedPosts} />
+                      
+                      <div className="flex justify-center mt-12">
+                        <Button asChild className="bg-sky-500 hover:bg-sky-600 text-white">
+                          <Link href="/blog/archive" className="flex items-center gap-2">
+                            View All Posts
+                            <ArrowRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <EmptyState type="recent" />
                   )}
                 </div>
                 
@@ -139,6 +190,30 @@ export default async function BlogPage() {
               </div>
             </div>
           </FadeIn>
+
+          {/* No Content Guidance - Only show if no posts at all */}
+          {!hasPosts && (
+            <FadeIn delay={200}>
+              <div className="container mx-auto px-4 py-6 max-w-6xl">
+                <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-6 my-8">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-amber-500/10 rounded-full">
+                      <AlertCircle className="h-6 w-6 text-amber-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold mb-2">Why am I seeing this?</h3>
+                      <p className="text-slate-300 mb-3">
+                        This empty state appears because there are no blog posts published yet. Once content is added, this section will be replaced with your blog posts.
+                      </p>
+                      <p className="text-slate-400 text-sm">
+                        <span className="font-medium text-amber-400">Admin tip:</span> Use the admin dashboard to create your first blog post.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </FadeIn>
+          )}
 
           {/* CTA section */}
           <FadeIn delay={200}>

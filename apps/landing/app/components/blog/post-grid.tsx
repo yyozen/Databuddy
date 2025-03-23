@@ -3,8 +3,9 @@ import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Clock, Eye } from 'lucide-react';
+import { CalendarIcon, Clock, Eye, FileText } from 'lucide-react';
 import { BlogPost, BlogCategory, BlogTag } from '@/app/lib/blog-types';
+import { Button } from '@/components/ui/button';
 
 interface PostGridProps {
   posts: BlogPost[];
@@ -18,6 +19,23 @@ export function PostGrid({ posts }: PostGridProps) {
     const words = content.trim().split(/\s+/).length;
     return Math.ceil(words / wordsPerMinute);
   };
+
+  // If no posts are available, show empty state
+  if (!posts || posts.length === 0) {
+    return (
+      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-8 text-center">
+        <div className="flex justify-center mb-4">
+          <FileText className="h-10 w-10 text-slate-500" />
+        </div>
+        <h3 className="text-xl font-semibold mb-2 text-slate-300">
+          No posts available
+        </h3>
+        <p className="text-slate-400 max-w-md mx-auto">
+          Check back soon for new content.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

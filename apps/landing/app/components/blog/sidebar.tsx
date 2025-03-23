@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { CalendarIcon, Hash, Layers, Search, Mail, TrendingUp } from 'lucide-react'
+import { CalendarIcon, Hash, Layers, Search, Mail, TrendingUp, FileText, Tag, FolderArchive } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { BlogPost, BlogCategory, BlogTag } from '@/app/lib/blog-types'
@@ -38,7 +38,7 @@ export function BlogSidebar({ recentPosts, categories, tags }: BlogSidebarProps)
             type="search" 
             placeholder="Search posts..." 
             className="pl-9 bg-slate-800/50 border-slate-700 focus:border-sky-500/50 text-slate-300"
-          />
+          />  
         </div>
       </div>
       
@@ -86,7 +86,14 @@ export function BlogSidebar({ recentPosts, categories, tags }: BlogSidebarProps)
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-slate-400">No recent posts</p>
+          <div className="flex items-center justify-center py-4 text-center">
+            <div className="space-y-2">
+              <div className="flex justify-center">
+                <FileText className="h-5 w-5 text-slate-500" />
+              </div>
+              <p className="text-sm text-slate-400">No recent posts available</p>
+            </div>
+          </div>
         )}
       </div>
 
@@ -112,7 +119,14 @@ export function BlogSidebar({ recentPosts, categories, tags }: BlogSidebarProps)
             ))}
           </div>
         ) : (
-          <p className="text-sm text-slate-400">No categories</p>
+          <div className="flex items-center justify-center py-4 text-center">
+            <div className="space-y-2">
+              <div className="flex justify-center">
+                <FolderArchive className="h-5 w-5 text-slate-500" />
+              </div>
+              <p className="text-sm text-slate-400">No categories available yet</p>
+            </div>
+          </div>
         )}
       </div>
 
@@ -138,7 +152,14 @@ export function BlogSidebar({ recentPosts, categories, tags }: BlogSidebarProps)
             ))}
           </div>
         ) : (
-          <p className="text-sm text-slate-400">No tags</p>
+          <div className="flex items-center justify-center py-4 text-center">
+            <div className="space-y-2">
+              <div className="flex justify-center">
+                <Tag className="h-5 w-5 text-slate-500" />
+              </div>
+              <p className="text-sm text-slate-400">No tags available yet</p>
+            </div>
+          </div>
         )}
       </div>
       
