@@ -187,9 +187,6 @@ export default function CCPACPRAPage() {
                   <Button asChild className="bg-amber-500 hover:bg-amber-600 text-white">
                     <Link href="/demo">Try Databuddy Today</Link>
                   </Button>
-                  <Button asChild variant="outline" className="border-slate-700 bg-slate-800/50 hover:bg-slate-800">
-                    <Link href="/privacy">View Our Privacy Approach</Link>
-                  </Button>
                 </div>
               </div>
               
@@ -224,15 +221,15 @@ export default function CCPACPRAPage() {
                     </span>
                     What are CCPA & CPRA?
                   </h2>
-                  <div className="prose prose-invert max-w-none prose-p:text-slate-300 prose-li:text-slate-300 prose-headings:text-white">
-                    <p>
-                      The California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA) are comprehensive privacy laws designed to enhance privacy rights and consumer protection for residents of California. The CCPA, which took effect on January 1, 2020, was the first major consumer privacy law in the United States. The CPRA, sometimes called "CCPA 2.0," was approved in November 2020 and became effective on January 1, 2023, significantly expanding and strengthening the original CCPA.
+                  <div className="space-y-4">
+                    <p className="text-slate-300">
+                      The California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA) are comprehensive privacy laws designed to enhance privacy rights and consumer protection for residents of California. <span className="text-amber-400 font-medium">The CCPA, which took effect on January 1, 2020, was the first major consumer privacy law in the United States.</span> The CPRA, sometimes called "CCPA 2.0," was approved in November 2020 and became effective on January 1, 2023, significantly expanding and strengthening the original CCPA.
                     </p>
-                    <p>
-                      These groundbreaking laws give California residents unprecedented control over their personal information and impose significant obligations on businesses that collect and process this data. They represent California's response to growing concerns about data privacy in the digital age and align with global privacy trends, moving closer to the standards set by the European Union's General Data Protection Regulation (GDPR).
+                    <p className="text-slate-300">
+                      These groundbreaking laws give California residents unprecedented control over their personal information and impose significant obligations on businesses that collect and process this data. <span className="text-amber-400 font-medium">They represent California's response to growing concerns about data privacy in the digital age and align with global privacy trends, moving closer to the standards set by the European Union's General Data Protection Regulation (GDPR).</span>
                     </p>
-                    <p>
-                      The CPRA notably established the California Privacy Protection Agency (CPPA), a dedicated enforcement body, and introduced stronger protections for sensitive personal information, reflecting the increased importance of data privacy in today's digital economy.
+                    <p className="text-slate-300">
+                      <span className="text-amber-400 font-medium">The CPRA notably established the California Privacy Protection Agency (CPPA), a dedicated enforcement body,</span> and introduced stronger protections for sensitive personal information, reflecting the increased importance of data privacy in today's digital economy.
                     </p>
                   </div>
                 </div>

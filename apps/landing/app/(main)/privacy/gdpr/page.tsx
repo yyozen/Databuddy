@@ -180,9 +180,6 @@ export default function GDPRPage() {
                   <Button asChild className="bg-sky-500 hover:bg-sky-600 text-white">
                     <Link href="/demo">Try Databuddy Today</Link>
                   </Button>
-                  <Button asChild variant="outline" className="border-slate-700 bg-slate-800/50 hover:bg-slate-800">
-                    <Link href="/privacy">View Our Privacy Approach</Link>
-                  </Button>
                 </div>
               </div>
               
@@ -217,15 +214,15 @@ export default function GDPRPage() {
                     </span>
                     What is GDPR?
                   </h2>
-                  <div className="prose prose-invert max-w-none prose-p:text-slate-300 prose-li:text-slate-300 prose-headings:text-white">
-                    <p>
-                      The General Data Protection Regulation (GDPR) is a comprehensive legal framework designed to protect the privacy and security of personal data for individuals within the European Union. Enacted by the EU and effective since May 25, 2018, GDPR represents a significant shift in how personal data is handled online.
+                  <div className="space-y-4">
+                    <p className="text-slate-300">
+                      The General Data Protection Regulation (GDPR) is a comprehensive legal framework designed to protect the privacy and security of personal data for individuals within the European Union. <span className="text-sky-400 font-medium">Enacted by the EU and effective since May 25, 2018, GDPR represents a significant shift in how personal data is handled online.</span>
                     </p>
-                    <p>
-                      GDPR's primary objectives include giving individuals greater control over their personal information and ensuring organizations are accountable for how they process this data. The regulation standardizes data protection laws across all EU member states and European Economic Area (EEA) countries, providing a consistent set of rights and obligations.
+                    <p className="text-slate-300">
+                      <span className="text-sky-400 font-medium">GDPR's primary objectives include giving individuals greater control over their personal information and ensuring organizations are accountable for how they process this data.</span> The regulation standardizes data protection laws across all EU member states and European Economic Area (EEA) countries, providing a consistent set of rights and obligations.
                     </p>
-                    <p>
-                      This modernization of data protection rules aligns with today's digital society, where online interactions and cloud services are commonplace. GDPR recognizes data privacy as a fundamental right and empowers individuals to manage their digital footprint.
+                    <p className="text-slate-300">
+                      This modernization of data protection rules aligns with today's digital society, where online interactions and cloud services are commonplace. <span className="text-sky-400 font-medium">GDPR recognizes data privacy as a fundamental right and empowers individuals to manage their digital footprint.</span>
                     </p>
                   </div>
                 </div>
@@ -376,17 +373,17 @@ export default function GDPRPage() {
                 </div>
 
                 <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-8 mb-10 shadow-lg transition-all duration-300 hover:shadow-teal-900/5">
-                  <div className="prose prose-invert max-w-none prose-p:text-slate-300 prose-li:text-slate-300 prose-headings:text-white">
-                    <h3 className="text-2xl font-bold text-white mb-6">Web Analytics and GDPR</h3>
-                    <p>
+                  <h3 className="text-2xl font-bold text-white mb-6">Web Analytics and GDPR</h3>
+                  <div className="space-y-4">
+                    <p className="text-slate-300">
                       Websites commonly employ web analytics to track user behavior, understand website traffic, and improve user experience. Under GDPR, the use of tracking cookies and the processing of personal data for analytics generally require explicit consent from the user.
                     </p>
-                    <p>
+                    <p className="text-slate-300">
                       This means that websites can no longer rely on implied consent or pre-checked boxes; users must actively and affirmatively agree to the collection of their data for these purposes. The consent obtained must be freely given, specific, informed, and unambiguous.
                     </p>
                     
                     {/* Analytics statistics */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-8 not-prose">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-8">
                       <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700 flex flex-col items-center text-center">
                         <span className="text-3xl font-bold text-sky-400 mb-2">62%</span>
                         <p className="text-slate-300 text-sm mb-1">of websites use cookie-based analytics that require consent</p>
@@ -404,10 +401,10 @@ export default function GDPRPage() {
                       </div>
                     </div>
                     
-                    <p>
+                    <p className="text-slate-300">
                       Websites are also obligated to provide transparent information about their use of cookies and data processing practices in their privacy policies. This includes detailing the types of cookies used, their purpose, the data collected, and whether this data is shared with any third parties.
                     </p>
-                    <p>
+                    <p className="text-slate-300">
                       Moreover, it must be as easy for users to withdraw their consent as it was to grant it. This emphasis on explicit consent and transparency has led to the widespread implementation of cookie consent banners and a greater awareness among internet users regarding online tracking practices.
                     </p>
                   </div>
@@ -534,9 +531,6 @@ export default function GDPRPage() {
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                       <Button asChild className="bg-sky-500 hover:bg-sky-600 text-white">
                         <Link href="/demo">Try for Free</Link>
-                      </Button>
-                      <Button asChild variant="outline" className="border-slate-700 bg-slate-800/50 hover:bg-slate-800">
-                        <Link href="/contact">Talk to Privacy Expert</Link>
                       </Button>
                     </div>
                   </div>
