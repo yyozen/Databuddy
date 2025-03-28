@@ -54,19 +54,15 @@
     ;
     var l = class {
         constructor(e) {
-            // Set default options
             this.options = {
-                // Core tracking options
                 disabled: false,
                 waitForProfile: true,
                 
-                // Feature toggles
                 trackScreenViews: true,
                 trackHashChanges: false,
                 trackAttributes: true,
                 trackOutgoingLinks: true,
                 
-                // Enhanced tracking features
                 trackSessions: true,
                 trackPerformance: true,
                 trackWebVitals: true,
@@ -75,8 +71,8 @@
                 trackExitIntent: true,
                 trackInteractions: true,
                 trackErrors: true,
+                trackBounceRate: true,
 
-                // Override with user provided options
                 ...e
             };
             
@@ -92,23 +88,21 @@
                 defaultHeaders: t
             });
             
-            // These properties will be initialized in init() if enabled
             this.lastPath = "";
+            this.pageCount = 0;
+            this.isInternalNavigation = false;
             
             this.anonymousId = this.getOrCreateAnonymousId();
             this.sessionId = this.getOrCreateSessionId();
             this.sessionStartTime = this.getSessionStartTime();
             this.lastActivityTime = Date.now();
-            this.pageViewCount = this.getPageViewCount();
             
-            // Engagement tracking
             this.maxScrollDepth = 0;
             this.interactionCount = 0;
             this.hasExitIntent = false;
             this.pageStartTime = Date.now();
             this.utmParams = this.getUtmParams();
 
-            // Setup exit tracking
             if (typeof window !== 'undefined' && this.options.trackExitIntent) {
                 this.setupExitTracking();
             }
@@ -161,62 +155,39 @@
             sessionStorage.setItem('did_session_start', now.toString());
             return now;
         }
-        getPageViewCount() {
-            if (this.isServer()) {
-                return 0;
-            }
-
-            const count = sessionStorage.getItem('did_page_count');
-            return count ? parseInt(count, 10) : 0;
-        }
-        savePageViewCount(count) {
-            if (!this.isServer()) {
-                sessionStorage.setItem('did_page_count', count.toString());
-            }
-        }
         init() {
             if (this.isServer()) return;
             
-            // Set up session tracking if enabled
             if (this.options.trackSessions) {
-                // Get or create session data
                 this.anonymousId = this.getOrCreateAnonymousId();
                 this.sessionId = this.getOrCreateSessionId();
                 this.sessionStartTime = this.getSessionStartTime();
                 this.lastActivityTime = Date.now();
-                this.pageViewCount = this.getPageViewCount();
                 
-                // Set up activity tracking for session management
                 ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(eventType => {
                     window.addEventListener(eventType, () => {
                         this.lastActivityTime = Date.now();
                         
-                        // Only count as interaction if engagement tracking is enabled
                         if (this.options.trackInteractions) {
                             this.interactionCount++;
                         }
                     }, { passive: true });
                 });
             } else {
-                // Still need anonymous ID even without sessions
                 this.anonymousId = this.getOrCreateAnonymousId();
             }
             
-            // Initialize engagement tracking features
             if (this.options.trackEngagement) {
-                // Initialize counters even if specific tracking is disabled
                 this.maxScrollDepth = 0;
                 this.interactionCount = 0;
                 this.hasExitIntent = false;
                 
-                // Set up scroll depth tracking
                 if (this.options.trackScrollDepth) {
                     window.addEventListener('scroll', () => {
                         this.trackScrollDepth();
                     }, { passive: true });
                 }
                 
-                // Set up exit intent tracking
                 if (this.options.trackExitIntent) {
                     document.addEventListener('mouseleave', (e) => {
                         if (e.clientY <= 0) {
@@ -226,7 +197,6 @@
                 }
             }
             
-            // Set up error tracking
             if (this.options.trackErrors) {
                 window.addEventListener('error', (event) => {
                     this.track('error', {
@@ -234,7 +204,10 @@
                         filename: event.filename,
                         lineno: event.lineno,
                         colno: event.colno,
-                        stack: event.error?.stack
+                        stack: event.error?.stack,
+                        __path: window.location.href,
+                        __title: document.title,
+                        __referrer: document.referrer || 'direct'
                     });
                 });
             }
@@ -242,18 +215,8 @@
         trackScrollDepth() {
             if (this.isServer()) return;
             
-            const scrollTop = window.scrollY || document.documentElement.scrollTop;
-            const scrollHeight = Math.max(
-                document.body.scrollHeight, 
-                document.documentElement.scrollHeight,
-                document.body.offsetHeight, 
-                document.documentElement.offsetHeight
-            ) - window.innerHeight;
-            
-            if (scrollHeight > 0) {
-                const scrollDepth = (scrollTop / scrollHeight) * 100;
-                this.maxScrollDepth = Math.max(this.maxScrollDepth, scrollDepth);
-            }
+            const scroll_depth = Math.round(this.maxScrollDepth);
+            super.track('scroll_depth', { scroll_depth });
         }
         ready() {
             this.options.waitForProfile = !1,
@@ -288,11 +251,6 @@
             };
             
             if (e === 'screen_view' || e === 'page_view') {
-                if (this.options.trackSessions) {
-                    this.pageViewCount++;
-                    this.savePageViewCount(this.pageViewCount);
-                }
-                
                 // Add performance metrics for page loads if enabled
                 if (!this.isServer() && this.options.trackPerformance) {
                     // Collect performance timing metrics
@@ -344,12 +302,10 @@
             this.sessionId = this.generateSessionId();
             this.sessionStartTime = Date.now();
             this.lastActivityTime = this.sessionStartTime;
-            this.pageViewCount = 0;
             
             if (!this.isServer()) {
                 sessionStorage.setItem('did_session', this.sessionId);
                 sessionStorage.setItem('did_session_start', this.sessionStartTime.toString());
-                sessionStorage.setItem('did_page_count', '0');
             }
         }
         flush() {
@@ -454,8 +410,7 @@
         
         collectWebVitals(eventName) {
             if (this.isServer() || !this.options.trackWebVitals || 
-                typeof window.performance === 'undefined' || 
-                typeof window.performance.getEntriesByType !== 'function') {
+                typeof window.performance === 'undefined') {
                 return;
             }
             
@@ -491,13 +446,39 @@
                     }
                 }
                 
+                // Get viewport and screen information
+                const viewportInfo = {
+                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
+                    viewport_size: `${window.innerWidth}x${window.innerHeight}`
+                };
+
+                // Get timezone information
+                const timezoneInfo = {
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    language: navigator.language
+                };
+
+                // Get connection information
+                const connectionInfo = this.getConnectionInfo();
+
+                // Get current page context
+                const pageContext = {
+                    __path: this.lastPath,
+                    __title: document.title,
+                    __referrer: this.global?.__referrer || document.referrer || 'direct'
+                };
+                
                 // Send vitals if we have at least one metric
                 if (fcpTime || lcpTime || cls !== null) {
                     this.track('web_vitals', {
+                        __timestamp_ms: Date.now(),
                         fcp: fcpTime,
                         lcp: lcpTime,
                         cls: cls,
-                        path: this.lastPath
+                        ...pageContext,
+                        ...viewportInfo,
+                        ...timezoneInfo,
+                        ...connectionInfo,
                     });
                 }
             } catch (e) {
@@ -521,8 +502,6 @@
         setupExitTracking() {
             if (typeof window === 'undefined') return;
 
-            // Track scroll depth
-            let lastScrollDepth = 0;
             window.addEventListener('scroll', () => {
                 const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
                 const currentScroll = window.scrollY;
@@ -530,7 +509,6 @@
                 this.maxScrollDepth = Math.max(this.maxScrollDepth, scrollPercent);
             });
 
-            // Track interactions
             const interactionEvents = ['click', 'keypress', 'mousemove', 'touchstart'];
             interactionEvents.forEach(event => {
                 window.addEventListener(event, () => {
@@ -538,34 +516,73 @@
                 }, { once: true });
             });
 
-            // Track exit intent
             window.addEventListener('mouseout', (e) => {
                 if (e.clientY <= 0 && !this.hasExitIntent) {
                     this.hasExitIntent = true;
-                    this.trackExitData();
                 }
             });
 
-            // Track beforeunload
+            document.addEventListener('click', (e) => {
+                const link = e.target.closest('a[href]');
+                if (link && link.href) {
+                    try {
+                        const linkUrl = new URL(link.href);
+                        const isSameOrigin = linkUrl.origin === window.location.origin;
+                        if (isSameOrigin) {
+                            this.isInternalNavigation = true;
+                        }
+                    } catch (err) {
+                        // Invalid URL, ignore
+                    }
+                }
+            });
+
+            window.addEventListener('popstate', () => {
+                this.isInternalNavigation = true;
+            });
+
+            window.addEventListener('pushstate', () => {
+                this.isInternalNavigation = true;
+            });
+
+            window.addEventListener('replacestate', () => {
+                this.isInternalNavigation = true;
+            });
+
             window.addEventListener('beforeunload', () => {
-                this.trackExitData();
+                if (!this.isInternalNavigation) {
+                    this.trackExitData();
+                }
+                this.isInternalNavigation = false;
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden' && !this.isInternalNavigation) {
+                    this.trackExitData();
+                }
             });
         }
 
         trackExitData() {
-            if (typeof window === 'undefined') return;
-
-            const timeSpent = Date.now() - this.pageStartTime;
-            const exitData = {
-                timeSpent,
-                maxScrollDepth: this.maxScrollDepth,
-                interactionCount: this.interactionCount,
-                hasExitIntent: this.hasExitIntent,
-                utmParams: this.utmParams
+            if (this.isServer()) return;
+            
+            const time_on_page = Math.round((Date.now() - this.pageEngagementStart) / 1000);
+            const utm_params = this.getUtmParams();
+            const exit_data = {
+                time_on_page: time_on_page,
+                scroll_depth: Math.round(this.maxScrollDepth),
+                interaction_count: this.interactionCount,
+                has_exit_intent: this.hasExitIntent,
+                page_count: this.pageCount,
+                is_bounce: this.pageCount <= 1 ? 1 : 0,
+                utm_source: utm_params.utm_source || "",
+                utm_medium: utm_params.utm_medium || "",
+                utm_campaign: utm_params.utm_campaign || "",
+                utm_term: utm_params.utm_term || "",
+                utm_content: utm_params.utm_content || ""
             };
-
-            // Send exit data
-            this.track('page_exit', exitData);
+            
+            super.track('page_exit', exit_data);
         }
 
         getConnectionInfo() {
@@ -574,6 +591,42 @@
             return {
                 connection_type: navigator.connection.effectiveType || navigator.connection.type || 'unknown'
             };
+        }
+
+        trackCustomEvent(eventName, properties = {}) {
+            if (this.isServer()) return;
+            
+            // Get current page context
+            const pageContext = {
+                __path: window.location.href,
+                __title: document.title,
+                __referrer: this.global?.__referrer || document.referrer || 'direct'
+            };
+
+            // Get viewport and screen information
+            const viewportInfo = {
+                screen_resolution: `${window.screen.width}x${window.screen.height}`,
+                viewport_size: `${window.innerWidth}x${window.innerHeight}`
+            };
+
+            // Get timezone information
+            const timezoneInfo = {
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                language: navigator.language
+            };
+
+            // Get connection information
+            const connectionInfo = this.getConnectionInfo();
+
+            // Track the custom event with all context
+            super.track(eventName, {
+                __timestamp_ms: Date.now(),
+                ...properties,
+                ...pageContext,
+                ...viewportInfo,
+                ...timezoneInfo,
+                ...connectionInfo,
+            });
         }
     }
     ;
@@ -590,10 +643,9 @@
             
             if (this.isServer()) return;
             
-            // Set global properties
+            // Set global properties without default referrer
             this.setGlobalProperties({
-                __anonymized: true,
-                __referrer: document.referrer || 'direct'
+                __anonymized: true
             });
             
             // Set up screen view tracking if enabled
@@ -632,39 +684,40 @@
             })
         }
         trackScreenViews() {
-            if (this.isServer())
-                return;
+            if (this.isServer()) return;
+            
             let t = history.pushState;
             history.pushState = function(...s) {
                 let o = t.apply(this, s);
-                return window.dispatchEvent(new Event("pushstate")),
-                window.dispatchEvent(new Event("locationchange")),
-                o
+                window.dispatchEvent(new Event("pushstate"));
+                window.dispatchEvent(new Event("locationchange"));
+                return o;
             };
+            
             let r = history.replaceState;
             history.replaceState = function(...s) {
                 let o = r.apply(this, s);
-                return window.dispatchEvent(new Event("replacestate")),
-                window.dispatchEvent(new Event("locationchange")),
-                o
-            },
+                window.dispatchEvent(new Event("replacestate"));
+                window.dispatchEvent(new Event("locationchange"));
+                return o;
+            };
+            
             window.addEventListener("popstate", () => {
-                window.dispatchEvent(new Event("locationchange"))
+                window.dispatchEvent(new Event("locationchange"));
             });
             
             this.pageEngagementStart = Date.now();
-            window.addEventListener('beforeunload', () => {
-                if (this.lastPath) {
-                    const timeOnPage = Math.round((Date.now() - this.pageEngagementStart) / 1000);
-                    super.track('page_exit', {
-                        __path: this.lastPath,
-                        timeOnPage: timeOnPage
-                    });
-                }
-            });
             
-            let i = () => this.debounce( () => this.screenView(), 50);
-            this.options.trackHashChanges ? window.addEventListener("hashchange", i) : window.addEventListener("locationchange", i)
+            let i = () => this.debounce(() => {
+                const previous_path = this.lastPath || window.location.href;
+                this.setGlobalProperties({
+                    __referrer: previous_path
+                });
+                this.isInternalNavigation = true;
+                this.screenView();
+            }, 50);
+            
+            this.options.trackHashChanges ? window.addEventListener("hashchange", i) : window.addEventListener("locationchange", i);
         }
         trackAttributes() {
             this.isServer() || document.addEventListener("click", t => {
@@ -686,81 +739,60 @@
             
             let i, n;
             
-            // Calculate time on previous page if exists
             if (this.lastPath && this.pageEngagementStart && this.options.trackEngagement) {
-                const timeOnPage = Math.round((Date.now() - this.pageEngagementStart) / 1000);
-                const exitData = {
+                const time_on_page = Math.round((Date.now() - this.pageEngagementStart) / 1000);
+                const exit_data = {
                     __path: this.lastPath,
-                    timeOnPage: timeOnPage
+                    time_on_page: time_on_page,
+                    scroll_depth: Math.round(this.maxScrollDepth),
+                    interaction_count: this.interactionCount,
+                    exit_intent: this.hasExitIntent,
+                    screen_resolution: `${window.screen.width}x${window.screen.height}`,
+                    viewport_size: `${window.innerWidth}x${window.innerHeight}`,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    language: navigator.language,
+                    ...this.getConnectionInfo(),
+                    ...this.getUtmParams()
                 };
                 
-                // Only include engagement metrics if those features are enabled
-                if (this.options.trackScrollDepth) {
-                    exitData.scrollDepth = Math.round(this.maxScrollDepth);
-                }
-                
-                if (this.options.trackInteractions) {
-                    exitData.interactionCount = this.interactionCount;
-                }
-                
-                if (this.options.trackExitIntent) {
-                    exitData.exitIntent = this.hasExitIntent;
-                }
-                
-                super.track('page_exit', exitData);
-                
-                // Reset engagement metrics for next page
                 this.maxScrollDepth = 0;
                 this.interactionCount = 0;
                 this.hasExitIntent = false;
             }
             
-            // Reset engagement timer
             this.pageEngagementStart = Date.now();
             
             typeof t == "string" ? (i = t, n = r) : (i = window.location.href, n = t);
             
             if (this.lastPath !== i) {
                 this.lastPath = i;
+                this.pageCount++;
                 
-                // Get UTM parameters only if they exist
-                const urlParams = new URLSearchParams(window.location.search);
-                const utmParams = {};
-                ['source', 'medium', 'campaign', 'term', 'content'].forEach(param => {
-                    const value = urlParams.get(`utm_${param}`);
-                    if (value) {
-                        utmParams[`utm_${param}`] = value;
-                    }
-                });
-
-                // Get connection information
-                const connectionInfo = this.getConnectionInfo();
-
-                // Get viewport and screen information
-                const viewportInfo = {
+                const utm_params = this.getUtmParams();
+                const connection_info = this.getConnectionInfo();
+                const viewport_info = {
                     screen_resolution: `${window.screen.width}x${window.screen.height}`,
                     viewport_size: `${window.innerWidth}x${window.innerHeight}`
                 };
-
-                // Get timezone information
-                const timezoneInfo = {
+                const timezone_info = {
                     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                     language: navigator.language
+                };
+                const referrer_info = {
+                    __referrer: this.global?.__referrer || document.referrer || 'direct'
                 };
 
                 super.track("screen_view", {
                     ...n ?? {},
                     __path: i,
                     __title: document.title,
-                    ...utmParams,
-                    ...connectionInfo,
-                    ...viewportInfo,
-                    ...timezoneInfo,
-                    __enriched: {
-                        sdk_name: this.options.sdk,
-                        sdk_version: this.options.sdkVersion,
-                        timestamp_ms: Date.now()
-                    }
+                    __timestamp_ms: Date.now(),
+                    page_count: this.pageCount,
+                    ...utm_params,
+                    ...connection_info,
+                    ...viewport_info,
+                    ...timezone_info,
+                    ...referrer_info,
                 });
             }
         }

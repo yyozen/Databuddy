@@ -7,7 +7,9 @@ export interface AnalyticsSummary {
   sessions: number;
   unique_visitors: number;
   bounce_rate: number;
+  bounce_rate_pct: string;
   avg_session_duration: number;
+  avg_session_duration_formatted: string;
 }
 
 export interface TodayStats {
@@ -26,12 +28,16 @@ export interface PageData {
   pageviews: number;
   visitors: number;
   avg_time_on_page: number;
+  avg_time_on_page_formatted: string;
 }
 
 export interface ReferrerData {
   referrer: string;
   visitors: number;
   pageviews: number;
+  type?: string;
+  name?: string;
+  domain?: string;
 }
 
 export interface TrendData {
@@ -42,14 +48,18 @@ export interface TrendData {
   visitors: number;
   sessions: number;
   bounce_rate: number;
+  bounce_rate_pct?: string;
   avg_session_duration: number;
+  avg_session_duration_formatted?: string;
 }
 
 export interface DeviceData {
   browsers: Array<{
     browser: string;
+    version?: string;
     visitors: number;
     pageviews: number;
+    count?: number;
   }>;
   os: Array<{
     os: string;
@@ -60,6 +70,11 @@ export interface DeviceData {
     device_type: string;
     visitors: number;
     pageviews: number;
+  }>;
+  screen_resolutions?: Array<{
+    screen_resolution: string;
+    count: number;
+    visitors: number;
   }>;
 }
 
@@ -78,7 +93,87 @@ export interface LocationData {
   }>;
 }
 
+export interface PerformanceData {
+  avg_load_time: number;
+  avg_ttfb: number;
+  avg_dom_ready_time: number;
+  avg_render_time: number;
+  avg_fcp: number;
+  avg_lcp: number;
+  avg_cls: number;
+  avg_load_time_formatted: string;
+  avg_ttfb_formatted: string;
+  avg_dom_ready_time_formatted: string;
+  avg_render_time_formatted: string;
+  avg_fcp_formatted: string;
+  avg_lcp_formatted: string;
+  avg_cls_formatted: string;
+}
+
+export interface SessionData {
+  session_id: string;
+  session_name: string;
+  first_visit: string;
+  last_visit: string;
+  duration: number;
+  duration_formatted: string;
+  page_views: number;
+  visitor_id: string;
+  device: string;
+  browser: string;
+  os: string;
+  country: string;
+  city: string;
+  referrer: string;
+  is_returning_visitor: boolean;
+  visitor_session_count: number;
+  referrer_parsed?: {
+    type: string;
+    name: string;
+    domain: string;
+  };
+}
+
+export interface SessionEventData {
+  event_id: string;
+  time: string;
+  event_name: string;
+  path: string;
+  url: string;
+  referrer: string;
+  title: string;
+  time_on_page: number;
+  screen_resolution: string;
+  user_agent?: string;
+  device_type: string;
+  browser: string;
+  os: string;
+  utm_source: string;
+  utm_medium: string;
+  utm_campaign: string;
+}
+
+export interface SessionWithEvents extends SessionData {
+  events: SessionEventData[];
+}
+
 export type TimeInterval = 'day' | 'week' | 'month';
+
+export interface ProfileData {
+  visitor_id: string;
+  first_visit: string;
+  last_visit: string;
+  total_sessions: number;
+  total_pageviews: number;
+  total_duration: number;
+  total_duration_formatted: string;
+  device: string;
+  browser: string;
+  os: string;
+  country: string;
+  city: string;
+  sessions: SessionData[];
+}
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -155,6 +250,46 @@ export function useWebsiteAnalytics(
         summary: data.summary as AnalyticsSummary,
         today: data.today as TodayStats,
         date_range: data.date_range as DateRange,
+        performance: data.performance as PerformanceData,
+        browser_versions: data.browser_versions as Array<{
+          browser: string;
+          version: string;
+          count: number;
+          visitors: number;
+        }>,
+        device_types: data.device_types as Array<{
+          device_type: string;
+          visitors: number;
+          pageviews: number;
+        }>,
+        countries: data.countries as Array<{
+          country: string;
+          visitors: number;
+          pageviews: number;
+        }>,
+        connection_types: data.connection_types as Array<{
+          connection_type: string;
+          visitors: number;
+          pageviews: number;
+        }>,
+        languages: data.languages as Array<{
+          language: string;
+          visitors: number;
+          pageviews: number;
+        }>,
+        timezones: data.timezones as Array<{
+          timezone: string;
+          visitors: number;
+          pageviews: number;
+        }>,
+        top_pages: data.top_pages as Array<PageData>,
+        top_referrers: data.top_referrers as Array<ReferrerData>,
+        screen_resolutions: data.screen_resolutions as Array<{
+          screen_resolution: string;
+          count: number;
+          visitors: number;
+        }>,
+        events_by_date: data.events_by_date as Array<TrendData>,
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -250,6 +385,17 @@ export function useWebsiteAnalytics(
     analytics: {
       summary: summaryQuery.data?.summary,
       today: summaryQuery.data?.today,
+      performance: summaryQuery.data?.performance,
+      browser_versions: summaryQuery.data?.browser_versions,
+      device_types: summaryQuery.data?.device_types,
+      countries: summaryQuery.data?.countries,
+      connection_types: summaryQuery.data?.connection_types,
+      languages: summaryQuery.data?.languages,
+      timezones: summaryQuery.data?.timezones,
+      top_pages: summaryQuery.data?.top_pages,
+      top_referrers: summaryQuery.data?.top_referrers,
+      screen_resolutions: summaryQuery.data?.screen_resolutions,
+      events_by_date: summaryQuery.data?.events_by_date,
     },
     // Individual loading states
     loading: {
@@ -550,6 +696,141 @@ export function useAnalyticsLocations(
         countries: data.countries || [],
         cities: data.cities || [],
         date_range: data.date_range as DateRange,
+      };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Hook to fetch sessions list
+ */
+export function useAnalyticsSessions(
+  websiteId: string,
+  dateRange?: DateRange,
+  limit: number = 20
+) {
+  return useQuery({
+    queryKey: ['analytics', 'sessions', websiteId, dateRange, limit],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        website_id: websiteId,
+        limit: limit.toString(),
+      });
+      
+      if (dateRange?.start_date) {
+        params.append('start_date', dateRange.start_date);
+      }
+      
+      if (dateRange?.end_date) {
+        params.append('end_date', dateRange.end_date);
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/analytics/sessions?${params.toString()}`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch sessions data');
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch sessions data');
+      }
+      
+      return {
+        sessions: data.sessions as SessionData[],
+        date_range: data.date_range as DateRange,
+        unique_visitors: data.unique_visitors as number
+      };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Hook to fetch details for a specific session
+ */
+export function useAnalyticsSessionDetails(
+  websiteId: string,
+  sessionId: string,
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: ['analytics', 'session', websiteId, sessionId],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        website_id: websiteId,
+      });
+      
+      const response = await fetch(`${API_BASE_URL}/analytics/session/${sessionId}?${params.toString()}`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch session details');
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch session details');
+      }
+      
+      return {
+        session: data.session as SessionWithEvents,
+      };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: enabled && !!sessionId,
+  });
+}
+
+/**
+ * Hook to fetch visitor profiles
+ */
+export function useAnalyticsProfiles(
+  websiteId: string,
+  dateRange?: DateRange,
+  limit: number = 50
+) {
+  return useQuery({
+    queryKey: ['analytics', 'profiles', websiteId, dateRange, limit],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        website_id: websiteId,
+        limit: limit.toString(),
+      });
+      
+      if (dateRange?.start_date) {
+        params.append('start_date', dateRange.start_date);
+      }
+      
+      if (dateRange?.end_date) {
+        params.append('end_date', dateRange.end_date);
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/analytics/profiles?${params.toString()}`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch visitor profiles');
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch visitor profiles');
+      }
+      
+      return {
+        profiles: data.profiles as ProfileData[],
+        date_range: data.date_range as DateRange,
+        total_visitors: data.total_visitors as number,
+        returning_visitors: data.returning_visitors as number
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
