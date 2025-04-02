@@ -150,4 +150,25 @@ export function createSuccessResponse(data: Record<string, any>) {
     success: true,
     ...data
   };
+}
+
+// Helper function to format browser data
+export function formatBrowserData(browserData: Array<{ browser_name: string; browser_version: string; count: number; visitors: number }>) {
+  return browserData.map(item => ({
+    browser: item.browser_name,
+    version: item.browser_version,
+    count: item.count,
+    visitors: item.visitors
+  }));
+}
+
+// Helper function to format device data
+export function formatDeviceData(deviceData: Array<{ device_type: string; device_brand: string; device_model: string; visitors: number; pageviews: number }>) {
+  return deviceData.map(item => ({
+    device_type: item.device_type || 'desktop',
+    device_brand: item.device_brand || 'Unknown',
+    device_model: item.device_model || 'Unknown',
+    visitors: item.visitors,
+    pageviews: item.pageviews
+  }));
 } 

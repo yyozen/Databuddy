@@ -3,7 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { customSession, multiSession, jwt, twoFactor, captcha, organization, emailOTP } from "better-auth/plugins";
 import { getSessionCookie } from "better-auth/cookies";
 import { db } from "@databuddy/db";
-import { sendEmail } from "@databuddy/email";
+// import { Resend } from "resend";
 
 export const canManageUsers = (role: string) => {
   return role === 'ADMIN'
@@ -31,7 +31,7 @@ export const auth = betterAuth({
     socialProviders: {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID as string,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,   
         },
         github: {
             clientId: process.env.GITHUB_CLIENT_ID as string,
@@ -40,7 +40,29 @@ export const auth = betterAuth({
     },
     emailAndPassword: {
         enabled: true,
+        minPasswordLength: 8,
+        maxPasswordLength: 100,
+        autoSignIn: true,
+        // requireEmailVerification: true,
+        // sendResetPasswordEmail: true,
     },
+    // emailVerification: {
+    //     sendOnSignUp: true,
+    //     sendVerificationOnSignUp: true,
+    //     disableSignUp: true,
+    //     sendVerificationOnSignIn: true,
+    //     autoSignInAfterVerification: true,
+    //     sendVerificationEmail: async ({user, url}: {user: any, url: string}) => {
+    //         const resend = new Resend(process.env.RESEND_API_KEY as string);
+    //         const email = await resend.emails.send({
+    //             from: 'noreply@databuddy.cc',
+    //             to: user.email,
+    //             subject: 'Verify your email',
+    //             html: `<p>Click <a href="${url}">here</a> to verify your email</p>`
+    //         });
+    //         console.log(email);
+    //     }
+    // },
     jwt: {
         enabled: true,
     },
@@ -69,7 +91,7 @@ export const auth = betterAuth({
                     name: user.name,
                     email: user.email,
                     image: user.image,
-                    emailVerified: dbUser?.emailVerified || false,
+                    emailVerified: user.emailVerified || false,
                     role: dbUser?.role || 'USER',
                 },
                 session: {
@@ -87,48 +109,6 @@ export const auth = betterAuth({
         twoFactor(),
         multiSession(),
         jwt(),
-        // emailOTP({
-        //     sendVerificationOnSignUp: true,
-        //     disableSignUp: true,
-        //     generateOTP: () => Math.floor(100000 + Math.random() * 900000).toString(),
-        //     async sendVerificationOTP({ email, otp, type }: { email: string, otp: string, type: 'sign-in' | 'email-verification' | 'forget-password' }) {
-        //         try {
-        //             if (type === 'sign-in') {
-        //                 await sendEmail('verification', {
-        //                     to: email,
-        //                     data: { 
-        //                         userName: email.split('@')[0],
-        //                         verificationUrl: `https://app.databuddy.cc/verify?code=${otp}`,
-        //                         companyName: 'Databuddy',
-        //                         expiryHours: 24
-        //                     },
-        //                 });
-        //             } else if (type === 'email-verification') {
-        //                 await sendEmail('verification', {
-        //                     to: email,
-        //                     data: { 
-        //                         userName: email.split('@')[0],
-        //                         verificationUrl: `https://app.databuddy.cc/verify?code=${otp}`,
-        //                         companyName: 'Databuddy',
-        //                         expiryHours: 24
-        //                     },
-        //                 });
-        //             } else if (type === 'forget-password') {
-        //                 await sendEmail('password-reset', {
-        //                     to: email,
-        //                     data: { 
-        //                         userName: email.split('@')[0],
-        //                         resetUrl: `https://app.databuddy.cc/reset-password?code=${otp}`,
-        //                         companyName: 'Databuddy',
-        //                         expiryMinutes: 30
-        //                     },
-        //                 });
-        //             }
-        //         } catch (error) {
-        //             console.error('Failed to send email', error);
-        //         }
-        //     }
-        // }),
         organization({
             teams: {
                 enabled: true,

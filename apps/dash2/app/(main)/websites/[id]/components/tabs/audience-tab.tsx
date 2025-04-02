@@ -1,22 +1,50 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 
 import { DistributionChart } from "@/components/charts/distribution-chart";
 import { DataTable } from "@/components/analytics/data-table";
 import { useWebsiteAnalytics } from "@/hooks/use-analytics";
 import { formatDistributionData, groupBrowserData } from "../utils/analytics-helpers";
-import { BaseTabProps } from "../utils/types";
+import { RefreshableTabProps } from "../utils/types";
 
 export function WebsiteAudienceTab({
   websiteId,
-  dateRange
-}: BaseTabProps) {
+  dateRange,
+  isRefreshing,
+  setIsRefreshing
+}: RefreshableTabProps) {
   // Fetch analytics data
   const {
     analytics,
-    loading
+    loading,
+    refetch
   } = useWebsiteAnalytics(websiteId, dateRange);
+
+  // Handle refresh
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (isRefreshing) {
+      const doRefresh = async () => {
+        try {
+          await refetch();
+        } catch (error) {
+          console.error("Failed to refresh data:", error);
+        } finally {
+          if (isMounted) {
+            setIsRefreshing(false);
+          }
+        }
+      };
+      
+      doRefresh();
+    }
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [isRefreshing, refetch, setIsRefreshing]);
 
   // Prepare device data
   const deviceData = useMemo(() => 
@@ -42,6 +70,9 @@ export function WebsiteAudienceTab({
     [analytics.languages]
   );
 
+  // Combine loading states
+  const isLoading = loading.summary || isRefreshing;
+
   return (
     <div className="pt-2 space-y-3">
       <h2 className="text-lg font-semibold mb-2">Audience Insights</h2>
@@ -51,7 +82,7 @@ export function WebsiteAudienceTab({
         <div className="rounded-2xl border shadow-sm overflow-hidden">
           <DistributionChart 
             data={deviceData} 
-            isLoading={loading.summary}
+            isLoading={isLoading}
             title="Device Types"
             description="Visitors by device type"
             height={280}
@@ -61,7 +92,7 @@ export function WebsiteAudienceTab({
         <div className="rounded-2xl border shadow-sm overflow-hidden">
           <DistributionChart 
             data={browserData} 
-            isLoading={loading.summary}
+            isLoading={isLoading}
             title="Browsers"
             description="Visitors by browser"
             height={280}
@@ -74,7 +105,7 @@ export function WebsiteAudienceTab({
         <div className="rounded-2xl border shadow-sm overflow-hidden">
           <DistributionChart 
             data={connectionData} 
-            isLoading={loading.summary}
+            isLoading={isLoading}
             title="Connection Types"
             description="Visitors by network connection"
             height={250}
@@ -84,7 +115,7 @@ export function WebsiteAudienceTab({
         <div className="rounded-2xl border shadow-sm overflow-hidden">
           <DistributionChart 
             data={languageData} 
-            isLoading={loading.summary}
+            isLoading={isLoading}
             title="Languages"
             description="Visitors by preferred language"
             height={250}
@@ -123,7 +154,7 @@ export function WebsiteAudienceTab({
           ]}
           title="Timezones"
           description="Visitors by timezone"
-          isLoading={loading.summary}
+          isLoading={isLoading}
           limit={10}
         />
       </div>
@@ -155,11 +186,11 @@ export function WebsiteAudienceTab({
           ]}
           title="Geographic Distribution"
           description="Visitors by location"
-          isLoading={loading.summary}
+          isLoading={isLoading}
         />
       </div>
       
-      {/* Screen resolutions */}
+      {/* Screen Resolutions */}
       <div className="rounded-2xl border shadow-sm overflow-hidden">
         <DataTable 
           data={analytics.screen_resolutions}
@@ -186,7 +217,7 @@ export function WebsiteAudienceTab({
           ]}
           title="Screen Resolutions"
           description="Visitors by screen size"
-          isLoading={loading.summary}
+          isLoading={isLoading}
         />
       </div>
     </div>

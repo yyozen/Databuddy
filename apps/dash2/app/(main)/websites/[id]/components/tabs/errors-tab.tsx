@@ -12,7 +12,8 @@ import {
   AlertCircle,
   AlertTriangle,
   X,
-  ExternalLink
+  ExternalLink,
+  HelpCircle
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,21 +26,16 @@ import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tool
 import { useWebsiteErrors } from "@/hooks/use-analytics";
 import { DateRange, ErrorDetail } from "@/hooks/use-analytics";
 import { AnimatedLoading } from "@/components/analytics/animated-loading";
-
-// Define the component props type
-interface WebsiteErrorsTabProps {
-  websiteId: string;
-  dateRange: DateRange & { granularity?: 'daily' | 'hourly' };
-  isRefreshing: boolean;
-  setIsRefreshing: (value: boolean) => void;
-}
+import { Card } from "@/components/ui/card";
+import { RefreshableTabProps } from "../utils/types";
+import { EmptyState } from "../utils/ui-components";
 
 export function WebsiteErrorsTab({
   websiteId,
   dateRange,
   isRefreshing,
   setIsRefreshing
-}: WebsiteErrorsTabProps) {
+}: RefreshableTabProps) {
   // State for errors tab
   const [errorPage, setErrorPage] = useState<number>(1);
   const [selectedError, setSelectedError] = useState<ErrorDetail | null>(null);
@@ -52,6 +48,7 @@ export function WebsiteErrorsTab({
   const { 
     data: errorsData, 
     isLoading: isLoadingErrors,
+    error: errorsError,
     refetch: errorsRefetch 
   } = useWebsiteErrors(
     websiteId, 
@@ -59,6 +56,34 @@ export function WebsiteErrorsTab({
     50,
     errorPage
   );
+
+  // Handle refresh
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (isRefreshing) {
+      const doRefresh = async () => {
+        try {
+          await errorsRefetch();
+        } catch (error) {
+          console.error("Failed to refresh data:", error);
+        } finally {
+          if (isMounted) {
+            setIsRefreshing(false);
+          }
+        }
+      };
+      
+      doRefresh();
+    }
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [isRefreshing, errorsRefetch, setIsRefreshing]);
+
+  // Combine loading states
+  const isLoading = isLoadingErrors || isRefreshing;
 
   // Handler for toggling error metrics visibility
   const toggleErrorMetric = useCallback((metric: string) => {
@@ -68,32 +93,17 @@ export function WebsiteErrorsTab({
     }));
   }, []);
 
-  // Prepare data for the error chart
+  // Memoize chart data
   const errorChartData = useMemo(() => {
-    if (!errorsData?.errors_over_time?.length) return [];
+    if (!errorsData?.errors_over_time) return [];
     
-    return errorsData.errors_over_time.map(dataPoint => {
-      // Create a filtered object with only the visible metrics
-      const filtered: any = {
-        date: dataPoint.date,
-      };
-      
-      // Add visible metrics
-      Object.keys(dataPoint).forEach(key => {
-        if (key !== 'date' && visibleErrorMetrics[key]) {
-          filtered[key] = dataPoint[key];
-        }
-      });
-      
-      // Format the date
-      const date = new Date(dataPoint.date);
-      filtered.date = format(date, 'MMM d');
-      
-      return filtered;
-    });
-  }, [errorsData?.errors_over_time, visibleErrorMetrics]);
+    return errorsData.errors_over_time.map(point => ({
+      ...point,
+      date: format(new Date(point.date), 'MMM d')
+    }));
+  }, [errorsData?.errors_over_time]);
 
-  // Simulate loading progress
+  // Handle loading progress animation
   useEffect(() => {
     if (isLoadingErrors) {
       const intervals = [
@@ -129,11 +139,39 @@ export function WebsiteErrorsTab({
     }
   }, [isLoadingErrors]);
 
+  // Only show error state when there's a real error with summary data and not loading
+  if (errorsError && !isLoading) {
+    return (
+      <div className="pt-6">
+        <EmptyState
+          icon={<AlertCircle className="h-10 w-10" />}
+          title="Error loading error data"
+          description="Unable to load error metrics for this website."
+          action={null}
+        />
+      </div>
+    );
+  }
+
+  // Only show empty state when we're not loading and have no data
+  if (!isLoading && (!errorsData?.error_types || errorsData.error_types.length === 0)) {
+    return (
+      <div className="pt-6">
+        <EmptyState
+          icon={<Bug className="h-10 w-10" />}
+          title="No errors detected"
+          description="We haven't detected any errors on your website during this time period."
+          action={null}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="pt-2 space-y-3">
       <h2 className="text-lg font-semibold mb-2">Error Tracking</h2>
       
-      {isLoadingErrors ? (
+      {isLoading ? (
         <AnimatedLoading type="errors" progress={loadingProgress} />
       ) : errorsData ? (
         <>
@@ -154,7 +192,7 @@ export function WebsiteErrorsTab({
                     .filter(key => key !== 'date')
                     .map((errorType, index) => (
                       <div key={errorType} className="flex items-center space-x-2">
-                        <Checkbox 
+                        <Checkbox
                           id={`error-${errorType}`} 
                           checked={visibleErrorMetrics[errorType] || false}
                           onCheckedChange={() => toggleErrorMetric(errorType)}
@@ -259,26 +297,19 @@ export function WebsiteErrorsTab({
                 </TableHeader>
                 <TableBody>
                   {errorsData.error_types && errorsData.error_types.length > 0 ? (
-                    errorsData.error_types.map((error, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium whitespace-nowrap">
-                          <span className="flex items-center gap-1">
-                            <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                            {error.error_type}
-                          </span>
-                        </TableCell>
-                        <TableCell className="max-w-[300px] truncate">
-                          {error.error_message}
-                        </TableCell>
+                    errorsData.error_types.map((error) => (
+                      <TableRow key={error.error_type}>
+                        <TableCell className="font-medium">{error.error_type}</TableCell>
+                        <TableCell className="max-w-[300px] truncate">{error.error_message}</TableCell>
                         <TableCell className="text-right">{error.count}</TableCell>
                         <TableCell className="text-right">{error.unique_users}</TableCell>
-                        <TableCell>{error.last_occurrence ? format(new Date(error.last_occurrence), 'MMM d, yyyy HH:mm:ss') : '-'}</TableCell>
+                        <TableCell>{format(new Date(error.last_occurrence), 'MMM d, yyyy HH:mm')}</TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center">
-                        No errors recorded in the selected time period
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        No error data available
                       </TableCell>
                     </TableRow>
                   )}
@@ -287,131 +318,31 @@ export function WebsiteErrorsTab({
             </div>
           </div>
           
-          {/* Error details with pagination */}
-          <div className="rounded-lg border shadow-sm overflow-hidden">
-            <div className="p-4 border-b flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-medium">Recent Error Details</h3>
-                <p className="text-sm text-muted-foreground">
-                  Detailed error information to help with debugging
-                </p>
+          {/* Pagination */}
+          {errorsData.total_pages > 1 && (
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Page {errorPage} of {errorsData.total_pages}
               </div>
-              
-              {/* Pagination UI */}
-              {errorsData.total_pages > 1 && (
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => setErrorPage(Math.max(1, errorPage - 1))}
-                    disabled={errorPage === 1 || isLoadingErrors}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="text-xs text-muted-foreground mx-2">
-                    Page {errorPage} of {errorsData.total_pages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => setErrorPage(Math.min(errorsData.total_pages, errorPage + 1))}
-                    disabled={errorPage === errorsData.total_pages || isLoadingErrors}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-            
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Error Type</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead>URL</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Device</TableHead>
-                    <TableHead className="w-[50px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {errorsData.recent_errors && errorsData.recent_errors.length > 0 ? (
-                    errorsData.recent_errors.map((error, index) => (
-                      <TableRow key={index} className="group cursor-pointer hover:bg-muted/50">
-                        <TableCell className="font-medium whitespace-nowrap">
-                          <span className="flex items-center gap-1">
-                            <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                            {error.error_type}
-                          </span>
-                        </TableCell>
-                        <TableCell className="max-w-[250px] truncate">
-                          {error.error_message}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          <a 
-                            href={error.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 hover:text-primary hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {error.path}
-                            <ExternalLink className="h-3 w-3 opacity-70" />
-                          </a>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          {format(new Date(error.time), 'MMM d, yyyy HH:mm:ss')}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap text-sm">
-                          {`${error.browser} / ${error.os}`}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 invisible group-hover:visible"
-                            onClick={() => setSelectedError(error)}
-                          >
-                            <Code className="h-3.5 w-3.5" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center">
-                        No detailed error data available
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            
-            {/* Pagination controls at bottom */}
-            {errorsData.total_pages > 1 && (
-              <div className="p-2 border-t flex items-center justify-center gap-1">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 w-7 p-0"
+                  className="h-8 w-8 p-0"
                   onClick={() => setErrorPage(1)}
-                  disabled={errorPage === 1 || isLoadingErrors}
+                  disabled={errorPage === 1 || isLoading}
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                  <ChevronLeft className="h-3.5 w-3.5 -ml-2" />
+                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4 -ml-2" />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 w-7 p-0"
+                  className="h-8 w-8 p-0"
                   onClick={() => setErrorPage(Math.max(1, errorPage - 1))}
-                  disabled={errorPage === 1 || isLoadingErrors}
+                  disabled={errorPage === 1 || isLoading}
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <ChevronLeft className="h-4 w-4" />
                 </Button>
                 
                 {/* Page numbers */}
@@ -433,9 +364,9 @@ export function WebsiteErrorsTab({
                       key={pageNum}
                       variant={pageNum === errorPage ? "default" : "outline"}
                       size="sm"
-                      className="h-7 w-7 p-0"
+                      className="h-8 w-8 p-0"
                       onClick={() => setErrorPage(pageNum)}
-                      disabled={isLoadingErrors}
+                      disabled={isLoading}
                     >
                       <span className="text-xs">{pageNum}</span>
                     </Button>
@@ -445,25 +376,25 @@ export function WebsiteErrorsTab({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 w-7 p-0"
+                  className="h-8 w-8 p-0"
                   onClick={() => setErrorPage(Math.min(errorsData.total_pages, errorPage + 1))}
-                  disabled={errorPage === errorsData.total_pages || isLoadingErrors}
+                  disabled={errorPage === errorsData.total_pages || isLoading}
                 >
-                  <ChevronRight className="h-3.5 w-3.5" />
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 w-7 p-0"
+                  className="h-8 w-8 p-0"
                   onClick={() => setErrorPage(errorsData.total_pages)}
-                  disabled={errorPage === errorsData.total_pages || isLoadingErrors}
+                  disabled={errorPage === errorsData.total_pages || isLoading}
                 >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                  <ChevronRight className="h-3.5 w-3.5 -ml-2" />
+                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4 -ml-2" />
                 </Button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
           
           {/* Total error count */}
           <div className="text-sm text-muted-foreground">
@@ -505,104 +436,70 @@ export function WebsiteErrorsTab({
       <Dialog open={!!selectedError} onOpenChange={(open) => {
         if (!open) setSelectedError(null);
       }}>
-        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader className="flex flex-row items-center justify-between">
-            <div>
-              <DialogTitle className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                {selectedError?.error_type || 'Error Details'}
-              </DialogTitle>
-              <DialogDescription className="flex items-center gap-2">
-                {selectedError?.time && format(new Date(selectedError.time), 'MMM d, yyyy HH:mm:ss')}
-                
-                {/* Always render these spans but conditionally apply visibility */}
-                <span className={`ml-3 flex items-center gap-1 text-xs bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full ${!(selectedError?.count && selectedError.count > 1) && 'hidden'}`}>
-                  {selectedError?.count} occurrences
-                </span>
-                
-                <span className={`ml-2 flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full ${!(selectedError?.unique_users && selectedError.unique_users > 1) && 'hidden'}`}>
-                  {selectedError?.unique_users} users affected
-                </span>
-              </DialogDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => setSelectedError(null)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Error Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about this error occurrence
+            </DialogDescription>
           </DialogHeader>
           
-          <div className="mt-4 space-y-4">
-            {/* Error overview */}
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium">URL:</p>
-                <a 
-                  href={selectedError?.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline flex items-center gap-1"
-                >
-                  {selectedError?.url}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
+          {selectedError && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Error Type</h4>
+                  <p className="text-sm text-muted-foreground">{selectedError.error_type}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Time</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(selectedError.time), 'MMM d, yyyy HH:mm:ss')}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">URL</h4>
+                  <p className="text-sm text-muted-foreground">{selectedError.url}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Path</h4>
+                  <p className="text-sm text-muted-foreground">{selectedError.path}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Browser</h4>
+                  <p className="text-sm text-muted-foreground">{selectedError.browser}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">OS</h4>
+                  <p className="text-sm text-muted-foreground">{selectedError.os}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Device</h4>
+                  <p className="text-sm text-muted-foreground">{selectedError.device_type}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Visitor ID</h4>
+                  <p className="text-sm text-muted-foreground">{selectedError.visitor_id}</p>
+                </div>
               </div>
+              
               <div>
-                <p className="font-medium">Visitor ID:</p>
-                <p>{selectedError?.visitor_id}</p>
+                <h4 className="text-sm font-medium mb-1">Error Message</h4>
+                <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
+                  {selectedError.error_message}
+                </p>
               </div>
-              <div>
-                <p className="font-medium">Browser:</p>
-                <p>{selectedError?.browser} / {selectedError?.os}</p>
-              </div>
-              <div>
-                <p className="font-medium">Device:</p>
-                <p>{selectedError?.device_type}</p>
-              </div>
+              
+              {selectedError.stack_trace && (
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Stack Trace</h4>
+                  <pre className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md overflow-x-auto">
+                    {selectedError.stack_trace}
+                  </pre>
+                </div>
+              )}
             </div>
-            
-            {/* Error message */}
-            <div>
-              <p className="font-medium mb-1">Error Message:</p>
-              <div className="rounded-md bg-red-50 p-3 border border-red-200 text-red-800">
-                {selectedError?.error_message}
-              </div>
-            </div>
-            
-            {/* Stack trace */}
-            {selectedError?.stack_trace && (
-              <div>
-                <p className="font-medium mb-1">Stack Trace:</p>
-                <pre className="rounded-md bg-gray-900 text-gray-100 p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap">
-                  {selectedError.stack_trace}
-                </pre>
-              </div>
-            )}
-          </div>
-          
-          <div className="mt-4 flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (selectedError) {
-                  navigator.clipboard.writeText(
-                    `Error Type: ${selectedError.error_type}\n` +
-                    `Message: ${selectedError.error_message}\n` +
-                    `URL: ${selectedError.url}\n` +
-                    `Time: ${selectedError.time}\n` +
-                    `Stack Trace: ${selectedError.stack_trace || 'N/A'}`
-                  );
-                  toast("Error details copied to clipboard");
-                }
-              }}
-            >
-              Copy Details
-            </Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

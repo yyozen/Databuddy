@@ -137,8 +137,7 @@ export function createSummaryBuilder(
     WITH session_metrics AS (
       SELECT
         session_id,
-        countIf(event_name = 'screen_view') as page_count,
-        countDistinct(anonymous_id) as unique_visitors
+        countIf(event_name = 'screen_view') as page_count
       FROM analytics.events
       WHERE 
         client_id = '${websiteId}'
@@ -157,10 +156,20 @@ export function createSummaryBuilder(
         AND toDate(time) <= '${endDate}'
       GROUP BY session_id
       HAVING duration > 0
+    ),
+    unique_visitors AS (
+      SELECT
+        countDistinct(anonymous_id) as unique_visitors
+      FROM analytics.events
+      WHERE 
+        client_id = '${websiteId}'
+        AND toDate(time) >= '${startDate}'
+        AND toDate(time) <= '${endDate}'
+        AND event_name = 'screen_view'
     )
     SELECT
       sum(page_count) as pageviews,
-      sum(unique_visitors) as visitors,
+      (SELECT unique_visitors FROM unique_visitors) as unique_visitors,
       count(session_metrics.session_id) as sessions,
       (COALESCE(countIf(page_count = 1), 0) / COALESCE(COUNT(*), 0)) * 100 as bounce_rate,
       AVG(sd.duration) as avg_session_duration
@@ -182,8 +191,7 @@ export function createTodayBuilder(websiteId: string) {
     WITH session_metrics AS (
       SELECT
         session_id,
-        countIf(event_name = 'screen_view') as page_count,
-        countDistinct(anonymous_id) as unique_visitors
+        countIf(event_name = 'screen_view') as page_count
       FROM analytics.events
       WHERE 
         client_id = '${websiteId}'
@@ -200,10 +208,19 @@ export function createTodayBuilder(websiteId: string) {
         AND toDate(time) = today()
       GROUP BY session_id
       HAVING duration > 0
+    ),
+    unique_visitors AS (
+      SELECT
+        countDistinct(anonymous_id) as unique_visitors
+      FROM analytics.events
+      WHERE 
+        client_id = '${websiteId}'
+        AND toDate(time) = today()
+        AND event_name = 'screen_view'
     )
     SELECT
       sum(page_count) as pageviews,
-      sum(unique_visitors) as visitors,
+      (SELECT unique_visitors FROM unique_visitors) as unique_visitors,
       count(session_metrics.session_id) as sessions,
       (COALESCE(countIf(page_count = 1), 0) / COALESCE(COUNT(*), 0)) * 100 as bounce_rate,
       AVG(sd.duration) as avg_session_duration
@@ -236,13 +253,23 @@ export function createTodayByHourBuilder(websiteId: string) {
       SELECT
         toStartOfHour(time) as event_hour,
         session_id,
-        countIf(event_name = 'screen_view') as page_count,
-        countDistinct(anonymous_id) as session_visitors
+        countIf(event_name = 'screen_view') as page_count
       FROM analytics.events
       WHERE 
         client_id = '${websiteId}'
         AND toDate(time) = today()
       GROUP BY event_hour, session_id
+    ),
+    hourly_visitors AS (
+      SELECT
+        toStartOfHour(time) as event_hour,
+        count(distinct anonymous_id) as unique_visitors
+      FROM analytics.events
+      WHERE 
+        client_id = '${websiteId}'
+        AND toDate(time) = today()
+        AND event_name = 'screen_view'
+      GROUP BY event_hour
     ),
     session_durations AS (
       SELECT
@@ -266,8 +293,7 @@ export function createTodayByHourBuilder(websiteId: string) {
       SELECT
         event_hour,
         sum(page_count) as pageviews,
-        sum(session_visitors) as unique_visitors,
-        count(session_id) as sessions,
+        count(distinct session_id) as sessions,
         countIf(page_count = 1) as bounced_sessions
       FROM session_metrics
       GROUP BY event_hour
@@ -275,7 +301,7 @@ export function createTodayByHourBuilder(websiteId: string) {
     SELECT
       formatDateTime(hour_range.datetime, '%Y-%m-%d %H:00:00') as date,
       COALESCE(hm.pageviews, 0) as pageviews,
-      COALESCE(hm.unique_visitors, 0) as unique_visitors,
+      COALESCE(hv.unique_visitors, 0) as unique_visitors,
       COALESCE(hm.sessions, 0) as sessions,
       CASE 
         WHEN COALESCE(hm.sessions, 0) > 0 
@@ -285,11 +311,12 @@ export function createTodayByHourBuilder(websiteId: string) {
       COALESCE(AVG(sd.duration), 0) as avg_session_duration
     FROM hour_range
     LEFT JOIN hourly_metrics hm ON hour_range.datetime = hm.event_hour
+    LEFT JOIN hourly_visitors hv ON hour_range.datetime = hv.event_hour
     LEFT JOIN session_durations sd ON hour_range.datetime = sd.event_hour
     GROUP BY 
       hour_range.datetime, 
       hm.pageviews, 
-      hm.unique_visitors, 
+      hv.unique_visitors, 
       hm.sessions, 
       hm.bounced_sessions
     ORDER BY hour_range.datetime ASC
@@ -347,9 +374,6 @@ export function createTopReferrersBuilder(websiteId: string, startDate: string, 
 export function createEventsByDateBuilder(websiteId: string, startDate: string, endDate: string, granularity: 'hourly' | 'daily' = 'daily') {
   const builder = createSqlBuilder();
   
-  // Generate all dates in the range with zero values by default,
-  // then only fill in actual data where it exists
-  
   // For hourly data, we need to generate hourly intervals instead of daily
   if (granularity === 'hourly') {
     // For hourly data, we should limit the range to avoid generating too many rows
@@ -373,6 +397,30 @@ export function createEventsByDateBuilder(websiteId: string, startDate: string, 
           range(toUInt32(dateDiff('hour', toDateTime('${adjustedStartDate} 00:00:00'), toDateTime('${endDate} 23:59:59')) + 1))
         )) AS datetime
       ),
+      session_metrics AS (
+        SELECT 
+          toStartOfHour(time) as event_hour,
+          session_id,
+          countIf(event_name = 'screen_view') as page_count
+        FROM analytics.events
+        WHERE 
+          client_id = '${websiteId}'
+          AND time >= parseDateTimeBestEffort('${adjustedStartDate} 00:00:00')
+          AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+        GROUP BY event_hour, session_id
+      ),
+      hourly_visitors AS (
+        SELECT
+          toStartOfHour(time) as event_hour,
+          count(distinct anonymous_id) as unique_visitors
+        FROM analytics.events
+        WHERE 
+          client_id = '${websiteId}'
+          AND time >= parseDateTimeBestEffort('${adjustedStartDate} 00:00:00')
+          AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+          AND event_name = 'screen_view'
+        GROUP BY event_hour
+      ),
       session_durations AS (
         SELECT 
           toStartOfHour(min_time) as event_hour,
@@ -392,25 +440,11 @@ export function createEventsByDateBuilder(websiteId: string, startDate: string, 
           HAVING min_time < max_time
         )
       ),
-      session_metrics AS (
-        SELECT
-          toStartOfHour(time) as event_hour,
-          session_id,
-          countIf(event_name = 'screen_view') as page_count,
-          count(distinct anonymous_id) as unique_visitors
-        FROM analytics.events
-        WHERE 
-          client_id = '${websiteId}'
-          AND time >= parseDateTimeBestEffort('${adjustedStartDate} 00:00:00')
-          AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
-        GROUP BY event_hour, session_id
-      ),
       hourly_metrics AS (
         SELECT
           event_hour,
           sum(page_count) as pageviews,
-          sum(unique_visitors) as unique_visitors,
-          count(session_id) as sessions,
+          count(distinct session_id) as sessions,
           countIf(page_count = 1) as bounced_sessions
         FROM session_metrics
         GROUP BY event_hour
@@ -418,21 +452,22 @@ export function createEventsByDateBuilder(websiteId: string, startDate: string, 
       SELECT
         formatDateTime(hour_range.datetime, '%Y-%m-%d %H:00:00') as date,
         COALESCE(hm.pageviews, 0) as pageviews,
-        COALESCE(hm.unique_visitors, 0) as unique_visitors,
+        COALESCE(hv.unique_visitors, 0) as unique_visitors,
         COALESCE(hm.sessions, 0) as sessions,
         CASE 
-          WHEN COALESCE(hm.sessions, 0) > 0
+          WHEN COALESCE(hm.sessions, 0) > 0 
           THEN (COALESCE(hm.bounced_sessions, 0) / COALESCE(hm.sessions, 0)) * 100 
           ELSE 0 
         END as bounce_rate,
-        COALESCE(avg(sd.duration), 0) as avg_session_duration
+        COALESCE(AVG(sd.duration), 0) as avg_session_duration
       FROM hour_range
       LEFT JOIN hourly_metrics hm ON hour_range.datetime = hm.event_hour
+      LEFT JOIN hourly_visitors hv ON hour_range.datetime = hv.event_hour
       LEFT JOIN session_durations sd ON hour_range.datetime = sd.event_hour
       GROUP BY 
         hour_range.datetime, 
         hm.pageviews, 
-        hm.unique_visitors, 
+        hv.unique_visitors, 
         hm.sessions, 
         hm.bounced_sessions
       ORDER BY hour_range.datetime ASC
@@ -444,13 +479,26 @@ export function createEventsByDateBuilder(websiteId: string, startDate: string, 
     return builder;
   }
   
-  // Default daily granularity query (unchanged)
+  // Default daily granularity query
   const sql = `
     WITH date_range AS (
       SELECT arrayJoin(arrayMap(
         d -> toDate('${startDate}') + d,
         range(toUInt32(dateDiff('day', toDate('${startDate}'), toDate('${endDate}')) + 1))
       )) AS date
+    ),
+    session_metrics AS (
+      SELECT 
+        toDate(time) as event_date,
+        session_id,
+        anonymous_id,
+        countIf(event_name = 'screen_view') as page_count
+      FROM analytics.events
+      WHERE 
+        client_id = '${websiteId}'
+        AND time >= parseDateTimeBestEffort('${startDate}')
+        AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+      GROUP BY event_date, session_id, anonymous_id
     ),
     session_durations AS (
       SELECT 
@@ -471,26 +519,13 @@ export function createEventsByDateBuilder(websiteId: string, startDate: string, 
         HAVING min_time < max_time
       )
     ),
-    session_metrics AS (
-      SELECT
-        toDate(time) as event_date,
-        session_id,
-        countIf(event_name = 'screen_view') as page_count,
-        count(distinct anonymous_id) as unique_visitors
-      FROM analytics.events
-      WHERE 
-        client_id = '${websiteId}'
-        AND time >= parseDateTimeBestEffort('${startDate}')
-        AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
-      GROUP BY event_date, session_id
-    ),
     daily_metrics AS (
       SELECT
         event_date,
         sum(page_count) as pageviews,
-        sum(unique_visitors) as unique_visitors,
-        count(session_id) as sessions,
-        countIf(page_count = 1) as bounced_sessions
+        count(distinct session_id) as sessions,
+        countIf(page_count = 1) as bounced_sessions,
+        count(distinct anonymous_id) as unique_visitors
       FROM session_metrics
       GROUP BY event_date
     )
@@ -549,21 +584,35 @@ export function createBrowserVersionsBuilder(websiteId: string, startDate: strin
   const builder = createSqlBuilder();
   builder.setTable('events');
   
-  builder.sb.select = buildCommonSelect({
-    user_agent: 'user_agent',
+  builder.sb.select = {
+    browser_name: 'browser_name',
+    browser_version: 'browser_version',
+    os_name: 'os_name',
+    os_version: 'os_version',
     count: 'COUNT(*) as count',
     visitors: 'COUNT(DISTINCT anonymous_id) as visitors'
-  });
+  };
   
-  builder.sb.where = buildWhereClauses(websiteId, startDate, endDate, {
-    browser_filter: "event_name = 'screen_view'"
-  });
+  builder.sb.where = {
+    client_filter: `client_id = '${websiteId}'`,
+    date_filter: `time >= parseDateTimeBestEffort('${startDate}') AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')`,
+    event_filter: "event_name = 'screen_view'",
+    browser_filter: "(browser_name IS NOT NULL AND browser_name != 'Unknown') OR (os_name IS NOT NULL AND os_name != 'Unknown')"
+  };
   
-  builder.sb.groupBy = buildCommonGroupBy({
-    user_agent: 'user_agent'
-  });
+  builder.sb.groupBy = {
+    browser_name: 'browser_name',
+    browser_version: 'browser_version',
+    os_name: 'os_name',
+    os_version: 'os_version'
+  };
   
-  builder.sb.orderBy = buildCommonOrderBy({ visitors: 'visitors DESC' });
+  builder.sb.orderBy = {
+    visitors: 'visitors DESC',
+    browser_name: 'browser_name ASC',
+    browser_version: 'browser_version ASC'
+  };
+  
   builder.sb.limit = limit;
   
   return builder;
@@ -594,18 +643,32 @@ export function createDeviceTypesBuilder(websiteId: string, startDate: string, e
   const builder = createSqlBuilder();
   builder.setTable('events');
   
-  builder.sb.select = buildCommonSelect({
-    user_agent: 'user_agent',
+  builder.sb.select = {
+    device_type: 'COALESCE(device_type, \'desktop\') as device_type',
+    device_brand: 'COALESCE(device_brand, \'Unknown\') as device_brand',
+    device_model: 'COALESCE(device_model, \'Unknown\') as device_model',
     visitors: 'COUNT(DISTINCT anonymous_id) as visitors',
     pageviews: 'COUNT(*) as pageviews'
-  });
+  };
   
-  builder.sb.where = buildWhereClauses(websiteId, startDate, endDate, {
+  builder.sb.where = {
+    client_filter: `client_id = '${websiteId}'`,
+    date_filter: `time >= parseDateTimeBestEffort('${startDate}') AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')`,
     event_filter: "event_name = 'screen_view'"
-  });
+  };
   
-  builder.sb.groupBy = buildCommonGroupBy({ user_agent: 'user_agent' });
-  builder.sb.orderBy = buildCommonOrderBy({ visitors: 'visitors DESC' });
+  builder.sb.groupBy = {
+    device_type: 'device_type',
+    device_brand: 'device_brand',
+    device_model: 'device_model'
+  };
+  
+  builder.sb.orderBy = {
+    visitors: 'visitors DESC',
+    device_type: 'device_type ASC',
+    device_brand: 'device_brand ASC'
+  };
+  
   builder.sb.limit = limit;
   
   return builder;
@@ -838,36 +901,13 @@ export function parseReferrers(
 }
 
 // Helper function to parse user agents for browser data
-export function parseBrowserData(browserData: Array<{ browser: string; version: string; count: number; visitors: number }>) {
-  return browserData.map(item => {
-    const userAgentInfo = parseUserAgent(item.version);
-    return {
-      browser: item.browser !== 'Unknown' ? item.browser : userAgentInfo.browser || 'Unknown',
-      version: extractBrowserVersion(item.version) || 'Unknown',
-      count: item.count,
-      visitors: item.visitors
-    };
-  });
-}
-
-// Helper function to extract browser version from user agent string
-function extractBrowserVersion(userAgent: string): string {
-  if (!userAgent) return 'Unknown';
-  
-  // Simple regex patterns to extract common browser versions
-  const chromeMatch = userAgent.match(/Chrome\/(\d+\.\d+)/);
-  if (chromeMatch) return chromeMatch[1];
-  
-  const firefoxMatch = userAgent.match(/Firefox\/(\d+\.\d+)/);
-  if (firefoxMatch) return firefoxMatch[1];
-  
-  const safariMatch = userAgent.match(/Version\/(\d+\.\d+).*Safari/);
-  if (safariMatch) return safariMatch[1];
-  
-  const edgeMatch = userAgent.match(/Edg\/(\d+\.\d+)/);
-  if (edgeMatch) return edgeMatch[1];
-  
-  return 'Unknown';
+export function parseBrowserData(browserData: Array<{ browser_name: string; browser_version: string; count: number; visitors: number }>) {
+  return browserData.map(item => ({
+    browser: item.browser_name || 'Unknown',
+    version: item.browser_version || 'Unknown',
+    count: item.count,
+    visitors: item.visitors
+  }));
 }
 
 // Helper function to anonymize IP addresses in bulk
@@ -1047,4 +1087,27 @@ export function createSessionEventsBuilder(websiteId: string, sessionId: string)
   };
   
   return builder;
+}
+
+// Helper function to format browser data
+export function formatBrowserData(browserData: Array<{ browser_name: string; browser_version: string; os_name: string; os_version: string; count: number; visitors: number }>) {
+  return browserData.map(item => ({
+    browser: item.browser_name || 'Unknown',
+    version: item.browser_version || 'Unknown',
+    os: item.os_name || 'Unknown',
+    os_version: item.os_version || 'Unknown',
+    count: item.count,
+    visitors: item.visitors
+  }));
+}
+
+// Helper function to format device data
+export function formatDeviceData(deviceData: Array<{ device_type: string; device_brand: string; device_model: string; visitors: number; pageviews: number }>) {
+  return deviceData.map(item => ({
+    device_type: item.device_type || 'desktop',
+    device_brand: item.device_brand || 'Unknown',
+    device_model: item.device_model || 'Unknown',
+    visitors: item.visitors,
+    pageviews: item.pageviews
+  }));
 }

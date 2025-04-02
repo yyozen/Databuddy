@@ -16,7 +16,7 @@
     "@react-email/render": "^0.0.12",
     "emailjs": "^4.0.3",
     "handlebars": "^4.7.8",
-    "react": "^19.1.0",
+    "react": "^19.0.0",
     "react-email": "^2.1.0",
     "resend": "^4.2.0",
     "zod": "^3.22.4"

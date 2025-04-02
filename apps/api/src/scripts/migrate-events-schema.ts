@@ -18,34 +18,16 @@ async function migrateEventsSchema() {
     // Define the new columns to add - we'll add them all without validation
     logger.info('Preparing columns to add');
     const newColumns = [
-      { name: 'screen_resolution', type: 'String', defaultValue: '\'\'' },
-      { name: 'viewport_size', type: 'String', defaultValue: '\'\'' },
-      { name: 'language', type: 'String', defaultValue: '\'\'' },
-      { name: 'timezone', type: 'String', defaultValue: '\'\'' },
-      { name: 'timezone_offset', type: 'Nullable(Int16)', defaultValue: 'NULL' },
-      { name: 'connection_type', type: 'String', defaultValue: '\'\'' },
-      { name: 'connection_speed', type: 'String', defaultValue: '\'\'' },
-      { name: 'rtt', type: 'Nullable(Int16)', defaultValue: 'NULL' },
-      { name: 'time_on_page', type: 'Nullable(Float32)', defaultValue: 'NULL' },
-      { name: 'page_count', type: 'Nullable(Int16)', defaultValue: 'NULL' },
-      // Performance metrics
-      { name: 'load_time', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      { name: 'dom_ready_time', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      { name: 'ttfb', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      { name: 'redirect_time', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      { name: 'domain_lookup_time', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      { name: 'connection_time', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      { name: 'request_time', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      { name: 'render_time', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      // Web vitals
-      { name: 'fcp', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      { name: 'lcp', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      { name: 'cls', type: 'Nullable(Float32)', defaultValue: 'NULL' },
-      { name: 'page_size', type: 'Nullable(Int32)', defaultValue: 'NULL' },
-      // Page engagement metrics
-      { name: 'scroll_depth', type: 'Nullable(Float32)', defaultValue: 'NULL' },
-      { name: 'interaction_count', type: 'Nullable(Int16)', defaultValue: 'NULL' },
-      { name: 'exit_intent', type: 'UInt8', defaultValue: '0' }
+      // User Agent parsing fields
+      { name: 'browser_name', type: 'Nullable(String)', defaultValue: 'NULL' },
+      { name: 'browser_version', type: 'Nullable(String)', defaultValue: 'NULL' },
+      { name: 'os_name', type: 'Nullable(String)', defaultValue: 'NULL' },
+      { name: 'os_version', type: 'Nullable(String)', defaultValue: 'NULL' },
+      { name: 'device_type', type: 'Nullable(String)', defaultValue: 'NULL' },
+      { name: 'device_brand', type: 'Nullable(String)', defaultValue: 'NULL' },
+      { name: 'device_model', type: 'Nullable(String)', defaultValue: 'NULL' },
+      // Existing columns
+
     ];
     logger.info(`Will attempt to add ${newColumns.length} columns one by one`);
     
@@ -81,12 +63,72 @@ async function migrateEventsSchema() {
       }
     }
     
+    // Add a migration to update the device_stats table
+    logger.info('Updating device_stats table schema...');
+    const deviceStatsColumns = [
+      { name: 'browser_name', type: 'String', defaultValue: '\'\'' },
+      { name: 'browser_version', type: 'String', defaultValue: '\'\'' },
+      { name: 'os_name', type: 'String', defaultValue: '\'\'' },
+      { name: 'os_version', type: 'String', defaultValue: '\'\'' },
+      { name: 'device_brand', type: 'String', defaultValue: '\'\'' },
+      { name: 'device_model', type: 'String', defaultValue: '\'\'' }
+    ];
+
+    for (const column of deviceStatsColumns) {
+      logger.info(`Adding column ${column.name} to device_stats (${column.type})...`);
+      
+      const alterQuery = `
+        ALTER TABLE analytics.device_stats
+        ADD COLUMN IF NOT EXISTS ${column.name} ${column.type} DEFAULT ${column.defaultValue}
+      `;
+      
+      try {
+        await clickHouse.command({
+          query: alterQuery,
+          clickhouse_settings: {
+            receive_timeout: 30,
+            send_timeout: 30,
+            connect_timeout: 30
+          }
+        });
+        
+        logger.info(`✓ Successfully added column ${column.name} to device_stats`);
+        successCount++;
+      } catch (error) {
+        logger.error(`Failed to add column ${column.name} to device_stats: ${error instanceof Error ? error.message : String(error)}`);
+        errorCount++;
+      }
+    }
+
+    // Update the ORDER BY clause for device_stats
+    try {
+      const alterOrderBy = `
+        ALTER TABLE analytics.device_stats
+        MODIFY ORDER BY (client_id, date, browser_name, os_name, device_type)
+      `;
+      
+      await clickHouse.command({
+        query: alterOrderBy,
+        clickhouse_settings: {
+          receive_timeout: 30,
+          send_timeout: 30,
+          connect_timeout: 30
+        }
+      });
+      
+      logger.info('✓ Successfully updated device_stats ORDER BY clause');
+      successCount++;
+    } catch (error) {
+      logger.error(`Failed to update device_stats ORDER BY clause: ${error instanceof Error ? error.message : String(error)}`);
+      errorCount++;
+    }
+    
     logger.info('-----------------------------------------------');
     logger.info(`Migration completed: ${successCount} columns added, ${errorCount} failures`);
     
     return {
       success: true,
-      message: `Events table schema migration completed with ${successCount} columns added and ${errorCount} failures`
+      message: `Schema migration completed with ${successCount} columns added and ${errorCount} failures`
     };
   } catch (error) {
     logger.error('-----------------------------------------------');

@@ -26,6 +26,13 @@ CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.events (
   title Nullable(String),
   ip String,
   user_agent String,
+  browser_name Nullable(String),
+  browser_version Nullable(String),
+  os_name Nullable(String),
+  os_version Nullable(String),
+  device_type Nullable(String),
+  device_brand Nullable(String),
+  device_model Nullable(String),
   screen_resolution Nullable(String),
   viewport_size Nullable(String),
   language Nullable(String),
@@ -54,10 +61,8 @@ CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.events (
   scroll_depth Nullable(Float32),
   interaction_count Nullable(Int16),
   exit_intent UInt8,
-  // Bounce rate tracking
   page_count UInt8 DEFAULT 1,
   is_bounce UInt8 DEFAULT 1,
-  // Error event specific fields
   error_message Nullable(String),
   error_filename Nullable(String),
   error_lineno Nullable(Int32),
@@ -178,15 +183,19 @@ const CREATE_DEVICE_STATS_TABLE = `
 CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.device_stats (
   client_id String,
   date Date,
-  browser String,
-  os String,
+  browser_name String,
+  browser_version String,
+  os_name String,
+  os_version String,
   device_type String,
+  device_brand String,
+  device_model String,
   visitors Int32,
   pageviews Int32,
   created_at DateTime64(3, 'UTC')
 ) ENGINE = SummingMergeTree()
 PARTITION BY toYYYYMM(date)
-ORDER BY (client_id, date, browser, os, device_type)
+ORDER BY (client_id, date, browser_name, os_name, device_type)
 TTL date + INTERVAL 24 MONTH
 SETTINGS index_granularity = 8192
 `;

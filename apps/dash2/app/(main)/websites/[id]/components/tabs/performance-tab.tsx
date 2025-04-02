@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Zap, Monitor, AlertCircle, HelpCircle, BarChart } from "lucide-react";
 import { 
   Tabs, 
@@ -17,7 +17,7 @@ import {
 import { StatCard } from "@/components/analytics/stat-card";
 import { useWebsiteAnalytics } from "@/hooks/use-analytics";
 import { getColorVariant } from "../utils/analytics-helpers";
-import { BaseTabProps } from "../utils/types";
+import { RefreshableTabProps } from "../utils/types";
 import { EmptyState } from "../utils/ui-components";
 
 // Define the normal/healthy ranges for each metric
@@ -33,16 +33,44 @@ const PERFORMANCE_THRESHOLDS = {
 
 export function WebsitePerformanceTab({
   websiteId,
-  dateRange
-}: BaseTabProps) {
+  dateRange,
+  isRefreshing,
+  setIsRefreshing
+}: RefreshableTabProps) {
   const [activeTab, setActiveTab] = useState<string>("core");
   
   // Fetch analytics data
   const {
     analytics,
     loading,
-    error
+    error,
+    refetch
   } = useWebsiteAnalytics(websiteId, dateRange);
+
+  // Handle refresh
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (isRefreshing) {
+      const doRefresh = async () => {
+        try {
+          await refetch();
+        } catch (error) {
+          console.error("Failed to refresh data:", error);
+        } finally {
+          if (isMounted) {
+            setIsRefreshing(false);
+          }
+        }
+      };
+      
+      doRefresh();
+    }
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [isRefreshing, refetch, setIsRefreshing]);
 
   const hasPerformanceData = Boolean(analytics.performance && 
     Object.keys(analytics.performance).some(
@@ -52,6 +80,9 @@ export function WebsitePerformanceTab({
       }
     )
   );
+
+  // Combine loading states
+  const isLoading = loading.summary || isRefreshing;
 
   // Helper for displaying tooltips with helpful information
   const MetricTooltip = ({ 
@@ -94,7 +125,7 @@ export function WebsitePerformanceTab({
   };
 
   // Only show error state when there's a real error with summary data and not loading
-  if (error?.summary && !loading.summary) {
+  if (error?.summary && !isLoading) {
     return (
       <div className="pt-6">
         <EmptyState
@@ -108,7 +139,7 @@ export function WebsitePerformanceTab({
   }
 
   // Only show empty state when we're not loading and have no data
-  if (!loading.summary && !hasPerformanceData) {
+  if (!isLoading && !hasPerformanceData) {
     return (
       <div className="pt-6">
         <EmptyState
@@ -139,7 +170,7 @@ export function WebsitePerformanceTab({
                 title="Page Load Time"
                 value={analytics.performance?.avg_load_time_formatted || '0 ms'}
                 icon={Zap}
-                isLoading={loading.summary}
+                isLoading={isLoading}
                 variant={getColorVariant(analytics.performance?.avg_load_time || 0, 3000, 1500)}
                 className="shadow-sm h-full"
                 description="Total time to load the page"
@@ -151,7 +182,7 @@ export function WebsitePerformanceTab({
                 title="Time to First Byte"
                 value={analytics.performance?.avg_ttfb_formatted || '0 ms'}
                 icon={Zap}
-                isLoading={loading.summary}
+                isLoading={isLoading}
                 variant={getColorVariant(analytics.performance?.avg_ttfb || 0, 1000, 500)}
                 className="shadow-sm h-full"
                 description="Server response time"
@@ -163,7 +194,7 @@ export function WebsitePerformanceTab({
                 title="DOM Ready"
                 value={analytics.performance?.avg_dom_ready_time_formatted || '0 ms'}
                 icon={Zap}
-                isLoading={loading.summary}
+                isLoading={isLoading}
                 variant={getColorVariant(analytics.performance?.avg_dom_ready_time || 0, 2000, 1000)}
                 className="shadow-sm h-full"
                 description="Time until DOM is ready"
@@ -175,7 +206,7 @@ export function WebsitePerformanceTab({
                 title="Render Time"
                 value={analytics.performance?.avg_render_time_formatted || '0 ms'}
                 icon={Zap}
-                isLoading={loading.summary}
+                isLoading={isLoading}
                 variant={getColorVariant(analytics.performance?.avg_render_time || 0, 2000, 1000)}
                 className="shadow-sm h-full"
                 description="Time until content renders"
@@ -191,7 +222,7 @@ export function WebsitePerformanceTab({
                 title="First Contentful Paint"
                 value={analytics.performance?.avg_fcp_formatted || '0 ms'}
                 icon={Monitor}
-                isLoading={loading.summary}
+                isLoading={isLoading}
                 variant={getColorVariant(analytics.performance?.avg_fcp || 0, 3000, 1800)}
                 className="shadow-sm h-full"
                 description="When first content is painted"
@@ -203,7 +234,7 @@ export function WebsitePerformanceTab({
                 title="Largest Contentful Paint"
                 value={analytics.performance?.avg_lcp_formatted || '0 ms'}
                 icon={Monitor}
-                isLoading={loading.summary}
+                isLoading={isLoading}
                 variant={getColorVariant(analytics.performance?.avg_lcp || 0, 4000, 2500)}
                 className="shadow-sm h-full"
                 description="When largest content is painted"
@@ -215,10 +246,10 @@ export function WebsitePerformanceTab({
                 title="Cumulative Layout Shift"
                 value={analytics.performance?.avg_cls_formatted || '0'}
                 icon={Monitor}
-                isLoading={loading.summary}
+                isLoading={isLoading}
                 variant={getColorVariant(analytics.performance?.avg_cls || 0, 0.25, 0.1)}
                 className="shadow-sm h-full"
-                description="Visual stability score"
+                description="Visual stability"
               />
             </MetricTooltip>
           </div>

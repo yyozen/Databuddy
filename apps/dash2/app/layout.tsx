@@ -1,3 +1,6 @@
+// import "@/app/once-ui/styles/index.scss";
+// import "@/app/once-ui/tokens/index.scss";
+
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -63,7 +66,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full min-h-screen bg-background text-foreground flex flex-col`}
       >
         <Providers>
-          <main className="flex-1">{children}</main>
+            <main className="flex-1">{children}</main>
         </Providers>
         <Toaster duration={1500} position="top-center" closeButton richColors />
       </body>

@@ -23,8 +23,12 @@
     "packages/*"
   ],
   "dependencies": {
+    "@types/ua-parser-js": "^0.7.39",
     "ioredis": "^5.6.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
     "recharts": "^2.15.1",
+    "stripe": "^18.0.0",
     "superjson": "^2.2.2",
     "ua-parser-js": "^2.0.3"
   }

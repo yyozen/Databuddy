@@ -10,12 +10,33 @@ import { z } from 'zod';
 import { websiteAuthHook } from '../hooks/auth';
 import { processEvent } from '../controllers/analytics.controller';
 import { AppVariables, TrackingEvent } from '../types';
-import { parseUserAgent } from '../utils/user-agent';
+import { UAParser } from 'ua-parser-js';
 import { parseIp, anonymizeIp } from '../utils/ip-geo';
 import { parseReferrer } from '../utils/referrer';
+import bots from '../lists/bots';
 
 // Initialize logger
 const logger = createLogger('analytics-basket');
+
+// Helper function to check if user agent matches any bot patterns
+function isBot(userAgent: string): boolean {
+  if (!userAgent) return false;
+  
+  // Convert to lowercase for case-insensitive matching
+  const ua = userAgent.toLowerCase();
+  
+  // Check against bot patterns
+  return bots.some(bot => {
+    try {
+      const regex = new RegExp(bot.regex, 'i');
+      return regex.test(ua);
+    } catch (e) {
+      // Log regex error but don't block the request
+      logger.error('Bot regex error', { pattern: bot.regex, error: e });
+      return false;
+    }
+  });
+}
 
 // Create a new basket router
 const basketRouter = new Hono<{ Variables: AppVariables & { enriched?: any } }>();
@@ -103,12 +124,14 @@ basketRouter.use('*', async (c, next) => {
   const url = new URL(c.req.url);
   const language = c.req.header('accept-language')?.split(',')[0] || '';
 
-  // Parse user agent info
-  const uaInfo = parseUserAgent(userAgent);
+  // Parse user agent info using ua-parser-js
+  const parser = new UAParser(userAgent);
+  const result = parser.getResult();
   
-  // Skip bot traffic
-  if (uaInfo.bot.isBot) {
-    logger.info('Skipping bot request', { userAgent });
+  const isBotEvent = isBot(userAgent);
+  
+  if (isBotEvent) {
+    logger.info('Skipping bot request', { userAgent, isBotEvent });
     return c.json({ status: 'skipped', message: 'Bot request' }, 200);
   }
 
@@ -133,13 +156,14 @@ basketRouter.use('*', async (c, next) => {
     path: url.pathname,
     title: '',
     user_agent: userAgent,
-    browser: uaInfo.browser,
-    browser_version: '',
-    os: uaInfo.os,
-    os_version: '',
-    device_type: uaInfo.device,
-    device_vendor: '',
-    device_model: '',
+    // Store parsed user agent data
+    browser_name: result.browser.name || 'Unknown',
+    browser_version: result.browser.version || 'Unknown',
+    os_name: result.os.name || 'Unknown',
+    os_version: result.os.version || 'Unknown',
+    device_type: result.device.type || 'desktop',
+    device_brand: result.device.vendor || 'Unknown',
+    device_model: result.device.model || 'Unknown',
     screen_resolution: '',
     viewport_size: '',
     language,

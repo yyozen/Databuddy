@@ -11,9 +11,21 @@ import { zValidator } from '@hono/zod-validator';
 import { chQuery, createSqlBuilder } from '@databuddy/db';
 import { AppVariables } from '../types';
 import { authMiddleware } from '../middleware/auth';
-import { parseUserAgent } from '../utils/user-agent';
+import { UAParser } from 'ua-parser-js';
 import { format } from 'date-fns';
 import { 
+  formatTime, 
+  formatPerformanceMetric, 
+  getDefaultDateRange, 
+  formatCleanPath,
+  formatAnalyticsEntry, 
+  createSuccessResponse, 
+  createErrorResponse,
+  calculateWeightedBounceRate,
+  formatBrowserData,
+  formatDeviceData
+} from '../utils/analytics-helpers';
+import {
   createSummaryBuilder, 
   createTodayBuilder, 
   createTodayByHourBuilder,
@@ -39,11 +51,6 @@ import {
   createSessionEventsBuilder,
   parseReferrers
 } from '../builders/analytics';
-import { 
-  formatTime, formatPerformanceMetric, getDefaultDateRange, formatCleanPath,
-  formatAnalyticsEntry, createSuccessResponse, createErrorResponse,
-  calculateWeightedBounceRate
-} from '../utils/analytics-helpers';
 import {
   mergeTodayDataIntoSummary,
   updateEventsWithTodayData,
@@ -60,6 +67,8 @@ interface ReferrerData {
 interface BrowserData {
   browser: string;
   version: string;
+  os: string;
+  os_version: string;
   count: number;
   visitors: number;
 }
@@ -225,18 +234,15 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       todaySummary.bounce_rate_pct = `${Math.round(todaySummary.bounce_rate * 10) / 10}%`;
     }
     
-    // Process browser data to include browser and version
-    const processedBrowserVersions = browserVersions.map(item => {
-      const userAgentInfo = parseUserAgent(item.user_agent);
-      const version = extractBrowserVersion(item.user_agent) || 'Unknown';
-      
-      return {
-        browser: userAgentInfo.browser || 'Unknown',
-        version: version,
-        count: item.count,
-        visitors: item.visitors
-      };
-    });
+    // Process browser data to include browser version and OS info
+    const processedBrowserVersions = formatBrowserData(browserVersions as Array<{ 
+      browser_name: string; 
+      browser_version: string; 
+      os_name: string;
+      os_version: string;
+      count: number; 
+      visitors: number 
+    }>);
     
     // Process referrer data to extract domain and source info
     // Filter out internal referrers
@@ -252,26 +258,10 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     );
     
     // Process device types
-    const deviceTypes = deviceTypeResults.map(item => {
-      const userAgentInfo = parseUserAgent(item.user_agent);
-      return {
-        device_type: userAgentInfo.device || 'Unknown',
-        visitors: item.visitors,
-        pageviews: item.pageviews
-      };
-    }).reduce((acc, current) => {
-      const existing = acc.find(item => item.device_type === current.device_type);
-      if (existing) {
-        existing.visitors += current.visitors;
-        existing.pageviews += current.pageviews;
-      } else {
-        acc.push(current);
-      }
-      return acc;
-    }, [] as Array<{device_type: string, visitors: number, pageviews: number}>);
+    const deviceTypes = formatDeviceData(deviceTypeResults as Array<{ device_type: string; device_brand: string; device_model: string; visitors: number; pageviews: number }>);
     
     // Sort device types by visitors
-    deviceTypes.sort((a, b) => b.visitors - a.visitors);
+    deviceTypes.sort((a: { visitors: number }, b: { visitors: number }) => b.visitors - a.visitors);
     
     // Process countries to replace empty values with "Unknown"
     const processedCountries = countries.map(country => ({
@@ -1280,13 +1270,13 @@ analyticsRouter.get('/errors', zValidator('query', analyticsQuerySchema), async 
     
     // Process error details to include browser, OS, and device information
     const processedErrorDetails = errorDetails.map(error => {
-      const userAgentInfo = parseUserAgent(error.user_agent);
+      const userAgentInfo = parseUserAgentDetails(error.user_agent);
       
       return {
         ...error,
-        browser: userAgentInfo.browser || 'Unknown',
-        os: userAgentInfo.os || 'Unknown',
-        device_type: userAgentInfo.device || 'Unknown'
+        browser: userAgentInfo.browser_name,
+        os: userAgentInfo.os_name,
+        device_type: userAgentInfo.device_type
       };
     });
     
@@ -1366,10 +1356,10 @@ analyticsRouter.get('/devices', zValidator('query', analyticsQuerySchema), async
     const os: Array<{os: string, visitors: number, pageviews: number}> = [];
     
     browserResults.forEach(item => {
-      const userAgentInfo = parseUserAgent(item.browser);
+      const userAgentInfo = parseUserAgentDetails(item.browser);
       
       // Add browser data
-      const browserName = userAgentInfo.browser || 'Unknown';
+      const browserName = userAgentInfo.browser_name || 'Unknown';
       const existingBrowser = browsers.find(b => b.browser === browserName);
       
       if (existingBrowser) {
@@ -1384,7 +1374,7 @@ analyticsRouter.get('/devices', zValidator('query', analyticsQuerySchema), async
       }
       
       // Add OS data
-      const osName = userAgentInfo.os || 'Unknown';
+      const osName = userAgentInfo.os_name || 'Unknown';
       const existingOS = os.find(o => o.os === osName);
       
       if (existingOS) {
@@ -1403,8 +1393,8 @@ analyticsRouter.get('/devices', zValidator('query', analyticsQuerySchema), async
     const deviceTypes: Array<{device_type: string, visitors: number, pageviews: number}> = [];
     
     deviceTypeResults.forEach(item => {
-      const userAgentInfo = parseUserAgent(item.user_agent);
-      const deviceType = userAgentInfo.device || 'Unknown';
+      const userAgentInfo = parseUserAgentDetails(item.user_agent);
+      const deviceType = userAgentInfo.device_type || 'Unknown';
       
       const existingDevice = deviceTypes.find(d => d.device_type === deviceType);
       
@@ -1421,44 +1411,13 @@ analyticsRouter.get('/devices', zValidator('query', analyticsQuerySchema), async
     });
     
     // Process browser data to extract browser version from user_agent
-    const browser_versions = browserResults.map(browser => {
-      const userAgentInfo = parseUserAgent(browser.user_agent);
-      const version = extractBrowserVersion(browser.user_agent) || 'Unknown';
-      
-      return {
-        browser: userAgentInfo.browser || 'Unknown',
-        version: version,
-        visitors: browser.visitors,
-        pageviews: browser.pageviews
-      };
-    }).reduce((acc, current) => {
-      // Combine entries with the same browser+version
-      const key = `${current.browser}-${current.version}`;
-      const existing = acc.find(item => 
-        item.browser === current.browser && 
-        item.version === current.version
-      );
-      
-      if (existing) {
-        existing.visitors += current.visitors;
-        existing.pageviews += current.pageviews;
-      } else {
-        acc.push(current);
-      }
-      
-      return acc;
-    }, [] as Array<{
-      browser: string;
-      version: string;
-      visitors: number;
-      pageviews: number;
-    }>);
+    const browser_versions = formatBrowserData(browserResults as Array<{ browser_name: string; browser_version: string; count: number; visitors: number }>);
     
     // Sort by visitors
-    browsers.sort((a, b) => b.visitors - a.visitors);
-    os.sort((a, b) => b.visitors - a.visitors);
-    deviceTypes.sort((a, b) => b.visitors - a.visitors);
-    browser_versions.sort((a, b) => b.visitors - a.visitors);
+    browsers.sort((a: { visitors: number }, b: { visitors: number }) => b.visitors - a.visitors);
+    os.sort((a: { visitors: number }, b: { visitors: number }) => b.visitors - a.visitors);
+    deviceTypes.sort((a: { visitors: number }, b: { visitors: number }) => b.visitors - a.visitors);
+    browser_versions.sort((a: { visitors: number }, b: { visitors: number }) => b.visitors - a.visitors);
     
     return c.json({
       success: true,
@@ -1611,43 +1570,6 @@ analyticsRouter.get('/timezones', zValidator('query', analyticsQuerySchema), asy
   }
 });
 
-// Helper function to extract browser version from user agent string
-function extractBrowserVersion(userAgent: string): string {
-  if (!userAgent) return 'Unknown';
-  
-  // Simple regex patterns to extract common browser versions
-  const chromeMatch = userAgent.match(/Chrome\/(\d+\.\d+)/);
-  if (chromeMatch) return chromeMatch[1];
-  
-  const firefoxMatch = userAgent.match(/Firefox\/(\d+\.\d+)/);
-  if (firefoxMatch) return firefoxMatch[1];
-  
-  const safariMatch = userAgent.match(/Version\/(\d+\.\d+).*Safari/);
-  if (safariMatch) return safariMatch[1];
-  
-  const edgeMatch = userAgent.match(/Edg(?:e)?\/(\d+\.\d+)/);
-  if (edgeMatch) return edgeMatch[1];
-  
-  const ieMatch = userAgent.match(/(?:MSIE |rv:)(\d+\.\d+)/);
-  if (ieMatch) return ieMatch[1];
-  
-  const operaMatch = userAgent.match(/OPR\/(\d+\.\d+)/);
-  if (operaMatch) return operaMatch[1];
-  
-  // For mobile browsers
-  const mobileFirefoxMatch = userAgent.match(/(?:Mobile|Tablet).*Firefox\/(\d+\.\d+)/);
-  if (mobileFirefoxMatch) return mobileFirefoxMatch[1];
-  
-  const chromeMobileMatch = userAgent.match(/Chrome\/(\d+\.\d+).*Mobile/);
-  if (chromeMobileMatch) return chromeMobileMatch[1];
-  
-  // For iOS devices
-  const iosMatch = userAgent.match(/OS (\d+[_.]\d+)/);
-  if (iosMatch) return iosMatch[1].replace('_', '.');
-  
-  return 'Unknown';
-}
-
 /**
  * Check if a referrer URL is from the same website (internal referrer)
  */
@@ -1744,7 +1666,7 @@ analyticsRouter.get('/sessions', zValidator('query', analyticsQuerySchema), asyn
       durationFormatted += `${seconds}s`;
       
       // Parse user agent to get device, browser, and OS
-      const userAgentInfo = parseUserAgent(session.user_agent || '');
+      const userAgentInfo = parseUserAgentDetails(session.user_agent || '');
       
       // Parse referrer if present
       const referrerParsed = session.referrer ? parseReferrers(
@@ -1760,9 +1682,9 @@ analyticsRouter.get('/sessions', zValidator('query', analyticsQuerySchema), asyn
       return {
         ...session,
         session_name: sessionName,
-        device: userAgentInfo.device || 'Unknown',
-        browser: userAgentInfo.browser || 'Unknown',
-        os: userAgentInfo.os || 'Unknown',
+        device: userAgentInfo.device_type,
+        browser: userAgentInfo.browser_name,
+        os: userAgentInfo.os_name,
         duration_formatted: durationFormatted,
         referrer_parsed: referrerParsed,
         is_returning_visitor: visitorSessionCount > 1,
@@ -1832,7 +1754,7 @@ analyticsRouter.get('/session/:session_id', zValidator('query', z.object({
     durationFormatted += `${seconds}s`;
     
     // Parse user agent to get device, browser, and OS
-    const userAgentInfo = parseUserAgent(session.user_agent || '');
+    const userAgentInfo = parseUserAgentDetails(session.user_agent || '');
     
     // Parse referrer
     const referrerParsed = session.referrer ? parseReferrers(
@@ -1845,16 +1767,16 @@ analyticsRouter.get('/session/:session_id', zValidator('query', z.object({
     
     // Process events to add device, browser, OS info from user_agent
     const processedEvents = eventsResult.map(event => {
-      const eventUserAgentInfo = parseUserAgent(event.user_agent || '');
+      const eventUserAgentInfo = parseUserAgentDetails(event.user_agent || '');
       
       // Create a new object without the user_agent field
       const { user_agent, ...eventWithoutUserAgent } = event;
       
       return {
         ...eventWithoutUserAgent,
-        device_type: eventUserAgentInfo.device || 'Unknown',
-        browser: eventUserAgentInfo.browser || 'Unknown',
-        os: eventUserAgentInfo.os || 'Unknown'
+        device_type: eventUserAgentInfo.device_type,
+        browser: eventUserAgentInfo.browser_name,
+        os: eventUserAgentInfo.os_name
       };
     });
     
@@ -1881,9 +1803,9 @@ analyticsRouter.get('/session/:session_id', zValidator('query', z.object({
     const formattedSession = {
       ...sessionWithoutUserAgent,
       session_name: sessionName,
-      device: userAgentInfo.device || 'Unknown',
-      browser: userAgentInfo.browser || 'Unknown',
-      os: userAgentInfo.os || 'Unknown',
+      device: userAgentInfo.device_type,
+      browser: userAgentInfo.browser_name,
+      os: userAgentInfo.os_name,
       duration_formatted: durationFormatted,
       referrer_parsed: referrerParsed,
       is_returning_visitor: visitorSessionCount > 1,
@@ -2035,7 +1957,7 @@ analyticsRouter.get('/profiles', zValidator('query', analyticsQuerySchema), asyn
         durationFormatted += `${seconds}s`;
         
         // Parse user agent
-        const userAgentInfo = parseUserAgent(session.user_agent || '');
+        const userAgentInfo = parseUserAgentDetails(session.user_agent || '');
         
         // Parse referrer if present
         const referrerParsed = session.referrer ? parseReferrers(
@@ -2048,9 +1970,9 @@ analyticsRouter.get('/profiles', zValidator('query', analyticsQuerySchema), asyn
         return {
           ...session,
           session_name: sessionName,
-          device: userAgentInfo.device || 'Unknown',
-          browser: userAgentInfo.browser || 'Unknown',
-          os: userAgentInfo.os || 'Unknown',
+          device: userAgentInfo.device_type,
+          browser: userAgentInfo.browser_name,
+          os: userAgentInfo.os_name,
           duration_formatted: durationFormatted,
           referrer_parsed: referrerParsed,
           visitor_id: visitor.visitor_id,
@@ -2130,6 +2052,111 @@ analyticsRouter.get('/profiles', zValidator('query', analyticsQuerySchema), asyn
       success: false,
       error: error instanceof Error ? error.message : 'Failed to retrieve visitor profiles.'
     }, 400);
+  }
+});
+
+// Define event schema
+const analyticsEventSchema = z.object({
+  type: z.string(),
+  payload: z.object({
+    name: z.string(),
+    anonymousId: z.string(),
+    properties: z.record(z.any())
+  })
+});
+
+const analyticsBatchSchema = z.array(analyticsEventSchema);
+
+// Define interface for parsed user agent details
+interface ParsedUserAgent {
+  browser_name: string;
+  browser_version: string;
+  os_name: string;
+  os_version: string;
+  device_type: string;
+  device_brand: string;
+  device_model: string;
+}
+
+// Helper function to parse user agent and return structured data
+function parseUserAgentDetails(userAgent: string): ParsedUserAgent {
+  const parser = new UAParser(userAgent);
+  const result = parser.getResult();
+  
+  return {
+    browser_name: result.browser.name || 'Unknown',
+    browser_version: result.browser.version || 'Unknown',
+    os_name: result.os.name || 'Unknown',
+    os_version: result.os.version || 'Unknown',
+    device_type: result.device.type || 'desktop', // Default to desktop if not detected
+    device_brand: result.device.vendor || 'Unknown',
+    device_model: result.device.model || 'Unknown'
+  };
+}
+
+// Helper function to process a single analytics event
+async function processAnalyticsEvent(event: z.infer<typeof analyticsEventSchema> & ParsedUserAgent) {
+  // Implementation would go here - this would handle inserting into ClickHouse
+  // For now just log the event
+  logger.debug('Processing analytics event:', event);
+}
+
+// Helper function to process a batch of analytics events
+async function processAnalyticsBatch(events: Array<z.infer<typeof analyticsEventSchema> & ParsedUserAgent>) {
+  // Implementation would go here - this would handle batch inserting into ClickHouse
+  // For now just log the events
+  logger.debug('Processing analytics batch:', events);
+}
+
+// Update the event processing to include parsed user agent data
+analyticsRouter.post('/basket', zValidator('json', analyticsEventSchema), async (c) => {
+  const event = c.req.valid('json');
+  const userAgent = c.req.header('user-agent') || 'Unknown';
+  
+  try {
+    // Parse user agent once
+    const userAgentInfo = parseUserAgentDetails(userAgent);
+    
+    // Add parsed user agent data to event properties
+    const eventWithUserAgent = {
+      ...event,
+      user_agent: userAgent,
+      ...userAgentInfo
+    };
+    
+    // Process the event with the enhanced data
+    await processAnalyticsEvent(eventWithUserAgent);
+    
+    return c.json({ success: true });
+  } catch (error) {
+    logger.error('Error processing analytics event:', { error });
+    return c.json({ success: false, error: 'Failed to process event' }, 500);
+  }
+});
+
+// Update batch processing to include parsed user agent data
+analyticsRouter.post('/basket/batch', zValidator('json', analyticsBatchSchema), async (c) => {
+  const events = c.req.valid('json');
+  const userAgent = c.req.header('user-agent') || 'Unknown';
+  
+  try {
+    // Parse user agent once since it will be the same for all events in the batch
+    const userAgentInfo = parseUserAgentDetails(userAgent);
+    
+    // Process each event with the enhanced user agent data
+    const processedEvents = events.map(event => ({
+      ...event,
+      user_agent: userAgent,
+      ...userAgentInfo
+    }));
+    
+    // Process the batch with enhanced data
+    await processAnalyticsBatch(processedEvents);
+    
+    return c.json({ success: true });
+  } catch (error) {
+    logger.error('Error processing analytics batch:', { error });
+    return c.json({ success: false, error: 'Failed to process batch' }, 500);
   }
 });
 
