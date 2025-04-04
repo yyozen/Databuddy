@@ -166,6 +166,15 @@ export const SubscriptionStatus: {
 export type SubscriptionStatus = (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus]
 
 
+export const VerificationStatus: {
+  PENDING: 'PENDING',
+  VERIFIED: 'VERIFIED',
+  FAILED: 'FAILED'
+};
+
+export type VerificationStatus = (typeof VerificationStatus)[keyof typeof VerificationStatus]
+
+
 export const WebsiteStatus: {
   ACTIVE: 'ACTIVE',
   HEALTHY: 'HEALTHY',
@@ -212,6 +221,10 @@ export const ProjectStatus: typeof $Enums.ProjectStatus
 export type SubscriptionStatus = $Enums.SubscriptionStatus
 
 export const SubscriptionStatus: typeof $Enums.SubscriptionStatus
+
+export type VerificationStatus = $Enums.VerificationStatus
+
+export const VerificationStatus: typeof $Enums.VerificationStatus
 
 export type WebsiteStatus = $Enums.WebsiteStatus
 
@@ -12267,6 +12280,9 @@ export namespace Prisma {
     domain: string | null
     name: string | null
     status: $Enums.WebsiteStatus | null
+    verificationStatus: $Enums.VerificationStatus | null
+    verificationToken: string | null
+    verifiedAt: Date | null
     userId: string | null
     projectId: string | null
     createdAt: Date | null
@@ -12279,6 +12295,9 @@ export namespace Prisma {
     domain: string | null
     name: string | null
     status: $Enums.WebsiteStatus | null
+    verificationStatus: $Enums.VerificationStatus | null
+    verificationToken: string | null
+    verifiedAt: Date | null
     userId: string | null
     projectId: string | null
     createdAt: Date | null
@@ -12291,6 +12310,9 @@ export namespace Prisma {
     domain: number
     name: number
     status: number
+    verificationStatus: number
+    verificationToken: number
+    verifiedAt: number
     userId: number
     projectId: number
     createdAt: number
@@ -12305,6 +12327,9 @@ export namespace Prisma {
     domain?: true
     name?: true
     status?: true
+    verificationStatus?: true
+    verificationToken?: true
+    verifiedAt?: true
     userId?: true
     projectId?: true
     createdAt?: true
@@ -12317,6 +12342,9 @@ export namespace Prisma {
     domain?: true
     name?: true
     status?: true
+    verificationStatus?: true
+    verificationToken?: true
+    verifiedAt?: true
     userId?: true
     projectId?: true
     createdAt?: true
@@ -12329,6 +12357,9 @@ export namespace Prisma {
     domain?: true
     name?: true
     status?: true
+    verificationStatus?: true
+    verificationToken?: true
+    verifiedAt?: true
     userId?: true
     projectId?: true
     createdAt?: true
@@ -12414,6 +12445,9 @@ export namespace Prisma {
     domain: string
     name: string | null
     status: $Enums.WebsiteStatus
+    verificationStatus: $Enums.VerificationStatus
+    verificationToken: string | null
+    verifiedAt: Date | null
     userId: string | null
     projectId: string | null
     createdAt: Date
@@ -12443,6 +12477,9 @@ export namespace Prisma {
     domain?: boolean
     name?: boolean
     status?: boolean
+    verificationStatus?: boolean
+    verificationToken?: boolean
+    verifiedAt?: boolean
     userId?: boolean
     projectId?: boolean
     createdAt?: boolean
@@ -12457,6 +12494,9 @@ export namespace Prisma {
     domain?: boolean
     name?: boolean
     status?: boolean
+    verificationStatus?: boolean
+    verificationToken?: boolean
+    verifiedAt?: boolean
     userId?: boolean
     projectId?: boolean
     createdAt?: boolean
@@ -12471,6 +12511,9 @@ export namespace Prisma {
     domain?: boolean
     name?: boolean
     status?: boolean
+    verificationStatus?: boolean
+    verificationToken?: boolean
+    verifiedAt?: boolean
     userId?: boolean
     projectId?: boolean
     createdAt?: boolean
@@ -12485,6 +12528,9 @@ export namespace Prisma {
     domain?: boolean
     name?: boolean
     status?: boolean
+    verificationStatus?: boolean
+    verificationToken?: boolean
+    verifiedAt?: boolean
     userId?: boolean
     projectId?: boolean
     createdAt?: boolean
@@ -12492,7 +12538,7 @@ export namespace Prisma {
     deletedAt?: boolean
   }
 
-  export type WebsiteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "domain" | "name" | "status" | "userId" | "projectId" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["website"]>
+  export type WebsiteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "domain" | "name" | "status" | "verificationStatus" | "verificationToken" | "verifiedAt" | "userId" | "projectId" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["website"]>
   export type WebsiteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | Website$userArgs<ExtArgs>
     project?: boolean | Website$projectArgs<ExtArgs>
@@ -12517,6 +12563,9 @@ export namespace Prisma {
       domain: string
       name: string | null
       status: $Enums.WebsiteStatus
+      verificationStatus: $Enums.VerificationStatus
+      verificationToken: string | null
+      verifiedAt: Date | null
       userId: string | null
       projectId: string | null
       createdAt: Date
@@ -12951,6 +13000,9 @@ export namespace Prisma {
     readonly domain: FieldRef<"Website", 'String'>
     readonly name: FieldRef<"Website", 'String'>
     readonly status: FieldRef<"Website", 'WebsiteStatus'>
+    readonly verificationStatus: FieldRef<"Website", 'VerificationStatus'>
+    readonly verificationToken: FieldRef<"Website", 'String'>
+    readonly verifiedAt: FieldRef<"Website", 'DateTime'>
     readonly userId: FieldRef<"Website", 'String'>
     readonly projectId: FieldRef<"Website", 'String'>
     readonly createdAt: FieldRef<"Website", 'DateTime'>
@@ -27328,6 +27380,9 @@ export namespace Prisma {
     domain: 'domain',
     name: 'name',
     status: 'status',
+    verificationStatus: 'verificationStatus',
+    verificationToken: 'verificationToken',
+    verifiedAt: 'verifiedAt',
     userId: 'userId',
     projectId: 'projectId',
     createdAt: 'createdAt',
@@ -27659,6 +27714,20 @@ export namespace Prisma {
    * Reference to a field of type 'WebsiteStatus[]'
    */
   export type ListEnumWebsiteStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WebsiteStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'VerificationStatus'
+   */
+  export type EnumVerificationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VerificationStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'VerificationStatus[]'
+   */
+  export type ListEnumVerificationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VerificationStatus[]'>
     
 
 
@@ -28374,6 +28443,9 @@ export namespace Prisma {
     domain?: StringFilter<"Website"> | string
     name?: StringNullableFilter<"Website"> | string | null
     status?: EnumWebsiteStatusFilter<"Website"> | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFilter<"Website"> | $Enums.VerificationStatus
+    verificationToken?: StringNullableFilter<"Website"> | string | null
+    verifiedAt?: DateTimeNullableFilter<"Website"> | Date | string | null
     userId?: StringNullableFilter<"Website"> | string | null
     projectId?: StringNullableFilter<"Website"> | string | null
     createdAt?: DateTimeFilter<"Website"> | Date | string
@@ -28388,6 +28460,9 @@ export namespace Prisma {
     domain?: SortOrder
     name?: SortOrderInput | SortOrder
     status?: SortOrder
+    verificationStatus?: SortOrder
+    verificationToken?: SortOrderInput | SortOrder
+    verifiedAt?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
     projectId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -28400,25 +28475,31 @@ export namespace Prisma {
   export type WebsiteWhereUniqueInput = Prisma.AtLeast<{
     id?: string
     domain?: string
+    verificationToken?: string
     projectId?: string
     AND?: WebsiteWhereInput | WebsiteWhereInput[]
     OR?: WebsiteWhereInput[]
     NOT?: WebsiteWhereInput | WebsiteWhereInput[]
     name?: StringNullableFilter<"Website"> | string | null
     status?: EnumWebsiteStatusFilter<"Website"> | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFilter<"Website"> | $Enums.VerificationStatus
+    verifiedAt?: DateTimeNullableFilter<"Website"> | Date | string | null
     userId?: StringNullableFilter<"Website"> | string | null
     createdAt?: DateTimeFilter<"Website"> | Date | string
     updatedAt?: DateTimeFilter<"Website"> | Date | string
     deletedAt?: DateTimeNullableFilter<"Website"> | Date | string | null
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     project?: XOR<ProjectNullableScalarRelationFilter, ProjectWhereInput> | null
-  }, "id" | "domain" | "projectId">
+  }, "id" | "domain" | "verificationToken" | "projectId">
 
   export type WebsiteOrderByWithAggregationInput = {
     id?: SortOrder
     domain?: SortOrder
     name?: SortOrderInput | SortOrder
     status?: SortOrder
+    verificationStatus?: SortOrder
+    verificationToken?: SortOrderInput | SortOrder
+    verifiedAt?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
     projectId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -28437,6 +28518,9 @@ export namespace Prisma {
     domain?: StringWithAggregatesFilter<"Website"> | string
     name?: StringNullableWithAggregatesFilter<"Website"> | string | null
     status?: EnumWebsiteStatusWithAggregatesFilter<"Website"> | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusWithAggregatesFilter<"Website"> | $Enums.VerificationStatus
+    verificationToken?: StringNullableWithAggregatesFilter<"Website"> | string | null
+    verifiedAt?: DateTimeNullableWithAggregatesFilter<"Website"> | Date | string | null
     userId?: StringNullableWithAggregatesFilter<"Website"> | string | null
     projectId?: StringNullableWithAggregatesFilter<"Website"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Website"> | Date | string
@@ -30139,6 +30223,9 @@ export namespace Prisma {
     domain: string
     name?: string | null
     status?: $Enums.WebsiteStatus
+    verificationStatus?: $Enums.VerificationStatus
+    verificationToken?: string | null
+    verifiedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
@@ -30151,6 +30238,9 @@ export namespace Prisma {
     domain: string
     name?: string | null
     status?: $Enums.WebsiteStatus
+    verificationStatus?: $Enums.VerificationStatus
+    verificationToken?: string | null
+    verifiedAt?: Date | string | null
     userId?: string | null
     projectId?: string | null
     createdAt?: Date | string
@@ -30163,6 +30253,9 @@ export namespace Prisma {
     domain?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumWebsiteStatusFieldUpdateOperationsInput | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
+    verificationToken?: NullableStringFieldUpdateOperationsInput | string | null
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -30175,6 +30268,9 @@ export namespace Prisma {
     domain?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumWebsiteStatusFieldUpdateOperationsInput | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
+    verificationToken?: NullableStringFieldUpdateOperationsInput | string | null
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     userId?: NullableStringFieldUpdateOperationsInput | string | null
     projectId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30187,6 +30283,9 @@ export namespace Prisma {
     domain: string
     name?: string | null
     status?: $Enums.WebsiteStatus
+    verificationStatus?: $Enums.VerificationStatus
+    verificationToken?: string | null
+    verifiedAt?: Date | string | null
     userId?: string | null
     projectId?: string | null
     createdAt?: Date | string
@@ -30199,6 +30298,9 @@ export namespace Prisma {
     domain?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumWebsiteStatusFieldUpdateOperationsInput | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
+    verificationToken?: NullableStringFieldUpdateOperationsInput | string | null
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -30209,6 +30311,9 @@ export namespace Prisma {
     domain?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumWebsiteStatusFieldUpdateOperationsInput | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
+    verificationToken?: NullableStringFieldUpdateOperationsInput | string | null
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     userId?: NullableStringFieldUpdateOperationsInput | string | null
     projectId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -31929,6 +32034,13 @@ export namespace Prisma {
     not?: NestedEnumWebsiteStatusFilter<$PrismaModel> | $Enums.WebsiteStatus
   }
 
+  export type EnumVerificationStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.VerificationStatus | EnumVerificationStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumVerificationStatusFilter<$PrismaModel> | $Enums.VerificationStatus
+  }
+
   export type ProjectNullableScalarRelationFilter = {
     is?: ProjectWhereInput | null
     isNot?: ProjectWhereInput | null
@@ -31939,6 +32051,9 @@ export namespace Prisma {
     domain?: SortOrder
     name?: SortOrder
     status?: SortOrder
+    verificationStatus?: SortOrder
+    verificationToken?: SortOrder
+    verifiedAt?: SortOrder
     userId?: SortOrder
     projectId?: SortOrder
     createdAt?: SortOrder
@@ -31951,6 +32066,9 @@ export namespace Prisma {
     domain?: SortOrder
     name?: SortOrder
     status?: SortOrder
+    verificationStatus?: SortOrder
+    verificationToken?: SortOrder
+    verifiedAt?: SortOrder
     userId?: SortOrder
     projectId?: SortOrder
     createdAt?: SortOrder
@@ -31963,6 +32081,9 @@ export namespace Prisma {
     domain?: SortOrder
     name?: SortOrder
     status?: SortOrder
+    verificationStatus?: SortOrder
+    verificationToken?: SortOrder
+    verifiedAt?: SortOrder
     userId?: SortOrder
     projectId?: SortOrder
     createdAt?: SortOrder
@@ -31978,6 +32099,16 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumWebsiteStatusFilter<$PrismaModel>
     _max?: NestedEnumWebsiteStatusFilter<$PrismaModel>
+  }
+
+  export type EnumVerificationStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.VerificationStatus | EnumVerificationStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumVerificationStatusWithAggregatesFilter<$PrismaModel> | $Enums.VerificationStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumVerificationStatusFilter<$PrismaModel>
+    _max?: NestedEnumVerificationStatusFilter<$PrismaModel>
   }
 
   export type AccountCountOrderByAggregateInput = {
@@ -33402,6 +33533,10 @@ export namespace Prisma {
     set?: $Enums.WebsiteStatus
   }
 
+  export type EnumVerificationStatusFieldUpdateOperationsInput = {
+    set?: $Enums.VerificationStatus
+  }
+
   export type UserUpdateOneWithoutWebsitesNestedInput = {
     create?: XOR<UserCreateWithoutWebsitesInput, UserUncheckedCreateWithoutWebsitesInput>
     connectOrCreate?: UserCreateOrConnectWithoutWebsitesInput
@@ -34282,6 +34417,13 @@ export namespace Prisma {
     not?: NestedEnumWebsiteStatusFilter<$PrismaModel> | $Enums.WebsiteStatus
   }
 
+  export type NestedEnumVerificationStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.VerificationStatus | EnumVerificationStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumVerificationStatusFilter<$PrismaModel> | $Enums.VerificationStatus
+  }
+
   export type NestedEnumWebsiteStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.WebsiteStatus | EnumWebsiteStatusFieldRefInput<$PrismaModel>
     in?: $Enums.WebsiteStatus[] | ListEnumWebsiteStatusFieldRefInput<$PrismaModel>
@@ -34290,6 +34432,16 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumWebsiteStatusFilter<$PrismaModel>
     _max?: NestedEnumWebsiteStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumVerificationStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.VerificationStatus | EnumVerificationStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumVerificationStatusWithAggregatesFilter<$PrismaModel> | $Enums.VerificationStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumVerificationStatusFilter<$PrismaModel>
+    _max?: NestedEnumVerificationStatusFilter<$PrismaModel>
   }
 
   export type NestedEnumSubscriptionStatusFilter<$PrismaModel = never> = {
@@ -34674,6 +34826,9 @@ export namespace Prisma {
     domain: string
     name?: string | null
     status?: $Enums.WebsiteStatus
+    verificationStatus?: $Enums.VerificationStatus
+    verificationToken?: string | null
+    verifiedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
@@ -34685,6 +34840,9 @@ export namespace Prisma {
     domain: string
     name?: string | null
     status?: $Enums.WebsiteStatus
+    verificationStatus?: $Enums.VerificationStatus
+    verificationToken?: string | null
+    verifiedAt?: Date | string | null
     projectId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -35068,6 +35226,9 @@ export namespace Prisma {
     domain?: StringFilter<"Website"> | string
     name?: StringNullableFilter<"Website"> | string | null
     status?: EnumWebsiteStatusFilter<"Website"> | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFilter<"Website"> | $Enums.VerificationStatus
+    verificationToken?: StringNullableFilter<"Website"> | string | null
+    verifiedAt?: DateTimeNullableFilter<"Website"> | Date | string | null
     userId?: StringNullableFilter<"Website"> | string | null
     projectId?: StringNullableFilter<"Website"> | string | null
     createdAt?: DateTimeFilter<"Website"> | Date | string
@@ -37656,6 +37817,9 @@ export namespace Prisma {
     domain: string
     name?: string | null
     status?: $Enums.WebsiteStatus
+    verificationStatus?: $Enums.VerificationStatus
+    verificationToken?: string | null
+    verifiedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     deletedAt?: Date | string | null
@@ -37667,6 +37831,9 @@ export namespace Prisma {
     domain: string
     name?: string | null
     status?: $Enums.WebsiteStatus
+    verificationStatus?: $Enums.VerificationStatus
+    verificationToken?: string | null
+    verifiedAt?: Date | string | null
     userId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -37825,6 +37992,9 @@ export namespace Prisma {
     domain?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumWebsiteStatusFieldUpdateOperationsInput | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
+    verificationToken?: NullableStringFieldUpdateOperationsInput | string | null
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -37836,6 +38006,9 @@ export namespace Prisma {
     domain?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumWebsiteStatusFieldUpdateOperationsInput | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
+    verificationToken?: NullableStringFieldUpdateOperationsInput | string | null
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     userId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38430,6 +38603,9 @@ export namespace Prisma {
     domain: string
     name?: string | null
     status?: $Enums.WebsiteStatus
+    verificationStatus?: $Enums.VerificationStatus
+    verificationToken?: string | null
+    verifiedAt?: Date | string | null
     projectId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -38750,6 +38926,9 @@ export namespace Prisma {
     domain?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumWebsiteStatusFieldUpdateOperationsInput | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
+    verificationToken?: NullableStringFieldUpdateOperationsInput | string | null
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38761,6 +38940,9 @@ export namespace Prisma {
     domain?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumWebsiteStatusFieldUpdateOperationsInput | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
+    verificationToken?: NullableStringFieldUpdateOperationsInput | string | null
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projectId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38772,6 +38954,9 @@ export namespace Prisma {
     domain?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumWebsiteStatusFieldUpdateOperationsInput | $Enums.WebsiteStatus
+    verificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
+    verificationToken?: NullableStringFieldUpdateOperationsInput | string | null
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     projectId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

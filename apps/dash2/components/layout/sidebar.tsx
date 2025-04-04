@@ -3,18 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Button } from "@/app/once-ui/components";
-import { Icon } from "@/app/once-ui/components";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Globe, 
+  BarChart, 
+  Settings, 
+  CreditCard, 
+  Clock, 
+  Users, 
+  Plug, 
+  ChevronLeft,
+  Menu
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { TopHeader } from "./top-header";
 import { useWebsites } from "@/hooks/use-websites";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface NavigationItem {
   name: string;
-  icon: string;
+  icon: React.ReactNode;
   href: string;
   rootLevel?: boolean;
 }
@@ -29,10 +39,10 @@ const mainNavigation: NavigationSection[] = [
   {
     title: "Main",
     items: [
-      { name: "Websites", icon: "globe", href: "/websites", rootLevel: true },
-      // { name: "Analytics", icon: "barChart", href: "/analytics", rootLevel: true },
-      { name: "Settings", icon: "settings", href: "/settings", rootLevel: true },
-      { name: "Billing", icon: "creditCard", href: "/billing", rootLevel: true },
+      { name: "Websites", icon: <Globe className="h-4 w-4" />, href: "/websites", rootLevel: true },
+      // { name: "Analytics", icon: <BarChart className="h-4 w-4" />, href: "/analytics", rootLevel: true },
+      { name: "Settings", icon: <Settings className="h-4 w-4" />, href: "/settings", rootLevel: true },
+      { name: "Billing", icon: <CreditCard className="h-4 w-4" />, href: "/billing", rootLevel: true },
     ],
   },
 ];
@@ -42,17 +52,17 @@ const websiteNavigation: NavigationSection[] = [
   {
     title: "Analytics",
     items: [
-      { name: "Overview", icon: "barChart", href: "" },
-      { name: "Sessions", icon: "clock", href: "/sessions" },
-      { name: "Profiles", icon: "users", href: "/profiles" },
+      { name: "Overview", icon: <BarChart className="h-4 w-4" />, href: "" },
+      { name: "Sessions", icon: <Clock className="h-4 w-4" />, href: "/sessions" },
+      { name: "Profiles", icon: <Users className="h-4 w-4" />, href: "/profiles" },
     ],
   },
   {
     title: "Settings",
     items: [
-      { name: "General", icon: "settings", href: "/settings" },
-      { name: "Team", icon: "users", href: "/team" },
-      { name: "Integrations", icon: "plug", href: "/integrations" },
+      { name: "General", icon: <Settings className="h-4 w-4" />, href: "/settings" },
+      { name: "Team", icon: <Users className="h-4 w-4" />, href: "/team" },
+      { name: "Integrations", icon: <Plug className="h-4 w-4" />, href: "/integrations" },
     ],
   },
 ];
@@ -92,17 +102,13 @@ export function Sidebar() {
           key={item.name}
           href={fullPath}
           className={cn(
-            "flex items-center gap-x-3 px-3 py-2 text-sm rounded-md transition-all",
+            "flex items-center gap-x-3 px-3 py-2 text-sm rounded-md transition-all cursor-pointer",
             isActive
               ? "bg-primary/10 text-primary font-medium"
               : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
           )}
         >
-          <Icon 
-            name={item.icon} 
-            size="s" 
-            onBackground={isActive ? "brand-strong" : "neutral-medium"} 
-          />
+          {item.icon}
           <span>{item.name}</span>
         </Link>
       );
@@ -136,25 +142,31 @@ export function Sidebar() {
               <>
                 {/* Back to websites button */}
                 <div className="mb-6">
-                  <Link href="/websites">
-                    <Button variant="secondary" size="m" prefixIcon="chevronLeft" className="w-full justify-start mb-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start mb-4 cursor-pointer"
+                    asChild
+                  >
+                    <Link href="/websites">
+                      <ChevronLeft className="mr-2 h-4 w-4" />
                       <span>Back to Websites</span>
-                    </Button>
-                  </Link>
-                  
-                  {/* Current website name */}
-                  <div className="px-2 py-1 mb-6">
-                    <h2 className="text-base font-semibold truncate">
-                      {currentWebsite?.name || currentWebsite?.domain || (
-                        <Skeleton className="h-5 w-36" />
-                      )}
-                    </h2>
-                    <div className="text-sm text-muted-foreground truncate mt-0.5">
-                      {currentWebsite ? 
-                        currentWebsite.domain : 
-                        <Skeleton className="h-4 w-24 mt-1" />
-                      }
-                    </div>
+                    </Link>
+                  </Button>
+                </div>
+                
+                {/* Current website name */}
+                <div className="px-2 py-1 mb-6">
+                  <h2 className="text-base font-semibold truncate">
+                    {currentWebsite?.name || currentWebsite?.domain || (
+                      <Skeleton className="h-5 w-36" />
+                    )}
+                  </h2>
+                  <div className="text-sm text-muted-foreground truncate mt-0.5">
+                    {currentWebsite ? 
+                      currentWebsite.domain : 
+                      <Skeleton className="h-4 w-24 mt-1" />
+                    }
                   </div>
                 </div>
                 
@@ -216,13 +228,13 @@ export function Sidebar() {
                           key={site.id}
                           href={`/websites/${site.id}`}
                           className={cn(
-                            "flex items-center gap-x-3 px-3 py-2 text-sm rounded-md transition-all",
+                            "flex items-center gap-x-3 px-3 py-2 text-sm rounded-md transition-all cursor-pointer",
                             pathname === `/websites/${site.id}`
                               ? "bg-primary/10 text-primary font-medium"
                               : "text-foreground hover:bg-accent/50"
                           )}
                         >
-                          <Icon name="globe" size="s" onBackground={pathname === `/websites/${site.id}` ? "brand-strong" : "neutral-medium"} />
+                          <Globe className="h-4 w-4" />
                           <span className="truncate">{site.name || site.domain}</span>
                         </Link>
                       ))

@@ -215,6 +215,9 @@ exports.Prisma.WebsiteScalarFieldEnum = {
   domain: 'domain',
   name: 'name',
   status: 'status',
+  verificationStatus: 'verificationStatus',
+  verificationToken: 'verificationToken',
+  verifiedAt: 'verifiedAt',
   userId: 'userId',
   projectId: 'projectId',
   createdAt: 'createdAt',
@@ -419,6 +422,12 @@ exports.WebsiteStatus = exports.$Enums.WebsiteStatus = {
   UNHEALTHY: 'UNHEALTHY',
   INACTIVE: 'INACTIVE',
   PENDING: 'PENDING'
+};
+
+exports.VerificationStatus = exports.$Enums.VerificationStatus = {
+  PENDING: 'PENDING',
+  VERIFIED: 'VERIFIED',
+  FAILED: 'FAILED'
 };
 
 exports.SubscriptionStatus = exports.$Enums.SubscriptionStatus = {

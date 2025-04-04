@@ -7,7 +7,6 @@ import { useSession, signOut } from "@databuddy/auth/client";
 import { useOrganizationSelector } from "@databuddy/auth";
 import { toast } from "sonner";
 import { 
-  Bell, 
   Menu, 
   LayoutDashboard, 
   LogOut, 
@@ -23,7 +22,6 @@ import {
   Sun,
   MessageSquare,
   Laptop,
-  BarChart
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -42,23 +40,13 @@ import {
   DropdownMenuShortcut
 } from "@/components/ui/dropdown-menu";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { NotificationsPopover } from "@/components/notifications/notifications-popover";
 
 interface TopHeaderProps {
   setMobileOpen: (open: boolean) => void;
@@ -69,19 +57,11 @@ export function TopHeader({ setMobileOpen }: TopHeaderProps) {
   const pathname = usePathname();
   const { data: session, isPending } = useSession();
   const { theme, setTheme } = useTheme();
-//   const { organizations, activeOrganization, selectOrganization } = useOrganizationSelector();
   
   // States
   const [mounted, setMounted] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-
-  // Mock notifications - in a real app these would come from an API
-  const notifications = [
-    { id: 1, title: "New visitor on Website X", time: "5 min ago", read: false, type: "analytics" },
-    { id: 2, title: "Free plan limit reached", time: "2 hours ago", read: false, type: "billing" }
-  ];
 
   // Handle hydration
   useEffect(() => {
@@ -112,16 +92,6 @@ export function TopHeader({ setMobileOpen }: TopHeaderProps) {
     }
   };
 
-  // Handle organization selection
-//   const handleSelectOrganization = async (id: string) => {
-//     try {
-//       await selectOrganization(id);
-//       toast.success("Organization switched successfully");
-//     } catch (error) {
-//       toast.error("Failed to switch organization");
-//     }
-//   };
-
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-full h-16 border-b bg-background/95 backdrop-blur-md">
       <div className="flex items-center h-full px-4 md:px-6">
@@ -143,205 +113,38 @@ export function TopHeader({ setMobileOpen }: TopHeaderProps) {
             </div>
             <span className="font-semibold text-lg">Databuddy</span>
           </Link>
-
-          {/* Organization selector */}
-          {/* {mounted && (
-            <div className="hidden md:block">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2 h-9 pl-2 pr-3">
-                    <div className="flex items-center justify-center w-6 h-6 rounded bg-primary/10">
-                      {activeOrganization?.logo ? (
-                        <img 
-                          src={activeOrganization.logo} 
-                          alt={activeOrganization.name} 
-                          className="w-full h-full object-cover rounded" 
-                        />
-                      ) : (
-                        <Building2 className="h-3.5 w-3.5 text-primary" />
-                      )}
-                    </div>
-                    <span className="font-medium truncate max-w-[120px]">
-                      {activeOrganization?.name || "Personal"}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="start">
-                  <DropdownMenuLabel className="text-xs">Your Organizations</DropdownMenuLabel>
-                  
-                  {organizations && organizations.length > 0 ? (
-                    <DropdownMenuGroup>
-                      {organizations.map((org) => (
-                        <DropdownMenuItem
-                          key={org.id}
-                          onClick={() => handleSelectOrganization(org.id)}
-                          className={cn(
-                            "flex items-center gap-2 cursor-pointer",
-                            activeOrganization?.id === org.id && "bg-accent"
-                          )}
-                        >
-                          <div className="flex items-center justify-center w-6 h-6 rounded bg-primary/10">
-                            {org.logo ? (
-                              <img
-                                src={org.logo}
-                                alt={org.name}
-                                className="w-full h-full object-cover rounded"
-                              />
-                            ) : (
-                              <Building2 className="h-3.5 w-3.5 text-primary" />
-                            )}
-                          </div>
-                          <span className="text-sm truncate">{org.name}</span>
-                          {activeOrganization?.id === org.id && (
-                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary"></div>
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuGroup>
-                  ) : (
-                    <div className="text-xs text-center py-2 px-2 text-muted-foreground">
-                      No organizations yet
-                    </div>
-                  )}
-
-                  <DropdownMenuSeparator />
-                  
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem
-                      onClick={() => router.push("/organizations/new")}
-                      className="cursor-pointer"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      <span className="text-sm">Create Organization</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => router.push("/organizations/settings")}
-                      className="cursor-pointer"
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      <span className="text-sm">Manage Organizations</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )} */}
         </div>
 
         {/* Right Side - User Controls */}
         <div className="flex items-center gap-2 ml-auto">
           {/* Theme toggle */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="hidden md:flex h-8 w-8"
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                >
-                  {mounted && theme === "dark" ? (
-                    <Moon className="h-4 w-4" />
-                  ) : (
-                    <Sun className="h-4 w-4" />
-                  )}
-                  <span className="sr-only">Toggle theme</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{theme === "dark" ? "Light mode" : "Dark mode"}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="hidden md:flex h-8 w-8"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          >
+            {mounted && theme === "dark" ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+            <span className="sr-only">Toggle theme</span>
+          </Button>
 
           {/* Help */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="hidden md:flex h-8 w-8"
-                  onClick={() => setHelpOpen(true)}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                  <span className="sr-only">Help</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Help & Resources</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="hidden md:flex h-8 w-8"
+            onClick={() => setHelpOpen(true)}
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="sr-only">Help</span>
+          </Button>
 
           {/* Notifications */}
-          <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative h-8 w-8">
-                      <Bell className="h-4 w-4" />
-                      {notifications.filter(n => !n.read).length > 0 && (
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-                      )}
-                      <span className="sr-only">Notifications</span>
-                    </Button>
-                  </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent>Notifications</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <PopoverContent className="w-80 p-0" align="end">
-              <div className="flex items-center justify-between p-3 border-b">
-                <h4 className="font-medium text-sm">Notifications</h4>
-                <Button variant="ghost" size="sm" className="h-7 text-xs">Mark all as read</Button>
-              </div>
-              <div className="max-h-[300px] overflow-y-auto">
-                {notifications.length > 0 ? (
-                  <div className="divide-y">
-                    {notifications.map(notification => (
-                      <div 
-                        key={notification.id} 
-                        className={cn(
-                          "p-3 flex gap-3 hover:bg-muted/50 cursor-pointer transition-colors",
-                          !notification.read && "bg-accent/20"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                          notification.type === 'analytics' && "bg-blue-100 text-blue-700",
-                          notification.type === 'billing' && "bg-amber-100 text-amber-700"
-                        )}>
-                          {notification.type === 'analytics' && <BarChart className="h-4 w-4" />}
-                          {notification.type === 'billing' && <Bell className="h-4 w-4" />}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <span className={cn(
-                              "text-sm",
-                              !notification.read && "font-medium"
-                            )}>
-                              {notification.title}
-                            </span>
-                            {!notification.read && (
-                              <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
-                            )}
-                          </div>
-                          <span className="text-xs text-muted-foreground mt-1 block">{notification.time}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-8 text-center">
-                    <span className="text-muted-foreground text-sm">No notifications</span>
-                  </div>
-                )}
-              </div>
-              <div className="p-2 border-t">
-                <Button variant="outline" className="w-full h-8 text-xs">
-                  View all notifications
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <NotificationsPopover />
 
           {/* User Menu */}
           {!mounted || isPending ? (

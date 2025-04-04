@@ -1,5 +1,6 @@
-export { prisma as db, prisma } from './client' // exports instance of prisma 
+export { prisma as db, prisma, createClientWithContext } from './client' // exports instance of prisma 
 export * from "../generated/client" // exports generated types from prisma
+// export { createAuditMiddleware, withAuditContext } from './middleware' // exports audit middleware
 
 export * from './clickhouse/client'
 export * from './clickhouse/schema'

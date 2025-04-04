@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Globe, MoreHorizontal, Plus, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { Globe, MoreHorizontal, Plus, ExternalLink, Pencil, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +34,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { WebsiteDialog } from "@/components/website-dialog";
 import { useWebsites } from "@/hooks/use-websites";
 
@@ -236,10 +237,27 @@ export default function WebsitesPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
-                    Created {new Date(website.createdAt).toLocaleDateString()}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
+                      Created {new Date(website.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  
+                  {/* Domain Verification Status */}
+                  <div className="flex items-center gap-2">
+                    {website.verifiedAt ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <span className="text-sm text-green-600 dark:text-green-400">Domain Verified</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-4 w-4 text-amber-500" />
+                        <span className="text-sm text-amber-600 dark:text-amber-400">Verification Required</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>

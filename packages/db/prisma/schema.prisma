@@ -178,6 +178,12 @@ model Tag {
 
 // Website models for dashboard
 
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
 model Website {
   id        String        @id @default(uuid())
   domain    String        @unique
@@ -185,6 +191,10 @@ model Website {
   status    WebsiteStatus @default(ACTIVE)
   
   // Can belong to either a user (personal site) or a project (org site)
+
+  verificationStatus VerificationStatus @default(PENDING)
+  verificationToken  String?           @unique @default(uuid())
+  verifiedAt         DateTime?
   // User-owned website
   userId    String?
   user      User?         @relation(fields: [userId], references: [id])
