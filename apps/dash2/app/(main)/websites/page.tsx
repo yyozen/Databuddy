@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { ErrorState } from "@/components/websites/error-state";
 import { WebsiteCard } from "@/components/websites/website-card";
 import { VerificationDialog } from "@/components/websites/verification-dialog";
 
-export default function WebsitesPage() {
+function WebsitesPage() {
   const searchParams = useSearchParams();
   const shouldOpenDialog = searchParams.get('new') === 'true';
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -128,3 +128,11 @@ export default function WebsitesPage() {
     </div>
   );
 } 
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <WebsitesPage />
+    </Suspense>
+  )
+}
