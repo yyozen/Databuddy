@@ -271,7 +271,7 @@ export function WebsiteProfilesTab({
                 </div>
               </div>
             ) : (
-              <p className="mt-2 text-sm text-muted-foreground">Loading profile information...</p>
+              <div className="mt-2 text-sm text-muted-foreground">Loading profile information...</div>
             )}
           </DialogHeader>
           

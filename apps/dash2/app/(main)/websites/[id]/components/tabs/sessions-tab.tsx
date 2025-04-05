@@ -262,9 +262,9 @@ export function WebsiteSessionsTab({
                 </span>
               )}
             </DialogTitle>
-            <DialogDescription>
+            <div className="text-sm text-muted-foreground mt-2">
               {sessionDetails?.session ? (
-                <div className="grid grid-cols-2 gap-4 mt-2 text-sm text-muted-foreground">
+                <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
                   <div>
                     <span className="font-medium">Started:</span> {format(new Date(sessionDetails.session.first_visit), 'MMM d, yyyy HH:mm:ss')}
                   </div>
@@ -299,9 +299,9 @@ export function WebsiteSessionsTab({
                   </div>
                 </div>
               ) : (
-                <p>Loading session information...</p>
+                <div>Loading session information...</div>
               )}
-            </DialogDescription>
+            </div>
           </DialogHeader>
           
           <div className="mt-4">
