@@ -78,6 +78,7 @@ export const auth = betterAuth({
             audience: "databuddy.cc",
             expirationTime: "30d"
         },
+        // TODO: Remove this once we have a proper way to handle JWKS
         jwks: {
             disablePrivateKeyEncryption: true
         }
