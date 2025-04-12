@@ -8,7 +8,9 @@
         "./client": "./src/client.ts",
         "./generated/*": "./generated/*",
         "./services/*": "./src/services/*",
-        "./clickhouse/*": "./src/clickhouse/*"
+        "./clickhouse/*": "./src/clickhouse/*",
+        "./edge/*": "./src/edge/index.ts",
+        "./edge": "./src/edge/client.ts"
     },
     "dependencies": {
         "@clickhouse/client": "^1.11.0",

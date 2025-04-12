@@ -1,4 +1,4 @@
-import { WebsiteStatus } from '@databuddy/db';
+import type { WebsiteStatus } from '@databuddy/db';
 
 export interface TrackingEvent {
   type: 'track' | 'alias' | 'increment' | 'decrement';
@@ -6,7 +6,7 @@ export interface TrackingEvent {
     name?: string;
     anonymousId?: string;
     profileId?: string;
-    properties?: Record<string, any>;
+    properties?: Record<string, unknown>;
     property?: string;
     value?: number;
   };

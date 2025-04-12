@@ -5,11 +5,11 @@
  * client IDs and origins against registered websites.
  */
 
-import { MiddlewareHandler } from 'hono';
+import type { MiddlewareHandler } from 'hono';
 import { createLogger } from '@databuddy/logger';
-import { prisma, WebsiteStatus, Website } from '@databuddy/db';
+import { dbEdge as prisma, WebsiteStatus, type Website } from '@databuddy/db';
 import { cacheable } from '@databuddy/redis';
-import { AppVariables } from '../types';
+import type { AppVariables } from '../types';
 
 // Initialize logger
 const logger = createLogger('website-auth');

@@ -7,7 +7,7 @@
 import { Hono } from 'hono';
 import { initClickHouseSchema } from '@databuddy/db';
 import { createLogger } from '@databuddy/logger';
-import { AppVariables } from '../types';
+import type { AppVariables } from '../types';
 
 // Initialize logger for admin routes
 const logger = createLogger('admin:routes');
@@ -27,10 +27,10 @@ adminRouter.post('/init-tables', async (c) => {
     if (result.success) {
       logger.info('ClickHouse tables initialized successfully');
       return c.json(result, 200);
-    } else {
-      logger.error('Failed to initialize ClickHouse tables:', result.error);
-      return c.json(result, 500);
     }
+    
+    logger.error('Failed to initialize ClickHouse tables:', result.error);
+    return c.json(result, 500);
   } catch (error) {
     logger.error('Error in init-tables endpoint:', error);
     return c.json({

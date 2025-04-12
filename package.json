@@ -10,6 +10,7 @@
     "generate-db": "turbo run generate --filter=@databuddy/db"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@types/react-image-crop": "^9.0.2",
     "prettier": "^3.5.3",
     "turbo": "^2.4.4",

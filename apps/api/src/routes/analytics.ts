@@ -9,7 +9,7 @@ import { createLogger } from '@databuddy/logger';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { chQuery, createSqlBuilder } from '@databuddy/db';
-import { AppVariables } from '../types';
+import type { AppVariables } from '../types';
 import { authMiddleware } from '../middleware/auth';
 import { UAParser } from 'ua-parser-js';
 import { format } from 'date-fns';
@@ -214,7 +214,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     let todayTotalSessions = 0;
     let todayBounceRateSum = 0;
     
-    todayHourlyData.forEach(hour => {
+    for (const hour of todayHourlyData) {
       if (hour.pageviews > 0) {
         todaySummary.pageviews += hour.pageviews;
         // Don't sum up visitors here as they'll be double-counted
@@ -226,7 +226,8 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
           todayBounceRateSum += (hour.sessions * hour.bounce_rate);
         }
       }
-    });
+      todaySummary.bounce_rate = todayBounceRateSum / todayTotalSessions;
+    }
     
     // Create a dedicated query to get accurate unique visitor count for today
     const todayUniqueVisitorsBuilder = createSqlBuilder('events');
@@ -237,7 +238,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     
     todayUniqueVisitorsBuilder.sb.where = {
       client_filter: `client_id = '${params.website_id}'`,
-      date_filter: `toDate(time) = today()`,
+      date_filter: "toDate(time) = today()",
       event_filter: "event_name = 'screen_view'"
     };
     
@@ -327,7 +328,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     const mergedTopPages = [...processedTopPages];
     
     // Add today's top pages that aren't already in the list
-    processedTodayTopPages.forEach(todayPage => {
+    for (const todayPage of processedTodayTopPages) {
       const existingPageIndex = mergedTopPages.findIndex(p => p.path === todayPage.path);
       
       if (existingPageIndex >= 0) {
@@ -338,7 +339,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
         // Add new page from today
         mergedTopPages.push(todayPage);
       }
-    });
+    }
     
     // Sort and limit
     mergedTopPages.sort((a, b) => b.pageviews - a.pageviews);
@@ -348,7 +349,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     const mergedTopReferrers = [...processedReferrers];
     
     // Add today's top referrers that aren't already in the list
-    processedTodayReferrers.forEach(todayReferrer => {
+    for (const todayReferrer of processedTodayReferrers) {
       const existingReferrerIndex = mergedTopReferrers.findIndex(r => 
         r.referrer === todayReferrer.referrer || r.domain === todayReferrer.domain);
       
@@ -360,7 +361,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
         // Add new referrer from today
         mergedTopReferrers.push(todayReferrer);
       }
-    });
+    }
     
     // Sort and limit
     mergedTopReferrers.sort((a, b) => b.visitors - a.visitors);
@@ -485,7 +486,7 @@ analyticsRouter.get('/trends', zValidator('query', analyticsQuerySchema), async 
       let todayTotalSessions = 0;
       let todayBounceRateSum = 0;
       
-      todayHourlyData.forEach(hour => {
+      for (const hour of todayHourlyData) {
         if (hour.pageviews > 0) {
           todaySummary.pageviews += hour.pageviews;
           todaySummary.visitors += hour.unique_visitors || 0;
@@ -497,7 +498,7 @@ analyticsRouter.get('/trends', zValidator('query', analyticsQuerySchema), async 
             todayBounceRateSum += (hour.sessions * hour.bounce_rate);
           }
         }
-      });
+      }
       
       // Create a dedicated query to get accurate unique visitor count for today
       const todayUniqueVisitorsBuilder = createSqlBuilder('events');
@@ -508,7 +509,7 @@ analyticsRouter.get('/trends', zValidator('query', analyticsQuerySchema), async 
       
       todayUniqueVisitorsBuilder.sb.where = {
         client_filter: `client_id = '${params.website_id}'`,
-        date_filter: `toDate(time) = today()`,
+        date_filter: "toDate(time) = today()",
         event_filter: "event_name = 'screen_view'"
       };
       
@@ -625,9 +626,9 @@ analyticsRouter.get('/chart', zValidator('query', analyticsQuerySchema), async (
                 client_id = '${params.website_id}'
                 AND toDate(time) >= '${startDate}'
                 AND toDate(time) <= '${endDate}'
-                ${intervalName === 'date' ? `AND toDayOfMonth(time) = day` : ''}
-                ${intervalName === 'week' ? `AND toDayOfWeek(time) = day` : ''}
-                ${intervalName === 'month' ? `AND toMonth(time) = month` : ''}
+                ${intervalName === 'date' ? "AND toDayOfMonth(time) = day" : ''}
+                ${intervalName === 'week' ? "AND toDayOfWeek(time) = day" : ''}
+                ${intervalName === 'month' ? "AND toMonth(time) = month" : ''}
               GROUP BY session_id)
           ), 0
         ) as bounce_rate`,
@@ -643,9 +644,9 @@ analyticsRouter.get('/chart', zValidator('query', analyticsQuerySchema), async (
                 client_id = '${params.website_id}'
                 AND toDate(time) >= '${startDate}'
                 AND toDate(time) <= '${endDate}'
-                ${intervalName === 'date' ? `AND toDayOfMonth(time) = day` : ''}
-                ${intervalName === 'week' ? `AND toDayOfWeek(time) = day` : ''}
-                ${intervalName === 'month' ? `AND toMonth(time) = month` : ''}
+                ${intervalName === 'date' ? "AND toDayOfMonth(time) = day" : ''}
+                ${intervalName === 'week' ? "AND toDayOfWeek(time) = day" : ''}
+                ${intervalName === 'month' ? "AND toMonth(time) = month" : ''}
               GROUP BY session_id
               HAVING duration > 0)
           ), 0
@@ -728,7 +729,7 @@ analyticsRouter.get('/chart', zValidator('query', analyticsQuerySchema), async (
       let todayTotalSessions = 0;
       let todayBounceRateSum = 0;
       
-      todayHourlyData.forEach(hour => {
+      for (const hour of todayHourlyData) {
         if (hour.pageviews > 0) {
           todaySummary.pageviews += hour.pageviews;
           todaySummary.visitors += hour.unique_visitors || 0;
@@ -740,7 +741,7 @@ analyticsRouter.get('/chart', zValidator('query', analyticsQuerySchema), async (
             todayBounceRateSum += (hour.sessions * hour.bounce_rate);
           }
         }
-      });
+      }
       
       // Calculate weighted bounce rate
       if (todayTotalSessions > 0) {
@@ -1217,7 +1218,7 @@ analyticsRouter.get('/events', zValidator('query', analyticsQuerySchema), async 
     
     const timeSeriesData: Record<string, TimeSeriesPoint> = {};
     
-    eventsOverTime.forEach(event => {
+    for (const event of eventsOverTime) {
       const date = event[intervalName] as string;
       const eventType = event.event_type as string;
       const count = event.count as number;
@@ -1227,7 +1228,7 @@ analyticsRouter.get('/events', zValidator('query', analyticsQuerySchema), async 
       }
       
       timeSeriesData[date][eventType] = count;
-    });
+    }
     
     const timeSeriesArray = Object.values(timeSeriesData);
     
@@ -1286,7 +1287,7 @@ analyticsRouter.get('/errors', zValidator('query', analyticsQuerySchema), async 
     
     const timeSeriesData: Record<string, TimeSeriesPoint> = {};
     
-    errorsOverTime.forEach(error => {
+    for (const error of errorsOverTime) {
       const date = error.date as string;
       const errorType = error.error_type as string;
       const count = error.count as number;
@@ -1296,7 +1297,7 @@ analyticsRouter.get('/errors', zValidator('query', analyticsQuerySchema), async 
       }
       
       timeSeriesData[date][errorType] = count;
-    });
+    }
     
     const timeSeriesArray = Object.values(timeSeriesData);
     
@@ -1387,7 +1388,7 @@ analyticsRouter.get('/devices', zValidator('query', analyticsQuerySchema), async
     const browsers: Array<{browser: string, visitors: number, pageviews: number}> = [];
     const os: Array<{os: string, visitors: number, pageviews: number}> = [];
     
-    browserResults.forEach(item => {
+    for (const item of browserResults) {
       const userAgentInfo = parseUserAgentDetails(item.browser);
       
       // Add browser data
@@ -1419,12 +1420,12 @@ analyticsRouter.get('/devices', zValidator('query', analyticsQuerySchema), async
           pageviews: item.pageviews
         });
       }
-    });
+    }
     
     // Process device type data
     const deviceTypes: Array<{device_type: string, visitors: number, pageviews: number}> = [];
     
-    deviceTypeResults.forEach(item => {
+    for (const item of deviceTypeResults) {
       const userAgentInfo = parseUserAgentDetails(item.user_agent);
       const deviceType = userAgentInfo.device_type || 'Unknown';
       
@@ -1440,7 +1441,7 @@ analyticsRouter.get('/devices', zValidator('query', analyticsQuerySchema), async
           pageviews: item.pageviews
         });
       }
-    });
+    }
     
     // Process browser data to extract browser version from user_agent
     const browser_versions = formatBrowserData(browserResults as Array<{ browser_name: string; browser_version: string; count: number; visitors: number }>);
@@ -1678,11 +1679,11 @@ analyticsRouter.get('/sessions', zValidator('query', analyticsQuerySchema), asyn
     
     // Create a map of visitor IDs to their session counts
     const visitorSessionCounts: Record<string, number> = {};
-    sessionsResult.forEach(session => {
+    for (const session of sessionsResult) { 
       if (session.visitor_id) {
         visitorSessionCounts[session.visitor_id] = (visitorSessionCounts[session.visitor_id] || 0) + 1;
       }
-    });
+    }
     
     // Format the sessions data
     const formattedSessions = sessionsResult.map(session => {

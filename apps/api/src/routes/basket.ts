@@ -9,7 +9,7 @@ import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { websiteAuthHook } from '../hooks/auth';
 import { processEvent } from '../controllers/analytics.controller';
-import { AppVariables, TrackingEvent } from '../types';
+import type { AppVariables, TrackingEvent } from '../types';
 import { UAParser } from 'ua-parser-js';
 import { parseIp, anonymizeIp } from '../utils/ip-geo';
 import { parseReferrer } from '../utils/referrer';

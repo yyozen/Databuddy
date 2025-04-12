@@ -5,18 +5,9 @@ import { getSessionCookie } from "better-auth/cookies";
 import { db } from "@databuddy/db";
 import { Resend } from "resend";
 
-const resend = new Resend(getEnv('RESEND_API_KEY'));
-
-// Helper function to access environment variables in both Node.js and Cloudflare Workers
-function getEnv(key: string) {
-  return process.env[key] || 
-         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.[key] : null) || 
-         (typeof globalThis !== 'undefined' && key in globalThis ? (globalThis as any)[key] : null);
-}
-
 // Helper to check NODE_ENV
 function isProduction() {
-  const nodeEnv = getEnv('NODE_ENV');
+  const nodeEnv = process.env.NODE_ENV;
   return nodeEnv === 'production';
 }
 
@@ -45,39 +36,39 @@ export const auth = betterAuth({
     },
     socialProviders: {
         google: {
-            clientId: getEnv('GOOGLE_CLIENT_ID') as string,
-            clientSecret: getEnv('GOOGLE_CLIENT_SECRET') as string,
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
         },
         github: { 
-            clientId: getEnv('GITHUB_CLIENT_ID') as string,
-            clientSecret: getEnv('GITHUB_CLIENT_SECRET') as string,
+            clientId: process.env.GITHUB_CLIENT_ID as string,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
         },
     },
     emailAndPassword: {
         enabled: true,
         minPasswordLength: 8,
         maxPasswordLength: 32,
-        autoSignIn: true,
-        // requireEmailVerification: true,
-        // sendResetPasswordEmail: true,
+        autoSignIn: false,
+        requireEmailVerification: true,
+        sendResetPasswordEmail: true,
     },
-    // emailVerification: {
-    //     sendOnSignUp: true,
-    //     sendVerificationOnSignUp: true,
-    //     disableSignUp: true,
-    //     sendVerificationOnSignIn: true,
-    //     autoSignInAfterVerification: true,
-    //     sendVerificationEmail: async ({user, url}: {user: any, url: string}) => {
-    //         const resend = new Resend(process.env.RESEND_API_KEY as string);
-    //         const email = await resend.emails.send({
-    //             from: 'noreply@databuddy.cc',
-    //             to: user.email,
-    //             subject: 'Verify your email',
-    //             html: `<p>Click <a href="${url}">here</a> to verify your email</p>`
-    //         });
-    //         console.log(email);
-    //     }
-    // },
+    emailVerification: {
+        sendOnSignUp: true,
+        sendVerificationOnSignUp: true,
+        disableSignUp: true,
+        sendVerificationOnSignIn: true,
+        autoSignInAfterVerification: true,
+        sendVerificationEmail: async ({user, url}: {user: any, url: string}) => {
+            const resend = new Resend(process.env.RESEND_API_KEY as string);
+            const email = await resend.emails.send({
+                from: 'noreply@databuddy.cc',
+                to: user.email,
+                subject: 'Verify your email',
+                html: `<p>Click <a href="${url}">here</a> to verify your email</p>`
+            });
+            console.log(email);
+        }
+    },
     api: {
         enabled: true,
     },
@@ -119,6 +110,7 @@ export const auth = betterAuth({
         }),
         emailOTP({
             async sendVerificationOTP({email, otp, type}) {
+                const resend = new Resend(process.env.RESEND_API_KEY as string); 
                 await resend.emails.send({
                     from: 'noreply@databuddy.cc',
                     to: email,

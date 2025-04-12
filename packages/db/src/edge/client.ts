@@ -1,7 +1,7 @@
-import { PrismaClient } from "../generated/client";
+import { PrismaClient } from "../../generated/client/edge";
 // import { createAuditMiddleware } from './middleware';
 
-export * from '../generated/client';
+export * from '../../generated/client/edge';
 
 // Helper function to access environment variables in both Node.js and Cloudflare Workers
 function getEnv(key: string) {
@@ -42,10 +42,3 @@ export const prisma = globalForPrisma.prisma ?? getPrismaClient();
 if (!isProduction()) {
   globalForPrisma.prisma = prisma;
 }
-
-// Export a function to create a client with custom context
-export const createClientWithContext = (context: { userId?: string; ipAddress?: string; userAgent?: string }) => {
-  const client = new PrismaClient();
-  // client.$use(createAuditMiddleware(context));
-  return client;
-};

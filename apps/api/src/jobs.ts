@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '@databuddy/logger';
-import { initEventQueueWorker, closeAll, EventJobData } from '@databuddy/queue';
+import { initEventQueueWorker, closeAll, type EventJobData } from '@databuddy/queue';
 // import { processEvent } from './controllers/analytics.controller';
 
 // Initialize logger

@@ -6,7 +6,7 @@ import { createLogger } from '@databuddy/logger';
 import { appRouter } from '@databuddy/trpc';
 import { trpcServer } from '@hono/trpc-server'
 import { authMiddleware } from './middleware/auth'
-import { auth } from '@databuddy/auth';
+import { auth, type AuthUser, type SessionData } from '@databuddy/auth';
 import { TRPCError } from '@trpc/server';
 import basketRouter from './routes/basket';
 import adminRouter from './routes/admin';
@@ -15,8 +15,8 @@ import analyticsRouter from './routes/analytics';
 // Define the Hono app with typed context
 type AppVariables = {
   Variables: {
-    user: any; // Replace 'any' with your actual user type
-    session: any; // Replace 'any' with your actual session type
+    user: AuthUser; // Replace 'any' with your actual user type
+    session: SessionData; // Replace 'any' with your actual session type
   }
 }
 

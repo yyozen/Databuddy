@@ -369,13 +369,6 @@ exports.Prisma.TwoFactorScalarFieldEnum = {
   userId: 'userId'
 };
 
-exports.Prisma.JwksScalarFieldEnum = {
-  id: 'id',
-  publicKey: 'publicKey',
-  privateKey: 'privateKey',
-  createdAt: 'createdAt'
-};
-
 exports.Prisma.UserPreferenceScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -490,7 +483,6 @@ exports.Prisma.ModelName = {
   Client: 'Client',
   AuditLog: 'AuditLog',
   TwoFactor: 'TwoFactor',
-  Jwks: 'Jwks',
   UserPreference: 'UserPreference'
 };
 
