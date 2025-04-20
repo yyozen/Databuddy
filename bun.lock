@@ -93,12 +93,6 @@
       "version": "1.0.50",
       "dependencies": {
         "@clickhouse/client": "^1.10.1",
-        "@databuddy/auth": "*",
-        "@databuddy/db": "*",
-        "@databuddy/logger": "*",
-        "@databuddy/queue": "*",
-        "@databuddy/redis": "*",
-        "@databuddy/trpc": "*",
         "@highlight-run/hono": "^1.0.3",
         "@hono/node-server": "^1.8.2",
         "@hono/trpc-server": "^0.3.4",
@@ -109,6 +103,7 @@
         "@types/ua-parser-js": "^0.7.39",
         "better-auth": "^1.2.2",
         "chalk": "^5.4.1",
+        "dayjs": "^1.11.13",
         "hono": "^4.7.2",
         "prisma": "^6.4.1",
         "ua-parser-js": "^2.0.2",
@@ -3393,7 +3388,7 @@
 
     "api/@trpc/server": ["@trpc/server@11.0.1", "", { "peerDependencies": { "typescript": ">=5.7.2" } }, "sha512-DZS3+bONLno4oJjHBMrS3xRPtoZsnmBImDH/Mmo1QhaFt3Xp/S0Riu7WU/oofsLTVj2m1UO5LlgLJFumvlSNoQ=="],
 
-    "api/bun-types": ["bun-types@1.2.8", "", { "dependencies": { "@types/node": "*", "@types/ws": "*" } }, "sha512-D5npfxKIGuYe9dTHLK1hi4XFmbMdKYoLrgyd25rrUyCrnyU4ljmQW7vDdonvibKeyU72mZuixIhQ2J+q6uM0Mg=="],
+    "api/bun-types": ["bun-types@1.2.10", "", { "dependencies": { "@types/node": "*" } }, "sha512-b5ITZMnVdf3m1gMvJHG+gIfeJHiQPJak0f7925Hxu6ZN5VKA8AGy4GZ4lM+Xkn6jtWxg5S3ldWvfmXdvnkp3GQ=="],
 
     "are-we-there-yet/readable-stream": ["readable-stream@3.6.2", "", { "dependencies": { "inherits": "^2.0.3", "string_decoder": "^1.1.1", "util-deprecate": "^1.0.1" } }, "sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA=="],
 
