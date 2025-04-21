@@ -1,6 +1,7 @@
 {
   "name": "api",
   "version": "1.0.50",
+  "packageManager": "bun@1.2.3",
   "scripts": {
     "dev": "bun --watch run src/index.ts",
     "clean": "rm -rf dist",
