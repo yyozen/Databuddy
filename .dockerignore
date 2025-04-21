@@ -1,0 +1,54 @@
+# Git / Version Control
+.git
+.gitignore
+.gitattributes
+
+# Node Dependencies (these should be installed *inside* the Docker image)
+# Matches node_modules at the root and in any subdirectory (apps/*, packages/*)
+**/node_modules
+node_modules
+
+# Turborepo Cache & Logs
+.turbo
+*.log
+
+# Build Artifacts (these should be generated *inside* the builder stage)
+# Add any other build output directories your apps/packages might use
+**/dist
+**/build
+**/.next
+**/out
+dist
+build
+.next
+out
+
+# Local Environment Variables & Secrets
+# Avoid baking secrets into the image. Use runtime ENV variables or Docker secrets.
+.env*
+!.env.example
+!.env.template
+
+# Test Reports & Coverage
+coverage
+**/coverage
+lcov.info
+*.lcov
+
+# Operating System / Editor specific files
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+
+# Dependency Debug Logs
+npm-debug.log*
+yarn-error.log*
+yarn-debug.log*
+
+# Optional: TypeScript build info cache (if using)
+*.tsbuildinfo
+
+# Optional: Specific temporary files or folders
+tmp/
+temp/

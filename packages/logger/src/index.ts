@@ -162,3 +162,5 @@
 export function createLogger(name: string) {
   return console;
 }
+
+export default createLogger;
