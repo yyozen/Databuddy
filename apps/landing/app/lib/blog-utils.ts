@@ -35,10 +35,10 @@ export function generateMetaDescription(content: string, maxLength = 160): strin
   const lastSpace = truncated.lastIndexOf(' ');
   
   if (lastSpace === -1) {
-    return truncated + '...';
+    return `${truncated}...`;
   }
   
-  return truncated.substring(0, lastSpace) + '...';
+  return `${truncated.substring(0, lastSpace)}...`;
 }
 
 /**
@@ -74,7 +74,7 @@ export function analyzeKeywordDensity(content: string, keyword: string): number 
  * @param maxLength Maximum length for the title
  * @returns An SEO-optimized title
  */
-export function generateSeoTitle(title: string, siteName: string = 'Databuddy', maxLength: number = 60): string {
+export function generateSeoTitle(title: string, siteName = 'Databuddy', maxLength = 60): string {
   // If title already includes site name, return it if within length
   if (title.includes(siteName) && title.length <= maxLength) {
     return title;
@@ -84,7 +84,7 @@ export function generateSeoTitle(title: string, siteName: string = 'Databuddy', 
   if (title.length > maxLength - 3) {
     const truncated = title.substring(0, maxLength - 3);
     const lastSpace = truncated.lastIndexOf(' ');
-    return lastSpace === -1 ? truncated + '...' : truncated.substring(0, lastSpace) + '...';
+    return lastSpace === -1 ? `${truncated}...` : `${truncated.substring(0, lastSpace)}...`;
   }
   
   // If adding site name would make it too long, return just the title

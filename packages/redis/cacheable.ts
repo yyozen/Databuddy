@@ -45,7 +45,7 @@ export async function getCache<T>(
           const ttl = await getRedisCache().ttl(key);
           if (ttl < staleTime) {
             // Return stale data and revalidate in background
-            fn().then(async (freshData) => {
+            fn().then(async (freshData: T) => {
               if (freshData !== undefined && freshData !== null) {
                 await getRedisCache().setex(key, expireInSec, serialize(freshData));
               }
@@ -130,7 +130,7 @@ export function cacheable<T extends (...args: any) => any>(
             const ttl = await getRedisCache().ttl(key);
             if (ttl < staleTime) {
               // Return stale data and revalidate in background
-              fn(...args).then(async (freshData) => {
+              fn(...args).then(async (freshData: Awaited<ReturnType<T>>) => {
                 if (freshData !== undefined && freshData !== null) {
                   await getRedisCache().setex(key, expireInSec, serialize(freshData));
                 }

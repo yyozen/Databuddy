@@ -599,8 +599,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 6.5.0
-   * Query Engine version: 173f8d54f8d52e692c7e27e72a88314ec7aeff60
+   * Prisma Client JS version: 6.6.0
+   * Query Engine version: f676762280b54cd07c770017ed3711ddde35f37a
    */
   export type PrismaVersion = {
     client: string
@@ -3416,7 +3416,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Email model
-   */ 
+   */
   interface EmailFieldRefs {
     readonly id: FieldRef<"Email", 'String'>
     readonly ipAddress: FieldRef<"Email", 'String'>
@@ -4528,7 +4528,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Contact model
-   */ 
+   */
   interface ContactFieldRefs {
     readonly id: FieldRef<"Contact", 'String'>
     readonly name: FieldRef<"Contact", 'String'>
@@ -5681,7 +5681,7 @@ export namespace Prisma {
 
   /**
    * Fields of the User model
-   */ 
+   */
   interface UserFieldRefs {
     readonly id: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
@@ -6948,7 +6948,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Verification model
-   */ 
+   */
   interface VerificationFieldRefs {
     readonly id: FieldRef<"Verification", 'String'>
     readonly identifier: FieldRef<"Verification", 'String'>
@@ -7995,7 +7995,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Session model
-   */ 
+   */
   interface SessionFieldRefs {
     readonly id: FieldRef<"Session", 'String'>
     readonly expiresAt: FieldRef<"Session", 'DateTime'>
@@ -9185,7 +9185,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Post model
-   */ 
+   */
   interface PostFieldRefs {
     readonly id: FieldRef<"Post", 'String'>
     readonly title: FieldRef<"Post", 'String'>
@@ -10302,7 +10302,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Category model
-   */ 
+   */
   interface CategoryFieldRefs {
     readonly id: FieldRef<"Category", 'String'>
     readonly name: FieldRef<"Category", 'String'>
@@ -11385,7 +11385,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Tag model
-   */ 
+   */
   interface TagFieldRefs {
     readonly id: FieldRef<"Tag", 'String'>
     readonly name: FieldRef<"Tag", 'String'>
@@ -12552,7 +12552,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Website model
-   */ 
+   */
   interface WebsiteFieldRefs {
     readonly id: FieldRef<"Website", 'String'>
     readonly domain: FieldRef<"Website", 'String'>
@@ -13751,7 +13751,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Account model
-   */ 
+   */
   interface AccountFieldRefs {
     readonly id: FieldRef<"Account", 'String'>
     readonly accountId: FieldRef<"Account", 'String'>
@@ -14987,7 +14987,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Subscription model
-   */ 
+   */
   interface SubscriptionFieldRefs {
     readonly id: FieldRef<"Subscription", 'String'>
     readonly organizationId: FieldRef<"Subscription", 'String'>
@@ -16107,7 +16107,7 @@ export namespace Prisma {
 
   /**
    * Fields of the ProjectAccess model
-   */ 
+   */
   interface ProjectAccessFieldRefs {
     readonly id: FieldRef<"ProjectAccess", 'String'>
     readonly projectId: FieldRef<"ProjectAccess", 'String'>
@@ -17265,7 +17265,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Project model
-   */ 
+   */
   interface ProjectFieldRefs {
     readonly id: FieldRef<"Project", 'String'>
     readonly name: FieldRef<"Project", 'String'>
@@ -18436,7 +18436,7 @@ export namespace Prisma {
 
   /**
    * Fields of the EventMeta model
-   */ 
+   */
   interface EventMetaFieldRefs {
     readonly id: FieldRef<"EventMeta", 'String'>
     readonly projectId: FieldRef<"EventMeta", 'String'>
@@ -19528,7 +19528,7 @@ export namespace Prisma {
 
   /**
    * Fields of the Client model
-   */ 
+   */
   interface ClientFieldRefs {
     readonly id: FieldRef<"Client", 'String'>
     readonly name: FieldRef<"Client", 'String'>
@@ -20649,7 +20649,7 @@ export namespace Prisma {
 
   /**
    * Fields of the AuditLog model
-   */ 
+   */
   interface AuditLogFieldRefs {
     readonly id: FieldRef<"AuditLog", 'String'>
     readonly action: FieldRef<"AuditLog", 'String'>
@@ -21718,7 +21718,7 @@ export namespace Prisma {
 
   /**
    * Fields of the TwoFactor model
-   */ 
+   */
   interface TwoFactorFieldRefs {
     readonly id: FieldRef<"TwoFactor", 'String'>
     readonly secret: FieldRef<"TwoFactor", 'String'>
@@ -22799,7 +22799,7 @@ export namespace Prisma {
 
   /**
    * Fields of the UserPreference model
-   */ 
+   */
   interface UserPreferenceFieldRefs {
     readonly id: FieldRef<"UserPreference", 'String'>
     readonly userId: FieldRef<"UserPreference", 'String'>
@@ -23550,7 +23550,7 @@ export namespace Prisma {
 
 
   /**
-   * Field references 
+   * Field references
    */
 
 
@@ -27709,7 +27709,7 @@ export namespace Prisma {
     _min?: NestedEnumProjectStatusFilter<$PrismaModel>
     _max?: NestedEnumProjectStatusFilter<$PrismaModel>
   }
-  export type JsonNullableFilter<$PrismaModel = never> = 
+  export type JsonNullableFilter<$PrismaModel = never> =
     | PatchUndefined<
         Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
         Required<JsonNullableFilterBase<$PrismaModel>>
@@ -27760,7 +27760,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
-  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> = 
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
     | PatchUndefined<
         Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
         Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
@@ -29190,7 +29190,7 @@ export namespace Prisma {
     _min?: NestedEnumProjectStatusFilter<$PrismaModel>
     _max?: NestedEnumProjectStatusFilter<$PrismaModel>
   }
-  export type NestedJsonNullableFilter<$PrismaModel = never> = 
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
     | PatchUndefined<
         Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
         Required<NestedJsonNullableFilterBase<$PrismaModel>>

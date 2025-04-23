@@ -1,4 +1,4 @@
-import { Post as DbPost, Category as DbCategory, Tag as DbTag, User as DbUser } from "@databuddy/db";
+import type { Post as DbPost, Category as DbCategory, Tag as DbTag, User as DbUser } from "@databuddy/db";
 
 // Frontend-specific interfaces that extend the DB types with additional properties
 export interface BlogPost {

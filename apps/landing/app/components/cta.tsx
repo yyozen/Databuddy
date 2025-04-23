@@ -8,50 +8,69 @@ import { Input } from "@/components/ui/input"
 import { useState, useRef, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import FadeIn from "./FadeIn"
-import { subscribeToEarlyAccess } from "@/app/lib/api"
 import { toast } from "sonner"
 import Link from "next/link"
 
-
 export default function CTA() {
-  const [email, setEmail] = useState("")
+  const [wishlistEmail, setWishlistEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
+  const [submitError, setSubmitError] = useState("")
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false)
+  const [userCount, setUserCount] = useState(0)
+  const [submitted, setSubmitted] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setErrorMessage("")
-    
-    try {
-      const result = await subscribeToEarlyAccess(email)
+  useEffect(() => {
+    // Fetch user count on mount
+    fetch("/api/wishlist")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && typeof data.data?.count === "number") {
+          setUserCount(data.data.count)
+        }
+      })
+  }, [])
 
-      if (result.success) {
-        setIsSuccess(true)
-        toast.success("You've been added to the early access list!")
-        setIsSubmitting(false)
-        setEmail("")
-        
-        // Open the survey in a new tab after 3 seconds of successful submission
-        setTimeout(() => {
-          window.open("https://form.typeform.com/to/yXiXwsDD", "_blank")
-        }, 3000)
+  const handleWishlistSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!wishlistEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(wishlistEmail)) {
+      setSubmitError("Please enter a valid email address");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const response = await fetch("/api/wishlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: wishlistEmail }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const isAlreadySubscribed = data.message?.includes("already");
+        setAlreadySubscribed(isAlreadySubscribed);
+
+        if (!isAlreadySubscribed) {
+          setUserCount((prev) => prev + 1);
+        }
+
+        setSubmitted(true);
+        setWishlistEmail("");
       } else {
-        setErrorMessage(result.error || "Failed to join waitlist. Please try again.")
-        toast.error(result.error)
-        setIsSubmitting(false)
+        setSubmitError(data.error || "Failed to join wishlist. Please try again.");
       }
     } catch (error) {
-      setErrorMessage("An unexpected error occurred. Please try again.")
-      toast.error("An unexpected error occurred")
-      setIsSubmitting(false)
+      setSubmitError("An unexpected error occurred. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  // Focus the input when the component mounts or when URL has #cta-form
   useEffect(() => {
     if (window.location.hash === "#cta-form" && inputRef.current) {
       inputRef.current.focus()
@@ -70,26 +89,28 @@ export default function CTA() {
           <p className="text-slate-400 mb-8">
             Join privacy-conscious companies using advanced analytics. Sign up for early access today.
           </p>
-
+          <div className="mb-4 text-sky-400 font-semibold text-base">
+            {userCount} already joined
+          </div>
           <div>
-            {isSuccess ? (
+            {submitted ? (
               <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 mb-8">
-                <h3 className="text-xl font-semibold text-green-400 mb-2">Thank you for joining our waitlist!</h3>
-                <p className="text-slate-300 mb-4">We&apos;ve opened our survey in a new tab. If it didn&apos;t open, please click the button below.</p>
-                <Button 
-                  onClick={() => window.open("https://form.typeform.com/to/yXiXwsDD", "_blank")}
-                  className="bg-green-500 hover:bg-green-600"
-                >
-                  Take Our Quick Survey
-                </Button>
+                <h3 className="text-xl font-semibold text-green-400 mb-2">
+                  {alreadySubscribed ? "You're already on our wishlist!" : "Thank you for joining our wishlist!"}
+                </h3>
+                <p className="text-slate-300 mb-4">
+                  {alreadySubscribed
+                    ? "You have already joined our wishlist. We'll keep you updated!"
+                    : "You're on the list! We'll keep you updated as we launch."}
+                </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 justify-center mb-8" ref={formRef}>
+              <form onSubmit={handleWishlistSubmit} className="flex flex-col sm:flex-row gap-4 justify-center mb-8" ref={formRef}>
                 <Input
                   type="email"
                   placeholder="Enter your work email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={wishlistEmail}
+                  onChange={(e) => setWishlistEmail(e.target.value)}
                   className="max-w-sm bg-black/50 border-slate-800 placeholder:text-slate-500"
                   disabled={isSubmitting}
                   required
@@ -108,14 +129,12 @@ export default function CTA() {
                 </Button>
               </form>
             )}
-            
-            {errorMessage && (
+            {submitError && (
               <div className="text-red-400 mb-6 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                {errorMessage}
+                {submitError}
               </div>
             )}
           </div>
-
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-slate-400">
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-400" />
@@ -130,7 +149,6 @@ export default function CTA() {
               Help shape the product
             </div>
           </div>
-          
           <div className="mt-8">
             <Link 
               href="/demo" 
