@@ -1,4 +1,4 @@
-import { Metadata, ResolvingMetadata } from 'next';
+import type { Metadata, ResolvingMetadata } from 'next';
 import { notFound } from 'next/navigation'
 import Background from '@/app/components/background'
 import Navbar from '@/app/components/navbar'
@@ -10,8 +10,7 @@ import { BlogSidebar } from '@/app/components/blog/sidebar'
 import { calculateReadingTime, generateMetaDescription, generateSeoTitle } from '@/app/lib/blog-utils'
 import { Separator } from '@/components/ui/separator'
 import Script from 'next/script'
-import { BlogPost } from '@/app/lib/blog-types'
-import React from 'react'
+import type React from 'react'
 
 export const revalidate = 3600; // Revalidate every hour (ISR)
 

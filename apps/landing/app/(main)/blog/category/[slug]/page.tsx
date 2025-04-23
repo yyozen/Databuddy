@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Background from '@/app/components/background';
 import Navbar from '@/app/components/navbar';
@@ -7,7 +7,7 @@ import { getAllCategories, getPostsByCategory, getRecentPosts, getAllTags } from
 import { BlogSidebar } from '@/app/components/blog/sidebar';
 import { PostGrid } from '@/app/components/blog/post-grid';
 import { Separator } from '@/components/ui/separator';
-import { BlogCategory } from '@/app/lib/blog-types';
+import type { BlogCategory } from '@/app/lib/blog-types';
 
 export const revalidate = 3600; // Revalidate every hour (ISR)
 

@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Background from '@/app/components/background';
 import Navbar from '@/app/components/navbar';
 import Footer from '@/app/components/footer';
@@ -109,7 +109,7 @@ export default async function ArchivePage({ params }: { params: Promise<{ page?:
                           {/* Page numbers */}
                           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                             // Show pages around current page
-                            let pageNum;
+                            let pageNum: number;
                             if (totalPages <= 5) {
                               pageNum = i + 1;
                             } else if (currentPage <= 3) {

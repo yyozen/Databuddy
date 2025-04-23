@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Background from '@/app/components/background';
 import Navbar from '@/app/components/navbar';
@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Filter, Grid3X3, LayoutList, SortAsc, SortDesc } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { BlogTag } from '@/app/lib/blog-types';
+import type { BlogTag } from '@/app/lib/blog-types';
 
 export const revalidate = 3600; // Revalidate every hour (ISR)
 

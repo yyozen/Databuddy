@@ -2,7 +2,8 @@
 
 import { db } from "@databuddy/db";
 import { unstable_cache } from "next/cache";
-import { BlogPost, BlogCategory, BlogTag, transformPost, transformCategory, transformTag } from "@/app/lib/blog-types";
+import type { BlogPost, BlogCategory, BlogTag } from "@/app/lib/blog-types";
+import { transformPost, transformCategory, transformTag } from "@/app/lib/blog-types";
 
 // Get all published blog posts
 export const getAllPublishedPosts = unstable_cache(

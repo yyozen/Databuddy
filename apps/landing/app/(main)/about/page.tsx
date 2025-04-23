@@ -6,7 +6,7 @@ import Mission from "@/app/components/mission";
 import FadeIn from "@/app/components/FadeIn";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { 
   Users, 
   Shield, 

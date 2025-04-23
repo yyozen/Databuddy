@@ -4,7 +4,7 @@ import Footer from "@/app/components/footer";
 import FadeIn from "@/app/components/FadeIn";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { 
   BookOpen,
   ArrowRight,
@@ -224,6 +224,7 @@ export default async function BlogPage() {
           {/* Structured data for SEO */}
           <script
             type="application/ld+json"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
               __html: JSON.stringify({
                 "@context": "https://schema.org",

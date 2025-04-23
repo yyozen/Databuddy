@@ -1,16 +1,16 @@
-import { MetadataRoute } from 'next'
-import { getAllPosts, getAllCategories, getAllTags } from '@/app/lib/blog-api'
+import type { MetadataRoute } from 'next'
+// import { getAllPosts, getAllCategories, getAllTags } from '@/app/lib/blog-api'
 import { competitors } from '@/app/(main)/compare/data'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.databuddy.cc'
   
   // Fetch all dynamic content
-  const [posts, categories, tags] = await Promise.all([
-    getAllPosts(),
-    getAllCategories(),
-    getAllTags()
-  ])
+  // const [posts, categories, tags] = await Promise.all([
+  //   getAllPosts(),
+  //   getAllCategories(),
+  //   getAllTags()
+  // ])
   
   // Current date for lastModified
   const currentDate = new Date()
@@ -133,29 +133,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   
   // Blog post routes
-  const postRoutes = posts.map((post) => ({
-    url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: new Date(post.updatedAt || post.createdAt),
-    changeFrequency: 'monthly' as const,
-    priority: 0.7,
-  }))
+  // const postRoutes = posts.map((post) => ({
+  //   url: `${baseUrl}/blog/${post.slug}`,
+  //   lastModified: new Date(post.updatedAt || post.createdAt),
+  //   changeFrequency: 'monthly' as const,
+  //   priority: 0.7,
+  // }))
   
-  // Category routes
-  const categoryRoutes = categories.map((category) => ({
-    url: `${baseUrl}/blog/category/${category.slug}`,
-    lastModified: currentDate,
-    changeFrequency: 'weekly' as const,
-    priority: 0.6,
-  }))
+  // // Category routes
+  // const categoryRoutes = categories.map((category) => ({
+  //   url: `${baseUrl}/blog/category/${category.slug}`,
+  //   lastModified: currentDate,
+  //   changeFrequency: 'weekly' as const,
+  //   priority: 0.6,
+  // }))
   
-  // Tag routes
-  const tagRoutes = tags.map((tag) => ({
-    url: `${baseUrl}/blog/tag/${tag.slug}`,
-    lastModified: currentDate,
-    changeFrequency: 'weekly' as const,
-    priority: 0.5,
-  }))
+  // // Tag routes
+  // const tagRoutes = tags.map((tag) => ({
+  //   url: `${baseUrl}/blog/tag/${tag.slug}`,
+  //   lastModified: currentDate,
+  //   changeFrequency: 'weekly' as const,
+  //   priority: 0.5,
+  // }))
   
   // Combine all routes
-  return [...staticRoutes, ...comparisonRoutes, ...postRoutes, ...categoryRoutes, ...tagRoutes]
+  return [...staticRoutes, ...comparisonRoutes]
 } 
