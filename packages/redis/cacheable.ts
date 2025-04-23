@@ -49,7 +49,7 @@ export async function getCache<T>(
               if (freshData !== undefined && freshData !== null) {
                 await getRedisCache().setex(key, expireInSec, serialize(freshData));
               }
-            }).catch(error => {
+            }).catch((error: unknown) => {
               logger.error(`Background revalidation failed for key ${key}:`, error);
             });
           }
@@ -63,7 +63,7 @@ export async function getCache<T>(
         await getRedisCache().setex(key, expireInSec, serialize(data));
       }
       return data;
-    } catch (error) {
+    } catch (error: unknown) {
       retries++;
       if (retries === maxRetries) {
         logger.error(`Cache error for key ${key} after ${maxRetries} retries:`, error);
@@ -134,7 +134,7 @@ export function cacheable<T extends (...args: any) => any>(
                 if (freshData !== undefined && freshData !== null) {
                   await getRedisCache().setex(key, expireInSec, serialize(freshData));
                 }
-              }).catch(error => {
+              }).catch((error: unknown) => {
                 logger.error(`Background revalidation failed for function ${fn.name}:`, error);
               });
             }
@@ -148,7 +148,7 @@ export function cacheable<T extends (...args: any) => any>(
           await getRedisCache().setex(key, expireInSec, serialize(result));
         }
         return result;
-      } catch (error) {
+      } catch (error: unknown) {
         retries++;
         if (retries === maxRetries) {
           logger.error(`Cache error for function ${fn.name} after ${maxRetries} retries:`, error);

@@ -22,6 +22,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "../dashboard/app/dashboard/components/add-website-dialog.tsx", "../dashboard/app/dashboard/components/add-website-form.tsx", "../dashboard/app/dashboard/components/websites-list.tsx", "../dashboard/components/blog-image-upload.tsx", "../dashboard/components/image-upload.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
