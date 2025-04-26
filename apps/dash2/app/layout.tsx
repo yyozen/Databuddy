@@ -55,7 +55,7 @@ export default function RootLayout({
       <Script 
         src={isLocalhost ? "http://localhost:3000/databuddy.js" : "https://app.databuddy.cc/databuddy.js"}
         data-client-id="5ced32e5-0219-4e75-a18a-ad9826f85698"
-        data-api-url={isLocalhost ? "http://localhost:4000" : "https://api.app.databuddy.cc"}
+        data-api-url={isLocalhost ? "http://localhost:4000" : "https://api.databuddy.cc"}
         data-track-screen-views="true"
         data-track-performance="true"
         data-track-web-vitals="true"

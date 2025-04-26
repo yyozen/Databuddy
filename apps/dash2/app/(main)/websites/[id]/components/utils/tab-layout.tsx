@@ -42,11 +42,12 @@ export function TabLayout({
 }
 
 export function TabLoadingSkeleton() {
+  const loadingSkeletonIds = ['loading-skeleton-1', 'loading-skeleton-2', 'loading-skeleton-3', 'loading-skeleton-4'];
   return (
     <div className="space-y-4 pt-2">
       <div className="grid grid-cols-4 gap-2">
-        {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className={`h-24 w-full ${BORDER_RADIUS.card}`} />
+        {loadingSkeletonIds.map((id) => (
+          <Skeleton key={id} className={`h-24 w-full ${BORDER_RADIUS.card}`} />
         ))}
       </div>
       <Skeleton className={`h-64 w-full ${BORDER_RADIUS.container}`} />
