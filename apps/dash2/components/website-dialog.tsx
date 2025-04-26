@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -35,9 +35,23 @@ import {
 import type { Website } from "@/hooks/use-websites";
 import { useWebsitesStore } from "@/stores/use-websites-store";
 
+// Helper to normalize a domain (remove protocol, www, and trailing slash)
+function normalizeDomain(domain: string): string {
+  // Remove protocol (http://, https://)
+  let normalized = domain.trim().toLowerCase();
+  normalized = normalized.replace(/^(https?:\/\/)?(www\.)?/i, '');
+  
+  // Remove trailing slash if present
+  normalized = normalized.replace(/\/+$/, '');
+  
+  return normalized;
+}
+
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  domain: z.string().min(1, "Domain is required"),
+  domain: z.string()
+    .min(1, "Domain is required")
+    .transform(val => normalizeDomain(val)), // Normalize before validation
   domainId: z.string().optional(),
 });
 
@@ -53,6 +67,11 @@ interface WebsiteDialogProps {
     verificationStatus: "PENDING" | "VERIFIED" | "FAILED";
   }>;
   trigger?: React.ReactNode;
+  initialValues?: {
+    name?: string;
+    domain?: string;
+    domainId?: string;
+  } | null;
 }
 
 export function WebsiteDialog({
@@ -63,26 +82,65 @@ export function WebsiteDialog({
   isLoading,
   verifiedDomains = [],
   trigger,
+  initialValues = null,
 }: WebsiteDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const setSelectedWebsite = useWebsitesStore(state => state.setSelectedWebsite);
+  const websites = useWebsitesStore(state => state.websites);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: website?.name || "",
-      domain: website?.domain || "",
-      domainId: website?.domainId || undefined,
+      name: initialValues?.name || website?.name || "",
+      domain: initialValues?.domain || website?.domain || "",
+      domainId: initialValues?.domainId || website?.domainId || undefined,
     },
   });
+
+  // Reset form when dialog opens or initialValues/website changes
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: initialValues?.name || website?.name || "",
+        domain: initialValues?.domain || website?.domain || "",
+        domainId: initialValues?.domainId || website?.domainId || undefined,
+      });
+    }
+  }, [form, initialValues, website, open]);
 
   const handleClose = () => {
     setSelectedWebsite(null);
     onOpenChange(false);
-    form.reset();
+    // Don't reset form here, we'll do it when the dialog opens next time
   };
 
   const handleSubmit = async (data: z.infer<typeof formSchema>) => {
+    // Make domainId required if verifiedDomains are available
+    if (verifiedDomains.length > 0 && !data.domainId) {
+      form.setError('domainId', { 
+        type: 'required', 
+        message: 'Please select a verified domain' 
+      });
+      return;
+    }
+    
+    // Check for duplicate domains (normalized)
+    if (!website) { // Only check when creating new website
+      const normalizedInput = normalizeDomain(data.domain);
+      const domainExists = websites.some(w => {
+        const normalizedExisting = normalizeDomain(w.domain);
+        return normalizedExisting === normalizedInput;
+      });
+      
+      if (domainExists) {
+        form.setError('domain', {
+          type: 'manual',
+          message: 'A website with this domain already exists'
+        });
+        return;
+      }
+    }
+    
     setIsSubmitting(true);
     try {
       await onSubmit(data);
@@ -137,9 +195,18 @@ export function WebsiteDialog({
                       {...field} 
                       disabled={isEditing} 
                       className={isEditing ? "bg-muted" : ""}
+                      onChange={(e) => {
+                        // Pass raw value to form, normalization happens in schema
+                        field.onChange(e.target.value);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
+                  {!isEditing && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter domain without protocol (e.g., example.com)
+                    </p>
+                  )}
                   {isEditing && (
                     <p className="text-xs text-muted-foreground mt-1">
                       Domain cannot be changed after creation. Visit the Domains page to manage your domains.
@@ -156,8 +223,17 @@ export function WebsiteDialog({
                   <FormItem>
                     <FormLabel>Verified Domain</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Find the selected domain and update the domain field
+                        const selectedDomain = verifiedDomains.find(d => d.id === value);
+                        if (selectedDomain) {
+                          // Use normalized domain name
+                          form.setValue('domain', normalizeDomain(selectedDomain.name));
+                        }
+                      }}
                       defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -167,7 +243,7 @@ export function WebsiteDialog({
                       <SelectContent>
                         {verifiedDomains.map((domain) => (
                           <SelectItem key={domain.id} value={domain.id}>
-                            {domain.name} ({domain.verificationStatus})
+                            {domain.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

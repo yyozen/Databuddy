@@ -20,6 +20,18 @@ const getUser = cache(async () => {
   return session.user;
 });
 
+// Helper to normalize a domain (remove protocol, www, and trailing slash)
+function normalizeDomain(domain: string): string {
+  // Remove protocol (http://, https://)
+  let normalized = domain.trim().toLowerCase();
+  normalized = normalized.replace(/^(https?:\/\/)?(www\.)?/i, '');
+  
+  // Remove trailing slash if present
+  normalized = normalized.replace(/\/+$/, '');
+  
+  return normalized;
+}
+
 // Create website with proper revalidation
 export async function createWebsite(data: { 
   domain: string; 
@@ -34,16 +46,26 @@ export async function createWebsite(data: {
   try {
     console.log(`[Website] Creating: ${data.name} (${data.domain})`);
     
-    // Check if website already exists
+    // Normalize the domain to prevent duplicates with different formats
+    const normalizedDomain = normalizeDomain(data.domain);
+    
+    // Check if website already exists with normalized domain
     const existingWebsite = await db.website.findFirst({
       where: {
-        domain: data.domain,
+        OR: [
+          { domain: normalizedDomain },
+          { domain: `www.${normalizedDomain}` },
+          { domain: `http://${normalizedDomain}` },
+          { domain: `https://${normalizedDomain}` },
+          { domain: `http://www.${normalizedDomain}` },
+          { domain: `https://www.${normalizedDomain}` }
+        ]
       }
     });
 
     if (existingWebsite) {
-      console.log(`[Website] Already exists: ${data.domain}`);
-      return { error: "Website already exists" };
+      console.log(`[Website] Already exists: ${data.domain} (normalized: ${normalizedDomain})`);
+      return { error: "Website already exists with this domain" };
     }
 
     // Determine ownership (user or project)
@@ -75,9 +97,10 @@ export async function createWebsite(data: {
       }
     }
 
+    // Create website with normalized domain
     const website = await db.website.create({
       data: {
-        domain: data.domain,
+        domain: normalizedDomain, // Store normalized domain
         name: data.name,
         domainId: data.domainId, // Link to verified domain if provided
         ...ownerData
@@ -243,13 +266,20 @@ export async function updateWebsite(id: string, data: {
         return { error: "Domain not found or not verified" };
       }
     }
+
+    // If domain is provided, normalize it
+    const updateData: any = {
+      name: data.name,
+      domainId: data.domainId
+    };
+
+    if (data.domain) {
+      updateData.domain = normalizeDomain(data.domain);
+    }
     
     const updated = await db.website.update({
       where: { id },
-      data: {
-        name: data.name,
-        domainId: data.domainId
-      }
+      data: updateData
     });
 
     console.log(`[Website] Updated: ${updated.id}`);

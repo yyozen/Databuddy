@@ -18,11 +18,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WebsiteDialog } from "@/components/website-dialog";
-import { getWebsiteById, updateWebsite, regenerateVerificationToken, checkDomainVerification } from "@/app/actions/websites";
+import { getWebsiteById, updateWebsite } from "@/app/actions/websites";
+import { checkDomainVerification, regenerateVerificationToken } from "@/app/actions/domains";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/app/providers";
 import { format, subDays, subHours, differenceInDays } from "date-fns";
-import { DateRange as DayPickerRange } from "react-day-picker";
+import type { DateRange as DayPickerRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,8 +40,8 @@ import { WebsiteProfilesTab } from "./components/tabs/profiles-tab";
 import { WebsiteErrorsTab } from "./components/tabs/errors-tab";
 
 // Shared types
-import { DateRange as BaseDateRange } from "@/hooks/use-analytics";
-import { FullTabProps, WebsiteDataTabProps } from "./components/utils/types";
+import type { DateRange as BaseDateRange } from "@/hooks/use-analytics";
+import type { FullTabProps, WebsiteDataTabProps } from "./components/utils/types";
 import React from "react";
 
 // Add type for tab ID
@@ -190,25 +191,88 @@ function WebsiteDetailsPage() {
     }
   }, [isError, error]);
 
-  // Common props for tab components
-  const tabProps: FullTabProps = {
-    websiteId: id as string,
-    dateRange: memoizedDateRange,
-    websiteData: data,
-    isRefreshing: isRefreshing,
-    setIsRefreshing: (value: boolean) => {
-      setIsRefreshing(value);
+  // After the data query, check if the website is verified:
+  const isLocalhost = data?.domain?.includes('localhost') || data?.domain?.includes('127.0.0.1');
+  const isVerified = isLocalhost || data?.verifiedDomain?.verificationStatus === "VERIFIED";
+  
+  // Modified implementation of regenerateToken to fix typing issues
+  const regenerateToken = async (websiteId: string) => {
+    setIsRegenerating(true);
+    try {
+      const result = await regenerateVerificationToken(websiteId);
+      if (result.error) {
+        toast.error(result.error);
+        return { error: result.error };
+      }
+      
+      // Refetch website data
+      queryClient.invalidateQueries({ queryKey: ['website', id] });
+      toast.success("Verification token regenerated");
+      
+      // Add missing domain property
+      return { 
+        data: result.data ? {
+          ...result.data,
+          domain: data?.domain || ''
+        } : undefined 
+      };
+    } catch (error) {
+      console.error('Error regenerating token:', error);
+      toast.error("Failed to regenerate token");
+      return { error: "Failed to regenerate token" };
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+  
+  // Replace the verifyDomain function with checkDomainVerification:
+  const verifyDomain = async (websiteId: string) => {
+    try {
+      const result = await checkDomainVerification(websiteId);
+      
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      
+      if (result.data?.verified) {
+        // Refetch website data
+        queryClient.invalidateQueries({ queryKey: ['website', id] });
+        toast.success(result.data.message || "Domain verified successfully");
+      } else {
+        toast.error(result.data?.message || "Domain verification failed");
+      }
+    } catch (error) {
+      console.error('Error verifying domain:', error);
+      toast.error("Failed to verify domain");
     }
   };
 
-  // Props for settings tab which doesn't use dateRange
-  const settingsProps: WebsiteDataTabProps = {
+  // Use useRef for stable function references
+  const verifyDomainRef = useRef((id: string) => verifyDomain(id));
+  const regenerateTokenRef = useRef((id: string) => regenerateToken(id));
+
+  // Lazy load the verification dialog
+  const LazyVerificationDialog = React.memo(VerificationDialog);
+
+  // Create stable versions of the props objects before using in dependencies
+  const stableTabProps = useMemo(() => ({
+    websiteId: id as string,
+    dateRange: memoizedDateRange,
+    websiteData: data,
+    isRefreshing,
+    setIsRefreshing: (value: boolean) => {
+      setIsRefreshing(value);
+    }
+  }), [id, memoizedDateRange, data, isRefreshing]);
+
+  const stableSettingsProps = useMemo(() => ({
     websiteId: id as string,
     dateRange: memoizedDateRange,
     websiteData: data
-  };
+  }), [id, memoizedDateRange, data]);
 
-  // Function to render tab content
+  // Function to render tab content with stable props
   const renderTabContent = useCallback((tabId: TabId) => {
     // Only render if this tab is active
     if (tabId !== activeTab) return null;
@@ -216,23 +280,23 @@ function WebsiteDetailsPage() {
     // Choose which component to render
     switch (tabId) {
       case "overview":
-        return <WebsiteOverviewTab key={`overview-${websiteIdRef.current}-${dateRange.start_date}`} {...tabProps} />;
+        return <WebsiteOverviewTab key={`overview-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
       case "audience":
-        return <WebsiteAudienceTab key={`audience-${websiteIdRef.current}-${dateRange.start_date}`} {...tabProps} />;
+        return <WebsiteAudienceTab key={`audience-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
       case "content":
-        return <WebsiteContentTab key={`content-${websiteIdRef.current}-${dateRange.start_date}`} {...tabProps} />;
+        return <WebsiteContentTab key={`content-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
       case "performance":
-        return <WebsitePerformanceTab key={`performance-${websiteIdRef.current}-${dateRange.start_date}`} {...tabProps} />;
+        return <WebsitePerformanceTab key={`performance-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
       case "settings":
-        return <WebsiteSettingsTab key={`settings-${websiteIdRef.current}`} {...settingsProps} />;
+        return <WebsiteSettingsTab key={`settings-${websiteIdRef.current}`} {...stableSettingsProps} />;
       case "sessions":
-        return <WebsiteSessionsTab key={`sessions-${websiteIdRef.current}-${dateRange.start_date}`} {...tabProps} />;
+        return <WebsiteSessionsTab key={`sessions-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
       case "profiles":
-        return <WebsiteProfilesTab key={`profiles-${websiteIdRef.current}-${dateRange.start_date}`} {...tabProps} />;
+        return <WebsiteProfilesTab key={`profiles-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
       case "errors":
-        return <WebsiteErrorsTab key={`errors-${websiteIdRef.current}-${dateRange.start_date}`} {...tabProps} />;
+        return <WebsiteErrorsTab key={`errors-${websiteIdRef.current}-${dateRange.start_date}`} {...stableTabProps} />;
     }
-  }, [activeTab, tabProps, settingsProps, dateRange.start_date]);
+  }, [activeTab, stableTabProps, stableSettingsProps, dateRange.start_date]);
 
   // Define all tabs
   const tabs: TabDefinition[] = [
@@ -276,71 +340,6 @@ function WebsiteDetailsPage() {
     }
   };
 
-  // After the data query,  check if the website is verified:
-  const isLocalhost = data?.domain?.includes('localhost') || data?.domain?.includes('127.0.0.1');
-  const isVerified = isLocalhost || data?.verificationStatus === "VERIFIED";
-  
-  // Add regenerateToken function
-  const regenerateToken = async (websiteId: string) => {
-    setIsRegenerating(true);
-    try {
-      const result = await regenerateVerificationToken(websiteId);
-      if (result.error) {
-        toast.error(result.error);
-        return { error: result.error };
-      }
-      
-      // Refetch website data
-      queryClient.invalidateQueries({ queryKey: ['website', id] });
-      toast.success("Verification token regenerated");
-      return { data: result.data };
-    } catch (error) {
-      console.error('Error regenerating token:', error);
-      toast.error("Failed to regenerate token");
-      return { error: "Failed to regenerate token" };
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
-  
-  // Replace the verifyDomain function with checkDomainVerification:
-  const verifyDomain = async (websiteId: string) => {
-    try {
-      const result = await checkDomainVerification(websiteId);
-      
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-      
-      if (result.data?.verified) {
-        // Refetch website data
-        queryClient.invalidateQueries({ queryKey: ['website', id] });
-        toast.success(result.data.message || "Domain verified successfully");
-      } else {
-        toast.error(result.data?.message || "Domain verification failed");
-      }
-    } catch (error) {
-      console.error('Error verifying domain:', error);
-      toast.error("Failed to verify domain");
-    }
-  };
-
-  // Then, in the VerificationDialog section, memoize the callbacks to prevent recreating on each render
-  const memoizedVerifyDomain = useCallback((id: string) => verifyDomain(id), []);
-  const memoizedRegenerateToken = useCallback(async (id: string) => {
-    try {
-      const result = await regenerateToken(id);
-      return result;
-    } catch (error) {
-      console.error('Error regenerating token:', error);
-      return { error: "Failed to regenerate token" };
-    }
-  }, []);
-
-  // Lazy load the verification dialog
-  const LazyVerificationDialog = React.memo(VerificationDialog);
-
   if (isLoading) {
     return (
       <div className="p-3">
@@ -359,8 +358,8 @@ function WebsiteDetailsPage() {
         </div>
         <Skeleton className="h-9 w-full max-w-xs mb-4" />
         <div className="grid grid-cols-4 gap-2 mb-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full" />
+          {[1, 2, 3, 4].map((num) => (
+            <Skeleton key={`loading-skeleton-${num}`} className="h-24 w-full" />
           ))}
         </div>
         <Skeleton className="h-64 w-full mb-4" />
@@ -472,8 +471,8 @@ function WebsiteDetailsPage() {
           website={data}
           open={showVerificationDialog}
           onOpenChange={setShowVerificationDialog}
-          onVerify={memoizedVerifyDomain}
-          onRegenerateToken={memoizedRegenerateToken}
+          onVerify={verifyDomainRef.current}
+          onRegenerateToken={regenerateTokenRef.current}
           isVerifying={false}
           isRegenerating={isRegenerating}
         />
@@ -680,13 +679,13 @@ function WebsiteDetailsPage() {
   );
 } 
 
-// Loading skeleton for tabs
+// Fix TabLoadingSkeleton array key issues
 function TabLoadingSkeleton() {
   return (
     <div className="space-y-4 pt-2">
       <div className="grid grid-cols-4 gap-2">
-        {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full" />
+        {[1, 2, 3, 4].map((num) => (
+          <Skeleton key={`tab-loading-skeleton-${num}`} className="h-24 w-full" />
         ))}
       </div>
       <Skeleton className="h-64 w-full" />

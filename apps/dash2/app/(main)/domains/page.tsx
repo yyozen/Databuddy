@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 type Domain = {
   id: string;
@@ -61,6 +62,7 @@ export default function DomainsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedDomainId, setExpandedDomainId] = useState<string | null>(null);
+  const router = useRouter();
 
   // Helper function to clean domain input
   const cleanDomainInput = (input: string): string => {
@@ -259,6 +261,10 @@ export default function DomainsPage() {
     return filtered;
   };
 
+  const handleCreateWebsite = (domainId: string, domainName: string) => {
+    router.push(`/websites?new=true&domain=${domainName}&domainId=${domainId}`);
+  };
+
   const renderDomainRow = (domain: Domain) => {
     const domainIsVerifying = isVerifying[domain.id] || false;
     const domainIsDeleting = isDeleting[domain.id] || false;
@@ -337,6 +343,27 @@ export default function DomainsPage() {
                   </Tooltip>
                 </TooltipProvider>
               </>
+            )}
+            
+            {domain.verificationStatus === "VERIFIED" && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => handleCreateWebsite(domain.id, domain.name)}
+                      className="text-green-600 hover:text-green-800"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Website
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Create website with this domain</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             
             <TooltipProvider>
