@@ -3,9 +3,6 @@
 FROM oven/bun:1-slim AS base
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-
 # ---- Builder ----
 # Stage to build the application using the full workspace context.
 FROM base AS builder
