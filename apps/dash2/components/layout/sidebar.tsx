@@ -58,14 +58,6 @@ const websiteNavigation: NavigationSection[] = [
       { name: "Profiles", icon: <Users className="h-4 w-4" />, href: "/profiles" },
     ],
   },
-  {
-    title: "Settings",
-    items: [
-      { name: "General", icon: <Settings className="h-4 w-4" />, href: "/settings" },
-      { name: "Team", icon: <Users className="h-4 w-4" />, href: "/team" },
-      { name: "Integrations", icon: <Plug className="h-4 w-4" />, href: "/integrations" },
-    ],
-  },
 ];
 
 export function Sidebar() {
