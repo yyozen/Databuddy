@@ -8,6 +8,8 @@ export interface DatabuddyConfig {
   clientSecret?: string;
   /** Optional: Custom API URL (defaults to https://api.databuddy.cc) */
   apiUrl?: string;
+  /** Optional: Custom script URL (defaults to https://app.databuddy.cc/databuddy.js) */
+  scriptUrl?: string;
   /** Optional: SDK name (defaults to 'web') */
   sdk?: string;
   /** Optional: SDK version (defaults to '1.0.0') */

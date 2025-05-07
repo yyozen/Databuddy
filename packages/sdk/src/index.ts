@@ -1,5 +1,6 @@
 import type { DatabuddyConfig, EventProperties, PageViewProperties } from './types';
 
+
 /**
  * Databuddy SDK for web analytics tracking
  * 
@@ -24,8 +25,9 @@ export class Databuddy {
    * @param config - Configuration options for the SDK
    */
   constructor(config: DatabuddyConfig) {
-    this.config = {
+    const defaults = {
       apiUrl: 'https://api.databuddy.cc',
+      scriptUrl: 'https://app.databuddy.cc/databuddy.js',
       sdk: 'web',
       sdkVersion: '1.0.0',
       trackScreenViews: true,
@@ -35,7 +37,11 @@ export class Databuddy {
       enableBatching: true,
       batchSize: 20,
       batchTimeout: 5000,
-      ...config
+    };
+
+    this.config = {
+      ...defaults,
+      ...config,
     };
   }
 
@@ -49,9 +55,8 @@ export class Databuddy {
     if (typeof window === 'undefined') return;
 
     const script = document.createElement('script');
-    script.src = `${this.config.apiUrl?.replace('api.', '')}/databuddy.js`;
-    script.async = true;
-    
+    script.src = `${this.config.scriptUrl}`;
+
     // Set data attributes from config
     for (const [key, value] of Object.entries(this.config)) {
       if (value !== undefined) {
@@ -127,3 +132,6 @@ declare global {
     };
   }
 } 
+
+export * from './DatabuddyProvider';
+export * from './types';

@@ -107,11 +107,11 @@ export default function RootLayout({
         data-api-url={isLocalhost ? process.env.NEXT_PUBLIC_API_URL : "https://api.databuddy.cc"}
         data-track-screen-views="true"
         data-track-performance="true"
-        data-track-web-vitals="true"
+        data-track-web-vitals="false"
         data-track-errors="true"
-        data-enable-batching="true"
-        data-batch-size="20"
-        data-batch-timeout="5000"
+        // data-enable-batching="true"
+        // data-batch-size="20"
+        // data-batch-timeout="5000"
         strategy="afterInteractive"
       />
       <body className="antialiased h-full min-h-screen bg-background text-foreground flex flex-col">

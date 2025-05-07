@@ -2,19 +2,7 @@
   "name": "@databuddy/sdk",
   "version": "1.0.0",
   "description": "Official Databuddy Analytics SDK",
-  "main": "dist/index.js",
-  "module": "dist/index.esm.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "rollup -c",
-    "test": "jest",
-    "lint": "eslint src --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "prepare": "bun run build"
-  },
+  "main": "src/index.ts",
   "keywords": [
     "analytics",
     "tracking",
