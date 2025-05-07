@@ -70,7 +70,7 @@ export function formatAvgSessionDuration(sessionDuration: number): string {
  * @param suffix Optional suffix to add (default is 'ms')
  * @returns Formatted metric string
  */
-export function formatPerformanceMetric(value: number, suffix: string = 'ms'): string {
+export function formatPerformanceMetric(value: number, suffix = 'ms'): string {
   if (!value || Number.isNaN(value)) {
     return `0${suffix}`;
   }

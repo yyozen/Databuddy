@@ -1,7 +1,6 @@
 import { cacheable } from '@databuddy/redis';
 import { z } from 'zod';
-
-const logger = console;
+import { logger } from '../lib/logger';
 
 // Helper function to access environment variables in both Node.js and Cloudflare Workers
 function getEnv(key: string) {

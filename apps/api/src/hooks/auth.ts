@@ -154,8 +154,8 @@ export const websiteAuthHook = (): MiddlewareHandler<{
       
       // Validate origin against domain if origin header is present
       if (origin && !isValidOrigin(origin, website.domain)) {
-        logger.warn({
-          message: 'Origin mismatch',
+        logger.warn('Origin mismatch', { 
+          name: 'websiteAuthHook',
           clientId, 
           origin, 
           expectedDomain: website.domain 
