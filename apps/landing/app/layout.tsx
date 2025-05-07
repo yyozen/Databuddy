@@ -83,7 +83,7 @@ export default function RootLayout({
         <NextTopLoader showSpinner={false} />
         <Script 
         src="https://app.databuddy.cc/databuddy.js"
-        data-client-id="3ed1fce1-5a56-4cb6-a977-66864f6d18e3"
+        data-client-id="OXmNQsViBT-FOS_wZCTHc"
         data-api-url="https://api.databuddy.cc"
         data-track-screen-views="true"
         data-track-performance="true"
