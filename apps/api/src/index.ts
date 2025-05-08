@@ -99,14 +99,9 @@ app.notFound((c) => {
     headers: { 'Content-Type': 'application/json' }
   });
 });
-// Helper function to access environment variables in both Node.js and Cloudflare Workers
-function getEnv(key: string) {
-  return process.env[key] || 
-         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.[key] : null) || 
-         (typeof globalThis !== 'undefined' && key in globalThis ? (globalThis as Record<string, any>)[key] : null);
-}
+
 
 export default {
   fetch: app.fetch,
-  port: getEnv('PORT') || 3001,
+  port: process.env.PORT || 4001,
 };
