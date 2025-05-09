@@ -45,6 +45,7 @@ export function isLocalhost(domain: string): boolean {
     // Check domain directly
     return hostnamePattern.test(domain);
   } catch (error) {
+    console.error('Error checking if domain is localhost', { domain, error });
     logger.error('Error checking if domain is localhost', { domain, error });
     return false;
   }
@@ -68,6 +69,13 @@ export function isValidOrigin(origin: string, domain: string): boolean {
     const originUrl = new URL(origin);
     let hostname = originUrl.hostname + (originUrl.port ? `:${originUrl.port}` : '');
     hostname = hostname.replace(/^www\./, '');
+
+    console.log('isValidOrigin check', {
+      originalOrigin: origin,
+      normalizedOriginHostname: hostname,
+      originalDbDomain: domain,
+      normalizedDbDomainHostname: domainHostname
+    });
     
     logger.debug('isValidOrigin check', {
       originalOrigin: origin,
@@ -86,6 +94,7 @@ export function isValidOrigin(origin: string, domain: string): boolean {
     
     return false;
   } catch (error) {
+    console.error('Invalid origin format for isValidOrigin', { origin, domain, error });
     logger.error('Invalid origin format for isValidOrigin', { origin, domain, error });
     return false;
   }
@@ -109,6 +118,7 @@ export const websiteAuthHook = (): MiddlewareHandler<{
       
       // If still no client ID, return 401
       if (!clientId) {
+        console.error('Missing client ID', { url: c.req.url });
         logger.warn('Missing client ID', { url: c.req.url });
         return c.json({ error: 'Missing or invalid client ID' }, 401);
       }
@@ -134,18 +144,34 @@ export const websiteAuthHook = (): MiddlewareHandler<{
       
       // If website doesn't exist, reject
       if (!website) {
+        console.error('Unknown website ID', { 
+          name: 'websiteAuthHook',
+          clientId, 
+          origin
+        });
         logger.warn('Unknown website ID', { clientId });
         return c.json({ error: 'Invalid client ID' }, 401);
       }
       
       // If website is inactive, reject
       if (website.status !== 'ACTIVE') {
+        console.error('Inactive website', { 
+          name: 'websiteAuthHook',
+          clientId, 
+          status: website.status 
+        });
         logger.warn('Inactive website', { clientId, status: website.status });
         return c.json({ error: 'Website is not active' }, 403);
       }
       
       // Validate origin against domain if origin header is present
       if (origin && !isValidOrigin(origin, website.domain)) {
+        console.error('Origin mismatch', { 
+          name: 'websiteAuthHook',
+          clientId, 
+          origin, 
+          expectedDomain: website.domain 
+        });
         logger.warn('Origin mismatch', { 
           name: 'websiteAuthHook',
           clientId, 
@@ -170,6 +196,7 @@ export const websiteAuthHook = (): MiddlewareHandler<{
       
       await next();
     } catch (error) {
+      console.error('Error validating website', { clientId, origin, error: error instanceof Error ? error.message : String(error) });
       logger.error('Error validating website', { clientId, origin, error: error instanceof Error ? error.message : String(error) });
       return c.json({ error: 'Authentication error', message: error instanceof Error ? error.message : 'Unknown error' }, 500);
     }
