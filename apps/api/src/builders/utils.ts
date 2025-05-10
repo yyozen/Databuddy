@@ -34,11 +34,13 @@ export function buildCommonOrderBy(fields: Record<string, string>) {
 export function parseReferrers(
   referrers: Array<{ referrer: string; visitors: number; pageviews: number }>,
   filterInternal = false,
-  isInternalReferrerFn?: (referrer: string) => boolean
+  isInternalReferrerFn?: (referrer: string, websiteDomain?: string) => boolean,
+  websiteDomain?: string
 ) {
   // First map all referrers with parsed data
   const parsedReferrers = referrers.map(ref => {
-    const parsed = parseReferrer(ref.referrer);
+    // Pass websiteDomain to parseReferrer
+    const parsed = parseReferrer(ref.referrer, websiteDomain);
     return {
       ...ref,
       type: parsed.type,
@@ -51,7 +53,8 @@ export function parseReferrers(
   if (filterInternal && isInternalReferrerFn) {
     return parsedReferrers.filter(ref => {
       // Keep direct traffic and external referrers
-      return ref.type === 'direct' || !isInternalReferrerFn(ref.referrer);
+      // Also pass websiteDomain to isInternalReferrerFn
+      return ref.type === 'direct' || !isInternalReferrerFn(ref.referrer, websiteDomain);
     });
   }
   

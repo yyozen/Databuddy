@@ -140,6 +140,15 @@ export function WebsiteOverviewTab({
     setAdjustedDateRange(newAdjustedRange);
   }, [dateRange]);
 
+  // Define the structure for device type entries from the API
+  interface DeviceTypeEntry {
+    device_type: string;
+    device_brand: string;
+    device_model: string;
+    visitors: number;
+    pageviews: number;
+  }
+
   // Combine loading states into one - component is loading if:
   // 1. The API is loading
   // 2. We are refreshing data
@@ -151,10 +160,33 @@ export function WebsiteOverviewTab({
   }
 
   // Format data for UI
-  const deviceData = useMemo(() => 
-    formatDistributionData(analytics.device_types, 'device_type'), 
-    [analytics.device_types]
-  );
+  const deviceData = useMemo(() => { 
+    if (!analytics.device_types?.length) return [];
+
+    const processedDeviceData = (analytics.device_types as DeviceTypeEntry[]).map((item) => {
+      let name = item.device_type || 'Unknown Type';
+      const brand = item.device_brand || 'Unknown';
+      const model = item.device_model || 'Unknown';
+
+      if (brand !== 'Unknown' && brand.toLowerCase() !== 'generic') {
+        name += ` - ${brand}`;
+        if (model !== 'Unknown' && model.toLowerCase() !== brand.toLowerCase()) {
+          name += ` ${model}`;
+        }
+      } else if (model !== 'Unknown') {
+        // If brand is Unknown/generic but model is known
+        name += ` - ${model}`;
+      }
+      return {
+        ...item, // Keep original fields like visitors, pageviews
+        descriptiveName: name 
+      };
+    });
+    
+    // Assuming formatDistributionData groups by the provided key ('descriptiveName')
+    // and sums a metric like 'visitors' or 'count' from the items.
+    return formatDistributionData(processedDeviceData, 'descriptiveName');
+  }, [analytics.device_types]);
 
   const browserData = useMemo(() => 
     groupBrowserData(analytics.browser_versions), 

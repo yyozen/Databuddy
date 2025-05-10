@@ -54,6 +54,7 @@ import {
   updateEventsWithTodayData,
   mergeTodayIntoTrends
 } from '../utils/today-data-processor';
+import { logger } from '../lib/logger';
 
 // Define types for data processing
 interface ReferrerData {
@@ -62,14 +63,6 @@ interface ReferrerData {
   pageviews: number;
 }
 
-interface BrowserData {
-  browser: string;
-  version: string;
-  os: string;
-  os_version: string;
-  count: number;
-  visitors: number;
-}
 
 interface PageData {
   path: string;
@@ -89,16 +82,6 @@ interface AnalyticsEntry {
   [key: string]: any;
 }
 
-interface TodayData {
-  pageviews: number;
-  visitors: number;
-  sessions: number;
-  bounce_rate: number;
-  [key: string]: any;
-}
-
-// Initialize logger
-const logger = console;
 
 // Create router with typed context
 const analyticsRouter = new Hono<{ 
@@ -136,7 +119,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
   try {
     // Set default date range if not provided
     const { startDate, endDate } = getDefaultDateRange(params.end_date, params.start_date);
-    const today = new Date().toISOString().split('T')[0];
+    const todayDateStr = new Date().toISOString().split('T')[0];
     
     // Use our builders for all queries
     const summaryBuilder = createSummaryBuilder(params.website_id, startDate, endDate);
@@ -150,8 +133,8 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       endDate, 
       params.granularity as 'hourly' | 'daily'
     );
-    const todayPagesBuilder = createTopPagesBuilder(params.website_id, today, today, 5);
-    const todayReferrersBuilder = createTopReferrersBuilder(params.website_id, today, today, 5);
+    const todayPagesBuilder = createTopPagesBuilder(params.website_id, todayDateStr, todayDateStr, 5);
+    const todayReferrersBuilder = createTopReferrersBuilder(params.website_id, todayDateStr, todayDateStr, 5);
     const resolutionsBuilder = createScreenResolutionsBuilder(params.website_id, startDate, endDate, 10);
     const browserVersionsBuilder = createBrowserVersionsBuilder(params.website_id, startDate, endDate, 10);
     const countriesBuilder = createCountriesBuilder(params.website_id, startDate, endDate, 5);
@@ -224,7 +207,6 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
           todayBounceRateSum += (hour.sessions * hour.bounce_rate);
         }
       }
-      todaySummary.bounce_rate = todayBounceRateSum / todayTotalSessions;
     }
     
     // Create a dedicated query to get accurate unique visitor count for today
@@ -247,6 +229,10 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     if (todayTotalSessions > 0) {
       todaySummary.bounce_rate = todayBounceRateSum / todayTotalSessions;
       todaySummary.bounce_rate_pct = `${Math.round(todaySummary.bounce_rate * 10) / 10}%`;
+    } else {
+      // Ensure consistency if no sessions, bounce_rate remains 0 and bounce_rate_pct remains "0%" from initialization
+      todaySummary.bounce_rate = 0;
+      todaySummary.bounce_rate_pct = "0%";
     }
     
     // Process browser data to include browser version and OS info
@@ -258,19 +244,6 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       count: number; 
       visitors: number 
     }>) : [];
-    
-    // Process referrer data to extract domain and source info
-    // Filter out internal referrers
-    const processedReferrers = parseReferrers(
-      topReferrers as ReferrerData[],
-      true, // Filter internal referrers
-      (referrer) => isInternalReferrer(referrer)
-    );
-    const processedTodayReferrers = parseReferrers(
-      todayTopReferrers as ReferrerData[],
-      true, // Filter internal referrers
-      (referrer) => isInternalReferrer(referrer)
-    );
     
     // Process device types
     const deviceTypes = formatDeviceData(deviceTypeResults as Array<{ device_type: string; device_brand: string; device_model: string; visitors: number; pageviews: number }>);
@@ -284,34 +257,6 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       country: country.country?.trim() ? country.country : 'Unknown'
     }));
     
-    // Process top pages to normalize paths
-    const processedTopPages = topPages.map(page => {
-      const cleanPath = formatCleanPath(page.path);
-      const timeOnPage = page.avg_time_on_page || 0;
-      
-      return {
-        pageviews: page.pageviews,
-        visitors: page.visitors,
-        path: cleanPath,
-        avg_time_on_page: timeOnPage,
-        avg_time_on_page_formatted: formatTime(timeOnPage)
-      } as PageData & { avg_time_on_page_formatted: string };
-    });
-    
-    // Process today's top pages
-    const processedTodayTopPages = todayTopPages.map(page => {
-      const cleanPath = formatCleanPath(page.path);
-      const timeOnPage = page.avg_time_on_page || 0;
-      
-      return {
-        pageviews: page.pageviews,
-        visitors: page.visitors,
-        path: cleanPath,
-        avg_time_on_page: timeOnPage,
-        avg_time_on_page_formatted: formatTime(timeOnPage)
-      } as PageData & { avg_time_on_page_formatted: string };
-    });
-    
     // Use utility to merge today's data with historical data
     const summary = mergeTodayDataIntoSummary(summaryData[0], todaySummary);
     
@@ -321,49 +266,82 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       todaySummary,
       params.granularity as 'hourly' | 'daily'
     );
+
+    // Process top pages data first for clarity before conditional logic
+    const allProcessedTopPages = topPages.map(page => {
+      const cleanPath = formatCleanPath(page.path);
+      const timeOnPage = page.avg_time_on_page;
+      return {
+        pageviews: page.pageviews,
+        visitors: page.visitors,
+        path: cleanPath,
+        avg_time_on_page: timeOnPage,
+        avg_time_on_page_formatted: formatTime(timeOnPage === null ? null : timeOnPage)
+      } as PageData & { avg_time_on_page_formatted: string };
+    });
     
-    // Merge top pages data
-    const mergedTopPages = [...processedTopPages];
-    
-    // Add today's top pages that aren't already in the list
-    for (const todayPage of processedTodayTopPages) {
-      const existingPageIndex = mergedTopPages.findIndex(p => p.path === todayPage.path);
-      
-      if (existingPageIndex >= 0) {
-        // Update existing page with today's data
-        mergedTopPages[existingPageIndex].pageviews += todayPage.pageviews;
-        mergedTopPages[existingPageIndex].visitors += todayPage.visitors;
-      } else {
-        // Add new page from today
-        mergedTopPages.push(todayPage);
-      }
+    const allProcessedTodayTopPages = todayTopPages.map(page => {
+      const cleanPath = formatCleanPath(page.path);
+      const timeOnPage = page.avg_time_on_page;
+      return {
+        pageviews: page.pageviews,
+        visitors: page.visitors,
+        path: cleanPath,
+        avg_time_on_page: timeOnPage,
+        avg_time_on_page_formatted: formatTime(timeOnPage === null ? null : timeOnPage)
+      } as PageData & { avg_time_on_page_formatted: string };
+    });
+
+    let finalTopPages: Array<PageData & { avg_time_on_page_formatted: string }>;
+    if (endDate === todayDateStr) {
+        allProcessedTopPages.sort((a, b) => b.pageviews - a.pageviews);
+        finalTopPages = allProcessedTopPages.slice(0, params.limit);
+    } else {
+        const mergedTopPages: Array<PageData & { avg_time_on_page_formatted: string }> = [...allProcessedTopPages];
+        for (const todayPage of allProcessedTodayTopPages) {
+            const existingPageIndex = mergedTopPages.findIndex(p => p.path === todayPage.path);
+            if (existingPageIndex >= 0) {
+                mergedTopPages[existingPageIndex].pageviews += todayPage.pageviews;
+                mergedTopPages[existingPageIndex].visitors += todayPage.visitors;
+            } else {
+                mergedTopPages.push(todayPage);
+            }
+        }
+        mergedTopPages.sort((a, b) => b.pageviews - a.pageviews);
+        finalTopPages = mergedTopPages.slice(0, params.limit);
     }
     
-    // Sort and limit
-    mergedTopPages.sort((a, b) => b.pageviews - a.pageviews);
-    const finalTopPages = mergedTopPages.slice(0, params.limit);
-    
-    // Merge top referrers data
-    const mergedTopReferrers = [...processedReferrers];
-    
-    // Add today's top referrers that aren't already in the list
-    for (const todayReferrer of processedTodayReferrers) {
-      const existingReferrerIndex = mergedTopReferrers.findIndex(r => 
-        r.referrer === todayReferrer.referrer || r.domain === todayReferrer.domain);
-      
-      if (existingReferrerIndex >= 0) {
-        // Update existing referrer with today's data
-        mergedTopReferrers[existingReferrerIndex].visitors += todayReferrer.visitors;
-        mergedTopReferrers[existingReferrerIndex].pageviews += todayReferrer.pageviews;
-      } else {
-        // Add new referrer from today
-        mergedTopReferrers.push(todayReferrer);
-      }
+    // Process referrer data first for clarity before conditional logic
+    const allProcessedReferrers = parseReferrers(
+      topReferrers as ReferrerData[],
+      true, 
+      (referrer) => isInternalReferrer(referrer)
+    );
+    const allProcessedTodayReferrers = parseReferrers(
+      todayTopReferrers as ReferrerData[],
+      true, 
+      (referrer) => isInternalReferrer(referrer)
+    );
+
+    let finalTopReferrers: Array<ReferrerData & { type?: string; name?: string; domain?: string }>;
+    if (endDate === todayDateStr) {
+        allProcessedReferrers.sort((a, b) => b.visitors - a.visitors);
+        finalTopReferrers = allProcessedReferrers.slice(0, params.limit);
+    } else {
+        const mergedTopReferrers: Array<ReferrerData & { type?: string; name?: string; domain?: string }> = [...allProcessedReferrers];
+        for (const todayReferrer of allProcessedTodayReferrers) {
+            const existingReferrerIndex = mergedTopReferrers.findIndex(r => 
+                r.referrer === todayReferrer.referrer || r.domain === todayReferrer.domain);
+            if (existingReferrerIndex >= 0) {
+                mergedTopReferrers[existingReferrerIndex].visitors += todayReferrer.visitors;
+                mergedTopReferrers[existingReferrerIndex].pageviews += todayReferrer.pageviews;
+            } else {
+                mergedTopReferrers.push(todayReferrer);
+            }
+        }
+        mergedTopReferrers.sort((a, b) => b.visitors - a.visitors);
+        finalTopReferrers = mergedTopReferrers.slice(0, params.limit);
     }
-    
-    // Sort and limit
-    mergedTopReferrers.sort((a, b) => b.visitors - a.visitors);
-    const finalTopReferrers = mergedTopReferrers.slice(0, params.limit);
     
     return c.json({
       success: true,
@@ -375,7 +353,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       },
       summary: {
         pageviews: summary.pageviews,
-        visitors: summary.visitors,
+        visitors: summary.unique_visitors, // Ensure this mapping is correct based on summary object structure
         unique_visitors: summary.unique_visitors,
         sessions: summary.sessions,
         bounce_rate: summary.bounce_rate,
@@ -383,7 +361,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
         avg_session_duration: Math.round(summary.avg_session_duration),
         avg_session_duration_formatted: formatTime(summary.avg_session_duration)
       },
-      events_by_date: updatedEventsByDate.map(day => ({
+      events_by_date: updatedEventsByDate.map((day: AnalyticsEntry) => ({
         ...day,
         bounce_rate_pct: `${Math.round(day.bounce_rate * 10) / 10}%`,
         avg_session_duration_formatted: formatTime(day.avg_session_duration || 0)
@@ -402,20 +380,20 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       languages: languages,
       timezones: timezones,
       performance: {
-        avg_load_time: Math.round(performance[0]?.avg_load_time || 0),
-        avg_ttfb: Math.round(performance[0]?.avg_ttfb || 0),
-        avg_dom_ready_time: Math.round(performance[0]?.avg_dom_ready_time || 0),
-        avg_render_time: Math.round(performance[0]?.avg_render_time || 0),
-        avg_fcp: Math.round(performance[0]?.avg_fcp || 0),
-        avg_lcp: Math.round(performance[0]?.avg_lcp || 0),
-        avg_cls: Math.round((performance[0]?.avg_cls || 0) * 1000) / 1000,
-        avg_load_time_formatted: formatPerformanceMetric(performance[0]?.avg_load_time || 0),
-        avg_ttfb_formatted: formatPerformanceMetric(performance[0]?.avg_ttfb || 0),
-        avg_dom_ready_time_formatted: formatPerformanceMetric(performance[0]?.avg_dom_ready_time || 0),
-        avg_render_time_formatted: formatPerformanceMetric(performance[0]?.avg_render_time || 0),
-        avg_fcp_formatted: formatPerformanceMetric(performance[0]?.avg_fcp || 0),
-        avg_lcp_formatted: formatPerformanceMetric(performance[0]?.avg_lcp || 0),
-        avg_cls_formatted: formatPerformanceMetric(performance[0]?.avg_cls || 0, '')
+        avg_load_time: performance[0]?.avg_load_time !== undefined && performance[0]?.avg_load_time !== null ? Math.round(performance[0].avg_load_time) : null,
+        avg_ttfb: performance[0]?.avg_ttfb !== undefined && performance[0]?.avg_ttfb !== null ? Math.round(performance[0].avg_ttfb) : null,
+        avg_dom_ready_time: performance[0]?.avg_dom_ready_time !== undefined && performance[0]?.avg_dom_ready_time !== null ? Math.round(performance[0].avg_dom_ready_time) : null,
+        avg_render_time: performance[0]?.avg_render_time !== undefined && performance[0]?.avg_render_time !== null ? Math.round(performance[0].avg_render_time) : null,
+        avg_fcp: performance[0]?.avg_fcp !== undefined && performance[0]?.avg_fcp !== null ? Math.round(performance[0].avg_fcp) : null,
+        avg_lcp: performance[0]?.avg_lcp !== undefined && performance[0]?.avg_lcp !== null ? Math.round(performance[0].avg_lcp) : null,
+        avg_cls: performance[0]?.avg_cls !== undefined && performance[0]?.avg_cls !== null ? Math.round((performance[0].avg_cls) * 1000) / 1000 : null,
+        avg_load_time_formatted: formatPerformanceMetric(performance[0]?.avg_load_time === null ? null : performance[0]?.avg_load_time || 0),
+        avg_ttfb_formatted: formatPerformanceMetric(performance[0]?.avg_ttfb === null ? null : performance[0]?.avg_ttfb || 0),
+        avg_dom_ready_time_formatted: formatPerformanceMetric(performance[0]?.avg_dom_ready_time === null ? null : performance[0]?.avg_dom_ready_time || 0),
+        avg_render_time_formatted: formatPerformanceMetric(performance[0]?.avg_render_time === null ? null : performance[0]?.avg_render_time || 0),
+        avg_fcp_formatted: formatPerformanceMetric(performance[0]?.avg_fcp === null ? null : performance[0]?.avg_fcp || 0),
+        avg_lcp_formatted: formatPerformanceMetric(performance[0]?.avg_lcp === null ? null : performance[0]?.avg_lcp || 0),
+        avg_cls_formatted: formatPerformanceMetric(performance[0]?.avg_cls === null ? null : performance[0]?.avg_cls || 0, '')
       }
     });
   } catch (error) {
@@ -464,11 +442,9 @@ analyticsRouter.get('/trends', zValidator('query', analyticsQuerySchema), async 
     
     // Get today's data if needed
     if (today >= startDate && today <= endDate) {
-      const todayBuilder = createTodayBuilder(params.website_id);
       const todayByHourBuilder = createTodayByHourBuilder(params.website_id);
       
-      const [todayResults, todayHourlyData] = await Promise.all([
-        chQuery(todayBuilder.getSql()),
+      const [todayHourlyData] = await Promise.all([
         chQuery(todayByHourBuilder.getSql())
       ]);
       
@@ -1440,16 +1416,12 @@ analyticsRouter.get('/devices', zValidator('query', analyticsQuerySchema), async
         });
       }
     }
-    
-    // Process browser data to extract browser version from user_agent
-    const browser_versions = formatBrowserData(browserResults as Array<{ browser_name: string; browser_version: string; count: number; visitors: number }>);
-    
+
     // Sort by visitors
     browsers.sort((a: { visitors: number }, b: { visitors: number }) => b.visitors - a.visitors);
     os.sort((a: { visitors: number }, b: { visitors: number }) => b.visitors - a.visitors);
     deviceTypes.sort((a: { visitors: number }, b: { visitors: number }) => b.visitors - a.visitors);
-    browser_versions.sort((a: { visitors: number }, b: { visitors: number }) => b.visitors - a.visitors);
-    
+
     return c.json({
       success: true,
       website_id: params.website_id,
@@ -1458,7 +1430,6 @@ analyticsRouter.get('/devices', zValidator('query', analyticsQuerySchema), async
         end_date: endDate
       },
       browsers: browsers.slice(0, params.limit),
-      browser_versions: browser_versions.slice(0, params.limit),
       os: os.slice(0, params.limit),
       device_types: deviceTypes.slice(0, params.limit)
     });

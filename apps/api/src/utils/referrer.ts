@@ -16,7 +16,7 @@ export interface ReferrerInfo {
 /**
  * Parse a referrer URL to identify its source
  */
-export function parseReferrer(referrerUrl: string | null | undefined): ReferrerInfo {
+export function parseReferrer(referrerUrl: string | null | undefined, currentDomain?: string): ReferrerInfo {
   if (!referrerUrl) {
     return {
       type: 'direct',
@@ -30,6 +30,16 @@ export function parseReferrer(referrerUrl: string | null | undefined): ReferrerI
     // Parse URL to get hostname
     const url = new URL(referrerUrl);
     const hostname = url.hostname;
+    
+    // If the referrer is from the same domain as the current site, treat it as direct traffic
+    if (currentDomain && (hostname === currentDomain || hostname.endsWith(`.${currentDomain}`))) {
+      return {
+        type: 'direct',
+        name: 'Direct',
+        url: '',
+        domain: '',
+      };
+    }
     
     // Try to match against known referrers
     const referrerMatch = getReferrerByDomain(hostname);
