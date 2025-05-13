@@ -119,22 +119,22 @@ export function MapComponent({
     });
   }, [countryData?.data]);
 
-  const processedSubdivisionData = useMemo(() => {
-    if (!subdivisionData?.data) return null;
+//   const processedSubdivisionData = useMemo(() => {
+//     if (!subdivisionData?.data) return null;
 
-    return subdivisionData.data.map((item: any) => {
-      // For subdivisions, we'll use the country code from the beginning of the iso_3166_2 code
-      const countryCode = item.value?.split("-")[0];
-      const population = getCountryPopulation(countryCode);
-      // For subdivisions, we divide by 10x the population since regions are smaller
-      const perCapitaValue =
-        population > 0 ? item.count / (population / 10) : 0;
-      return {
-        ...item,
-        perCapita: perCapitaValue,
-      };
-    });
-  }, [subdivisionData?.data]);
+//     return subdivisionData.data.map((item: any) => {
+//       // For subdivisions, we'll use the country code from the beginning of the iso_3166_2 code
+//       const countryCode = item.value?.split("-")[0];
+//       const population = getCountryPopulation(countryCode);
+//       // For subdivisions, we divide by 10x the population since regions are smaller
+//       const perCapitaValue =
+//         population > 0 ? item.count / (population / 10) : 0;
+//       return {
+//         ...item,
+//         perCapita: perCapitaValue,
+//       };
+//     });
+//   }, [subdivisionData?.data]);
 
   const colorScale = useMemo(() => {
     if (!processedCountryData) return () => "#eee";
@@ -240,17 +240,17 @@ export function MapComponent({
     });
   };
 
-  const MapEventHandler = () => {
-    const map = useMapEvent("zoomend", () => {
-      // Commented out region switching functionality
-      // const newMapView = map.getZoom() >= 5 ? "subdivisions" : "countries";
-      // if (newMapView !== mapView) {
-      //   setMapView(newMapView);
-      //   setTooltipContent(null);
-      // }
-    });
-    return null;
-  };
+//   const MapEventHandler = () => {
+//     const map = useMapEvent("zoomend", () => {
+//       // Commented out region switching functionality
+//       // const newMapView = map.getZoom() >= 5 ? "subdivisions" : "countries";
+//       // if (newMapView !== mapView) {
+//       //   setMapView(newMapView);
+//       //   setTooltipContent(null);
+//       // }
+//     });
+//     return null;
+//   };
 
   const isLoading = isLocationsLoading || isLocationsFetching;
 
@@ -300,8 +300,7 @@ export function MapComponent({
             zIndex: "1",
           }}
         >
-          <MapEventHandler />
-          {/* Comment out subdivisions rendering */}
+          {/* <MapEventHandler /> */}
           {/* {mapView === "subdivisions" && subdivisionsGeoData && (
             <GeoJSON
               key={`subdivisions-${dataVersion}-${mode}`}

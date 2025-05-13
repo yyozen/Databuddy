@@ -99,13 +99,13 @@ export function DataTable({
               <TableBody>
                 {displayData.map((row, rowIndex) => (
                   <TableRow 
-                    key={rowIndex} 
+                    key={`${rowIndex}-${row.id}`} 
                     className={cn(
                       "h-8 hover:bg-muted/30",
                       rowIndex % 2 === 0 ? "" : "bg-muted/20",
                       onRowClick ? "cursor-pointer" : ""
                     )}
-                    onClick={() => onRowClick && onRowClick(row)}
+                    onClick={() => onRowClick?.(row)}
                   >
                     {columns.map((column) => (
                       <TableCell 
