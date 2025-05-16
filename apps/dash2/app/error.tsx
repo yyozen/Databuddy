@@ -55,7 +55,9 @@ export default function GlobalError({
               
               <Button 
                 className="sm:flex-1"
-                onClick={reset}
+                onClick={() => {
+                  window.location.reload();
+                }}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Try Again
