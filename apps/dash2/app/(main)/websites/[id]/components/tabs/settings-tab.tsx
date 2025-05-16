@@ -157,9 +157,6 @@ export function WebsiteSettingsTab({
       
       toast.success("Website deleted successfully");
       
-      // Update the store
-      useWebsitesStore.getState().deleteWebsite(websiteId);
-      
       // Invalidate queries and redirect
       queryClient.invalidateQueries({ queryKey: ["websites"] });
       router.push("/websites");

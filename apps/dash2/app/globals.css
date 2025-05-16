@@ -96,13 +96,13 @@
   --sidebar-accent-foreground: oklch(0.18 0.01 260);
   --sidebar-border: oklch(0.86 0.01 260);
   --sidebar-ring: oklch(0.55 0.25 264.376 / 0.5);
-  
+
   /* Success and warning colors */
   --success: oklch(0.55 0.22 150);
   --success-foreground: oklch(0.99 0 0);
   --warning: oklch(0.70 0.17 76);
   --warning-foreground: oklch(0.15 0.01 260);
-  
+
   /* Scrollbar variables */
   --scrollbar-size: 6px;
   --scrollbar-track: #e8e8ec;
@@ -142,13 +142,13 @@
   --sidebar-accent-foreground: oklch(0.98 0 0);
   --sidebar-border: oklch(1 0 0 / 15%);
   --sidebar-ring: oklch(0.65 0.25 264.376 / 0.5);
-  
+
   /* Success and warning colors for dark mode */
   --success: oklch(0.63 0.23 150);
   --success-foreground: oklch(0.125 0 0);
   --warning: oklch(0.78 0.18 76);
   --warning-foreground: oklch(0.125 0 0);
-  
+
   /* Scrollbar variables for dark mode */
   --scrollbar-track: #131313;
   --scrollbar-thumb: rgba(255, 255, 255, 0.2);
@@ -163,24 +163,24 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-  
+
   /* Improved typography */
   h1, h2, h3, h4, h5, h6 {
     @apply font-medium tracking-tight;
   }
-  
+
   h1 {
     @apply text-3xl sm:text-4xl;
   }
-  
+
   h2 {
     @apply text-2xl sm:text-3xl;
   }
-  
+
   h3 {
     @apply text-xl sm:text-2xl;
   }
-  
+
   h4 {
     @apply text-lg sm:text-xl;
   }
