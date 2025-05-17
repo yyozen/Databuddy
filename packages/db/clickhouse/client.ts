@@ -9,40 +9,9 @@ export { createClient };
  */
 export const TABLE_NAMES = {
   events: 'analytics.events',
-  sessions: 'analytics.sessions',
-  daily_stats: 'analytics.daily_stats',
-  page_stats: 'analytics.page_stats',
-  referrer_stats: 'analytics.referrer_stats',
-  location_stats: 'analytics.location_stats',
-  device_stats: 'analytics.device_stats',
-  performance_stats: 'analytics.performance_stats'
 };
 
 const logger = console;
-
-class CustomLogger implements Logger {
-    trace({ message, args }: LogParams) {
-      logger.debug(message, args);
-    }
-    debug({ message, args }: LogParams) {
-      if (message.includes('Query:') && args?.response_status === 200) {
-        return;
-      }
-      logger.debug(message, args);
-    }
-    info({ message, args }: LogParams) {
-      logger.info(message, args);
-    }
-    warn({ message, args }: WarnLogParams) {
-      logger.warn(message, args);
-    }
-    error({ message, args, err }: ErrorLogParams) {
-      logger.error(message, {
-        ...args,
-        error: err,
-      });
-    }
-  }
 
   export const CLICKHOUSE_OPTIONS: NodeClickHouseClientConfigOptions = {
     max_open_connections: 30,
@@ -57,16 +26,11 @@ class CustomLogger implements Logger {
     clickhouse_settings: {
       date_time_input_format: 'best_effort',
     },
-    // log: {
-    //   LoggerClass: CustomLogger,
-    //   level: ClickHouseLogLevel.DEBUG,
-    // },
+
   };
 
   export const clickHouseOG = createClient({
-    url: process.env.CLICKHOUSE_URL || 
-         (typeof globalThis.process !== 'undefined' ? globalThis.process.env?.CLICKHOUSE_URL : null) || 
-         (typeof globalThis !== 'undefined' && 'CLICKHOUSE_URL' in globalThis ? (globalThis as Record<string, any>).CLICKHOUSE_URL : null),
+    url: process.env.CLICKHOUSE_URL,
     ...CLICKHOUSE_OPTIONS,
   });
 

@@ -7,6 +7,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import NextTopLoader from 'nextjs-toploader';
 import Head from "next/head";
 import Script from "next/script";
+import { Databuddy } from "@databuddy/sdk";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -80,16 +81,13 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <Head>
         <NextTopLoader showSpinner={false} />
-        <Script 
-        src="https://app.databuddy.cc/databuddy.js"
-        data-client-id="OXmNQsViBT-FOS_wZCTHc"
-        data-api-url="https://basket.databuddy.cc"
-        data-track-screen-views="true"
-        data-track-performance="true"
-        data-track-errors="true"
-        strategy="afterInteractive"
-        defer
-      />
+        <Databuddy 
+          clientId="OXmNQsViBT-FOS_wZCTHc"
+          apiUrl="https://basket.databuddy.cc"
+          trackScreenViews
+          trackPerformance
+          trackErrors
+        />
       </Head>
       <PostHogProvider>
         <body

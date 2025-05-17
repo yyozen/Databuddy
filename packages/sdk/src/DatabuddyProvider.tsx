@@ -1,96 +1,33 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef } from 'react';
-import type { DatabuddyConfig, EventProperties, PageViewProperties } from './types';
-import { Databuddy } from './index';
-
-interface DatabuddyContextValue {
-  track: (eventName: string, properties?: EventProperties) => void;
-  screenView: (properties?: PageViewProperties) => void;
-  increment: (name: string, properties?: EventProperties, value?: number) => void;
-  decrement: (name: string, properties?: EventProperties, value?: number) => void;
-  clear: () => void;
-}
-
-const DatabuddyContext = createContext<DatabuddyContextValue | null>(null);
-
-interface DatabuddyProviderProps extends DatabuddyConfig {
-  children: React.ReactNode;
-}
+import { useEffect } from 'react';
+import type { DatabuddyConfig } from './types';
 
 /**
- * Provider component for Databuddy analytics
- * 
- * @example
- * ```tsx
- * // In your layout.tsx
- * import { DatabuddyProvider } from '@databuddy/sdk';
- * 
- * export default function RootLayout({ children }) {
- *   return (
- *     <html>
- *       <body>
- *         <DatabuddyProvider
- *           clientId={process.env.NEXT_PUBLIC_DATABUDDY_CLIENT_ID}
- *           trackScreenViews
- *           trackPerformance
- *         >
- *           {children}
- *         </DatabuddyProvider>
- *       </body>
- *     </html>
- *   );
- * }
- * ```
+ * <Databuddy /> component for Next.js/React apps
+ * Injects the databuddy.js script with all config as data attributes
+ * Usage: <Databuddy clientId="..." trackScreenViews trackPerformance ... />
  */
-export function DatabuddyProvider({ children, ...config }: DatabuddyProviderProps) {
-  const databuddyRef = useRef<Databuddy | null>(null);
-  const configRef = useRef(config);
-
+export function Databuddy(props: DatabuddyConfig) {
   useEffect(() => {
-    if (!databuddyRef.current) {
-      databuddyRef.current = new Databuddy(configRef.current);
-      databuddyRef.current.init();
+    if (typeof window === 'undefined') return;
+    if (document.querySelector('script[data-databuddy-injected]')) return;
+    const script = document.createElement('script');
+    script.src = props.scriptUrl || 'https://app.databuddy.cc/databuddy.js';
+    script.defer = true;
+    script.setAttribute('data-databuddy-injected', 'true');
+    for (const [key, value] of Object.entries(props)) {
+      if (value !== undefined) {
+        const dataKey = `data-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+        script.setAttribute(dataKey, String(value));
+      }
     }
-  }, []);
-
-  const value: DatabuddyContextValue = {
-    track: (eventName, properties) => databuddyRef.current?.track(eventName, properties),
-    screenView: (properties) => databuddyRef.current?.screenView(properties),
-    increment: (name, properties, value = 1) => databuddyRef.current?.increment(name, value, properties),
-    decrement: (name, properties, value = 1) => databuddyRef.current?.decrement(name, value, properties),
-    clear: () => databuddyRef.current?.clear(),
-  };
-
-  return (
-    <DatabuddyContext.Provider value={value}>
-      {children}
-    </DatabuddyContext.Provider>
-  );
+    document.head.appendChild(script);
+    return () => {
+      script.remove();
+    };
+  }, [props]);
+  return null;
 }
 
-/**
- * Hook to use Databuddy analytics in your components
- * 
- * @example
- * ```tsx
- * import { useDatabuddy } from '@databuddy/sdk';
- * 
- * function MyComponent() {
- *   const databuddy = useDatabuddy();
- *   
- *   const handleClick = () => {
- *     databuddy.track('button_clicked', { buttonId: 'submit' });
- *   };
- *   
- *   return <button onClick={handleClick}>Click me</button>;
- * }
- * ```
- */
-export function useDatabuddy() {
-  const context = useContext(DatabuddyContext);
-  if (!context) {
-    throw new Error('useDatabuddy must be used within a DatabuddyProvider');
-  }
-  return context;
-} 
+export default Databuddy; 

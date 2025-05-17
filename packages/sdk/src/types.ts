@@ -1,65 +1,166 @@
 /**
- * Configuration options for the Databuddy SDK
+ * Configuration options for the Databuddy SDK and <Databuddy /> component.
+ * All options are passed as data attributes to the injected script.
  */
 export interface DatabuddyConfig {
-  /** Required: Your Databuddy client ID */
+  /**
+   * Your Databuddy project client ID (required).
+   * Get this from your Databuddy dashboard.
+   * Example: '3ed1fce1-5a56-4cbc-a917-66864f6d18e3'
+   */
   clientId: string;
-  /** Optional: Your Databuddy client secret for server-side operations */
+
+  /**
+   * (Advanced) Your Databuddy client secret for server-side operations.
+   * Not required for browser usage.
+   */
   clientSecret?: string;
-  /** Optional: Custom API URL (defaults to https://api.databuddy.cc) */
+
+  /**
+   * Custom API endpoint for event ingestion.
+   * Default: 'https://api.databuddy.cc'
+   */
   apiUrl?: string;
-  /** Optional: Custom script URL (defaults to https://app.databuddy.cc/databuddy.js) */
+
+  /**
+   * Custom script URL for the Databuddy browser bundle.
+   * Default: 'https://app.databuddy.cc/databuddy.js'
+   */
   scriptUrl?: string;
-  /** Optional: SDK name (defaults to 'web') */
+
+  /**
+   * SDK name for analytics (default: 'web').
+   * Only override if you are building a custom integration.
+   */
   sdk?: string;
-  /** Optional: SDK version (defaults to '1.0.0') */
+
+  /**
+   * SDK version (default: '1.0.0').
+   * Only override for custom builds.
+   */
   sdkVersion?: string;
-  /** Optional: Disable tracking completely */
+
+  /**
+   * Disable all tracking (default: false).
+   * If true, no events will be sent.
+   */
   disabled?: boolean;
-  /** Optional: Wait for user profile before sending events */
+
+  /**
+   * Wait for user profile before sending events (advanced, default: false).
+   */
   waitForProfile?: boolean;
-  /** Optional: Track screen/page views automatically (defaults to true) */
+
+  // --- Tracking Features ---
+
+  /**
+   * Automatically track screen/page views (default: true).
+   */
   trackScreenViews?: boolean;
-  /** Optional: Track hash changes in URL */
+
+  /**
+   * Track hash changes in the URL (default: false).
+   */
   trackHashChanges?: boolean;
-  /** Optional: Track data-* attributes on elements */
+
+  /**
+   * Track data-* attributes on elements (default: false).
+   */
   trackAttributes?: boolean;
-  /** Optional: Track outgoing link clicks */
+
+  /**
+   * Track clicks on outgoing links (default: false).
+   */
   trackOutgoingLinks?: boolean;
-  /** Optional: Track user sessions */
+
+  /**
+   * Track user sessions (default: false).
+   */
   trackSessions?: boolean;
-  /** Optional: Track page performance metrics (defaults to true) */
+
+  /**
+   * Track page performance metrics (default: true).
+   */
   trackPerformance?: boolean;
-  /** Optional: Track Web Vitals metrics (defaults to true) */
+
+  /**
+   * Track Web Vitals metrics (default: true).
+   */
   trackWebVitals?: boolean;
-  /** Optional: Track user engagement metrics */
+
+  /**
+   * Track user engagement metrics (default: false).
+   */
   trackEngagement?: boolean;
-  /** Optional: Track scroll depth */
+
+  /**
+   * Track scroll depth (default: false).
+   */
   trackScrollDepth?: boolean;
-  /** Optional: Track exit intent */
+
+  /**
+   * Track exit intent (default: false).
+   */
   trackExitIntent?: boolean;
-  /** Optional: Track user interactions */
+
+  /**
+   * Track user interactions (default: false).
+   */
   trackInteractions?: boolean;
-  /** Optional: Track JavaScript errors (defaults to true) */
+
+  /**
+   * Track JavaScript errors (default: true).
+   */
   trackErrors?: boolean;
-  /** Optional: Track bounce rate */
+
+  /**
+   * Track bounce rate (default: false).
+   */
   trackBounceRate?: boolean;
-  /** Optional: Sampling rate for events (0.0 to 1.0) */
+
+  // --- Advanced/Performance ---
+
+  /**
+   * Sampling rate for events (0.0 to 1.0, default: 1.0).
+   * Example: 0.5 = 50% of events sent.
+   */
   samplingRate?: number;
-  /** Optional: Enable retries for failed requests */
+
+  /**
+   * Enable retries for failed requests (default: true).
+   */
   enableRetries?: boolean;
-  /** Optional: Maximum number of retries (defaults to 3) */
+
+  /**
+   * Maximum number of retries for failed requests (default: 3).
+   * Only used if enableRetries is true.
+   */
   maxRetries?: number;
-  /** Optional: Initial retry delay in milliseconds (defaults to 500) */
+
+  /**
+   * Initial retry delay in milliseconds (default: 500).
+   * Only used if enableRetries is true.
+   */
   initialRetryDelay?: number;
-  /** Optional: Enable event batching (defaults to true) */
+
+  /**
+   * Enable event batching (default: true).
+   */
   enableBatching?: boolean;
-  /** Optional: Number of events to batch (defaults to 20) */
+
+  /**
+   * Number of events to batch before sending (default: 20).
+   * Only used if enableBatching is true.
+   * Min: 1, Max: 50
+   */
   batchSize?: number;
-  /** Optional: Batch timeout in milliseconds (defaults to 5000) */
+
+  /**
+   * Batch timeout in milliseconds (default: 5000).
+   * Only used if enableBatching is true.
+   * Min: 100, Max: 30000
+   */
   batchTimeout?: number;
-  /** Optional: Anonymize user data */
-  anonymized?: boolean;
 }
 
 /**
@@ -70,113 +171,3 @@ export interface EventProperties {
   [key: string]: string | number | boolean | null | undefined | EventProperties;
 }
 
-/**
- * Base event interface
- */
-export interface BaseEvent {
-  /** Event type */
-  type: string;
-  /** Event payload */
-  payload: {
-    /** Event name */
-    name: string;
-    /** Anonymous user ID */
-    anonymousId: string;
-    /** Event properties */
-    properties?: EventProperties;
-  };
-}
-
-/**
- * Track event for custom events
- */
-export interface TrackEvent extends BaseEvent {
-  type: 'track';
-}
-
-/**
- * Metric event payload
- */
-export interface MetricEventPayload {
-  /** Event name */
-  name: string;
-  /** Anonymous user ID */
-  anonymousId: string;
-  /** Metric value */
-  value: number;
-  /** Event properties */
-  properties?: EventProperties;
-}
-
-/**
- * Increment event for metrics
- */
-export interface IncrementEvent {
-  type: 'increment';
-  payload: MetricEventPayload;
-}
-
-/**
- * Decrement event for metrics
- */
-export interface DecrementEvent {
-  type: 'decrement';
-  payload: MetricEventPayload;
-}
-
-/**
- * Union type of all possible events
- */
-export type DatabuddyEvent = TrackEvent | IncrementEvent | DecrementEvent;
-
-/**
- * Web Vitals metrics
- */
-export interface WebVitals {
-  /** First Contentful Paint in milliseconds */
-  fcp?: number;
-  /** Largest Contentful Paint in milliseconds */
-  lcp?: number;
-  /** Cumulative Layout Shift score */
-  cls?: number;
-}
-
-/**
- * Performance metrics
- */
-export interface PerformanceMetrics {
-  /** Total page load time in milliseconds */
-  load_time?: number;
-  /** DOM ready time in milliseconds */
-  dom_ready_time?: number;
-  /** Time to First Byte in milliseconds */
-  ttfb?: number;
-  /** Request time in milliseconds */
-  request_time?: number;
-  /** Render time in milliseconds */
-  render_time?: number;
-}
-
-/**
- * Page view properties
- */
-export interface PageViewProperties extends EventProperties {
-  /** Page path */
-  __path: string;
-  /** Page title */
-  __title: string;
-  /** Referrer URL */
-  __referrer?: string;
-  /** Timestamp in milliseconds */
-  __timestamp_ms: number;
-  /** Screen resolution */
-  screen_resolution?: string;
-  /** Viewport size */
-  viewport_size?: string;
-  /** Timezone */
-  timezone?: string;
-  /** Browser language */
-  language?: string;
-  /** Connection type */
-  connection_type?: string;
-} 

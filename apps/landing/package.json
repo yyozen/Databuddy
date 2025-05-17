@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@databuddy/db": "../../packages/db",
+    "@databuddy/sdk": "^1.1.0",
     "@fontsource/nunito": "^5.1.1",
     "@fontsource/poppins": "^5.1.1",
     "@hookform/resolvers": "^4.1.2",
