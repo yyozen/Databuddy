@@ -105,6 +105,8 @@ const analyticsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(1000).default(30),
 });
 
+const publicSites = ["OXmNQsViBT-FOS_wZCTHc"]
+
 /**
  * Get summary statistics
  * GET /analytics/summary
@@ -113,7 +115,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
   const params = c.req.valid('query');
   const user = c.get('user');
   
-  if (!user) {
+  if (!user && !publicSites.includes(params.website_id)) {
     return c.json({ error: 'Authentication required' }, 401);
   }
 
