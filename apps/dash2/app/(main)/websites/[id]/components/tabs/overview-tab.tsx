@@ -36,7 +36,6 @@ import { Card, CardHeader, CardContent, CardDescription, CardTitle } from "@/com
 // Define trend calculation return type
 interface TrendCalculation {
   visitors?: number;
-  unique_visitors?: number;
   sessions?: number;
   pageviews?: number;
   bounce_rate?: number;
@@ -44,34 +43,49 @@ interface TrendCalculation {
   pages_per_session?: number;
 }
 
+// Define type for referrer row data from analytics API
+interface ReferrerItem {
+  referrer: string;
+  visitors: number;
+  pageviews: number;
+  type?: string;
+  name?: string;      // This is the primary display name, maps to 'value' if accessorKey is 'name'
+  domain?: string;    // Used for favicon
+}
+
+const MIN_PREVIOUS_SESSIONS_FOR_TREND = 5;
+const MIN_PREVIOUS_VISITORS_FOR_TREND = 5;
+const MIN_PREVIOUS_PAGEVIEWS_FOR_TREND = 10;
+
 // Add UnauthorizedAccessError component
 function UnauthorizedAccessError() {
   const router = useRouter();
   
   return (
-    <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800/50">
-      <CardHeader className="pb-2">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
-            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+    <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800/50 w-full max-w-lg mx-auto my-8">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-full">
+            <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
           </div>
           <div>
-            <CardTitle>Access Denied</CardTitle>
+            <CardTitle className="text-lg">Access Denied</CardTitle>
             <CardDescription className="mt-1">
-              You don't have permission to access this website's analytics.
+              You do not have permission to view this website's analytics.
             </CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-2">
-        <p className="text-sm text-muted-foreground mb-4">
-          If you believe this is a mistake, please contact the website owner or your administrator to request access.
+      <CardContent className="pt-0">
+        <p className="text-sm text-muted-foreground mb-5">
+          If you believe this is an error, please contact the website owner or your administrator.
         </p>
         <Button 
           onClick={() => router.push("/websites")}
           className="w-full sm:w-auto"
+          variant="destructive"
         >
-          Return to Websites
+          Return to My Websites
         </Button>
       </CardContent>
     </Card>
@@ -95,7 +109,7 @@ export function WebsiteOverviewTab({
   const [visibleMetrics, setVisibleMetrics] = useState<Record<string, boolean>>({
     pageviews: true,
     visitors: true,
-    sessions: true
+    sessions: false,
   });
   
   // Toggle metric visibility
@@ -199,18 +213,18 @@ export function WebsiteOverviewTab({
       header: 'Page',
       cell: (value: string) => {
         const link = formatDomainLink(value, websiteData?.domain);
-        return <ExternalLinkButton href={link.href} label={link.display} title={link.title} />;
+        return <ExternalLinkButton href={link.href} label={link.display} title={link.title} className="text-sm" />;
       }
     },
     {
       accessorKey: 'pageviews',
       header: 'Views',
-      className: 'text-right',
+      className: 'text-right text-sm',
     },
     {
       accessorKey: 'visitors',
       header: 'Visitors',
-      className: 'text-right',
+      className: 'text-right text-sm',
     },
   ], [websiteData?.domain]);
 
@@ -218,21 +232,48 @@ export function WebsiteOverviewTab({
     {
       accessorKey: 'name',
       header: 'Source',
-      cell: (value: string, row: any) => (
-        <span className="font-medium">
-          {value || row.referrer || 'Direct'}
-        </span>
-      )
+      cell: (value: string | undefined, row: ReferrerItem) => {
+        const displayName = value || row.name || row.referrer || 'Direct';
+        const domain = row.domain;
+
+        if (displayName === 'Direct' || !domain) {
+          return (
+            <span className="font-medium text-sm">
+              {displayName}
+            </span>
+          );
+        }
+
+        const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+
+        const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+          e.currentTarget.style.display = 'none';
+        };
+
+        return (
+          <span className="font-medium text-sm flex items-center gap-2">
+            <img
+              src={faviconUrl}
+              alt={`${displayName} favicon`}
+              width={16}
+              height={16}
+              className="rounded-sm"
+              onError={handleImageError}
+            />
+            {displayName}
+          </span>
+        );
+      }
     },
     {
       accessorKey: 'visitors',
       header: 'Visitors',
-      className: 'text-right',
+      className: 'text-right text-sm',
     },
     {
       accessorKey: 'pageviews',
       header: 'Views',
-      className: 'text-right',
+      className: 'text-right text-sm',
     },
   ], []);
 
@@ -273,98 +314,78 @@ export function WebsiteOverviewTab({
   const metricColors = {
     pageviews: 'blue-500',
     visitors: 'green-500',
-    sessions: 'yellow-500'
+    sessions: 'purple-500'
   };
 
   // Calculate trends
   const calculateTrends = useMemo<TrendCalculation>(() => {
     if (!analytics.events_by_date?.length || analytics.events_by_date.length < 2) {
-      return {
-        visitors: undefined,
-        unique_visitors: undefined,
-        sessions: undefined,
-        pageviews: undefined,
-        bounce_rate: undefined,
-        session_duration: undefined,
-        pages_per_session: undefined
-      };
+      return {}; 
     }
 
-    const events = [...analytics.events_by_date].sort((a, b) => 
+    const events = [...analytics.events_by_date].sort((a, b) =>
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
-    
-    // Filter out days with no activity to prevent skewing calculations
-    const activeEvents = events.filter(event => 
-      event.pageviews > 0 || 
-      event.sessions > 0 || 
-      (event.visitors && event.visitors > 0)
-    );
-    
-    if (activeEvents.length < 2) {
-      return {
-        visitors: undefined,
-        unique_visitors: undefined,
-        sessions: undefined,
-        pageviews: undefined,
-        bounce_rate: undefined,
-        session_duration: undefined,
-        pages_per_session: undefined
-      };
-    }
-    
-    const midpoint = Math.floor(activeEvents.length / 2);
-    const previousPeriod = activeEvents.slice(0, midpoint);
-    const currentPeriod = activeEvents.slice(midpoint);
-    
-    // Calculate metrics for each period
-    const sum = (arr: any[], field: string) => arr.reduce((sum, item) => sum + (item[field] || 0), 0);
-    
-    const currentVisitors = sum(currentPeriod, 'visitors');
-    const previousVisitors = sum(previousPeriod, 'visitors');
-    
-    // Use visitors instead since the API returns unique_visitors at the summary level
-    // but uses visitors in the events_by_date array
-    const currentUniqueVisitors = currentVisitors;
-    const previousUniqueVisitors = previousVisitors;
-    
-    const currentSessions = sum(currentPeriod, 'sessions');
-    const previousSessions = sum(previousPeriod, 'sessions');
-    
-    const currentPageviews = sum(currentPeriod, 'pageviews');
-    const previousPageviews = sum(previousPeriod, 'pageviews');
-    
-    const currentPagesPerSession = currentSessions > 0 ? currentPageviews / currentSessions : 0;
-    const previousPagesPerSession = previousSessions > 0 ? previousPageviews / previousSessions : 0;
-    
-    // Calculate weighted averages for bounce rate and session duration
-    const getWeightedAvg = (arr: any[], field: string) => {
-      const filtered = arr.filter(day => day[field] !== undefined && day[field] > 0);
-      return filtered.length > 0 ? filtered.reduce((sum, day) => sum + (day[field] || 0), 0) / filtered.length : 0;
-    };
-    
-    const currentBounceRate = getWeightedAvg(currentPeriod, 'bounce_rate');
-    const previousBounceRate = getWeightedAvg(previousPeriod, 'bounce_rate');
-    
-    const currentSessionDuration = getWeightedAvg(currentPeriod, 'avg_session_duration');
-    const previousSessionDuration = getWeightedAvg(previousPeriod, 'avg_session_duration');
 
-    // Calculate and round percent changes
-    const calcTrend = (current: number, previous: number, invert = false) => {
-      if (previous <= 0) return undefined;
-      const change = calculatePercentChange(current, previous);
-      const value = Math.round(invert ? -change : change);
-      return Math.max(-100, Math.min(1000, value)); // Limit between -100% and 1000%
+    const midpoint = Math.floor(events.length / 2);
+    const previousPeriodData = events.slice(0, midpoint);
+    const currentPeriodData = events.slice(midpoint);
+
+    if (previousPeriodData.length === 0 || currentPeriodData.length === 0) {
+      return {};
+    }
+
+    const sumCountMetric = (period: MetricPoint[], field: keyof Pick<MetricPoint, 'pageviews' | 'visitors' | 'sessions'>) =>
+      period.reduce((acc, item) => acc + (Number(item[field]) || 0), 0);
+
+    const currentSumVisitors = sumCountMetric(currentPeriodData, 'visitors');
+    const currentSumSessions = sumCountMetric(currentPeriodData, 'sessions');
+    const currentSumPageviews = sumCountMetric(currentPeriodData, 'pageviews');
+    const currentPagesPerSession = currentSumSessions > 0 ? currentSumPageviews / currentSumSessions : 0;
+
+    const previousSumVisitors = sumCountMetric(previousPeriodData, 'visitors');
+    const previousSumSessions = sumCountMetric(previousPeriodData, 'sessions');
+    const previousSumPageviews = sumCountMetric(previousPeriodData, 'pageviews');
+    const previousPagesPerSession = previousSumSessions > 0 ? previousSumPageviews / previousSumSessions : 0;
+
+    const averageRateMetric = (period: MetricPoint[], field: keyof Pick<MetricPoint, 'bounce_rate' | 'avg_session_duration'>) => {
+      const validEntries = period.map(item => Number(item[field])).filter(value => !Number.isNaN(value) && value > 0);
+      if (validEntries.length === 0) return 0;
+      return validEntries.reduce((acc, value) => acc + value, 0) / validEntries.length;
     };
+
+    const currentBounceRateAvg = averageRateMetric(currentPeriodData, 'bounce_rate');
+    const previousBounceRateAvg = averageRateMetric(previousPeriodData, 'bounce_rate');
+    const currentSessionDurationAvg = averageRateMetric(currentPeriodData, 'avg_session_duration');
+    const previousSessionDurationAvg = averageRateMetric(previousPeriodData, 'avg_session_duration');
+
+    const calculateTrendPercentage = (current: number, previous: number, minimumBase = 0) => {
+      if (previous < minimumBase && !(previous === 0 && current === 0) ) {
+        return undefined; // Base is too small for a meaningful trend, unless both are 0
+      }
+      if (previous === 0) {
+        return current === 0 ? 0 : undefined; // 0% change if both 0, else undefined for growth from 0 base
+      }
+      const change = calculatePercentChange(current, previous);
+      return Math.max(-100, Math.min(1000, Math.round(change)));
+    };
+
+    // Determine if trends for session-dependent metrics are meaningful
+    const canShowSessionBasedTrend = previousSumSessions >= MIN_PREVIOUS_SESSIONS_FOR_TREND;
 
     return {
-      visitors: calcTrend(currentVisitors, previousVisitors),
-      unique_visitors: calcTrend(currentUniqueVisitors, previousUniqueVisitors),
-      sessions: calcTrend(currentSessions, previousSessions),
-      pageviews: calcTrend(currentPageviews, previousPageviews),
-      pages_per_session: calcTrend(currentPagesPerSession, previousPagesPerSession),
-      bounce_rate: calcTrend(currentBounceRate, previousBounceRate, true),
-      session_duration: calcTrend(currentSessionDuration, previousSessionDuration)
+      visitors: calculateTrendPercentage(currentSumVisitors, previousSumVisitors, MIN_PREVIOUS_VISITORS_FOR_TREND),
+      sessions: calculateTrendPercentage(currentSumSessions, previousSumSessions, MIN_PREVIOUS_SESSIONS_FOR_TREND),
+      pageviews: calculateTrendPercentage(currentSumPageviews, previousSumPageviews, MIN_PREVIOUS_PAGEVIEWS_FOR_TREND),
+      pages_per_session: canShowSessionBasedTrend 
+        ? calculateTrendPercentage(currentPagesPerSession, previousPagesPerSession) 
+        : undefined,
+      bounce_rate: canShowSessionBasedTrend 
+        ? calculateTrendPercentage(currentBounceRateAvg, previousBounceRateAvg) 
+        : undefined,
+      session_duration: canShowSessionBasedTrend 
+        ? calculateTrendPercentage(currentSessionDurationAvg, previousSessionDurationAvg) 
+        : undefined,
     };
   }, [analytics.events_by_date]);
 
@@ -474,8 +495,8 @@ export function WebsiteOverviewTab({
             data={chartData} 
             isLoading={isLoading} 
             height={350}
-            title="Traffic Overview"
-            description="Website performance metrics over time"
+            // title="Traffic Overview"
+            // description="Website performance metrics over time"
           />
         </div>
       </div>

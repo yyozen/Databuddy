@@ -8,10 +8,7 @@ import { LineChart } from "lucide-react";
 const METRIC_COLORS = {
   pageviews: "#3b82f6", // Blue-500
   visitors: "#22c55e", // Green-500
-  unique_visitors: "#10b981", // Emerald-500
-  sessions: "#eab308", // Yellow-500
-  bounce_rate: "#ef4444", // Red-500
-  avg_session_duration: "#a855f7", // Purple-500
+  sessions: "#a855f7", // Purple-500
 };
 
 // Clean tooltip component
@@ -90,8 +87,8 @@ export function MetricsChart({
   data, 
   isLoading, 
   height = 300, 
-  title = "Traffic Overview",
-  description = "Pageviews, visitors and sessions over time",
+  title,
+  description,
   className
 }: MetricsChartProps) {
   const chartData = useMemo(() => data || [], [data]);
@@ -144,10 +141,10 @@ export function MetricsChart({
 
   return (
     <Card className="w-full rounded-none border-none rounded-b-xl">
-      <CardHeader className="py-3 px-4">
+      {title && <CardHeader className="py-3 px-4">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {description && <CardDescription className="text-xs">{description}</CardDescription>}
-      </CardHeader>
+      </CardHeader>}
       <CardContent className="pt-0 px-0 pb-4">
         <div style={{ width: '100%', height: height - 70 }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -258,21 +255,6 @@ export function MetricsChart({
                   yAxisId="left"
                 />
               )}
-              
-              {hasUniqueVisitors && (
-                <Area 
-                  type="monotone" 
-                  dataKey="unique_visitors" 
-                  stroke={METRIC_COLORS.unique_visitors} 
-                  fillOpacity={1} 
-                  fill="url(#colorUniqueVisitors)" 
-                  strokeWidth={1.5}
-                  activeDot={{ r: 4, strokeWidth: 1 }}
-                  name="Unique visitors"
-                  yAxisId="left"
-                />
-              )}
-              
               {hasSessions && (
                 <Area 
                   type="monotone" 
@@ -284,34 +266,6 @@ export function MetricsChart({
                   activeDot={{ r: 4, strokeWidth: 1 }}
                   name="Sessions"
                   yAxisId="left"
-                />
-              )}
-              
-              {hasBounceRate && (
-                <Area 
-                  type="monotone" 
-                  dataKey="bounce_rate" 
-                  stroke={METRIC_COLORS.bounce_rate} 
-                  fillOpacity={1} 
-                  fill="url(#colorBounceRate)" 
-                  strokeWidth={1.5}
-                  activeDot={{ r: 4, strokeWidth: 1 }}
-                  name="Bounce rate"
-                  yAxisId="right"
-                />
-              )}
-              
-              {hasAvgSessionDuration && (
-                <Area 
-                  type="monotone" 
-                  dataKey="avg_session_duration" 
-                  stroke={METRIC_COLORS.avg_session_duration} 
-                  fillOpacity={1} 
-                  fill="url(#colorAvgSessionDuration)" 
-                  strokeWidth={1.5}
-                  activeDot={{ r: 4, strokeWidth: 1 }}
-                  name="Avg session duration"
-                  yAxisId="duration"
                 />
               )}
             </AreaChart>
