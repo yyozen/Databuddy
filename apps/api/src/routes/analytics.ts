@@ -136,7 +136,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     const todayPagesBuilder = createTopPagesBuilder(params.website_id, todayDateStr, todayDateStr, 5);
     const resolutionsBuilder = createScreenResolutionsBuilder(params.website_id, startDate, endDate, 6);
     const browserVersionsBuilder = createBrowserVersionsBuilder(params.website_id, startDate, endDate, 5);
-    const countriesBuilder = createCountriesBuilder(params.website_id, startDate, endDate, 100);
+    const countriesBuilder = createCountriesBuilder(params.website_id, startDate, endDate, 5);
     const deviceTypesBuilder = createDeviceTypesBuilder(params.website_id, startDate, endDate, 5);
     const connectionTypesBuilder = createConnectionTypesBuilder(params.website_id, startDate, endDate, 5);
     const languagesBuilder = createLanguagesBuilder(params.website_id, startDate, endDate, 5);
