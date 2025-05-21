@@ -135,15 +135,6 @@ function WebsiteDetailsPage() {
     websiteIdRef.current = id as string;
   }, [id]);
 
-  // Handle errors
-  useEffect(() => {
-    if (isError) {
-      toast.error("Failed to load website details");
-      console.error(error);
-    }
-  }, [isError, error]);
-
-  
   // Create stable versions of the props objects before using in dependencies
   const stableTabProps = useMemo(() => ({
     websiteId: id as string,
@@ -256,14 +247,17 @@ function WebsiteDetailsPage() {
 
   if (!data) {
     return (
-      <div className="p-4">
-        <div className="flex flex-col items-center justify-center py-8">
-          <h1 className="text-xl font-bold mb-2">Website Not Found</h1>
-          <p className="text-muted-foreground text-sm mb-4">
+      <div className="flex items-center justify-center min-h-[80vh]">
+        <div className="bg-card border rounded-lg shadow-sm p-8 max-w-md w-full text-center">
+          <div className="bg-muted/50 rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h1 className="text-2xl font-semibold mb-3">Website Not Found</h1>
+          <p className="text-muted-foreground mb-6 max-w-xs mx-auto">
             The website you're looking for doesn't exist or you don't have
             permission to view it.
           </p>
-          <Button asChild size="sm">
+          <Button asChild size="default" className="px-6">
             <Link href="/websites">Back to Websites</Link>
           </Button>
         </div>
