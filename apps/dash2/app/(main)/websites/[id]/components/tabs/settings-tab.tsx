@@ -55,7 +55,7 @@ interface TrackingOptions {
 const LIBRARY_DEFAULTS: TrackingOptions = {
   trackErrors: true,
   trackPerformance: true,
-  trackWebVitals: false,
+  trackWebVitals: true,
   trackOutgoingLinks: false,
   trackScreenViews: true,
   trackSessions: false,
@@ -114,12 +114,34 @@ export function WebsiteSettingsTab({
   
   // Generate NPM init code based on selected options
   const generateNpmCode = useCallback(() => {
-    // For NPM, we'll show all options explicitly
-    const options = Object.entries(trackingOptions)
-      .map(([key, value]) => `  ${key}: ${value}`)
-      .join(",\n");
-    
-    return `import { DataBuddy } from '@databuddy/tracker';\n\n// Initialize the tracker\nconst databuddy = new DataBuddy({\n  clientId: '${websiteId}',\n${options}\n});`;
+    // For NPM, we'll show all options explicitly as props to the component
+    const propsString = Object.entries(trackingOptions)
+      .map(([key, value]) => {
+        if (typeof value === 'boolean') {
+          // For boolean true, just the prop name is fine (e.g., trackScreenViews)
+          // For boolean false, explicitly set prop={false}
+          return value ? `  ${key}` : `  ${key}={false}`;
+        }
+        if (typeof value === 'string') {
+          return `  ${key}="${value}"`;
+        }
+        return `  ${key}={${value}}`;
+      })
+      .join("\n");
+
+    return `import { Databuddy } from '@databuddy/sdk';
+
+function AppLayout({ children }) {
+  return (
+    <>
+      {children}
+      <Databuddy
+        clientId="${websiteId}" // Your Website ID
+${propsString}
+      />
+    </>
+  );
+}`;
   }, [trackingOptions, websiteId]);
   
   const [trackingCode, setTrackingCode] = useState(generateScriptTag());
@@ -305,7 +327,7 @@ export function WebsiteSettingsTab({
                   <Tabs defaultValue="script" className="w-full" onValueChange={(value) => setInstallMethod(value as "script" | "npm")}>
                     <TabsList className="mb-3 grid grid-cols-2 h-8">
                       <TabsTrigger value="script" className="text-xs">Script Tag</TabsTrigger>
-                      <TabsTrigger disabled value="npm" className="text-xs">NPM Package</TabsTrigger>
+                      <TabsTrigger value="npm" className="text-xs">NPM Package</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="script" className="mt-0">
@@ -343,14 +365,14 @@ export function WebsiteSettingsTab({
                         <div className="relative">
                           <div className="bg-secondary/50 dark:bg-secondary/20 rounded-md p-3 overflow-x-auto border">
                             <pre className="text-xs font-mono">
-                              <code>npm install @databuddy/tracker</code>
+                              <code>bun install @databuddy/sdk</code>
                             </pre>
                           </div>
                           <Button 
                             size="icon" 
                             variant="ghost" 
                             className="absolute top-2 right-2 h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
-                            onClick={() => handleCopyCode("npm install @databuddy/tracker")}
+                            onClick={() => handleCopyCode("npm install @databuddy/sdk")}
                           >
                             {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Clipboard className="h-3.5 w-3.5" />}
                           </Button>
@@ -361,8 +383,8 @@ export function WebsiteSettingsTab({
                         </p>
                         <div className="relative">
                           <div className="bg-secondary/50 dark:bg-secondary/20 rounded-md p-3 overflow-x-auto border">
-                            <pre className="text-xs font-mono leading-relaxed">
-                              <code>{npmCode}</code>
+                            <pre className="text-xs font-mono">
+                              <code className="language-jsx">{npmCode}</code>
                             </pre>
                           </div>
                           <Button 
@@ -634,7 +656,10 @@ export function WebsiteSettingsTab({
                       <div className="text-xs text-muted-foreground">
                         Use the JavaScript API to track custom events:
                         <pre className="mt-1 bg-secondary/30 p-2 rounded font-mono text-[10px] leading-relaxed">
-                          {`databuddy.track('purchase_completed', {
+                          {`import { Databuddy } from '@databuddy/sdk';
+
+// Track custom events
+Databuddy.track('purchase_completed', {
   amount: 99.99,
   productId: 'prod_123',
   currency: 'USD'
