@@ -355,7 +355,7 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
     
     return c.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: "Error retrieving summary analytics data"
     }, 500);
   }
 });

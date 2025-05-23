@@ -231,8 +231,8 @@ profilesRouter.get('/', zValidator('query', analyticsQuerySchema), async (c) => 
       
       return c.json({
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to retrieve visitor profiles.'
-      }, 400);
+        error: "Error retrieving visitor profiles"
+      }, 500);
     }
   });
   

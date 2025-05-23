@@ -8,7 +8,7 @@ import { DistributionChart } from "@/components/charts/distribution-chart";
 import { DataTable } from "@/components/analytics/data-table";
 import { useWebsiteAnalytics } from "@/hooks/use-analytics";
 import { formatDistributionData, groupBrowserData } from "../utils/analytics-helpers";
-import type { RefreshableTabProps } from "../utils/types";
+import type { FullTabProps } from "../utils/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Globe, Laptop, Smartphone, Tablet, Monitor, HelpCircle, Languages, Wifi, WifiOff } from 'lucide-react';
 import { getLanguageName } from "@databuddy/shared";
@@ -78,9 +78,10 @@ const getDeviceIcon = (deviceType: string) => {
 export function WebsiteAudienceTab({
   websiteId,
   dateRange,
+  websiteData,
   isRefreshing,
   setIsRefreshing
-}: RefreshableTabProps) {
+}: FullTabProps) {
   // Fetch analytics data
   const {
     analytics,

@@ -27,16 +27,17 @@ import { useWebsiteErrors } from "@/hooks/use-analytics";
 import type { DateRange, ErrorDetail } from "@/hooks/use-analytics";
 import { AnimatedLoading } from "@/components/analytics/animated-loading";
 import { Card } from "@/components/ui/card";
-import type { RefreshableTabProps } from "../utils/types";
+import type { FullTabProps } from "../utils/types";
 import { EmptyState } from "../utils/ui-components";
 import { StatCard } from "@/components/analytics/stat-card";
 
 export function WebsiteErrorsTab({
   websiteId,
   dateRange,
+  websiteData,
   isRefreshing,
   setIsRefreshing
-}: RefreshableTabProps) {
+}: FullTabProps) {
   // State for errors tab
   const [errorPage, setErrorPage] = useState<number>(1);
   const [selectedError, setSelectedError] = useState<ErrorDetail | null>(null);

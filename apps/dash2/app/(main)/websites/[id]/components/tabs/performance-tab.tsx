@@ -12,15 +12,16 @@ import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/analytics/stat-card";
 import { useWebsiteAnalytics } from "@/hooks/use-analytics";
 import { getColorVariant, PERFORMANCE_THRESHOLDS } from "../utils/analytics-helpers";
-import type { RefreshableTabProps } from "../utils/types";
+import type { FullTabProps } from "../utils/types";
 import { EmptyState, MetricTooltip } from "../utils/ui-components";
 
 export function WebsitePerformanceTab({
   websiteId,
   dateRange,
+  websiteData,
   isRefreshing,
   setIsRefreshing
-}: RefreshableTabProps) {
+}: FullTabProps) {
   const [activeTab, setActiveTab] = useState<string>("core");
   
   // Fetch analytics data

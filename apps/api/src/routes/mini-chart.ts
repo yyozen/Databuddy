@@ -93,8 +93,7 @@ miniChartRouter.get('/:website_id', async (c) => {
     } catch (error: any) {
       logger.error('Error fetching batch mini chart data:', error);
       return c.json(createErrorResponse({ 
-        message: 'Error fetching batch mini chart data',
-        error: error.message
+        message: 'Error fetching batch mini chart data'
       }), 500);
     }
   });

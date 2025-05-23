@@ -335,7 +335,12 @@ interface LocationsResponse extends ApiResponse {
 interface SessionsResponse extends ApiResponse {
   sessions: SessionData[];
   date_range: DateRange;
-  unique_visitors: number;
+  pagination: {
+    page: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 interface SessionDetailsResponse extends ApiResponse {
@@ -652,18 +657,22 @@ export function useAnalyticsLocations(
 export function useAnalyticsSessions(
   websiteId: string,
   dateRange?: DateRange,
-  limit = 20
+  limit = 100,
+  page = 1
 ) {
-  return useQuery({
-    queryKey: ['analytics', 'sessions', websiteId, dateRange, limit],
-    queryFn: ({ signal }) => fetchAnalyticsData<SessionsResponse>(
-      '/analytics/sessions', 
-      websiteId, 
-      dateRange, 
-      { limit },
-      signal
-    ),
-    ...defaultQueryOptions
+  return useQuery<SessionsResponse>({
+    queryKey: ['analytics', 'sessions', websiteId, dateRange, limit, page],
+    queryFn: ({ signal }) => 
+      fetchAnalyticsData<SessionsResponse>(
+        '/analytics/sessions', 
+        websiteId, 
+        dateRange, 
+        { limit, page }, 
+        signal
+      ),
+    enabled: !!websiteId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -678,7 +687,7 @@ export function useAnalyticsSessionDetails(
   return useQuery({
     queryKey: ['analytics', 'session', websiteId, sessionId],
     queryFn: ({ signal }) => fetchAnalyticsData<SessionDetailsResponse>(
-      `/analytics/session/${sessionId}`, 
+      `/analytics/sessions/${sessionId}`, 
       websiteId, 
       undefined, 
       undefined,

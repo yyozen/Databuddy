@@ -24,7 +24,7 @@ export default function MainLayout({
     <div className="h-screen bg-background text-foreground overflow-hidden">
       <Sidebar />
       <div className="md:pl-72 pt-16 h-screen relative">
-        <div className="h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="h-[calc(100vh-4rem)] overflow-y-scroll">
           {children}
         </div>
       </div>

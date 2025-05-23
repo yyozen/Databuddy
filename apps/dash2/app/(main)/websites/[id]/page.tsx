@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, Suspense, lazy, useRef } from "react";
+import { useEffect, useState, useMemo, useCallback, Suspense, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
 import { 
   ArrowLeft, 
   RefreshCw,
@@ -28,18 +29,60 @@ import {
   formattedDateRangeAtom,
 } from "@/stores/jotai/filterAtoms";
 
-// Tab content components
-import { WebsiteOverviewTab } from "./components/tabs/overview-tab";
-import { WebsiteAudienceTab } from "./components/tabs/audience-tab";
-import { WebsiteContentTab } from "./components/tabs/content-tab";
-import { WebsitePerformanceTab } from "./components/tabs/performance-tab";
-import { WebsiteSettingsTab } from "./components/tabs/settings-tab";
-import { WebsiteErrorsTab } from "./components/tabs/errors-tab";
-
 import type React from "react";
+import type { FullTabProps, WebsiteDataTabProps } from "./components/utils/types";
 
 // Add type for tab ID
 type TabId = 'overview' | 'audience' | 'content' | 'performance' | 'settings' | 'errors';
+
+// Dynamic imports with proper loading states and error boundaries
+const WebsiteOverviewTab = dynamic(
+  () => import("./components/tabs/overview-tab").then(mod => ({ default: mod.WebsiteOverviewTab })),
+  {
+    loading: () => <TabLoadingSkeleton />,
+    ssr: false
+  }
+);
+
+const WebsiteAudienceTab = dynamic(
+  () => import("./components/tabs/audience-tab").then(mod => ({ default: mod.WebsiteAudienceTab })),
+  {
+    loading: () => <TabLoadingSkeleton />,
+    ssr: false
+  }
+);
+
+const WebsiteContentTab = dynamic(
+  () => import("./components/tabs/content-tab").then(mod => ({ default: mod.WebsiteContentTab })),
+  {
+    loading: () => <TabLoadingSkeleton />,
+    ssr: false
+  }
+);
+
+const WebsitePerformanceTab = dynamic(
+  () => import("./components/tabs/performance-tab").then(mod => ({ default: mod.WebsitePerformanceTab })),
+  {
+    loading: () => <TabLoadingSkeleton />,
+    ssr: false
+  }
+);
+
+const WebsiteSettingsTab = dynamic(
+  () => import("./components/tabs/settings-tab").then(mod => ({ default: mod.WebsiteSettingsTab })),
+  {
+    loading: () => <TabLoadingSkeleton />,
+    ssr: false
+  }
+);
+
+const WebsiteErrorsTab = dynamic(
+  () => import("./components/tabs/errors-tab").then(mod => ({ default: mod.WebsiteErrorsTab })),
+  {
+    loading: () => <TabLoadingSkeleton />,
+    ssr: false
+  }
+);
 
 // Tab definition structure
 type TabDefinition = {
@@ -146,32 +189,53 @@ function WebsiteDetailsPage() {
     }
   }), [id, memoizedDateRangeForTabs, data, isRefreshing]);
 
-  const stableSettingsProps = useMemo(() => ({
+  const stableSettingsProps: WebsiteDataTabProps = useMemo(() => ({
     websiteId: id as string,
     dateRange: memoizedDateRangeForTabs,
     websiteData: data
   }), [id, memoizedDateRangeForTabs, data]);
 
-  // Function to render tab content with stable props
+  // Function to render tab content with stable props and lazy loading
   const renderTabContent = useCallback((tabId: TabId) => {
     // Only render if this tab is active
     if (tabId !== activeTab) return null;
 
-    // Choose which component to render
-    switch (tabId) {
-      case "overview":
-        return <WebsiteOverviewTab key={`overview-${websiteIdRef.current}-${memoizedDateRangeForTabs.start_date}`} {...stableTabProps} />;
-      case "audience":
-        return <WebsiteAudienceTab key={`audience-${websiteIdRef.current}-${memoizedDateRangeForTabs.start_date}`} {...stableTabProps} />;
-      case "content":
-        return <WebsiteContentTab key={`content-${websiteIdRef.current}-${memoizedDateRangeForTabs.start_date}`} {...stableTabProps} />;
-      case "performance":
-        return <WebsitePerformanceTab key={`performance-${websiteIdRef.current}-${memoizedDateRangeForTabs.start_date}`} {...stableTabProps} />;
-      case "settings":
-        return <WebsiteSettingsTab key={`settings-${websiteIdRef.current}`} {...stableSettingsProps} />;
-      case "errors":
-        return <WebsiteErrorsTab key={`errors-${websiteIdRef.current}-${memoizedDateRangeForTabs.start_date}`} {...stableTabProps} />;
+    // Settings tab uses different props (no refresh functionality)
+    const key = `${tabId}-${websiteIdRef.current}-${tabId === "settings" ? "static" : memoizedDateRangeForTabs.start_date}`;
+
+    if (tabId === "settings") {
+      return (
+        <Suspense fallback={<TabLoadingSkeleton />}>
+          <WebsiteSettingsTab key={key} {...stableSettingsProps} />
+        </Suspense>
+      );
     }
+
+    // All other tabs use FullTabProps
+    const TabComponent = (() => {
+      switch (tabId) {
+        case "overview":
+          return WebsiteOverviewTab;
+        case "audience":
+          return WebsiteAudienceTab;
+        case "content":
+          return WebsiteContentTab;
+        case "performance":
+          return WebsitePerformanceTab;
+        case "errors":
+          return WebsiteErrorsTab;
+        default:
+          return null;
+      }
+    })();
+
+    if (!TabComponent) return null;
+
+    return (
+      <Suspense fallback={<TabLoadingSkeleton />}>
+        <TabComponent key={key} {...stableTabProps} />
+      </Suspense>
+    );
   }, [activeTab, stableTabProps, stableSettingsProps, memoizedDateRangeForTabs.start_date]);
 
   // Define all tabs
@@ -423,9 +487,7 @@ function WebsiteDetailsPage() {
             value={tab.id} 
             className={`${tab.className} transition-all duration-200 animate-fadeIn`}
           >
-            <Suspense fallback={<TabLoadingSkeleton />}>
-              {renderTabContent(tab.id)}
-            </Suspense>
+            {renderTabContent(tab.id)}
           </TabsContent>
         ))}
       </Tabs>

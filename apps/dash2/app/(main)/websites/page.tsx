@@ -2,18 +2,79 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { WebsiteDialog } from "@/components/website-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useWebsites } from "@/hooks/use-websites";
 import { useDomains } from "@/hooks/use-domains";
-import { LoadingState } from "@/components/websites/loading-state";
-import { EmptyState } from "@/components/websites/empty-state";
-import { ErrorState } from "@/components/websites/error-state";
-import { WebsiteList } from "@/components/websites/website-list";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
+
+// Dynamic imports with proper loading states
+const WebsiteDialog = dynamic(
+  () => import("@/components/website-dialog").then(mod => ({ default: mod.WebsiteDialog })),
+  {
+    loading: () => <div />, // Dialog doesn't need visible loading state
+    ssr: false
+  }
+);
+
+const LoadingState = dynamic(
+  () => import("@/components/websites/loading-state").then(mod => ({ default: mod.LoadingState })),
+  {
+    loading: () => <WebsiteLoadingSkeleton />,
+    ssr: false
+  }
+);
+
+const EmptyState = dynamic(
+  () => import("@/components/websites/empty-state").then(mod => ({ default: mod.EmptyState })),
+  {
+    loading: () => <WebsiteLoadingSkeleton />,
+    ssr: false
+  }
+);
+
+const ErrorState = dynamic(
+  () => import("@/components/websites/error-state").then(mod => ({ default: mod.ErrorState })),
+  {
+    loading: () => <WebsiteLoadingSkeleton />,
+    ssr: false
+  }
+);
+
+const WebsiteList = dynamic(
+  () => import("@/components/websites/website-list").then(mod => ({ default: mod.WebsiteList })),
+  {
+    loading: () => <WebsiteLoadingSkeleton />,
+    ssr: false
+  }
+);
+
+// Loading skeleton component for website components
+function WebsiteLoadingSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[1, 2, 3, 4, 5, 6].map((num) => (
+          <div key={`website-skeleton-${num}`} className="rounded-lg border p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-4 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-48" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-16" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function WebsitesPage() {
   const searchParams = useSearchParams();
@@ -82,11 +143,15 @@ function WebsitesPage() {
   };
 
   if (isError) {
-    return <ErrorState onRetry={handleRefresh} />;
+    return (
+      <Suspense fallback={<WebsiteLoadingSkeleton />}>
+        <ErrorState onRetry={handleRefresh} />
+      </Suspense>
+    );
   }
 
   return (
-    <div className="h-full flex flex-col animate-fadeIn">
+    <div className="h-full flex flex-col animate-fadeIn overflow-scroll">
       <div className="flex items-center justify-between px-4 py-4 border-b">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Websites</h1>
@@ -120,46 +185,67 @@ function WebsitesPage() {
         )}
 
         {/* Show loading state */}
-        {isLoading && <LoadingState />}
+        {isLoading && (
+          <Suspense fallback={<WebsiteLoadingSkeleton />}>
+            <LoadingState />
+          </Suspense>
+        )}
 
         {/* Show empty state */}
         {!isLoading && websites.length === 0 && (
-          <EmptyState 
-            onCreateWebsite={createWebsite} 
-            isCreating={isCreating} 
-            hasVerifiedDomains={verifiedDomains.length > 0}
-            verifiedDomains={verifiedDomains}
-          />
+          <Suspense fallback={<WebsiteLoadingSkeleton />}>
+            <EmptyState 
+              onCreateWebsite={createWebsite} 
+              isCreating={isCreating} 
+              hasVerifiedDomains={verifiedDomains.length > 0}
+              verifiedDomains={verifiedDomains}
+            />
+          </Suspense>
         )}
 
         {/* Show website list view */}
         {!isLoading && websites.length > 0 && (
-          <WebsiteList
-            websites={websites}
-            onUpdate={(id: string, name: string) => updateWebsite({ id, name })}
-            isUpdating={isUpdating}
-            verifiedDomains={verifiedDomains}
-          />
+          <Suspense fallback={<WebsiteLoadingSkeleton />}>
+            <WebsiteList
+              websites={websites}
+              onUpdate={(id: string, name: string) => updateWebsite({ id, name })}
+              isUpdating={isUpdating}
+              verifiedDomains={verifiedDomains}
+            />
+          </Suspense>
         )}
       </div>
 
       {/* Separate dialog component */}
-      <WebsiteDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        isLoading={isCreating}
-        verifiedDomains={verifiedDomains}
-        initialValues={initialValues}
-      />
+      <Suspense fallback={<div />}>
+        <WebsiteDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          isLoading={isCreating}
+          verifiedDomains={verifiedDomains}
+          initialValues={initialValues}
+        />
+      </Suspense>
     </div>
   );
 } 
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-full">
-      <div className="text-muted-foreground">Loading...</div>
-    </div>}>
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-full">
+        <div className="space-y-3 w-full max-w-4xl px-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+            <Skeleton className="h-9 w-32" />
+          </div>
+          <WebsiteLoadingSkeleton />
+        </div>
+      </div>
+    }>
       <WebsitesPage />
     </Suspense>
   )

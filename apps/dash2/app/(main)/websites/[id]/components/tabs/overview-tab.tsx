@@ -110,11 +110,8 @@ export function WebsiteOverviewTab({
   isRefreshing,
   setIsRefreshing,
 }: FullTabProps) {
-  // Local state for adjusted granularity
-  const [adjustedDateRange, setAdjustedDateRange] = useState(dateRange);
-  
   // Fetch analytics data
-  const { analytics, loading, error, refetch } = useWebsiteAnalytics(websiteId, adjustedDateRange);
+  const { analytics, loading, error, refetch } = useWebsiteAnalytics(websiteId, dateRange);
 
   // Chart metric visibility
   const [visibleMetrics, setVisibleMetrics] = useState<Record<string, boolean>>({
@@ -152,18 +149,6 @@ export function WebsiteOverviewTab({
       isMounted = false;
     };
   }, [isRefreshing, refetch, setIsRefreshing]);
-
-  // Set granularity based on date range
-  useEffect(() => {
-    // Update the adjusted date range with the granularity from props
-    // This granularity is already set based on the date range in the parent component
-    const newAdjustedRange = {
-      ...dateRange,
-      granularity: dateRange.granularity || 'daily'
-    };
-    
-    setAdjustedDateRange(newAdjustedRange);
-  }, [dateRange]);
 
   // Define the structure for device type entries from the API
   interface DeviceTypeEntry {
@@ -265,7 +250,7 @@ export function WebsiteOverviewTab({
     return analytics.events_by_date.map((event: any) => {
       // Start with the date
       const filtered: any = { 
-        date: formatDateByGranularity(event.date, adjustedDateRange.granularity) 
+        date: formatDateByGranularity(event.date, dateRange.granularity) 
       };
       
       // Map the metrics from the API data
@@ -284,7 +269,7 @@ export function WebsiteOverviewTab({
       
       return filtered;
     });
-  }, [analytics.events_by_date, visibleMetrics, adjustedDateRange.granularity]);
+  }, [analytics.events_by_date, visibleMetrics, dateRange.granularity]);
 
   // Date range info for warning message
   const dateFrom = useMemo(() => new Date(dateRange.start_date), [dateRange.start_date]);
@@ -455,9 +440,9 @@ export function WebsiteOverviewTab({
             <h2 className="text-lg font-semibold tracking-tight">Visitor Trends</h2>
             <p className="text-sm text-muted-foreground">
               Website performance metrics over time
-              {adjustedDateRange.granularity === 'hourly' ? ' (hourly data)' : ' (daily data)'}
+              {dateRange.granularity === 'hourly' ? ' (hourly data)' : ' (daily data)'}
             </p>
-            {adjustedDateRange.granularity === 'hourly' && dateDiff > 7 && (
+            {dateRange.granularity === 'hourly' && dateDiff > 7 && (
               <div className="mt-1 flex items-center text-amber-600 gap-1 text-xs">
                 <AlertTriangle className="h-3 w-3" />
                 <span>Showing hourly data for more than 7 days may affect performance</span>
@@ -473,12 +458,13 @@ export function WebsiteOverviewTab({
         </div>
         <div className="">
           <MetricsChart 
-            data={chartData} 
+            data={chartData}
             isLoading={isLoading} 
             height={350}
             // title="Traffic Overview"
             // description="Website performance metrics over time"
           />
+          {/* <div>Metrics Chart temporarily removed for debugging</div> */}
         </div>
       </div>
 
