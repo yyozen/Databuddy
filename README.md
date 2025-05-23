@@ -4,10 +4,9 @@
 
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15.2-black.svg)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.3-black.svg)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.0-blue.svg)](https://reactjs.org/)
 [![Turborepo](https://img.shields.io/badge/Turborepo-1.12-blue.svg)](https://turbo.build/repo)
-[![pnpm](https://img.shields.io/badge/pnpm-8.15-blue.svg)](https://pnpm.io/)
 [![Bun](https://img.shields.io/badge/Bun-1.2-blue.svg)](https://bun.sh/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-blue.svg)](https://tailwindcss.com/)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-4.13-orange.svg)](https://workers.cloudflare.com/)
