@@ -37,7 +37,7 @@ export function parseUserAgent(userAgent: string): UserAgentInfo {
       bot: {
         isBot: true,
         name: botInfo.name,
-        type: botInfo.type
+        type: botInfo.category
       },
       device: 'unknown'
     };
@@ -99,6 +99,6 @@ export function detectBot(userAgent: string): { isBot: boolean; name?: string; t
   
   const botInfo = isBot(userAgent);
   return botInfo 
-    ? { isBot: true, name: botInfo.name, type: botInfo.type } 
+    ? { isBot: true, name: botInfo.name, type: botInfo.category } 
     : { isBot: false };
 } 

@@ -4,7 +4,6 @@
  */
 
 import { Hono } from 'hono';
-import { z } from 'zod';
 import { websiteAuthHook } from '../hooks/auth';
 import { processEvent } from '../controllers/analytics.controller';
 import type { AppVariables, TrackingEvent } from '../types';
@@ -14,6 +13,27 @@ import { parseReferrer } from '../utils/referrer';
 import { isBot } from '../lists';
 import { logger } from '../lib/logger';
 import { getRedisCache } from '@databuddy/redis';
+import {
+  analyticsEventSchema,
+  batchAnalyticsEventSchema,
+  validatePayloadSize,
+  validateProperties,
+  filterSafeHeaders,
+  validateLanguage,
+  validateTimezone,
+  validateTimezoneOffset,
+  validateSessionId,
+  validateUtmParameter,
+  validatePerformanceMetric,
+  validateScreenResolution,
+  validateViewportSize,
+  validateScrollDepth,
+  validatePageCount,
+  validateInteractionCount,
+  validateExitIntent,
+  sanitizeString,
+  VALIDATION_LIMITS
+} from '../utils/validation';
 
 const redis = getRedisCache();
 
@@ -21,96 +41,94 @@ const basketRouter = new Hono<{ Variables: AppVariables & { enriched?: any } }>(
 
 basketRouter.use(websiteAuthHook());
 
-const eventSchema = z.object({
-  type: z.enum(['track']),
-  payload: z.object({
-    name: z.string().optional(),
-    anonymousId: z.string().optional(),
-    properties: z.record(z.any()).optional(),
-    property: z.string().optional(),
-    value: z.number().optional(),
-  }),
-}) satisfies z.ZodType<TrackingEvent>;
-
-const batchEventsSchema = z.array(eventSchema);
-
 const enrichEvent = (properties: Record<string, any>, enriched: any) => {
-  // Get the current domain from the URL
-  const currentDomain = new URL(properties.__path || enriched.path).hostname;
+  // Validate and sanitize all properties first
+  const validatedProperties = validateProperties(properties);
+  
+  // Get the current domain from the URL with safe parsing
+  let currentDomain = '';
+  try {
+    const urlPath = validatedProperties.__path || enriched.path;
+    if (urlPath && typeof urlPath === 'string') {
+      currentDomain = new URL(urlPath).hostname;
+    }
+  } catch (e) {
+    logger.warn('Invalid URL path provided', { path: validatedProperties.__path || enriched.path });
+    currentDomain = '';
+  }
   
   // Check if referrer is from the same domain
-  let referrer = properties.__referrer || enriched.referrer;
-  let referrerType = properties.__referrer_type;
-  let referrerName = properties.__referrer_name;
+  let referrer = validatedProperties.__referrer || enriched.referrer;
+  let referrerType = validatedProperties.__referrer_type;
+  let referrerName = validatedProperties.__referrer_name;
   
-  if (referrer) {
+  if (referrer && currentDomain) {
     try {
-      const referrerUrl = new URL(referrer);
+      const referrerUrl = new URL(referrer as string);
       if (referrerUrl.hostname === currentDomain) {
         referrer = 'direct';
         referrerType = 'direct';
         referrerName = 'Direct';
       }
     } catch (e) {
+      logger.warn('Invalid referrer URL', { referrer });
       // If URL parsing fails, keep the original referrer
     }
   }
 
   return {
-    screen_resolution: properties.screen_resolution || '',
-    viewport_size: properties.viewport_size || '',
-    language: properties.language || enriched.language || '',
-    timezone: properties.timezone || enriched.timezone || '',
-    timezone_offset: properties.timezone_offset || null,
-    connection_type: properties.connection_type || '',
-    connection_speed: properties.connection_speed || '',
-    rtt: properties.rtt || null,
-    load_time: properties.load_time || null,
-    dom_ready_time: properties.dom_ready_time || null,
-    ttfb: properties.ttfb || null,
-    redirect_time: properties.redirect_time || null,
-    domain_lookup_time: properties.domain_lookup_time || null,
-    connection_time: properties.connection_time || null,
-    request_time: properties.request_time || null,
-    render_time: properties.render_time || null,
-    fcp: properties.fcp || null,
-    lcp: properties.lcp || null,
-    cls: properties.cls || null,
-    page_size: properties.page_size || null,
-    time_on_page: properties.time_on_page || null,
-    page_count: properties.page_count || null,
-    scroll_depth: properties.scroll_depth || null,
-    interaction_count: properties.interaction_count || null,
-    exit_intent: properties.exit_intent || 0,
-    title: properties.__title || '',
-    path: properties.__path || enriched.path,
-    session_id: properties.sessionId,
-    session_start_time: properties.sessionStartTime,
-    referrer: referrer,
-    referrer_type: referrerType,
-    referrer_name: referrerName,
-    sdk_name: properties.__sdk_name || properties.__enriched?.sdk_name,
-    sdk_version: properties.__sdk_version || properties.__enriched?.sdk_version,
-    __raw_properties: properties,
+    screen_resolution: validateScreenResolution(validatedProperties.screen_resolution),
+    viewport_size: validateViewportSize(validatedProperties.viewport_size),
+    language: validateLanguage(validatedProperties.language || enriched.language),
+    timezone: validateTimezone(validatedProperties.timezone || enriched.timezone),
+    timezone_offset: validateTimezoneOffset(validatedProperties.timezone_offset),
+    connection_type: sanitizeString(validatedProperties.connection_type, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    connection_speed: sanitizeString(validatedProperties.connection_speed, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    rtt: validatePerformanceMetric(validatedProperties.rtt),
+    load_time: validatePerformanceMetric(validatedProperties.load_time),
+    dom_ready_time: validatePerformanceMetric(validatedProperties.dom_ready_time),
+    ttfb: validatePerformanceMetric(validatedProperties.ttfb),
+    redirect_time: validatePerformanceMetric(validatedProperties.redirect_time),
+    domain_lookup_time: validatePerformanceMetric(validatedProperties.domain_lookup_time),
+    connection_time: validatePerformanceMetric(validatedProperties.connection_time),
+    request_time: validatePerformanceMetric(validatedProperties.request_time),
+    render_time: validatePerformanceMetric(validatedProperties.render_time),
+    fcp: validatePerformanceMetric(validatedProperties.fcp),
+    lcp: validatePerformanceMetric(validatedProperties.lcp),
+    cls: validatePerformanceMetric(validatedProperties.cls),
+    page_size: validatePerformanceMetric(validatedProperties.page_size),
+    time_on_page: validatePerformanceMetric(validatedProperties.time_on_page),
+    page_count: validatePageCount(validatedProperties.page_count),
+    scroll_depth: validateScrollDepth(validatedProperties.scroll_depth),
+    interaction_count: validateInteractionCount(validatedProperties.interaction_count),
+    exit_intent: validateExitIntent(validatedProperties.exit_intent),
+    title: sanitizeString(validatedProperties.__title, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+    path: sanitizeString(validatedProperties.__path || enriched.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+    session_id: validateSessionId(validatedProperties.sessionId),
+    session_start_time: sanitizeString(validatedProperties.sessionStartTime, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    referrer: sanitizeString(referrer, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+    referrer_type: sanitizeString(referrerType, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    referrer_name: sanitizeString(referrerName, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    sdk_name: sanitizeString(validatedProperties.__sdk_name || (validatedProperties.__enriched as any)?.sdk_name, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    sdk_version: sanitizeString(validatedProperties.__sdk_version || (validatedProperties.__enriched as any)?.sdk_version, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    __raw_properties: validatedProperties,
     __enriched: enriched
   };
 };
 
 basketRouter.use('*', async (c, next) => {
-  const userAgent = c.req.header('user-agent') || '';
-  const referrer = c.req.header('referer') || '';
+  const userAgent = sanitizeString(c.req.header('user-agent'), VALIDATION_LIMITS.STRING_MAX_LENGTH);
+  const referrer = sanitizeString(c.req.header('referer'), VALIDATION_LIMITS.STRING_MAX_LENGTH);
   const url = new URL(c.req.url);
-  const language = c.req.header('accept-language')?.split(',')[0] || '';
+  const rawLanguage = c.req.header('accept-language')?.split(',')[0] || '';
+  const language = validateLanguage(rawLanguage);
 
   if (isBot(userAgent)) {
-    const botRequests = await redis.incr('bot_requests');
-    redis.publish('bot_requests', JSON.stringify({
-      userAgent,
-      referrer,
-      url,
-      language,
-      botRequests
-    }));
+    try {
+      redis.publish('bot_requests', 'Bot request');
+    } catch (error) {
+      logger.warn('Redis operation failed for bot tracking', { error: error instanceof Error ? error.message : String(error) });
+    }
     logger.info('Skipping bot request', { userAgent });
     return c.json({ status: 'skipped', message: 'Bot request' }, 200);
   }
@@ -118,9 +136,11 @@ basketRouter.use('*', async (c, next) => {
   const parser = new UAParser(userAgent);
   const result = parser.getResult();
   
+  // Use safe header filtering instead of copying all headers
+  const safeHeaders = filterSafeHeaders(c.req.header());
   const headers = new Headers();
-  for (const [key, value] of Object.entries(c.req.header())) {
-    if (value) headers.append(key, value);
+  for (const [key, value] of Object.entries(safeHeaders)) {
+    headers.append(key, value);
   }
   
   const request = new Request(c.req.url, { headers, method: c.req.method });
@@ -133,31 +153,31 @@ basketRouter.use('*', async (c, next) => {
     path: url.pathname,
     title: '',
     user_agent: userAgent,
-    browser_name: result.browser.name || 'Unknown',
-    browser_version: result.browser.version || 'Unknown',
-    os_name: result.os.name || 'Unknown',
-    os_version: result.os.version || 'Unknown',
-    device_type: result.device.type || 'desktop',
-    device_brand: result.device.vendor || 'Unknown',
-    device_model: result.device.model || 'Unknown',
+    browser_name: sanitizeString(result.browser.name, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    browser_version: sanitizeString(result.browser.version, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    os_name: sanitizeString(result.os.name, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    os_version: sanitizeString(result.os.version, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    device_type: sanitizeString(result.device.type, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH) || 'desktop',
+    device_brand: sanitizeString(result.device.vendor, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    device_model: sanitizeString(result.device.model, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
     screen_resolution: '',
     viewport_size: '',
     language,
-    timezone: geo.timezone || '',
+    timezone: validateTimezone(geo.timezone),
     timezone_offset: null,
     connection_type: '',
     connection_speed: '',
     rtt: null,
     ip: anonymizeIp(geo.ip || ''),
-    country: geo.country || '',
-    region: geo.region || '',
-    city: geo.city || '',
+    country: sanitizeString(geo.country, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    region: sanitizeString(geo.region, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    city: sanitizeString(geo.city, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
     referrer: referrerInfo.url,
-    utm_source: urlParams.get('utm_source') || '',
-    utm_medium: urlParams.get('utm_medium') || '',
-    utm_campaign: urlParams.get('utm_campaign') || '',
-    utm_term: urlParams.get('utm_term') || '',
-    utm_content: urlParams.get('utm_content') || '',
+    utm_source: validateUtmParameter(urlParams.get('utm_source')),
+    utm_medium: validateUtmParameter(urlParams.get('utm_medium')),
+    utm_campaign: validateUtmParameter(urlParams.get('utm_campaign')),
+    utm_term: validateUtmParameter(urlParams.get('utm_term')),
+    utm_content: validateUtmParameter(urlParams.get('utm_content')),
     load_time: null,
     dom_ready_time: null,
     ttfb: null,
@@ -181,81 +201,121 @@ basketRouter.use('*', async (c, next) => {
 });
 
 basketRouter.post('/', async (c) => {
-  const validationResult = eventSchema.safeParse(await c.req.json());
-  
-  if (!validationResult.success) {
-    return c.json({ 
-      status: 'error', 
-      message: 'Invalid event data',
-      errors: validationResult.error.issues
-    }, 400);
-  }
-  
-  const enriched = c.get('enriched');
-  const properties = validationResult.data.payload.properties || {};
-  
-  const mappedEvent = {
-    ...validationResult.data,
-    payload: {
-      ...validationResult.data.payload,
-      ...enrichEvent(properties, enriched)
+  try {
+    const requestBody = await c.req.json();
+    
+    // Comprehensive payload validation
+    if (!validatePayloadSize(requestBody, VALIDATION_LIMITS.PAYLOAD_MAX_SIZE)) {
+      return c.json({ 
+        status: 'error', 
+        message: 'Request payload too large'
+      }, 413);
     }
-  } as TrackingEvent;
-  
-  c.set('event', mappedEvent);
-  return processEvent(c);
-});
-
-basketRouter.post('/batch', async (c) => {
-  const validationResult = batchEventsSchema.safeParse(await c.req.json());
-  
-  if (!validationResult.success) {
-    return c.json({ 
-      status: 'error', 
-      message: 'Invalid batch events data',
-      errors: validationResult.error.issues
-    }, 400);
-  }
-  
-  const enriched = c.get('enriched');
-  const events = validationResult.data;
-  const results = [];
-  
-  for (const event of events) {
-    const properties = event.payload.properties || {};
+    
+    const validationResult = analyticsEventSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      return c.json({ 
+        status: 'error', 
+        message: 'Invalid event data',
+        errors: validationResult.error.issues
+      }, 400);
+    }
+    
+    const enriched = c.get('enriched');
+    const properties = validationResult.data.payload.properties || {};
     
     const mappedEvent = {
-      ...event,
+      ...validationResult.data,
       payload: {
-        ...event.payload,
+        ...validationResult.data.payload,
         ...enrichEvent(properties, enriched)
       }
     } as TrackingEvent;
     
     c.set('event', mappedEvent);
-    try {
-      const result = await processEvent(c);
-      const resultData = await result.json() as { status: string };
-      results.push({
-        status: resultData.status, 
-        eventName: event.payload.name,
-        anonymousId: event.payload.anonymousId?.substring(0, 8)
-      });
-    } catch (error) {
-      results.push({
-        status: 'error',
-        eventName: event.payload.name,
-        anonymousId: event.payload.anonymousId?.substring(0, 8),
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
+    return processEvent(c);
+  } catch (error) {
+    logger.error('Error processing event', { error: error instanceof Error ? error.message : String(error) });
+    return c.json({ 
+      status: 'error', 
+      message: 'Failed to process event'
+    }, 500);
   }
-  
-  return c.json({
-    status: 'success',
-    message: `Processed ${events.length} events`,
-    processed: results
-  }, 200);
+});
+
+basketRouter.post('/batch', async (c) => {
+  try {
+    const requestBody = await c.req.json();
+    
+    // Comprehensive batch payload validation
+    if (!validatePayloadSize(requestBody, VALIDATION_LIMITS.BATCH_PAYLOAD_MAX_SIZE)) {
+      return c.json({ 
+        status: 'error', 
+        message: 'Batch payload too large'
+      }, 413);
+    }
+    
+    const validationResult = batchAnalyticsEventSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      return c.json({ 
+        status: 'error', 
+        message: 'Invalid batch events data',
+        errors: validationResult.error.issues
+      }, 400);
+    }
+    
+    const enriched = c.get('enriched');
+    const events = validationResult.data;
+    const results = [];
+    
+    for (const event of events) {
+      const properties = event.payload.properties || {};
+      
+      const mappedEvent = {
+        ...event,
+        payload: {
+          ...event.payload,
+          ...enrichEvent(properties, enriched)
+        }
+      } as TrackingEvent;
+      
+      c.set('event', mappedEvent);
+      try {
+        const result = await processEvent(c);
+        const resultData = await result.json() as { status: string };
+        results.push({
+          status: resultData.status, 
+          eventName: event.payload.name,
+          anonymousId: event.payload.anonymousId?.substring(0, 8)
+        });
+      } catch (error) {
+        logger.error('Error processing batch event', { 
+          error: error instanceof Error ? error.message : String(error),
+          eventName: event.payload.name 
+        });
+        results.push({
+          status: 'error',
+          eventName: event.payload.name,
+          anonymousId: event.payload.anonymousId?.substring(0, 8),
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+    
+    return c.json({
+      status: 'success',
+      message: `Processed ${events.length} events`,
+      processed: results
+    }, 200);
+  } catch (error) {
+    logger.error('Error processing batch events', { error: error instanceof Error ? error.message : String(error) });
+    return c.json({ 
+      status: 'error', 
+      message: 'Failed to process batch events'
+    }, 500);
+  }
 });
 
 export default basketRouter;
