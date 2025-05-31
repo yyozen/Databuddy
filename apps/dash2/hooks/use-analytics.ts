@@ -352,6 +352,12 @@ interface ProfilesResponse extends ApiResponse {
   date_range: DateRange;
   total_visitors: number;
   returning_visitors: number;
+  pagination: {
+    page: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 interface MiniChartResponse extends ApiResponse {
@@ -551,27 +557,6 @@ export function useBatchedMiniCharts(websiteIds: string[]) {
 }
 
 /**
- * Hook to fetch visitor trends over time
- */
-export function useAnalyticsTrends(
-  websiteId: string, 
-  interval: TimeInterval = 'day',
-  dateRange?: DateRange,
-  limit = 30
-) {
-  return useQuery({
-    queryKey: ['analytics', 'trends', websiteId, interval, dateRange, limit],
-    queryFn: () => fetchAnalyticsData<TrendsResponse>(
-      '/analytics/trends', 
-      websiteId, 
-      dateRange, 
-      { interval, limit }
-    ),
-    ...defaultQueryOptions
-  });
-}
-
-/**
  * Hook to fetch top pages data
  */
 export function useAnalyticsPages(
@@ -704,15 +689,16 @@ export function useAnalyticsSessionDetails(
 export function useAnalyticsProfiles(
   websiteId: string,
   dateRange?: DateRange,
-  limit = 50
+  limit = 50,
+  page = 1
 ) {
   return useQuery({
-    queryKey: ['analytics', 'profiles', websiteId, dateRange, limit],
+    queryKey: ['analytics', 'profiles', websiteId, dateRange, limit, page],
     queryFn: ({ signal }) => fetchAnalyticsData<ProfilesResponse>(
       '/analytics/profiles', 
       websiteId, 
       dateRange, 
-      { limit },
+      { limit, page },
       signal
     ),
     ...defaultQueryOptions

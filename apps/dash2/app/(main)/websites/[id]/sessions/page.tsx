@@ -7,16 +7,21 @@ import { SessionStats } from "@/components/sessions/session-stats";
 import { SessionsTable } from "@/components/sessions/sessions-table";
 import { SessionDetailsModal } from "@/components/sessions/session-details-modal";
 import type { SessionData } from "@/hooks/use-analytics";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function SessionsPage() {
   const params = useParams();
   const websiteId = params.id as string;
   
   const [selectedSession, setSelectedSession] = useState<SessionData | null>(null);
+  const [page, setPage] = useState(1);
+  const limit = 1000;
   
-  const { data, isLoading } = useAnalyticsSessions(websiteId, undefined, 1000, 1);
+  const { data, isLoading } = useAnalyticsSessions(websiteId, undefined, limit, page);
 
   const sessions = data?.sessions || [];
+  const pagination = data?.pagination;
   
   // Calculate stats from all sessions
   const totalSessions = sessions.length;
@@ -40,12 +45,38 @@ export default function SessionsPage() {
       </div>
       
       {/* Table Section - Flexible height with scroll */}
-      <div className="flex-1 px-4 sm:px-6 pb-4 sm:pb-6 min-h-0">
+      <div className="flex-1 px-4 sm:px-6 pb-4 sm:pb-6 min-h-0 flex flex-col">
         <SessionsTable
           sessions={sessions}
           isLoading={isLoading}
           onSessionClick={setSelectedSession}
         />
+        {/* Pagination Controls */}
+        {pagination && (
+          <div className="flex items-center justify-between mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={!pagination.hasPrev}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="ml-1">Previous</span>
+            </Button>
+            <span className="text-sm px-2">
+              Page {pagination.page} of {pagination.hasNext ? pagination.page + 1 : pagination.page}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!pagination.hasNext}
+            >
+              <span className="mr-1">Next</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Modal */}

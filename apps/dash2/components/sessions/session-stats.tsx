@@ -9,9 +9,14 @@ interface SessionStatsProps {
 
 export function SessionStats({ totalSessions, avgDuration, bounceRate, totalPageViews }: SessionStatsProps) {
   const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+    let result = '';
+    if (hours > 0) result += `${hours}h `;
+    if (minutes > 0 || hours > 0) result += `${minutes}m `;
+    if (remainingSeconds > 0 || (hours === 0 && minutes === 0)) result += `${remainingSeconds}s`;
+    return result.trim();
   };
 
   const stats = [

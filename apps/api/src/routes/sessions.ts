@@ -10,6 +10,7 @@ import { timezoneMiddleware, useTimezone, timezoneQuerySchema } from "../middlew
 import { z } from "zod";
 import { formatDuration } from "../utils/dates";
 import { parseUserAgentDetails } from "../utils/ua";
+import { parseReferrer } from "../utils/referrer";
 
 const sessionsRouter = new Hono<{ Variables: AppVariables }>();
 
@@ -29,7 +30,7 @@ const analyticsQuerySchema = z.object({
 const formatSessionObject = (session: any, visitorSessionCount: number) => {
   const durationFormatted = formatDuration(session.duration || 0);
   const userAgentInfo = parseUserAgentDetails(session.user_agent || '');
-  const referrerParsed = session.referrer ? parseReferrers([{ referrer: session.referrer, visitors: 0, pageviews: 0 }])[0] : null;
+  const referrerInfo = parseReferrer(session.referrer, undefined);
   const sessionName = generateSessionName(session.session_id);
   
   const { user_agent, ...sessionWithoutUserAgent } = session;
@@ -41,7 +42,11 @@ const formatSessionObject = (session: any, visitorSessionCount: number) => {
     browser: userAgentInfo.browser_name,
     os: userAgentInfo.os_name,
     duration_formatted: durationFormatted,
-    referrer_parsed: referrerParsed,
+    referrer_parsed: session.referrer ? {
+      type: referrerInfo.type,
+      name: referrerInfo.name,
+      domain: referrerInfo.domain,
+    } : null,
     is_returning_visitor: visitorSessionCount > 1,
     visitor_session_count: visitorSessionCount
   };
@@ -109,16 +114,34 @@ sessionsRouter.get('/:session_id', zValidator('query', z.object({
   }
   
   try {
-    const sessionsBuilder = createSessionsBuilder(website.id, '2000-01-01', '2100-01-01', 1);
-    sessionsBuilder.sb.where.session_filter = `session_id = '${session_id}'`;
-    
-    const sessionResult = await chQuery(sessionsBuilder.getSql());
+    const sessionDetailBuilder = createSqlBuilder();
+    sessionDetailBuilder.sb.select = {
+      ...createSessionsBuilder(website.id, '2000-01-01', '2100-01-01', 1).sb.select,
+      visitor_total_sessions: `(
+        SELECT COUNT(DISTINCT s2.session_id)
+        FROM analytics.events s2
+        WHERE s2.client_id = events.client_id AND s2.anonymous_id = events.anonymous_id
+      ) AS visitor_total_sessions`
+    };
+    sessionDetailBuilder.sb.from = 'analytics.events';
+    sessionDetailBuilder.sb.where = {
+      client_filter: `client_id = '${website.id}'`,
+      session_filter: `session_id = '${session_id}'`,
+    };
+    sessionDetailBuilder.sb.groupBy = {
+        session_id: 'session_id',
+        visitor_id: 'anonymous_id',
+        client_id: 'client_id'
+    };
+
+    const sessionResult = await chQuery(sessionDetailBuilder.getSql());
     
     if (!sessionResult.length) {
       return c.json({ success: false, error: 'Session not found' }, 404);
     }
     
     const session = sessionResult[0];
+    const visitorSessionCount = session.visitor_total_sessions || 1;
     
     const eventsBuilder = createSessionEventsBuilder(website.id, session_id);
     const eventsResult = await chQuery(eventsBuilder.getSql());
@@ -134,17 +157,6 @@ sessionsRouter.get('/:session_id', zValidator('query', z.object({
         os: eventUserAgentInfo.os_name
       };
     });
-    
-    const visitorSessionsBuilder = createSqlBuilder();
-    visitorSessionsBuilder.sb.select = { session_count: 'COUNT(DISTINCT session_id) as session_count' };
-    visitorSessionsBuilder.sb.from = 'analytics.events';
-    visitorSessionsBuilder.sb.where = {
-      client_filter: `client_id = '${website.id}'`,
-      visitor_filter: `anonymous_id = '${session.visitor_id}'`
-    };
-    
-    const visitorSessionsResult = await chQuery(visitorSessionsBuilder.getSql());
-    const visitorSessionCount = visitorSessionsResult[0]?.session_count || 1;
     
     const formattedSession = {
       ...formatSessionObject(session, visitorSessionCount),

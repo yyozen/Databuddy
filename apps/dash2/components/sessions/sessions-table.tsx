@@ -135,12 +135,21 @@ export function SessionsTable({ sessions, isLoading, onSessionClick }: SessionsT
       ),
       cell: ({ getValue }) => {
         const duration = getValue() as number || 0;
-        const minutes = Math.floor(duration / 60);
-        const seconds = duration % 60;
+        // Format as Xh Ym Zs
+        const formatDuration = (seconds: number) => {
+          const hours = Math.floor(seconds / 3600);
+          const minutes = Math.floor((seconds % 3600) / 60);
+          const remainingSeconds = seconds % 60;
+          let result = '';
+          if (hours > 0) result += `${hours}h `;
+          if (minutes > 0 || hours > 0) result += `${minutes}m `;
+          if (remainingSeconds > 0 || (hours === 0 && minutes === 0)) result += `${remainingSeconds}s`;
+          return result.trim();
+        };
         return (
           <div className="text-center">
             <span className="text-xs font-medium">
-              {`${minutes}:${String(seconds).padStart(2, '0')}`}
+              {formatDuration(duration)}
             </span>
           </div>
         );
