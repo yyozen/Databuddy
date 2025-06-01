@@ -689,7 +689,7 @@ export function useAnalyticsSessionDetails(
 export function useAnalyticsProfiles(
   websiteId: string,
   dateRange?: DateRange,
-  limit = 50,
+  limit = 500,
   page = 1
 ) {
   return useQuery({

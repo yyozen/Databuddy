@@ -16,9 +16,8 @@ export default function ProfilesPage() {
   
   const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null);
   const [page, setPage] = useState(1);
-  const limit = 50;
-  
-  const { data, isLoading } = useAnalyticsProfiles(websiteId, undefined, limit, page);
+      
+  const { data, isLoading } = useAnalyticsProfiles(websiteId, undefined, 500, page);
 
   const profiles = data?.profiles || [];
   const pagination = data?.pagination;
