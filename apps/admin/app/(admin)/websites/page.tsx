@@ -1,30 +1,20 @@
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"; // For owner initials
-import { Button } from "@/components/ui/button";
-import { AlertCircle, Globe, MoreHorizontal, ExternalLink } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Globe, ExternalLink } from "lucide-react";
 import { getAllWebsitesAsAdmin } from "./actions";
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -35,14 +25,15 @@ import { WebsiteActions } from "./website-actions";
 interface WebsiteWithUser {
   id: string;
   name: string | null;
-  domain: string | null; // Assuming this is the full display domain or subdomain.domain
+  domain: string | null;
+  status: string;
   createdAt: Date | string;
   userId: string | null;
   ownerName: string | null;
   ownerEmail: string | null;
 }
 
-// Helper function to get initials (can be moved to a shared util)
+// Helper function to get initials
 const getInitials = (name: string | null | undefined) => {
   if (!name) return "U";
   return name
@@ -77,7 +68,6 @@ export default async function AdminWebsitesPage({
       <Card>
         <CardHeader>
           <CardTitle>Error</CardTitle>
-          <CardDescription>Could not load websites.</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-destructive">{error}</p>
@@ -87,107 +77,105 @@ export default async function AdminWebsitesPage({
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <Card className="bg-gradient-to-br from-primary/5 to-muted/0 border-0 shadow-none">
-        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 pb-2">
-          <div className="flex items-center gap-4">
-            <Globe className="h-10 w-10 text-primary bg-primary/10 rounded-full p-2 shadow" />
-            <div>
-              <CardTitle className="text-3xl font-bold mb-1">Manage Websites</CardTitle>
-              <CardDescription className="text-base text-muted-foreground">
-                View and manage all websites on the platform.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Websites</h1>
+          <p className="text-sm text-muted-foreground">
+            {filteredWebsites?.length || 0} website{filteredWebsites?.length === 1 ? '' : 's'}
+            {search && ` matching "${search}"`}
+          </p>
+        </div>
+        <DataTableToolbar placeholder="Search websites..." />
+      </div>
 
-      <Card className="shadow-md border-0 bg-gradient-to-br from-primary/5 to-muted/0">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Websites</CardTitle>
-              <CardDescription>
-                Found {filteredWebsites?.length || 0} website{filteredWebsites?.length === 1 ? '' : 's'}
-                {search && ` matching "${search}"`}.
-              </CardDescription>
-            </div>
-            <DataTableToolbar placeholder="Search websites..." />
-          </div>
-        </CardHeader>
-        <CardContent>
+      <Card>
+        <CardContent className="p-0">
           {(!filteredWebsites || filteredWebsites.length === 0) ? (
-            <div className="p-8 border rounded-lg bg-muted/20">
-              <p className="text-center text-muted-foreground">
-                {search 
-                  ? `No websites found matching "${search}". Try a different search term.`
-                  : "No websites found."}
-              </p>
+            <div className="p-8 text-center text-muted-foreground">
+              {search 
+                ? `No websites found matching "${search}"`
+                : "No websites found"}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[150px]">Website Name</TableHead>
-                  <TableHead>Domain</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="w-[50px] text-right">Actions</TableHead>
+                  <TableHead>Website</TableHead>
+                  <TableHead className="hidden md:table-cell">Owner</TableHead>
+                  <TableHead className="hidden lg:table-cell">Domain</TableHead>
+                  <TableHead className="hidden lg:table-cell">Created</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(filteredWebsites as WebsiteWithUser[]).map((website) => (
                   <TableRow key={website.id}>
-                    <TableCell className="font-medium">
-                      {website.name || "Untitled Website"}
-                    </TableCell>
                     <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium truncate">
+                              {website.name || "Untitled Website"}
+                            </span>
+                            {website.status && (
+                              <Badge 
+                                variant={website.status === 'ACTIVE' ? 'default' : 'secondary'} 
+                                className="text-xs h-4"
+                              >
+                                {website.status}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="md:hidden text-xs text-muted-foreground mt-1">
+                            {website.ownerName && `Owner: ${website.ownerName}`}
+                            {website.domain && (
+                              <span className="ml-2">{website.domain}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {website.userId || website.ownerEmail ? (
+                        <Link href={`/users/${encodeURIComponent(website.userId || website.ownerEmail || "")}`} className="flex items-center gap-2 group max-w-[200px]">
+                          <Avatar className="h-6 w-6 text-xs">
+                            <AvatarFallback className="text-[10px]">{getInitials(website.ownerName)}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate group-hover:underline">{website.ownerName || "Unknown"}</div>
+                            <div className="text-xs text-muted-foreground truncate">{website.ownerEmail}</div>
+                          </div>
+                        </Link>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Unknown</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       {website.domain ? (
                         <a 
                           href={`http://${website.domain}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="font-medium hover:underline flex items-center"
+                          className="text-sm hover:underline flex items-center gap-1 max-w-[200px]"
                         >
-                          {website.domain} <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                          <span className="truncate">{website.domain}</span>
+                          <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                         </a>
-                      ) : "N/A"}
+                      ) : (
+                        <span className="text-sm text-muted-foreground">None</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                      {format(new Date(website.createdAt), 'MMM d, yyyy')}
                     </TableCell>
                     <TableCell>
-                      {website.userId || website.ownerEmail ? (
-                        <Link href={`/users/${encodeURIComponent(website.userId || website.ownerEmail || "")}`} className="flex items-center gap-2 group">
-                          <Avatar className="h-8 w-8 text-xs group-hover:ring-2 group-hover:ring-primary">
-                            <AvatarFallback>{getInitials(website.ownerName)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-sm group-hover:underline">{website.ownerName || "Unknown User"}</div>
-                          </div>
-                        </Link>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8 text-xs">
-                            <AvatarFallback>{getInitials(website.ownerName)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-sm">{website.ownerName || "Unknown User"}</div>
-                          </div>
-                        </div>
-                      )}
-                      <div className="text-xs text-muted-foreground">{website.ownerEmail || "-"}</div>
-                    </TableCell>
-                    <TableCell>{format(new Date(website.createdAt), 'MMM d, yyyy')}</TableCell>
-                    <TableCell className="text-right">
                       <WebsiteActions website={website} />
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
-              {filteredWebsites.length > 10 && (
-                <TableCaption className="py-4 border-t mt-0">
-                  Showing {filteredWebsites.length} websites. Pagination coming soon.
-                </TableCaption>
-              )}
             </Table>
           )}
         </CardContent>

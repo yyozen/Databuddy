@@ -32,7 +32,7 @@ import {
   createTodayBuilder, 
   createTodayByHourBuilder,
   createTopPagesBuilder, 
-  createTopReferrersBuilder, 
+  createTopReferrersBuilder,
   createEventsByDateBuilder,
   createScreenResolutionsBuilder,
   createBrowserVersionsBuilder,
@@ -168,10 +168,6 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       chQuery(performanceBuilder.getSql()),
     ]);
     
-    if (!website) {
-      return c.json({ error: 'Website not found' }, 404);
-    }
-    
     // Process today's summary data directly from the todayBuilder result
     const rawTodaySummary = todayData?.[0] || {
       pageviews: 0,
@@ -279,24 +275,9 @@ analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async
       .sort((a, b) => b.visitors - a.visitors)
       .slice(0, 100);
 
-    let finalTopPages: Array<PageData & { avg_time_on_page_formatted: string }>;
-    if (endDate === todayDateStr && params.start_date === todayDateStr) {
-      const todayOnlyPagesBuilder = createTopPagesBuilder(params.website_id, todayDateStr, todayDateStr, 100);
-      const todayOnlyTopPagesResult = await chQuery(todayOnlyPagesBuilder.getSql());
-      finalTopPages = todayOnlyTopPagesResult.map(page => {
-        const cleanPath = formatCleanPath(page.path);
-        const timeOnPage = page.avg_time_on_page;
-        return {
-          pageviews: page.pageviews,
-          visitors: page.visitors,
-          path: cleanPath,
-          avg_time_on_page: timeOnPage,
-          avg_time_on_page_formatted: formatTime(timeOnPage === null ? null : timeOnPage)
-        } as PageData & { avg_time_on_page_formatted: string };
-      }).sort((a, b) => b.pageviews - a.pageviews).slice(0, 100);
-    } else {
-      finalTopPages = allProcessedTopPages.sort((a, b) => b.pageviews - a.pageviews).slice(0, 100);
-    }
+    const finalTopPages: Array<PageData & { avg_time_on_page_formatted: string }> = allProcessedTopPages
+      .sort((a, b) => b.pageviews - a.pageviews)
+      .slice(0, 100);
     
     return c.json({
       success: true,

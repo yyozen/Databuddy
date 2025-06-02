@@ -5,15 +5,24 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, RefreshCw, Trash2, CheckCircle } from "lucide-react";
+import { MoreHorizontal, RefreshCw, Trash2, CheckCircle, Shield } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { DeleteDialog } from "@/components/admin/delete-dialog";
-import { checkDomainVerification, regenerateVerificationToken, deleteDomain } from "./actions";
+import { checkDomainVerification, regenerateVerificationToken, deleteDomain, forceVerifyDomain } from "./actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Domain {
   id: string;
@@ -27,97 +36,111 @@ interface DomainActionsProps {
 }
 
 export function DomainActions({ domain }: DomainActionsProps) {
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showForceVerifyDialog, setShowForceVerifyDialog] = useState(false);
+  const [isForceVerifyPending, startForceVerifyTransition] = useTransition();
 
   const handleVerify = async () => {
-    setIsVerifying(true);
+    setLoading(true);
     try {
       const result = await checkDomainVerification(domain.id);
       if (result.error) {
         toast.error(result.error);
-        return;
-      }
-      if (result.data?.verified) {
-        toast.success("Domain verified successfully");
+      } else if (result.data?.verified) {
+        toast.success("Domain verified");
       } else {
-        toast.error(result.data?.message || "Domain verification failed");
+        toast.error(result.data?.message || "Verification failed");
       }
     } catch (error) {
-      console.error("Error verifying domain:", error);
       toast.error("Failed to verify domain");
     } finally {
-      setIsVerifying(false);
+      setLoading(false);
     }
   };
 
   const handleRegenerateToken = async () => {
-    setIsRegenerating(true);
+    setLoading(true);
     try {
       const result = await regenerateVerificationToken(domain.id);
       if (result.error) {
         toast.error(result.error);
-        return;
+      } else {
+        toast.success("Token regenerated");
       }
-      toast.success("Verification token regenerated");
     } catch (error) {
-      console.error("Error regenerating token:", error);
       toast.error("Failed to regenerate token");
     } finally {
-      setIsRegenerating(false);
+      setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    setIsDeleting(true);
+    setLoading(true);
     try {
       const result = await deleteDomain(domain.id);
       if (result.error) {
         toast.error(result.error);
-        return;
+      } else {
+        toast.success("Domain deleted");
+        setShowDeleteDialog(false);
       }
-      toast.success("Domain deleted successfully");
     } catch (error) {
-      console.error("Error deleting domain:", error);
       toast.error("Failed to delete domain");
     } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
+      setLoading(false);
     }
+  };
+
+  const handleForceVerify = async () => {
+    startForceVerifyTransition(async () => {
+      const result = await forceVerifyDomain(domain.id);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Domain force verified");
+        setShowForceVerifyDialog(false);
+      }
+    });
   };
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="sm" disabled={loading}>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Domain Actions</DropdownMenuLabel>
-          <DropdownMenuSeparator />
+        <DropdownMenuContent align="end" className="w-40">
           {domain.verificationStatus === "PENDING" && (
             <>
-              <DropdownMenuItem onClick={handleVerify} disabled={isVerifying}>
+              <DropdownMenuItem onClick={handleVerify}>
                 <CheckCircle className="mr-2 h-4 w-4" />
-                {isVerifying ? "Verifying..." : "Verify Domain"}
+                Check Status
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleRegenerateToken} disabled={isRegenerating}>
+              <DropdownMenuItem onClick={handleRegenerateToken}>
                 <RefreshCw className="mr-2 h-4 w-4" />
-                {isRegenerating ? "Regenerating..." : "Regenerate Token"}
+                New Token
               </DropdownMenuItem>
             </>
           )}
+          {domain.verificationStatus !== "VERIFIED" && (
+            <>
+              {domain.verificationStatus === "PENDING" && <DropdownMenuSeparator />}
+              <DropdownMenuItem onClick={() => setShowForceVerifyDialog(true)}>
+                <Shield className="mr-2 h-4 w-4" />
+                Force Verify
+              </DropdownMenuItem>
+            </>
+          )}
+          <DropdownMenuSeparator />
           <DropdownMenuItem 
             onClick={() => setShowDeleteDialog(true)}
-            disabled={isDeleting}
-            className="text-destructive"
+            className="text-destructive focus:text-destructive"
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            {isDeleting ? "Deleting..." : "Delete Domain"}
+            Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -127,8 +150,29 @@ export function DomainActions({ domain }: DomainActionsProps) {
         onOpenChange={setShowDeleteDialog}
         onConfirm={handleDelete}
         title="Delete Domain"
-        description={`Are you sure you want to delete ${domain.name}? This action cannot be undone.`}
+        description={`Delete ${domain.name}? This cannot be undone.`}
       />
+
+      <AlertDialog open={showForceVerifyDialog} onOpenChange={setShowForceVerifyDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Force verify domain?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark <strong>{domain.name}</strong> as verified without DNS validation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isForceVerifyPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleForceVerify}
+              disabled={isForceVerifyPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isForceVerifyPending ? "Verifying..." : "Force Verify"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 } 

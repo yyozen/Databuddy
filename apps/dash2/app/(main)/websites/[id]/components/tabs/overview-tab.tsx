@@ -253,6 +253,14 @@ export function WebsiteOverviewTab({
       accessorKey: 'visitors',
       header: 'Visitors',
     },
+    {
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info: CellContext<PageData, unknown>) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      },
+    },
   ], [websiteData?.domain]);
 
   const referrerColumns = useMemo((): ColumnDef<ReferrerItem, unknown>[] => [
@@ -271,6 +279,14 @@ export function WebsiteOverviewTab({
     {
       accessorKey: 'pageviews',
       header: 'Views',
+    },
+    {
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info: CellContext<ReferrerItem, unknown>) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      },
     },
   ], []);
 
@@ -297,6 +313,30 @@ export function WebsiteOverviewTab({
       return filtered;
     });
   }, [analytics.events_by_date, visibleMetrics, dateRange.granularity]);
+
+  // Process top pages with percentage calculations
+  const processedTopPages = useMemo(() => {
+    if (!analytics.top_pages?.length) return [];
+    
+    const totalPageviews = analytics.top_pages.reduce((sum, page) => sum + (page.pageviews || 0), 0);
+    
+    return analytics.top_pages.map(page => ({
+      ...page,
+      percentage: totalPageviews > 0 ? Math.round((page.pageviews / totalPageviews) * 100) : 0
+    }));
+  }, [analytics.top_pages]);
+
+  // Process top referrers with percentage calculations
+  const processedTopReferrers = useMemo(() => {
+    if (!analytics.top_referrers?.length) return [];
+    
+    const totalVisitors = analytics.top_referrers.reduce((sum, referrer) => sum + (referrer.visitors || 0), 0);
+    
+    return analytics.top_referrers.map(referrer => ({
+      ...referrer,
+      percentage: totalVisitors > 0 ? Math.round((referrer.visitors / totalVisitors) * 100) : 0
+    }));
+  }, [analytics.top_referrers]);
 
   const dateFrom = useMemo(() => new Date(dateRange.start_date), [dateRange.start_date]);
   const dateTo = useMemo(() => new Date(dateRange.end_date), [dateRange.end_date]);
@@ -556,7 +596,7 @@ export function WebsiteOverviewTab({
       {/* Content Tables */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DataTable 
-          data={analytics.top_referrers}
+          data={processedTopReferrers}
           columns={referrerColumns}
           title="Top Referrers"
           description="Sources of your traffic"
@@ -566,7 +606,7 @@ export function WebsiteOverviewTab({
         />
         
         <DataTable 
-          data={analytics.top_pages || []}
+          data={processedTopPages}
           columns={topPagesColumns}
           title="Top Pages"
           description="Most viewed content"

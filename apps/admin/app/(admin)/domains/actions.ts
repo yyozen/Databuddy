@@ -119,7 +119,7 @@ export async function checkDomainVerification(id: string) {
           })
           .where(eq(domainsTable.id, id));
         
-        revalidatePath("/admin/domains");
+        revalidatePath("/domains");
         
         return { 
           data: { 
@@ -186,7 +186,7 @@ export async function regenerateVerificationToken(id: string) {
       })
       .where(eq(domainsTable.id, id));
 
-    revalidatePath("/admin/domains");
+    revalidatePath("/domains");
     
     return { data: { verificationToken } };
   } catch (error) {
@@ -217,10 +217,34 @@ export async function deleteDomain(id: string) {
     await db.delete(domainsTable)
       .where(eq(domainsTable.id, id));
 
-    revalidatePath("/admin/domains");
+    revalidatePath("/domains");
     return { success: true };
   } catch (error) {
     console.error("Error deleting domain:", error);
     return { error: "Failed to delete domain" };
   }
+}
+
+export async function forceVerifyDomain(id: string) {
+  try {
+    await db
+      .update(domainsTable)
+      .set({
+        verificationStatus: "VERIFIED",
+        verifiedAt: new Date().toISOString(),
+      })
+      .where(eq(domainsTable.id, id));
+    revalidatePath("/domains");
+    return { success: "Domain force verified successfully" };
+  } catch (error) {
+    console.error("Error force verifying domain:", error);
+    return { error: "Failed to force verify domain. Please try again." };
+  }
+}
+
+export async function removeDomain(id: string) {
+  // Placeholder - implement actual removal logic if needed
+  console.log(`Remove domain called for ID: ${id}`);
+  revalidatePath("/domains");
+  return { success: "Domain removal initiated (placeholder)" };
 } 

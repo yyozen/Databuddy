@@ -30,7 +30,11 @@ interface TopReferrerEntry {
 }
 
 interface TopPageEntryWithPercent extends TopPageEntry {
-  percentage_of_total: number;
+  percentage: number;
+}
+
+interface TopReferrerEntryWithPercent extends TopReferrerEntry {
+  percentage: number;
 }
 
 // Helper to create a column with optional cell and meta
@@ -90,7 +94,7 @@ export function WebsiteContentTab({
     col<TopPageEntryWithPercent>('pageviews', 'Views'),
     col<TopPageEntryWithPercent>('visitors', 'Visitors', (info) => (info.getValue() as number | undefined) ?? 'N/A'),
     col<TopPageEntryWithPercent>('avg_time_on_page_formatted', 'Avg. Time', (info) => (info.getValue() as string | null | undefined) || 'N/A'),
-    col<TopPageEntryWithPercent>('percentage_of_total', '% Total Views', (info) => {
+    col<TopPageEntryWithPercent>('percentage', '% Total Views', (info) => {
       const value = info.getValue() as number | undefined;
       return value ? `${value.toFixed(1)}%` : 'N/A';
     }),
@@ -101,23 +105,32 @@ export function WebsiteContentTab({
     const totalSiteViews = analytics.summary?.pageviews || 1;
     return analytics.top_pages.map((page: TopPageEntry) => ({
       ...page,
-      percentage_of_total: (page.pageviews / totalSiteViews) * 100,
+      percentage: (page.pageviews / totalSiteViews) * 100,
     }));
   }, [analytics.top_pages, analytics.summary?.pageviews]);
 
   const topReferrersColumns = useMemo(() => [
-    col<TopReferrerEntry>('name', 'Source', (info) => {
+    col<TopReferrerEntryWithPercent>('name', 'Source', (info) => {
       const cellData: ReferrerSourceCellData = info.row.original;
       return <ReferrerSourceCell {...cellData} />;
     }),
-    col<TopReferrerEntry>('type', 'Type', (info) => (info.getValue() as string | undefined) || 'Unknown', { className: 'text-left capitalize' }),
-    col<TopReferrerEntry>('visitors', 'Visitors', undefined),
-    col<TopReferrerEntry>('pageviews', 'Pageviews', undefined),
+    col<TopReferrerEntryWithPercent>('type', 'Type', (info) => (info.getValue() as string | undefined) || 'Unknown', { className: 'text-left capitalize' }),
+    col<TopReferrerEntryWithPercent>('visitors', 'Visitors', undefined),
+    col<TopReferrerEntryWithPercent>('pageviews', 'Pageviews', undefined),
+    col<TopReferrerEntryWithPercent>('percentage', '% of Visitors', (info) => {
+      const value = info.getValue() as number | undefined;
+      return value ? `${value.toFixed(1)}%` : 'N/A';
+    }),
   ], []);
 
-  const topReferrersData = useMemo(() => {
-    return analytics.top_referrers || [];
-  }, [analytics.top_referrers]);
+  const topReferrersData = useMemo<TopReferrerEntryWithPercent[]>(() => {
+    if (!analytics.top_referrers?.length) return [];
+    const totalVisitors = analytics.summary?.visitors || analytics.summary?.unique_visitors || 1;
+    return analytics.top_referrers.map((referrer: TopReferrerEntry) => ({
+      ...referrer,
+      percentage: (referrer.visitors / totalVisitors) * 100,
+    }));
+  }, [analytics.top_referrers, analytics.summary?.visitors, analytics.summary?.unique_visitors]);
 
   if (!isLoading && error?.summary) {
     return (

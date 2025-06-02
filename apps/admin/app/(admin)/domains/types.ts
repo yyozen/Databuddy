@@ -8,9 +8,10 @@ export interface Website {
 
 export interface DomainEntry {
   id: string;
-  name: string;
-  verificationStatus: 'PENDING' | 'VERIFIED' | 'FAILED';
+  name: string | null;
   verifiedAt: string | null;
+  verificationStatus: "PENDING" | "VERIFIED" | "FAILED" | null;
+  verificationToken?: string | null; // Ensure this is always selected in queries
   createdAt: string;
   userId: string | null;
   ownerName: string | null;

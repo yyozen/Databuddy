@@ -399,14 +399,13 @@ export const discord = {
 export { DiscordWebhook }; 
 
 // Initialize DataBuddy Discord webhook
-const DATABUDDY_WEBHOOK_URL = 'https://discord.com/api/webhooks/1377972912887300176/IF804JlT_x0UUn93UwXl-hoknJHwaE_k8gV9aG2N0cXj8OkA9MuurC980P66E5SPjAOT';
+const DATABUDDY_WEBHOOK_URL = 'https://discord.com/api/webhooks/1379061559762092134/F6OLoVYCOTMzpHm8sUlQxSPJIYDyd3aUgKRm_OL2pC8bTe9VF9Fa5gyT1k1_xuc-5gz4';
 
 export const dataBuddyWebhook = new DiscordWebhook(DATABUDDY_WEBHOOK_URL, {
   defaultUsername: 'DataBuddy',
   defaultAvatarUrl: undefined
 });
 
-// Initialize the default webhook singleton with the DataBuddy webhook
 initializeDiscordWebhook(DATABUDDY_WEBHOOK_URL, {
   defaultUsername: 'DataBuddy',
 });

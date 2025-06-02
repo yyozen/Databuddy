@@ -37,7 +37,7 @@ export function SkeletonChart({ height = 300, title, className }: SkeletonChartP
           <div className="absolute bottom-12 left-0 right-0 flex items-end justify-between px-4">
             {Array.from({ length: 7 }).map((_, i) => (
               <div
-                key={i}
+                key={`skeleton-${i + 1}`}
                 className="bg-gradient-to-t from-primary/5 to-primary/20 rounded-t animate-pulse"
                 style={{
                   width: '12%',
@@ -55,7 +55,7 @@ export function SkeletonChart({ height = 300, title, className }: SkeletonChartP
           {/* X-axis labels */}
           <div className="absolute bottom-0 left-0 right-0 flex justify-between px-4">
             {Array.from({ length: 7 }).map((_, i) => (
-              <Skeleton key={i} className="h-2 w-10" />
+              <Skeleton key={`skeleton-${i + 1}`} className="h-2 w-10" />
             ))}
           </div>
           
@@ -65,7 +65,7 @@ export function SkeletonChart({ height = 300, title, className }: SkeletonChartP
           {/* Y-axis labels */}
           <div className="absolute top-4 bottom-12 left-0 flex flex-col justify-between">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-2 w-6 ml-1" />
+              <Skeleton key={`skeleton-${i + 1}`} className="h-2 w-6 ml-1" />
             ))}
           </div>
         </div>

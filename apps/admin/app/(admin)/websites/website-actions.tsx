@@ -1,73 +1,145 @@
 "use client";
-import { useState } from "react";
-import { Pencil, Trash2, Check, X } from "lucide-react";
+
+import { useState, useTransition } from "react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { updateWebsiteName, deleteWebsite } from "./actions";
+import { toast } from "sonner";
 
 export function WebsiteActions({ website }: { website: { id: string; name: string | null } }) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(website.name || "");
   const [loading, setLoading] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [name, setName] = useState(website.name || "");
+  const [isDeletePending, startDeleteTransition] = useTransition();
 
-  async function handleEdit() {
+  const handleEdit = async () => {
+    if (!name.trim()) return;
+    
     setLoading(true);
-    await updateWebsiteName(website.id, name);
-    setLoading(false);
-    setEditing(false);
-  }
+    try {
+      await updateWebsiteName(website.id, name);
+      toast.success("Website name updated");
+      setShowEdit(false);
+    } catch (error) {
+      toast.error("Failed to update website name");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  async function handleDelete() {
-    setLoading(true);
-    await deleteWebsite(website.id);
-    setLoading(false);
-    setShowDelete(false);
-  }
+  const handleDelete = async () => {
+    startDeleteTransition(async () => {
+      try {
+        await deleteWebsite(website.id);
+        toast.success("Website deleted");
+        setShowDelete(false);
+      } catch (error) {
+        toast.error("Failed to delete website");
+      }
+    });
+  };
 
   return (
-    <div className="flex items-center gap-2">
-      {editing ? (
-        <>
-          <Input
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="w-40 h-8 text-sm"
-            disabled={loading}
-            autoFocus
-          />
-          <Button size="icon" variant="ghost" onClick={handleEdit} disabled={loading || !name.trim()} aria-label="Save">
-            <Check className="h-4 w-4" />
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" disabled={loading}>
+            <MoreHorizontal className="h-4 w-4" />
           </Button>
-          <Button size="icon" variant="ghost" onClick={() => { setEditing(false); setName(website.name || ""); }} aria-label="Cancel">
-            <X className="h-4 w-4" />
-          </Button>
-        </>
-      ) : (
-        <>
-          <Button size="icon" variant="ghost" onClick={() => setEditing(true)} aria-label="Edit name">
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Dialog open={showDelete} onOpenChange={setShowDelete}>
-            <DialogTrigger asChild>
-              <Button size="icon" variant="ghost" aria-label="Delete website">
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete Website</DialogTitle>
-              </DialogHeader>
-              <div>Are you sure you want to delete this website? This action cannot be undone.</div>
-              <DialogFooter>
-                <Button variant="secondary" onClick={() => setShowDelete(false)} disabled={loading}>Cancel</Button>
-                <Button variant="destructive" onClick={handleDelete} disabled={loading}>Delete</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </>
-      )}
-    </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onClick={() => { setName(website.name || ""); setShowEdit(true); }}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit Name
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={() => setShowDelete(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEdit} onOpenChange={setShowEdit}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Website Name</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Website Name</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter website name"
+                disabled={loading}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEdit(false)} disabled={loading}>
+              Cancel
+            </Button>
+            <Button onClick={handleEdit} disabled={loading || !name.trim()}>
+              {loading ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete website?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete <strong>{website.name || "this website"}</strong>? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletePending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeletePending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeletePending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 } 

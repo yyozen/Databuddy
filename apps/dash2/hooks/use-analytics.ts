@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useQuery, useQueries, type QueryKey, type UseQueryOptions, type QueryFunction } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 // Types
 export interface AnalyticsSummary {

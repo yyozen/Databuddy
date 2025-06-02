@@ -1,3 +1,5 @@
+"use client";
+
 import { 
   Table,
   TableBody,
@@ -22,7 +24,7 @@ interface TabConfig<TData> {
   columns: ColumnDef<TData, unknown>[];
 }
 
-interface DataTableProps<TData extends RowData, TValue> {
+interface MinimalTableProps<TData extends RowData, TValue> {
   data?: TData[] | undefined;
   columns?: ColumnDef<TData, TValue>[];
   tabs?: TabConfig<TData>[];
@@ -119,7 +121,7 @@ const EnhancedSkeleton = ({ minHeight }: { minHeight: string | number }) => (
   </div>
 );
 
-export function DataTable<TData extends RowData, TValue>(
+export function MinimalTable<TData extends RowData, TValue>(
   {
     data,
     columns,
@@ -133,7 +135,7 @@ export function DataTable<TData extends RowData, TValue>(
     onRowClick,
     minHeight = 200,
     showSearch = true
-  }: DataTableProps<TData, TValue>
+  }: MinimalTableProps<TData, TValue>
 ) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState('');
@@ -214,7 +216,7 @@ export function DataTable<TData extends RowData, TValue>(
   }
 
   return (
-    <Card className={cn("w-full border-0 shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden", className)}>
+    <Card className={cn("w-full border-0 shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden group", className)}>
       <CardHeader className={cn(
         "px-4 space-y-0 pb-3 transition-all duration-300",
         showSearch ? "flex flex-row items-center justify-between" : ""
@@ -248,20 +250,20 @@ export function DataTable<TData extends RowData, TValue>(
         
         {/* Enhanced Internal Tabs */}
         {tabs && tabs.length > 1 && (
-                                  <div className="flex items-center gap-1 mt-3 p-1 bg-muted/20 rounded-md">
+          <div className="flex items-center gap-1 mt-3 p-1 bg-muted/20 rounded-md">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
                 disabled={isTransitioning}
-                                  className={cn(
-                    "relative px-3 py-1.5 text-xs font-medium rounded transition-colors duration-200",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    activeTab === tab.id
-                      ? "text-foreground bg-background shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-background/60"
-                  )}
+                className={cn(
+                  "relative px-3 py-1.5 text-xs font-medium rounded transition-colors duration-200",
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
+                  activeTab === tab.id
+                    ? "text-foreground bg-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                )}
                 aria-label={`Switch to ${tab.label} tab`}
                 aria-pressed={activeTab === tab.id}
               >
@@ -277,8 +279,8 @@ export function DataTable<TData extends RowData, TValue>(
       
       <CardContent className="px-4 pb-3 overflow-hidden">
         <div className={cn(
-          "transition-opacity duration-300",
-          isTransitioning && "opacity-30"
+          "transition-all duration-300 overflow-hidden",
+          isTransitioning && "opacity-50 transform scale-[0.98]"
         )}>
           {!table.getRowModel().rows.length ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-xs" style={{ minHeight }}>
@@ -338,14 +340,15 @@ export function DataTable<TData extends RowData, TValue>(
                       <TableRow 
                         key={row.id}
                         className={cn(
-                          "h-12 border-border/30 relative transition-all duration-200 animate-in fade-in-0",
-                          onRowClick ? "cursor-pointer hover:bg-muted/30" : ""
+                          "group h-12 border-border/30 transition-all duration-300 ease-out relative overflow-hidden",
+                          "animate-in fade-in-0 slide-in-from-bottom-1",
+                          onRowClick ? "cursor-pointer active:scale-[0.99]" : ""
                         )}
                         onClick={() => onRowClick?.(row.original)}
                         style={{
                           background: percentage > 0 ? gradient.background : undefined,
                           borderLeft: percentage > 0 ? `3px solid ${gradient.borderColor}` : undefined,
-                          animationDelay: `${rowIndex * 30}ms`,
+                          animationDelay: `${rowIndex * 50}ms`,
                           animationFillMode: 'both'
                         }}
                         onMouseEnter={(e) => {
@@ -369,14 +372,16 @@ export function DataTable<TData extends RowData, TValue>(
                           target.style.boxShadow = '';
                           target.style.borderColor = '';
                         }}
-
+                        role={onRowClick ? "button" : undefined}
+                        tabIndex={onRowClick ? 0 : undefined}
+                        aria-label={onRowClick ? `View details for row ${rowIndex + 1}` : undefined}
                       >
                         {row.getVisibleCells().map((cell, cellIndex) => (
-                                                      <TableCell 
+                          <TableCell 
                             key={cell.id}
                             className={cn(
-                              "py-3 text-sm font-medium transition-colors duration-150",
-                              cellIndex === 0 && percentage > 0 ? "pl-5" : "px-4",
+                              "py-3 px-4 text-sm relative z-10 font-medium transition-all duration-200",
+                              cellIndex === 0 && percentage > 0 ? "pl-5" : "px-4", // Extra padding for first cell when we have border-left
                               (cell.column.columnDef.meta as any)?.className
                             )}
                             style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
@@ -389,18 +394,16 @@ export function DataTable<TData extends RowData, TValue>(
                         {percentage > 0 && (
                           <>
                             <div 
-                              className="absolute bottom-0 left-0 h-1 transition-all duration-500 ease-out animate-in slide-in-from-left-1"
+                              className="absolute bottom-0 left-0 h-1 transition-all duration-700 ease-out"
                               style={{
                                 width: `${percentage}%`,
-                                background: `linear-gradient(90deg, ${gradient.accentColor} 0%, ${gradient.borderColor.replace('0.3', '0.6')} 50%, ${gradient.accentColor} 100%)`,
-                                animationDelay: `${rowIndex * 50 + 200}ms`,
-                                animationFillMode: 'both'
+                                background: `linear-gradient(90deg, ${gradient.accentColor} 0%, ${gradient.borderColor.replace('0.3', '0.6')} 50%, ${gradient.accentColor} 100%)`
                               }}
                             />
                             <div 
-                              className="absolute bottom-0 left-0 h-1 opacity-40 animate-pulse"
+                              className="absolute bottom-0 left-0 h-1 opacity-50 animate-pulse"
                               style={{
-                                width: `${Math.min(percentage + 8, 100)}%`,
+                                width: `${Math.min(percentage + 10, 100)}%`,
                                 background: `linear-gradient(90deg, transparent 0%, ${gradient.glowColor} 50%, transparent 100%)`
                               }}
                             />
@@ -417,8 +420,8 @@ export function DataTable<TData extends RowData, TValue>(
         </div>
         
         {/* Enhanced pagination */}
-                    {(table.getFilteredRowModel().rows.length > 0 || table.getPageCount() > 1) && (
-              <div className="flex items-center justify-between pt-4 text-xs">
+        {(table.getFilteredRowModel().rows.length > 0 || table.getPageCount() > 1) && (
+          <div className="flex items-center justify-between pt-4 text-xs">
             <div className="flex-1 text-muted-foreground font-medium">
               {(() => {
                 const pageIndex = table.getState().pagination.pageIndex;

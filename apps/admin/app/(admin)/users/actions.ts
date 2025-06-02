@@ -120,6 +120,19 @@ export async function updateUserRole(userId: string, role: 'USER' | 'ADMIN') {
   }
 }
 
+export async function forceVerifyUser(userId: string) {
+  try {
+    await db.update(user)
+      .set({ emailVerified: true })
+      .where(eq(user.id, userId));
+    revalidatePath('/users');
+    return { success: true };
+  } catch (error) {
+    console.error("Error force verifying user:", error);
+    return { error: "Failed to force verify user" };
+  }
+}
+
 // Domain Management Actions
 export async function addDomain(userId: string, domainName: string) {
   try {
