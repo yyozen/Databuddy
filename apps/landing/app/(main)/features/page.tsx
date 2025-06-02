@@ -496,7 +496,7 @@ export default function FeaturesPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Button asChild className="bg-sky-500 hover:bg-sky-600 text-white">
-                      <Link href="/demo">Try For Free</Link>
+                      <Link href="https://app.databuddy.cc" target="_blank" rel="noopener noreferrer">Get Started Free</Link>
                     </Button>
                     <Button asChild variant="outline" className="border-slate-700 bg-slate-800/50 hover:bg-slate-800">
                       <Link href="/contact">Schedule a Demo</Link>
@@ -506,37 +506,6 @@ export default function FeaturesPage() {
               </div>
             </div>
           </FadeIn>
-          
-          {/* Structured data for SEO */}
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "WebPage",
-                "name": "Databuddy Features",
-                "description": "Privacy-first web analytics with powerful features and zero impact on your site performance.",
-                "url": "https://databuddy.cc/features",
-                "mainEntity": {
-                  "@type": "SoftwareApplication",
-                  "name": "Databuddy",
-                  "applicationCategory": "WebApplication",
-                  "operatingSystem": "All",
-                  "offers": {
-                    "@type": "Offer",
-                    "price": "0",
-                    "priceCurrency": "USD",
-                    "availability": "https://schema.org/InStock"
-                  },
-                  "aggregateRating": {
-                    "@type": "AggregateRating",
-                    "ratingValue": "4.9",
-                    "ratingCount": "127"
-                  }
-                }
-              })
-            }}
-          />
         </main>
         <Footer />
       </div>

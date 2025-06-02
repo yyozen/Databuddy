@@ -5,7 +5,7 @@ import Link from "next/link";
 export default function DataOS() {
   return (
     <section className="py-16 sm:py-24 relative">
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950 to-slate-900/30 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950 to-slate-900/30 pointer-events-none" />
       <div className="container px-4 mx-auto relative z-10">
         <div className="text-center mb-10 sm:mb-16">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 tracking-tight">
@@ -103,9 +103,9 @@ export default function DataOS() {
         </div>
 
         <div className="text-center mt-12">
-          <Link href="/demo">
+          <Link href="https://app.databuddy.cc" target="_blank" rel="noopener noreferrer">
             <Button className="bg-sky-600 hover:bg-sky-500 text-white">
-              Get early access
+              Get Started Free
             </Button>
           </Link>
         </div>

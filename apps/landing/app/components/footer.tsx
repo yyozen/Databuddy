@@ -23,7 +23,7 @@ const footerLinks = [
       { name: "Pricing", href: "/pricing" },
       { name: "Demo", href: "/demo" },
       { name: "FAQ", href: "/faq" },
-      { name: "Early Access", href: "/#cta-form" },
+      { name: "Get Started", href: "https://app.databuddy.cc" },
     ]
   },
   {

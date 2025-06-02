@@ -6,8 +6,8 @@ import Hero from "./components/hero";
 import Features from "./components/features";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, DollarSign, Sparkles, Boxes, Target, Zap, Shield, BarChart } from "lucide-react";
-import { Metadata } from "next";
+import { ArrowRight, Zap, Shield, BarChart } from "lucide-react";
+import type { Metadata } from "next";
 
 import dynamic from "next/dynamic"; 
 
@@ -17,7 +17,6 @@ const Testimonials = dynamic(() => import("./components/testimonials"), { ssr: t
 const Contact = dynamic(() => import("./components/contact"), { ssr: true });
 const SocialProof = dynamic(() => import("./components/social-proof"), { ssr: true });
 const Footer = dynamic(() => import("./components/footer"), { ssr: true });
-const EarlyAccessPopup = dynamic(() => import("./components/EarlyAccessPopup"), { ssr: true });
 
 export const metadata: Metadata = {
   title: "Databuddy | Privacy-First Web Analytics",
@@ -118,28 +117,6 @@ export default function Home() {
           </div>
         </FadeIn>
         <Footer />
-        
-        {/* Early Access Popup with Typeform link */}
-        <EarlyAccessPopup typeformUrl="https://form.typeform.com/to/yXiXwsDD" />
-        
-        {/* Structured data for organization */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              "name": "Databuddy",
-              "url": "https://www.databuddy.cc",
-              "logo": "https://www.databuddy.cc/logo.png",
-              "description": "Privacy-first web analytics that doesn't compromise on features or performance.",
-              "sameAs": [
-                "https://twitter.com/databuddyps",
-                "https://github.com/databuddy-analytics"
-              ]
-            })
-          }}
-        />
       </div>
     </div>
   );

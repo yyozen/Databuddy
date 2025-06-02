@@ -177,7 +177,7 @@ export default function DataOSPage() {
                   <div className="mb-8 md:mb-0 md:mr-8">
                     <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Ready to go beyond analytics?</h2>
                     <p className="text-slate-300 md:text-lg max-w-xl">
-                      Join our early access program and be among the first to experience the power of Databuddy&apos;s complete Data Operating System.
+                      Experience the power of Databuddy&apos;s complete Data Operating System with our free trial.
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">

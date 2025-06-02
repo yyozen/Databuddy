@@ -22,9 +22,6 @@ export default function NavbarClient() {
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = React.useState(false)
   const [isOpen, setIsOpen] = React.useState(false)
-  
-  const isHomePage = pathname === "/"
-  const ctaLink = isHomePage ? "#cta-form" : "/#cta-form"
 
   // Handle scroll events to change navbar style
   React.useEffect(() => {
@@ -102,7 +99,7 @@ export default function NavbarClient() {
           <div className="pt-4 mt-4 border-t border-slate-800">
             <SheetClose asChild>
               <Button asChild className="w-full bg-sky-500 hover:bg-sky-600">
-                <Link href={ctaLink}>Join Waitlist</Link>
+                <Link href="https://app.databuddy.cc" target="_blank" rel="noopener noreferrer">Get Started</Link>
               </Button>
             </SheetClose>
           </div>
@@ -166,7 +163,7 @@ export default function NavbarClient() {
             </div>
             
             {/* Demo Button */}
-            <div className="h-6 w-px bg-slate-800 mx-1"></div>
+            <div className="h-6 w-px bg-slate-800 mx-1" />
             <motion.div
               variants={buttonVariants}
               initial="initial"
@@ -195,8 +192,8 @@ export default function NavbarClient() {
                 size="sm"
                 asChild
               >
-                <Link href={ctaLink} className="flex items-center gap-1.5">
-                  Join Waitlist
+                <Link href="https://app.databuddy.cc" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
+                  Get Started
                   <span className="inline-flex"><ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
                 </Link>
               </Button>

@@ -14,8 +14,7 @@ export default function Hero() {
           <meta itemProp="name" content="Databuddy"/>
           <meta itemProp="applicationCategory" content="BusinessApplication"/>
           <meta itemProp="operatingSystem" content="Web"/>
-          <meta itemProp="offers" itemScope itemType="https://schema.org/Offer">
-          </meta>
+          <meta itemProp="offers" itemScope itemType="https://schema.org/Offer" />
           <div itemProp="featureList">
             {[
               {
@@ -40,8 +39,8 @@ export default function Hero() {
             <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-sky-400 bg-sky-500/10 w-fit mx-auto px-3 sm:px-4 py-1.5 sm:py-2 rounded-full">
               <Shield className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
               <span className="whitespace-nowrap tracking-wide">GDPR & CCPA COMPLIANT</span>
-              <Badge variant="secondary" className="ml-1 sm:ml-2 bg-sky-500/20 text-white text-xs">
-                New
+              <Badge variant="secondary" className="ml-1 sm:ml-2 bg-green-500/20 text-white text-xs">
+                Live
               </Badge>
             </div>
           </FadeIn>
@@ -64,14 +63,16 @@ export default function Hero() {
           <FadeIn delay={400}>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-2">
               <Button size="lg" className="bg-sky-500 hover:bg-sky-600 group w-full sm:w-auto font-medium" asChild>
-                <Link href="#cta-form">
-                  Join Waitlist
+                <Link href="https://app.databuddy.cc" target="_blank" rel="noopener noreferrer">
+                  Get Started Free
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </Link>
               </Button>
-              <Link href="/demo" className="border-slate-700 hover:border-slate-600 text-white w-full sm:w-auto mt-3 sm:mt-0 font-medium">
-                View Live Demo
-              </Link>
+              <Button size="lg" variant="outline" className="border-slate-700 hover:border-slate-600 text-white w-full sm:w-auto font-medium" asChild>
+                <Link href="/demo">
+                  View Live Demo
+                </Link>
+              </Button>
             </div>
           </FadeIn>
 

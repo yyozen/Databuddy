@@ -246,7 +246,7 @@ export default function PrivacyPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button asChild className="bg-sky-500 hover:bg-sky-600 text-white">
-                      <Link href="/demo">Try for Free</Link>
+                      <Link href="https://app.databuddy.cc" target="_blank" rel="noopener noreferrer">Get Started Free</Link>
                     </Button>
                     <Button asChild variant="outline" className="border-slate-700 bg-slate-800/50 hover:bg-slate-800">
                       <Link href="/contact">Talk to Privacy Expert</Link>
@@ -256,32 +256,6 @@ export default function PrivacyPage() {
               </div>
             </div>
           </FadeIn>
-          
-          {/* Structured data for SEO */}
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "WebPage",
-                "name": "Privacy-First Analytics | Databuddy",
-                "description": "Databuddy provides GDPR & CCPA compliant web analytics without cookies. No consent banners needed while still getting accurate data.",
-                "mainEntity": {
-                  "@type": "SoftwareApplication",
-                  "name": "Databuddy",
-                  "applicationCategory": "AnalyticsApplication",
-                  "operatingSystem": "Web",
-                  "offers": {
-                    "@type": "Offer",
-                    "price": "0",
-                    "priceCurrency": "USD"
-                  },
-                  "keywords": "privacy analytics, GDPR analytics, CCPA compliant, cookieless tracking",
-                  "featureList": "Cookieless tracking, Data anonymization, Automated data deletion, Compliance documentation"
-                }
-              })
-            }}
-          />
         </main>
         <Footer />
       </div>

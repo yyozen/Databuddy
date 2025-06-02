@@ -202,7 +202,7 @@ export default function AboutPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button asChild className="bg-sky-500 hover:bg-sky-600 text-white">
-                      <Link href="/demo">Get Started</Link>
+                      <Link href="https://app.databuddy.cc" target="_blank" rel="noopener noreferrer">Get Started Free</Link>
                     </Button>
                     <Button asChild variant="outline" className="border-slate-700 bg-slate-800/50 hover:bg-slate-800">
                       <Link href="/contact">Contact Us</Link>
