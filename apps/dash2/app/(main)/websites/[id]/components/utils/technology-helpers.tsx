@@ -121,13 +121,43 @@ export const getOSIcon = (os: string): string => {
   return '/operating-systems/Ubuntu.svg';
 };
 
+// Helper function to capitalize device type names
+const capitalizeDeviceType = (deviceType: string): string => {
+  if (!deviceType || deviceType === 'Unknown') return 'Unknown';
+  
+  // Handle special cases
+  const specialCases: Record<string, string> = {
+    'mobile': 'Mobile',
+    'desktop': 'Desktop',
+    'laptop': 'Laptop',
+    'tablet': 'Tablet',
+    'tv': 'TV',
+    'smarttv': 'Smart TV',
+    'smartphone': 'Smartphone'
+  };
+  
+  const normalized = deviceType.toLowerCase().trim();
+  
+  if (specialCases[normalized]) {
+    return specialCases[normalized];
+  }
+  
+  // Capitalize first letter of each word
+  return deviceType
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 // Process device data with percentages
 export const processDeviceData = (deviceTypes: DeviceTypeEntry[]): TechnologyTableEntry[] => {
   const deviceGroups: Record<string, number> = {};
   
   for (const item of deviceTypes) {
     const deviceType = item.device_type || 'Unknown';
-    deviceGroups[deviceType] = (deviceGroups[deviceType] || 0) + (item.visitors || 0);
+    const capitalizedType = capitalizeDeviceType(deviceType);
+    deviceGroups[capitalizedType] = (deviceGroups[capitalizedType] || 0) + (item.visitors || 0);
   }
   
   const totalVisitors = Object.values(deviceGroups).reduce((sum, count) => sum + count, 0);
