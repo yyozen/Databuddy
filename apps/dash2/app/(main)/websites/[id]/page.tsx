@@ -104,7 +104,7 @@ function WebsiteDetailsPage() {
     }
   }, [setDateRangeAction]);
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch: refetchWebsiteData } = useQuery({
     queryKey: ["website", id],
     queryFn: async () => {
       const result = await getWebsiteById(id as string);
@@ -155,7 +155,8 @@ function WebsiteDetailsPage() {
     const settingsProps: WebsiteDataTabProps = {
       websiteId: id as string,
       dateRange: memoizedDateRangeForTabs,
-      websiteData: data
+      websiteData: data,
+      onWebsiteUpdated: refetchWebsiteData
     };
 
     const tabProps: FullTabProps = {
@@ -182,7 +183,7 @@ function WebsiteDetailsPage() {
         {getTabComponent()}
       </Suspense>
     );
-  }, [activeTab, id, memoizedDateRangeForTabs, data, isRefreshing]);
+  }, [activeTab, id, memoizedDateRangeForTabs, data, isRefreshing, refetchWebsiteData]);
 
   if (isLoading || isTrackingSetup === null) {
     return <TabLoadingSkeleton />;
