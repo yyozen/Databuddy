@@ -224,7 +224,6 @@ assistantRouter.post('/stream', zValidator('json', chatRequestSchema), async (c)
   const startTime = Date.now();
   const debugInfo: Record<string, any> = {};
 
-  // Create streaming response
   const stream = new ReadableStream({
     async start(controller) {
       const sendUpdate = (update: StreamingUpdate) => {
@@ -291,6 +290,7 @@ assistantRouter.post('/stream', zValidator('json', chatRequestSchema), async (c)
         });
 
         const sql = parsedAiJson.sql;
+        console.log(sql);
         if (!validateSQL(sql)) {
           sendUpdate({ 
             type: 'error', 
