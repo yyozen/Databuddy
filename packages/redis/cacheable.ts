@@ -1,4 +1,4 @@
-import { getRedisCache } from './index';
+import { redis } from './redis';
 
 const logger = console;
 
@@ -37,17 +37,17 @@ export async function getCache<T>(
   let retries = 0;
   while (retries < maxRetries) {
     try {
-      const hit = await getRedisCache().get(key);
+      const hit = await redis.get(key);
       if (hit) {
         const data = deserialize(hit) as T;
         
         if (staleWhileRevalidate) {
-          const ttl = await getRedisCache().ttl(key);
+          const ttl = await redis.ttl(key);
           if (ttl < staleTime) {
             // Return stale data and revalidate in background
             fn().then(async (freshData: T) => {
               if (freshData !== undefined && freshData !== null) {
-                await getRedisCache().setex(key, expireInSec, serialize(freshData));
+                await redis.setex(key, expireInSec, serialize(freshData));
               }
             }).catch((error: unknown) => {
               logger.error(`Background revalidation failed for key ${key}:`, error);
@@ -60,7 +60,7 @@ export async function getCache<T>(
 
       const data = await fn();
       if (data !== undefined && data !== null) {
-        await getRedisCache().setex(key, expireInSec, serialize(data));
+        await redis.setex(key, expireInSec, serialize(data));
       }
       return data;
     } catch (error: unknown) {
@@ -122,17 +122,17 @@ export function cacheable<T extends (...args: any) => any>(
     
     while (retries < maxRetries) {
       try {
-        const cached = await getRedisCache().get(key);
+        const cached = await redis.get(key);
         if (cached) {
           const data = deserialize(cached) as Awaited<ReturnType<T>>;
           
           if (staleWhileRevalidate) {
-            const ttl = await getRedisCache().ttl(key);
+            const ttl = await redis.ttl(key);
             if (ttl < staleTime) {
               // Return stale data and revalidate in background
               fn(...args).then(async (freshData: Awaited<ReturnType<T>>) => {
                 if (freshData !== undefined && freshData !== null) {
-                  await getRedisCache().setex(key, expireInSec, serialize(freshData));
+                  await redis.setex(key, expireInSec, serialize(freshData));
                 }
               }).catch((error: unknown) => {
                 logger.error(`Background revalidation failed for function ${fn.name}:`, error);
@@ -145,7 +145,7 @@ export function cacheable<T extends (...args: any) => any>(
 
         const result = await fn(...args);
         if (result !== undefined && result !== null) {
-          await getRedisCache().setex(key, expireInSec, serialize(result));
+          await redis.setex(key, expireInSec, serialize(result));
         }
         return result;
       } catch (error: unknown) {
@@ -164,13 +164,13 @@ export function cacheable<T extends (...args: any) => any>(
   cachedFn.getKey = getKey;
   cachedFn.clear = async (...args: Parameters<T>) => {
     const key = getKey(...args);
-    return getRedisCache().del(key);
+    return redis.del(key);
   };
 
   cachedFn.clearAll = async () => {
-    const keys = await getRedisCache().keys(`${cachePrefix}:*`);
+    const keys = await redis.keys(`${cachePrefix}:*`);
     if (keys.length > 0) {
-      return getRedisCache().del(...keys);
+      return redis.del(...keys);
     }
   };
 
@@ -178,7 +178,7 @@ export function cacheable<T extends (...args: any) => any>(
     const key = getKey(...args);
     const result = await fn(...args);
     if (result !== undefined && result !== null) {
-      await getRedisCache().setex(key, expireInSec, serialize(result));
+      await redis.setex(key, expireInSec, serialize(result));
     }
     return result;
   };
