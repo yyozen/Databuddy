@@ -19,7 +19,9 @@ import {
   processDeviceInfo, 
   processGeoInfo, 
   processUTMData, 
-  processReferrers 
+  processReferrers,
+  processEntryPages,
+  processExitPages
 } from './data-processors';
 import { 
   formatPerformanceData,
@@ -55,7 +57,8 @@ export function processAnalyticsData(input: AnalyticsProcessorInput) {
 
   const [
     summaryData, todayData, , pagesData, referrersData, 
-    eventsByDate, deviceInfoData, geoInfoData, performance, utmData
+    eventsByDate, deviceInfoData, geoInfoData, performance, utmData,
+    entryPagesData, exitPagesData
   ] = queryResults;
 
   // Process today's data
@@ -87,6 +90,8 @@ export function processAnalyticsData(input: AnalyticsProcessorInput) {
   const deviceInfo = processDeviceInfo(deviceInfoData);
   const geoInfo = processGeoInfo(geoInfoData);
   const utmInfo = processUTMData(utmData);
+  const entryPages = processEntryPages(entryPagesData);
+  const exitPages = processExitPages(exitPagesData);
   
   return {
     success: true,
@@ -115,6 +120,8 @@ export function processAnalyticsData(input: AnalyticsProcessorInput) {
     utm_sources: utmInfo.utm_sources,
     utm_mediums: utmInfo.utm_mediums,
     utm_campaigns: utmInfo.utm_campaigns,
+    entry_pages: entryPages,
+    exit_pages: exitPages,
     performance: formatPerformanceData(performance)
   };
 } 

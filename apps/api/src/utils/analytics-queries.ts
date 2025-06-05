@@ -19,6 +19,10 @@ import {
   createDeviceInfoBuilder,
   createGeoInfoBuilder
 } from '../builders/combined';
+import {
+  createEntryPagesBuilder,
+  createExitPagesBuilder
+} from '../builders/pages';
 
 export interface QueryParams {
   website_id: string;
@@ -51,6 +55,8 @@ export async function executeAnalyticsQueries(params: QueryParams) {
     chQuery(createGeoInfoBuilder(website_id, adjustedStartDate, adjustedEndDate, 100).getSql()),
     chQuery(createPerformanceBuilder(website_id, adjustedStartDate, adjustedEndDate).getSql()),
     chQuery(createUTMBuilder(website_id, adjustedStartDate, adjustedEndDate, 30).getSql()),
+    chQuery(createEntryPagesBuilder(website_id, adjustedStartDate, adjustedEndDate, 30).getSql()),
+    chQuery(createExitPagesBuilder(website_id, adjustedStartDate, adjustedEndDate, 30).getSql()),
   ]);
 }
 

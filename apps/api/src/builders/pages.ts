@@ -132,11 +132,28 @@ export function createEntryPagesBuilder(websiteId: string, startDate: string, en
         AND time >= parseDateTimeBestEffort('${startDate}')
         AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
         AND event_name = 'screen_view'
+        AND notEmpty(path)
       GROUP BY session_id
     ),
     entry_pages AS (
       SELECT
-        e.path,
+        CASE 
+          WHEN startsWith(e.path, 'http') THEN 
+            CASE 
+              WHEN position(e.path, '?') > 0 THEN substring(e.path, position(e.path, '/', 9), position(e.path, '?') - position(e.path, '/', 9))
+              ELSE substring(e.path, position(e.path, '/', 9))
+            END
+          WHEN startsWith(e.path, '/') THEN 
+            CASE 
+              WHEN position(e.path, '?') > 0 THEN substring(e.path, 1, position(e.path, '?') - 1)
+              ELSE e.path
+            END
+          ELSE 
+            CASE 
+              WHEN position(e.path, '?') > 0 THEN substring(e.path, 1, position(e.path, '?') - 1)
+              ELSE CONCAT('/', e.path)
+            END
+        END as path,
         COUNT(DISTINCT e.session_id) as entries,
         COUNT(DISTINCT e.anonymous_id) as visitors
       FROM analytics.events e
@@ -146,13 +163,15 @@ export function createEntryPagesBuilder(websiteId: string, startDate: string, en
         AND e.time >= parseDateTimeBestEffort('${startDate}')
         AND e.time <= parseDateTimeBestEffort('${endDate} 23:59:59')
         AND e.event_name = 'screen_view'
-      GROUP BY e.path
+        AND notEmpty(e.path)
+      GROUP BY path
     )
     SELECT 
       path,
       entries,
       visitors
     FROM entry_pages
+    WHERE notEmpty(path)
     ORDER BY entries DESC
     LIMIT ${limit}
   `;
@@ -180,11 +199,28 @@ export function createExitPagesBuilder(websiteId: string, startDate: string, end
         AND time >= parseDateTimeBestEffort('${startDate}')
         AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
         AND event_name = 'screen_view'
+        AND notEmpty(path)
       GROUP BY session_id
     ),
     exit_pages AS (
       SELECT
-        e.path,
+        CASE 
+          WHEN startsWith(e.path, 'http') THEN 
+            CASE 
+              WHEN position(e.path, '?') > 0 THEN substring(e.path, position(e.path, '/', 9), position(e.path, '?') - position(e.path, '/', 9))
+              ELSE substring(e.path, position(e.path, '/', 9))
+            END
+          WHEN startsWith(e.path, '/') THEN 
+            CASE 
+              WHEN position(e.path, '?') > 0 THEN substring(e.path, 1, position(e.path, '?') - 1)
+              ELSE e.path
+            END
+          ELSE 
+            CASE 
+              WHEN position(e.path, '?') > 0 THEN substring(e.path, 1, position(e.path, '?') - 1)
+              ELSE CONCAT('/', e.path)
+            END
+        END as path,
         COUNT(DISTINCT e.session_id) as exits,
         COUNT(DISTINCT e.anonymous_id) as visitors
       FROM analytics.events e
@@ -194,13 +230,15 @@ export function createExitPagesBuilder(websiteId: string, startDate: string, end
         AND e.time >= parseDateTimeBestEffort('${startDate}')
         AND e.time <= parseDateTimeBestEffort('${endDate} 23:59:59')
         AND e.event_name = 'screen_view'
-      GROUP BY e.path
+        AND notEmpty(e.path)
+      GROUP BY path
     )
     SELECT 
       path,
       exits,
       visitors
     FROM exit_pages
+    WHERE notEmpty(path)
     ORDER BY exits DESC
     LIMIT ${limit}
   `;

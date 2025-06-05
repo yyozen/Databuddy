@@ -29,7 +29,7 @@ import { MetricToggles } from "../utils/ui-components";
 import type { FullTabProps, MetricPoint } from "../utils/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import type { ColumnDef, CellContext } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { ReferrerSourceCell, type ReferrerSourceCellData } from "@/components/atomic/ReferrerSourceCell";
 import { PageLinkCell } from "@/components/atomic/PageLinkCell";
 import { 
@@ -41,6 +41,7 @@ import {
   type TechnologyTableEntry,
   type DeviceTypeEntry,
 } from "../utils/technology-helpers";
+
 
 // Types
 interface TrendCalculation {
@@ -87,15 +88,7 @@ const MIN_PREVIOUS_VISITORS_FOR_TREND = 5;
 const MIN_PREVIOUS_PAGEVIEWS_FOR_TREND = 10;
 
 
-// Helper function to create column definitions
-function col<T>(accessorKey: keyof T, header: string, cell?: (info: CellContext<T, unknown>) => React.ReactNode, meta?: object): ColumnDef<T, unknown> {
-  return {
-    accessorKey: accessorKey as string,
-    header,
-    ...(cell && { cell }),
-    ...(meta && { meta }),
-  };
-}
+
 
 // UnauthorizedAccessError component
 function UnauthorizedAccessError() {
@@ -210,11 +203,12 @@ export function WebsiteOverviewTab({
     [analytics.browser_versions]
   );
 
-  const topPagesColumns = useMemo((): ColumnDef<PageData, unknown>[] => [
+  const topPagesColumns = useMemo(() => [
     {
+      id: 'path',
       accessorKey: 'path',
       header: 'Page',
-      cell: (info: CellContext<PageData, unknown>) => (
+      cell: (info: any) => (
         <PageLinkCell 
           path={info.getValue() as string} 
           websiteDomain={websiteData?.domain} 
@@ -222,17 +216,86 @@ export function WebsiteOverviewTab({
       )
     },
     {
+      id: 'pageviews',
       accessorKey: 'pageviews',
       header: 'Views',
     },
     {
+      id: 'visitors',
       accessorKey: 'visitors',
       header: 'Visitors',
     },
     {
+      id: 'percentage',
       accessorKey: 'percentage',
       header: 'Share',
-      cell: (info: CellContext<PageData, unknown>) => {
+      cell: (info: any) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      },
+    },
+  ], [websiteData?.domain]);
+
+  const entryPagesColumns = useMemo(() => [
+    {
+      id: 'path',
+      accessorKey: 'path',
+      header: 'Page',
+      cell: (info: any) => (
+        <PageLinkCell 
+          path={info.getValue() as string} 
+          websiteDomain={websiteData?.domain} 
+        />
+      )
+    },
+    {
+      id: 'entries',
+      accessorKey: 'entries',
+      header: 'Entries',
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors',
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info: any) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      },
+    },
+  ], [websiteData?.domain]);
+
+  const exitPagesColumns = useMemo(() => [
+    {
+      id: 'path',
+      accessorKey: 'path',
+      header: 'Page',
+      cell: (info: any) => (
+        <PageLinkCell 
+          path={info.getValue() as string} 
+          websiteDomain={websiteData?.domain} 
+        />
+      )
+    },
+    {
+      id: 'exits',
+      accessorKey: 'exits',
+      header: 'Exits',
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors',
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info: any) => {
         const percentage = info.getValue() as number;
         return <PercentageBadge percentage={percentage} />;
       },
@@ -281,6 +344,28 @@ export function WebsiteOverviewTab({
     }));
   }, [analytics.top_pages]);
 
+  // Process entry pages with percentages
+  const processedEntryPages = useMemo(() => {
+    if (!analytics.entry_pages?.length) return [];
+    
+    return analytics.entry_pages.map(page => ({
+      ...page,
+      pageviews: page.entries, // Use entries as pageviews for consistency
+      visitors: page.visitors
+    }));
+  }, [analytics.entry_pages]);
+
+  // Process exit pages with percentages  
+  const processedExitPages = useMemo(() => {
+    if (!analytics.exit_pages?.length) return [];
+    
+    return analytics.exit_pages.map(page => ({
+      ...page,
+      pageviews: page.exits, // Use exits as pageviews for consistency
+      visitors: page.visitors
+    }));
+  }, [analytics.exit_pages]);
+
   // Simple tab configuration using utility
   const referrerTabs = useTableTabs({
     referrers: {
@@ -307,6 +392,28 @@ export function WebsiteOverviewTab({
       label: 'UTM Campaigns',
       primaryField: 'utm_campaign',
       primaryHeader: 'Campaign'
+    }
+  });
+
+  // Combined pages tabs (top pages, entry pages, exit pages)
+  const pagesTabs = useTableTabs({
+    top_pages: {
+      data: processedTopPages,
+      label: 'Top Pages',
+      primaryField: 'path',
+      primaryHeader: 'Page'
+    },
+    entry_pages: {
+      data: processedEntryPages,
+      label: 'Entry Pages',
+      primaryField: 'path',
+      primaryHeader: 'Page'
+    },
+    exit_pages: {
+      data: processedExitPages,
+      label: 'Exit Pages', 
+      primaryField: 'path',
+      primaryHeader: 'Page'
     }
   });
 
@@ -409,55 +516,97 @@ export function WebsiteOverviewTab({
   );
 
   // Technology table columns with enhanced styling
-  const deviceColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Device Type', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
+  const deviceColumns = useMemo(() => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Device Type',
+      cell: (info: any) => {
+        const entry = info.row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <TechnologyIcon entry={entry} size="md" />
+            <span className="font-medium">{entry.name}</span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors',
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info: any) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      },
+    },
   ], []);
 
-  const browserColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Browser', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
+  const browserColumns = useMemo(() => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Browser',
+      cell: (info: any) => {
+        const entry = info.row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <TechnologyIcon entry={entry} size="md" />
+            <span className="font-medium">{entry.name}</span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors',
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info: any) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      },
+    },
   ], []);
 
-  const osColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
-    col<TechnologyTableEntry>('name', 'Operating System', (info) => {
-      const entry = info.row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <TechnologyIcon entry={entry} size="md" />
-          <span className="font-medium">{entry.name}</span>
-        </div>
-      );
-    }),
-    col<TechnologyTableEntry>('visitors', 'Visitors'),
-    col<TechnologyTableEntry>('percentage', 'Share', (info) => {
-      const percentage = info.getValue() as number;
-      return <PercentageBadge percentage={percentage} />;
-    }),
+  const osColumns = useMemo(() => [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Operating System',
+      cell: (info: any) => {
+        const entry = info.row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <TechnologyIcon entry={entry} size="md" />
+            <span className="font-medium">{entry.name}</span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'visitors',
+      accessorKey: 'visitors',
+      header: 'Visitors',
+    },
+    {
+      id: 'percentage',
+      accessorKey: 'percentage',
+      header: 'Share',
+      cell: (info: any) => {
+        const percentage = info.getValue() as number;
+        return <PercentageBadge percentage={percentage} />;
+      },
+    },
   ], []);
 
   return (
@@ -568,7 +717,7 @@ export function WebsiteOverviewTab({
       </div>
 
       {/* Content Tables */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DataTable 
           tabs={referrerTabs}
           title="Traffic Sources"
@@ -579,10 +728,9 @@ export function WebsiteOverviewTab({
         />
         
         <DataTable 
-          data={processedTopPages}
-          columns={topPagesColumns}
-          title="Top Pages"
-          description="Most viewed content"
+          tabs={pagesTabs}
+          title="Pages"
+          description="Page views, entry points, and exit points"
           isLoading={isLoading}
           initialPageSize={7}
           minHeight={230}

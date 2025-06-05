@@ -323,4 +323,36 @@ export function processReferrers(referrersData: any[], website: any, parseReferr
   }
   
   return sortAndLimit(Array.from(referrerMap.values()), 'visitors', 100);
+}
+
+/**
+ * Process entry pages data
+ */
+export function processEntryPages(entryPagesData: any[]): any[] {
+  if (!entryPagesData?.length) return [];
+  
+  const totalEntries = entryPagesData.reduce((sum, page) => sum + (page.entries || 0), 0);
+  
+  return entryPagesData.map(page => ({
+    path: page.path,
+    entries: page.entries || 0,
+    visitors: page.visitors || 0,
+    percentage: totalEntries > 0 ? Math.round((page.entries / totalEntries) * 100) : 0
+  }));
+}
+
+/**
+ * Process exit pages data
+ */
+export function processExitPages(exitPagesData: any[]): any[] {
+  if (!exitPagesData?.length) return [];
+  
+  const totalExits = exitPagesData.reduce((sum, page) => sum + (page.exits || 0), 0);
+  
+  return exitPagesData.map(page => ({
+    path: page.path,
+    exits: page.exits || 0,
+    visitors: page.visitors || 0,
+    percentage: totalExits > 0 ? Math.round((page.exits / totalExits) * 100) : 0
+  }));
 } 

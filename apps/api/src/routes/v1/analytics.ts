@@ -49,7 +49,7 @@ analyticsRouter.use('*', timezoneMiddleware);
  * Get summary statistics
  * GET /analytics/summary
  */
-analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async (c) => {
+analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async (c: any) => {
   const params = c.req.valid('query');
   const website = c.get('website');
 
