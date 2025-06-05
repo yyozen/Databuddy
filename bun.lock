@@ -257,6 +257,7 @@
       "name": "docs",
       "version": "0.0.0",
       "dependencies": {
+        "@databuddy/sdk": "^1.2.0",
         "fumadocs-core": "15.5.0",
         "fumadocs-mdx": "11.6.6",
         "fumadocs-ui": "15.5.0",
@@ -3508,6 +3509,8 @@
     "databuddy-new/typescript": ["typescript@5.8.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ=="],
 
     "decode-named-character-reference/character-entities": ["character-entities@2.0.2", "", {}, "sha512-shx7oQ0Awen/BRIdkjkvz54PnEEI/EjwXDSIZp86/KKdbafHh1Df/RYGBhn4hbe2+uKC9FnT5UCEdyPz3ai9hQ=="],
+
+    "docs/@databuddy/sdk": ["@databuddy/sdk@1.2.0", "", {}, "sha512-tEV3GcIHzvjYGH2HcKLplVVi+6kBVqLN0rhL3V2bmBzGV6/YuHc5gtqF+wjpo0lnyGeezjI/HFL1H5VRUeU0gA=="],
 
     "docs/@types/node": ["@types/node@22.15.28", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-I0okKVDmyKR281I0UIFV7EWAWRnR0gkuSKob5wVcByyyhr7Px/slhkQapcYX4u00ekzNWaS1gznKZnuzxwo4pw=="],
 
