@@ -271,6 +271,21 @@ interface SummaryResponse extends ApiResponse {
     count: number;
     visitors: number;
   }>;
+  utm_sources: Array<{
+    utm_source: string;
+    visitors: number;
+    pageviews: number;
+  }>;
+  utm_mediums: Array<{
+    utm_medium: string;
+    visitors: number;
+    pageviews: number;
+  }>;
+  utm_campaigns: Array<{
+    utm_campaign: string;
+    visitors: number;
+    pageviews: number;
+  }>;
   events_by_date: Array<TrendData>;
 }
 
@@ -470,6 +485,9 @@ export function useWebsiteAnalytics(websiteId: string, dateRange: DateRange) {
       top_pages: summaryQuery.data?.top_pages,
       top_referrers: summaryQuery.data?.top_referrers,
       screen_resolutions: summaryQuery.data?.screen_resolutions,
+      utm_sources: summaryQuery.data?.utm_sources,
+      utm_mediums: summaryQuery.data?.utm_mediums,
+      utm_campaigns: summaryQuery.data?.utm_campaigns,
       events_by_date: summaryQuery.data?.events_by_date,
     },
     loading: {

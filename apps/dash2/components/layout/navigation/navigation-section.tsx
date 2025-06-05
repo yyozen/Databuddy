@@ -34,6 +34,7 @@ export function NavigationSection({ title, items, pathname, currentWebsiteId }: 
               isRootLevel={!!item.rootLevel}
               isExternal={item.external}
               isHighlighted={item.highlight}
+              production={item.production}
               currentWebsiteId={currentWebsiteId}
             />
           );

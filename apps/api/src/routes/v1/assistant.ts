@@ -112,9 +112,11 @@ CURRENT DATE & TIME CONTEXT:
 - Current month: ${new Date().getMonth() + 1}
 - Current UTC timestamp: ${new Date().toISOString()}
 - For "today", "yesterday", "this week", "this month" queries, use these reference points
-- When users ask about "yesterday", subtract 1 day from today's date
-- When users ask about "this week", use the past 7 days from today
-- When users ask about "this month", use the current calendar month
+- When users ask about "yesterday", use \`toDate(time) = yesterday()\`
+- When users ask about "today", use \`toDate(time) = today()\`
+- When users ask about "this week", use \`time >= today() - INTERVAL '7' DAY\`
+- When users ask about "this month", use \`time >= date_trunc('month', today())\`
+- When users ask about "last 30 days", use \`time >= today() - INTERVAL '30' DAY\`
 
 USER QUERY: "${userQuery}";
 WEBSITE ID: ${websiteId};

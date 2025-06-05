@@ -8,6 +8,7 @@ export interface NavigationItem {
   external?: boolean;
   highlight?: boolean;
   alpha?: boolean;
+  production?: boolean;
 }
 
 export interface NavigationSection {

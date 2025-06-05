@@ -52,13 +52,25 @@ interface TrendCalculation {
   pages_per_session?: number;
 }
 
-interface ReferrerItem {
+import { useTableTabs, type BaseTabItem } from "@/lib/table-tabs";
+
+interface ReferrerItem extends BaseTabItem {
   referrer: string;
-  visitors: number;
-  pageviews: number;
   type?: string;
   name?: string;
   domain?: string;
+}
+
+interface UTMSourceItem extends BaseTabItem {
+  utm_source: string;
+}
+
+interface UTMMediumItem extends BaseTabItem {
+  utm_medium: string;
+}
+
+interface UTMCampaignItem extends BaseTabItem {
+  utm_campaign: string;
 }
 
 interface ChartDataPoint {
@@ -127,8 +139,6 @@ export function WebsiteOverviewTab({
   isRefreshing,
   setIsRefreshing,
 }: FullTabProps) {
-  const searchParams = useSearchParams();
-  const currentTab = searchParams.get('tab') || 'overview';
   
   const { analytics, loading, error, refetch } = useWebsiteAnalytics(websiteId, dateRange);
 
@@ -229,32 +239,11 @@ export function WebsiteOverviewTab({
     },
   ], [websiteData?.domain]);
 
-  const referrerColumns = useMemo((): ColumnDef<ReferrerItem, unknown>[] => [
-    {
-      accessorKey: 'name',
-      header: 'Source',
-      cell: (info: CellContext<ReferrerItem, unknown>) => {
-        const cellData: ReferrerSourceCellData = info.row.original;
-        return <ReferrerSourceCell {...cellData} />;
-      }
-    },
-    {
-      accessorKey: 'visitors',
-      header: 'Visitors',
-    },
-    {
-      accessorKey: 'pageviews',
-      header: 'Views',
-    },
-    {
-      accessorKey: 'percentage',
-      header: 'Share',
-      cell: (info: CellContext<ReferrerItem, unknown>) => {
-        const percentage = info.getValue() as number;
-        return <PercentageBadge percentage={percentage} />;
-      },
-    },
-  ], []);
+  // Custom cell for referrers (special case)
+  const referrerCustomCell = useCallback((info: any) => {
+    const cellData: ReferrerSourceCellData = info.row.original;
+    return <ReferrerSourceCell {...cellData} />;
+  }, []);
 
   const chartData = useMemo(() => {
     if (!analytics.events_by_date?.length) return [];
@@ -292,17 +281,34 @@ export function WebsiteOverviewTab({
     }));
   }, [analytics.top_pages]);
 
-  // Process top referrers with percentage calculations
-  const processedTopReferrers = useMemo(() => {
-    if (!analytics.top_referrers?.length) return [];
-    
-    const totalVisitors = analytics.top_referrers.reduce((sum, referrer) => sum + (referrer.visitors || 0), 0);
-    
-    return analytics.top_referrers.map(referrer => ({
-      ...referrer,
-      percentage: totalVisitors > 0 ? Math.round((referrer.visitors / totalVisitors) * 100) : 0
-    }));
-  }, [analytics.top_referrers]);
+  // Simple tab configuration using utility
+  const referrerTabs = useTableTabs({
+    referrers: {
+      data: analytics.top_referrers || [],
+      label: 'Referrers',
+      primaryField: 'name',
+      primaryHeader: 'Source',
+      customCell: referrerCustomCell
+    },
+    utm_sources: {
+      data: analytics.utm_sources || [],
+      label: 'UTM Sources',
+      primaryField: 'utm_source',
+      primaryHeader: 'Source'
+    },
+    utm_mediums: {
+      data: analytics.utm_mediums || [],
+      label: 'UTM Mediums',
+      primaryField: 'utm_medium',
+      primaryHeader: 'Medium'
+    },
+    utm_campaigns: {
+      data: analytics.utm_campaigns || [],
+      label: 'UTM Campaigns',
+      primaryField: 'utm_campaign',
+      primaryHeader: 'Campaign'
+    }
+  });
 
   const dateFrom = useMemo(() => new Date(dateRange.start_date), [dateRange.start_date]);
   const dateTo = useMemo(() => new Date(dateRange.end_date), [dateRange.end_date]);
@@ -313,6 +319,8 @@ export function WebsiteOverviewTab({
     visitors: 'green-500',
     sessions: 'purple-500'
   };
+
+
 
   const calculateTrends = useMemo<TrendCalculation>(() => {
     if (!analytics.events_by_date?.length || analytics.events_by_date.length < 2) {
@@ -562,10 +570,9 @@ export function WebsiteOverviewTab({
       {/* Content Tables */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DataTable 
-          data={processedTopReferrers}
-          columns={referrerColumns}
-          title="Top Referrers"
-          description="Sources of your traffic"
+          tabs={referrerTabs}
+          title="Traffic Sources"
+          description="Sources of your traffic and UTM data"
           isLoading={isLoading}
           initialPageSize={7}
           minHeight={230}

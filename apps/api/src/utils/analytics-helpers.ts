@@ -131,18 +131,22 @@ export function getCurrentHourFormatted(): string {
  * Helper to format clean paths by removing protocol and hostname
  */
 export function formatCleanPath(path: string): string {
+  if (!path) return '/';
+  
   let cleanPath = path;
   
   try {
-    if (path?.startsWith('http')) {
+    if (path.startsWith('http')) {
       const url = new URL(path);
       cleanPath = url.pathname + url.search + url.hash;
     }
   } catch (e) {
     // If URL parsing fails, keep the original path
+    cleanPath = path;
   }
   
-  return cleanPath;
+  // Ensure we always return at least "/"
+  return cleanPath || '/';
 }
 
 /**
