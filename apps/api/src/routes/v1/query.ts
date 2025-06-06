@@ -282,32 +282,21 @@ const PARAMETER_BUILDERS = {
   `
 }
 
-// Helper function to process a single query
-async function processSingleQuery(
-  query: z.infer<typeof singleQuerySchema>, 
+// Helper function to build a unified query for multiple parameters
+function buildUnifiedQuery(
+  queries: Array<z.infer<typeof singleQuerySchema> & { id: string }>,
   websiteId: string
-) {
-  const { startDate, endDate, parameters, limit, page, filters } = query
-  const offset = (page - 1) * limit
-
-  // Check if all parameters are supported
-  const unsupportedParams = parameters.filter((param: string) => 
-    !PARAMETER_BUILDERS[param as keyof typeof PARAMETER_BUILDERS]
-  )
+): string {
+  const subQueries: string[] = []
   
-  if (unsupportedParams.length > 0) {
-    return {
-      success: false,
-      error: `Parameters not supported: ${unsupportedParams.join(', ')}`,
-      available_parameters: Object.keys(PARAMETER_BUILDERS),
-      queryId: query.id
-    }
-  }
-
-  // Execute all parameters in parallel
-  const results = await Promise.all(
-    parameters.map(async (parameter: string) => {
+  for (const query of queries) {
+    const { startDate, endDate, parameters, limit, page, filters } = query
+    const offset = (page - 1) * limit
+    
+    for (const parameter of parameters) {
       const builder = PARAMETER_BUILDERS[parameter as keyof typeof PARAMETER_BUILDERS]
+      if (!builder) return
+      
       let sql = builder(websiteId, startDate, endDate, limit, offset)
       
       // Apply filters if provided
@@ -327,111 +316,262 @@ async function processSingleQuery(
           sql = sql.replace('GROUP BY', `AND ${filterClauses.join(' AND ')}\n    GROUP BY`)
         }
       }
+      
+      // Add query and parameter identifiers to the result
+      const wrappedQuery = `
+        SELECT 
+          '${query.id}' as query_id,
+          '${parameter}' as parameter,
+          *
+        FROM (
+          ${sql}
+        ) subquery
+      `
+      
+      subQueries.push(wrappedQuery)
+    }
+  }
+  
+  return subQueries.join('\nUNION ALL\n')
+}
 
-      try {
-        const result = await chQuery<Record<string, any>>(sql)
-        
-        // Post-process data based on parameter type
-        let processedData = result;
-        
-        if (parameter === 'language') {
-          processedData = result.map(item => ({
+// Helper function to process data after unified query
+function processUnifiedResults(
+  rawResults: Array<Record<string, any>>,
+  queries: Array<z.infer<typeof singleQuerySchema> & { id: string }>
+) {
+  // Group results by query_id and parameter
+  const groupedResults: Record<string, Record<string, any[]>> = {}
+  
+  for (const row of rawResults) {
+    const { query_id, parameter, ...data } = row
+    
+    if (!groupedResults[query_id]) {
+      groupedResults[query_id] = {}
+    }
+    if (!groupedResults[query_id][parameter]) {
+      groupedResults[query_id][parameter] = []
+    }
+    
+    groupedResults[query_id][parameter].push(data)
+  }
+  
+  // Process each query's results
+  return queries.map(query => {
+    const queryResults = groupedResults[query.id] || {}
+    
+    // Check if all parameters are supported
+    const unsupportedParams = query.parameters.filter((param: string) => 
+      !PARAMETER_BUILDERS[param as keyof typeof PARAMETER_BUILDERS]
+    )
+    
+    if (unsupportedParams.length > 0) {
+      return {
+        success: false,
+        error: `Parameters not supported: ${unsupportedParams.join(', ')}`,
+        available_parameters: Object.keys(PARAMETER_BUILDERS),
+        queryId: query.id
+      }
+    }
+    
+    const processedResults = query.parameters.map(parameter => {
+      const rawData = queryResults[parameter] || []
+      
+      // Post-process data based on parameter type
+      let processedData = rawData
+      
+      if (parameter === 'language') {
+        processedData = rawData.map(item => ({
+          ...item,
+          name: getLanguageName(item.name?.split('-')[0] || item.name) || item.name,
+          code: item.name
+        }))
+      } else if (parameter === 'timezone') {
+        processedData = rawData.map(item => {
+          const tz = item.name
+          let displayName = tz
+          
+          // Common timezone mappings
+          const timezoneNames: Record<string, string> = {
+            'UTC': 'UTC (Coordinated Universal Time)',
+            'GMT': 'GMT (Greenwich Mean Time)',
+            'America/New_York': 'Eastern Time (US & Canada)',
+            'America/Chicago': 'Central Time (US & Canada)',
+            'America/Denver': 'Mountain Time (US & Canada)',
+            'America/Los_Angeles': 'Pacific Time (US & Canada)',
+            'America/Anchorage': 'Alaska Time',
+            'Pacific/Honolulu': 'Hawaii Time',
+            'Europe/London': 'Greenwich Mean Time (UK)',
+            'Europe/Paris': 'Central European Time',
+            'Europe/Berlin': 'Central European Time',
+            'Europe/Rome': 'Central European Time',
+            'Europe/Madrid': 'Central European Time',
+            'Europe/Amsterdam': 'Central European Time',
+            'Europe/Helsinki': 'Eastern European Time',
+            'Europe/Athens': 'Eastern European Time',
+            'Europe/Moscow': 'Moscow Standard Time',
+            'Asia/Tokyo': 'Japan Standard Time',
+            'Asia/Shanghai': 'China Standard Time',
+            'Asia/Beijing': 'China Standard Time',
+            'Asia/Kolkata': 'India Standard Time',
+            'Asia/Mumbai': 'India Standard Time',
+            'Asia/Dubai': 'Gulf Standard Time',
+            'Australia/Sydney': 'Australian Eastern Time',
+            'Australia/Melbourne': 'Australian Eastern Time',
+            'Australia/Perth': 'Australian Western Time',
+            'Pacific/Auckland': 'New Zealand Standard Time',
+            'America/Sao_Paulo': 'Brasília Time',
+            'America/Argentina/Buenos_Aires': 'Argentina Time',
+            'Africa/Cairo': 'Eastern European Time',
+            'Africa/Johannesburg': 'South Africa Standard Time'
+          }
+          
+          displayName = timezoneNames[tz] || tz.replace(/_/g, ' ').replace('/', ' / ')
+          
+          // Try to get current time in timezone
+          let currentTime = ''
+          try {
+            const now = new Date()
+            currentTime = now.toLocaleTimeString('en-US', { 
+              timeZone: tz,
+              hour12: false,
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          } catch {
+            // If timezone is invalid, skip time display
+          }
+          
+          return {
             ...item,
-            name: getLanguageName(item.name?.split('-')[0] || item.name) || item.name,
-            code: item.name
-          }));
-        } else if (parameter === 'timezone') {
-          processedData = result.map(item => {
-            const tz = item.name;
-            let displayName = tz;
-            
-            // Common timezone mappings
-            const timezoneNames: Record<string, string> = {
-              'UTC': 'UTC (Coordinated Universal Time)',
-              'GMT': 'GMT (Greenwich Mean Time)',
-              'America/New_York': 'Eastern Time (US & Canada)',
-              'America/Chicago': 'Central Time (US & Canada)',
-              'America/Denver': 'Mountain Time (US & Canada)',
-              'America/Los_Angeles': 'Pacific Time (US & Canada)',
-              'America/Anchorage': 'Alaska Time',
-              'Pacific/Honolulu': 'Hawaii Time',
-              'Europe/London': 'Greenwich Mean Time (UK)',
-              'Europe/Paris': 'Central European Time',
-              'Europe/Berlin': 'Central European Time',
-              'Europe/Rome': 'Central European Time',
-              'Europe/Madrid': 'Central European Time',
-              'Europe/Amsterdam': 'Central European Time',
-              'Europe/Helsinki': 'Eastern European Time',
-              'Europe/Athens': 'Eastern European Time',
-              'Europe/Moscow': 'Moscow Standard Time',
-              'Asia/Tokyo': 'Japan Standard Time',
-              'Asia/Shanghai': 'China Standard Time',
-              'Asia/Beijing': 'China Standard Time',
-              'Asia/Kolkata': 'India Standard Time',
-              'Asia/Mumbai': 'India Standard Time',
-              'Asia/Dubai': 'Gulf Standard Time',
-              'Australia/Sydney': 'Australian Eastern Time',
-              'Australia/Melbourne': 'Australian Eastern Time',
-              'Australia/Perth': 'Australian Western Time',
-              'Pacific/Auckland': 'New Zealand Standard Time',
-              'America/Sao_Paulo': 'Brasília Time',
-              'America/Argentina/Buenos_Aires': 'Argentina Time',
-              'Africa/Cairo': 'Eastern European Time',
-              'Africa/Johannesburg': 'South Africa Standard Time'
-            };
-            
-            displayName = timezoneNames[tz] || tz.replace(/_/g, ' ').replace('/', ' / ');
-            
-            // Try to get current time in timezone
-            let currentTime = '';
-            try {
-              const now = new Date();
-              currentTime = now.toLocaleTimeString('en-US', { 
-                timeZone: tz,
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit'
-              });
-            } catch {
-              // If timezone is invalid, skip time display
-            }
-            
-            return {
-              ...item,
-              name: displayName,
-              code: tz,
-              current_time: currentTime
-            };
-          });
-        }
-        
-        return {
-          parameter,
-          data: processedData,
-          success: true
-        }
-      } catch (error: any) {
-        return {
-          parameter,
-          data: [],
-          success: false,
-          error: error.message
-        }
+            name: displayName,
+            code: tz,
+            current_time: currentTime
+          }
+        })
+      }
+      
+      return {
+        parameter,
+        data: processedData,
+        success: true
       }
     })
-  )
-
-  return {
-    success: true,
-    queryId: query.id,
-    data: results,
-    meta: {
-      parameters: parameters,
-      total_parameters: parameters.length,
-      page,
-      limit,
-      filters_applied: filters.length
+    
+    return {
+      success: true,
+      queryId: query.id,
+      data: processedResults,
+      meta: {
+        parameters: query.parameters,
+        total_parameters: query.parameters.length,
+        page: query.page,
+        limit: query.limit,
+        filters_applied: query.filters.length
+      }
     }
+  })
+}
+
+// Helper function to process a single query (for backward compatibility)
+async function processSingleQuery(
+  query: z.infer<typeof singleQuerySchema>, 
+  websiteId: string
+) {
+  const queryWithId = { ...query, id: query.id || 'single_query' }
+  const results = await processBatchQueries([queryWithId], websiteId)
+  return results[0]
+}
+
+// New batch processing function that uses unified query
+async function processBatchQueries(
+  queries: Array<z.infer<typeof singleQuerySchema> & { id: string }>,
+  websiteId: string
+) {
+  try {
+    // Build unified query
+    const unifiedQuery = buildUnifiedQuery(queries, websiteId)
+    
+    // Execute single query
+    const rawResults = await chQuery<Record<string, any>>(unifiedQuery)
+    
+    // Process and group results
+    return processUnifiedResults(rawResults, queries)
+    
+  } catch (error: any) {
+    // If unified query fails, fall back to individual queries for error isolation
+    logger.error('Unified query failed, falling back to individual queries', {
+      error: error.message,
+      queries_count: queries.length
+    })
+    
+    return Promise.all(
+      queries.map(async (query) => {
+        try {
+          const { startDate, endDate, parameters, limit, page, filters } = query
+          const offset = (page - 1) * limit
+
+          const unsupportedParams = parameters.filter((param: string) => 
+            !PARAMETER_BUILDERS[param as keyof typeof PARAMETER_BUILDERS]
+          )
+          
+          if (unsupportedParams.length > 0) {
+            return {
+              success: false,
+              error: `Parameters not supported: ${unsupportedParams.join(', ')}`,
+              available_parameters: Object.keys(PARAMETER_BUILDERS),
+              queryId: query.id
+            }
+          }
+
+          const results = await Promise.all(
+            parameters.map(async (parameter: string) => {
+              const builder = PARAMETER_BUILDERS[parameter as keyof typeof PARAMETER_BUILDERS]
+              let sql = builder(websiteId, startDate, endDate, limit, offset)
+              
+              if (filters.length > 0) {
+                const filterClauses = filters.map((filter: any) => {
+                  switch (filter.operator) {
+                    case 'eq': return `${filter.field} = '${filter.value}'`
+                    case 'ne': return `${filter.field} != '${filter.value}'`
+                    case 'in': return `${filter.field} IN (${Array.isArray(filter.value) ? filter.value.map((v: any) => `'${v}'`).join(',') : `'${filter.value}'`})`
+                    case 'contains': return `${filter.field} LIKE '%${filter.value}%'`
+                    case 'starts_with': return `${filter.field} LIKE '${filter.value}%'`
+                    default: return ''
+                  }
+                }).filter(Boolean)
+                
+                if (filterClauses.length > 0) {
+                  sql = sql.replace('GROUP BY', `AND ${filterClauses.join(' AND ')}\n    GROUP BY`)
+                }
+              }
+
+              const result = await chQuery<Record<string, any>>(sql)
+              return { parameter, data: result, success: true }
+            })
+          )
+
+          return {
+            success: true,
+            queryId: query.id,
+            data: results,
+            meta: {
+              parameters: parameters,
+              total_parameters: parameters.length,
+              page,
+              limit,
+              filters_applied: filters.length
+            }
+          }
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message,
+            queryId: query.id
+          }
+        }
+      })
+    )
   }
 }
 
@@ -451,25 +591,14 @@ queryRouter.post(
       // Determine if it's a single query or batch
       const queries = Array.isArray(requestData) ? requestData : [requestData]
       
-      // Process all queries in parallel
-      const results = await Promise.all(
-        queries.map(async (query, index) => {
-          try {
-            // Add a default ID if not provided
-            const queryWithId = {
-              ...query,
-              id: query.id || `query_${index}`
-            }
-            return await processSingleQuery(queryWithId, website.id)
-          } catch (error: any) {
-            return {
-              success: false,
-              error: error.message,
-              queryId: query.id || `query_${index}`
-            }
-          }
-        })
-      )
+      // Add IDs to queries if not provided
+      const queriesWithIds = queries.map((query, index) => ({
+        ...query,
+        id: query.id || `query_${index}`
+      }))
+      
+      // Process all queries with unified approach
+      const results = await processBatchQueries(queriesWithIds, website.id)
 
       // If it was a single query, return single result format for backward compatibility
       if (!Array.isArray(requestData)) {
