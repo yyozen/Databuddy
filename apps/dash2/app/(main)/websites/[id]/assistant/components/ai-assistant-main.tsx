@@ -9,7 +9,7 @@ import VisualizationSection, { VisualizationSkeleton } from "./visualization-sec
 import { cn } from "@/lib/utils";
 
 export default function AIAssistantMain(props: WebsiteDataTabProps) {
-  const chat = useChat(props.websiteId, props.websiteData);
+  const chat = useChat(props.websiteId, props.websiteData?.name);
   
   const latestVisualizationMessage = chat.messages
     .slice()
