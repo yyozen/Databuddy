@@ -3,7 +3,7 @@
 // Assuming your @databuddy/db package exports the Drizzle instance as `db` 
 // and your users schema as `user` (singular, based on previous linter hint).
 import { db } from "@databuddy/db";
-import { eq, or, like } from "drizzle-orm";
+import { eq, or, like, desc } from "drizzle-orm";
 import { user, domains, websites, projects, projectAccess, clickHouse, chQuery } from "@databuddy/db";
 import { revalidatePath } from "next/cache";
 import { nanoid } from 'nanoid';
@@ -22,7 +22,7 @@ export async function getAllUsersAsAdmin() {
   // }
 
   try {
-    const users = await db.select().from(user);
+    const users = await db.select().from(user).orderBy(desc(user.createdAt));
     return { users, error: null };
   } catch (err) {
     console.error("Error fetching users for admin:", err);
@@ -301,7 +301,8 @@ export async function searchUsers(query: string) {
         email: user.email,
         role: user.role,
       }).from(user)
-        .limit(20); // Show more users when displaying all
+        .orderBy(desc(user.createdAt))
+        .limit(50); // Show more users when displaying all
     } else {
       // Search specific users
       const searchQuery = `%${query.toLowerCase()}%`;

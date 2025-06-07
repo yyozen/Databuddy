@@ -9,6 +9,7 @@ import { Github, Home, Twitter } from 'lucide-react';
  */
 export const baseOptions: BaseLayoutProps = {
   nav: {
+    enabled: false,
     title: (
       <div className="flex items-center gap-2.5">
         <img 
