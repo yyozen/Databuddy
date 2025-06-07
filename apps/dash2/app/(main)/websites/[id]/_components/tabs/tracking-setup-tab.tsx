@@ -217,11 +217,23 @@ export function WebsiteTrackingSetupTab({
             Customize tracking options (optional)
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Core Tracking */}
             <div className="space-y-3">
               <h4 className="font-medium text-sm">Core Tracking</h4>
               <div className="space-y-2">
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label htmlFor="disabled" className="text-sm">Enable Tracking</Label>
+                    <div className="text-xs text-muted-foreground">Master switch for all tracking</div>
+                  </div>
+                  <Switch
+                    id="disabled"
+                    checked={!trackingOptions.disabled}
+                    onCheckedChange={() => handleToggleOption('disabled')}
+                  />
+                </div>
                 <div className="flex items-center justify-between py-2">
                   <div>
                     <Label htmlFor="trackScreenViews" className="text-sm">Page Views</Label>
@@ -235,6 +247,17 @@ export function WebsiteTrackingSetupTab({
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <div>
+                    <Label htmlFor="trackHashChanges" className="text-sm">Hash Changes</Label>
+                    <div className="text-xs text-muted-foreground">Track URL hash navigation</div>
+                  </div>
+                  <Switch
+                    id="trackHashChanges"
+                    checked={trackingOptions.trackHashChanges}
+                    onCheckedChange={() => handleToggleOption('trackHashChanges')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div>
                     <Label htmlFor="trackSessions" className="text-sm">Sessions</Label>
                     <div className="text-xs text-muted-foreground">Track session duration</div>
                   </div>
@@ -244,6 +267,13 @@ export function WebsiteTrackingSetupTab({
                     onCheckedChange={() => handleToggleOption('trackSessions')}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Interaction Tracking */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm">Interaction Tracking</h4>
+              <div className="space-y-2">
                 <div className="flex items-center justify-between py-2">
                   <div>
                     <Label htmlFor="trackInteractions" className="text-sm">Interactions</Label>
@@ -255,11 +285,87 @@ export function WebsiteTrackingSetupTab({
                     onCheckedChange={() => handleToggleOption('trackInteractions')}
                   />
                 </div>
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label htmlFor="trackAttributes" className="text-sm">Data Attributes</Label>
+                    <div className="text-xs text-muted-foreground">Track data-* attributes</div>
+                  </div>
+                  <Switch
+                    id="trackAttributes"
+                    checked={trackingOptions.trackAttributes}
+                    onCheckedChange={() => handleToggleOption('trackAttributes')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label htmlFor="trackOutgoingLinks" className="text-sm">Outbound Links</Label>
+                    <div className="text-xs text-muted-foreground">Track external link clicks</div>
+                  </div>
+                  <Switch
+                    id="trackOutgoingLinks"
+                    checked={trackingOptions.trackOutgoingLinks}
+                    onCheckedChange={() => handleToggleOption('trackOutgoingLinks')}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Engagement Tracking */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm">Engagement Tracking</h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label htmlFor="trackEngagement" className="text-sm">Engagement</Label>
+                    <div className="text-xs text-muted-foreground">Track user engagement</div>
+                  </div>
+                  <Switch
+                    id="trackEngagement"
+                    checked={trackingOptions.trackEngagement}
+                    onCheckedChange={() => handleToggleOption('trackEngagement')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label htmlFor="trackScrollDepth" className="text-sm">Scroll Depth</Label>
+                    <div className="text-xs text-muted-foreground">Track scroll percentage</div>
+                  </div>
+                  <Switch
+                    id="trackScrollDepth"
+                    checked={trackingOptions.trackScrollDepth}
+                    onCheckedChange={() => handleToggleOption('trackScrollDepth')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label htmlFor="trackExitIntent" className="text-sm">Exit Intent</Label>
+                    <div className="text-xs text-muted-foreground">Track exit behavior</div>
+                  </div>
+                  <Switch
+                    id="trackExitIntent"
+                    checked={trackingOptions.trackExitIntent}
+                    onCheckedChange={() => handleToggleOption('trackExitIntent')}
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label htmlFor="trackBounceRate" className="text-sm">Bounce Rate</Label>
+                    <div className="text-xs text-muted-foreground">Track bounce detection</div>
+                  </div>
+                  <Switch
+                    id="trackBounceRate"
+                    checked={trackingOptions.trackBounceRate}
+                    onCheckedChange={() => handleToggleOption('trackBounceRate')}
+                  />
+                </div>
               </div>
             </div>
 
+            {/* Performance Tracking */}
             <div className="space-y-3">
-              <h4 className="font-medium text-sm">Performance</h4>
+              <h4 className="font-medium text-sm">Performance Tracking</h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between py-2">
                   <div>
@@ -294,6 +400,35 @@ export function WebsiteTrackingSetupTab({
                     onCheckedChange={() => handleToggleOption('trackErrors')}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Optimization */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">Optimization</h4>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <Label htmlFor="enableBatching" className="text-sm">Enable Batching</Label>
+                  <div className="text-xs text-muted-foreground">Batch requests for efficiency</div>
+                </div>
+                <Switch
+                  id="enableBatching"
+                  checked={trackingOptions.enableBatching}
+                  onCheckedChange={() => handleToggleOption('enableBatching')}
+                />
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <Label htmlFor="enableRetries" className="text-sm">Enable Retries</Label>
+                  <div className="text-xs text-muted-foreground">Retry failed requests</div>
+                </div>
+                <Switch
+                  id="enableRetries"
+                  checked={trackingOptions.enableRetries}
+                  onCheckedChange={() => handleToggleOption('enableRetries')}
+                />
               </div>
             </div>
           </div>

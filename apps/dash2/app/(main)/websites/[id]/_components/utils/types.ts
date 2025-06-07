@@ -59,15 +59,36 @@ export interface WebsiteFormData {
 }
 
 export interface TrackingOptions {
-  trackErrors: boolean;
+  // Core tracking
+  disabled: boolean;
+  trackScreenViews: boolean;
+  trackHashChanges: boolean;
+  trackSessions: boolean;
+  
+  // Interaction tracking
+  trackAttributes: boolean;
+  trackOutgoingLinks: boolean;
+  trackInteractions: boolean;
+  
+  // Advanced tracking
+  trackEngagement: boolean;
+  trackScrollDepth: boolean;
+  trackExitIntent: boolean;
+  trackBounceRate: boolean;
+  
+  // Performance tracking
   trackPerformance: boolean;
   trackWebVitals: boolean;
-  trackOutgoingLinks: boolean;
-  trackScreenViews: boolean;
-  trackSessions: boolean;
-  trackInteractions: boolean;
+  trackErrors: boolean;
+  
+  // Optimization
   samplingRate: number;
   enableRetries: boolean;
   maxRetries: number;
   initialRetryDelay: number;
+  
+  // Batching
+  enableBatching: boolean;
+  batchSize: number;
+  batchTimeout: number;
 } 
