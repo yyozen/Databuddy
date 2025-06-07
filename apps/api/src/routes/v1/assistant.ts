@@ -396,7 +396,6 @@ assistantRouter.post('/stream', zValidator('json', chatRequestSchema), async (c)
           content: createThinkingStep("Executing database query...") 
         });
 
-        // Handle different response types
         if (parsedAiJson.response_type === 'text') {
           sendUpdate({
             type: 'complete',
@@ -412,7 +411,6 @@ assistantRouter.post('/stream', zValidator('json', chatRequestSchema), async (c)
         }
 
         if (parsedAiJson.response_type === 'metric') {
-          // For metric responses, we might still need to execute SQL to get the actual value
           if (parsedAiJson.sql) {
             const sql = parsedAiJson.sql;
             console.log('Metric SQL:', sql);
@@ -431,7 +429,6 @@ assistantRouter.post('/stream', zValidator('json', chatRequestSchema), async (c)
               const queryData = await chQuery(sql);
               const queryTime = Date.now() - queryStart;
 
-              // Extract the metric value from the query result
               let metricValue = parsedAiJson.metric_value;
               if (queryData.length > 0 && queryData[0]) {
                 const firstRow = queryData[0];
@@ -470,7 +467,6 @@ assistantRouter.post('/stream', zValidator('json', chatRequestSchema), async (c)
               });
             }
           } else {
-            // Use the provided metric value directly
             sendUpdate({
               type: 'complete',
               content: parsedAiJson.text_response || `${parsedAiJson.metric_label || 'Result'}: ${typeof parsedAiJson.metric_value === 'number' ? parsedAiJson.metric_value.toLocaleString() : parsedAiJson.metric_value}`,
@@ -487,7 +483,6 @@ assistantRouter.post('/stream', zValidator('json', chatRequestSchema), async (c)
           return;
         }
 
-        // Handle chart response type
         if (parsedAiJson.response_type === 'chart' && parsedAiJson.sql) {
           const sql = parsedAiJson.sql;
           console.log(sql);

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Message } from "../types/message";
+import { getChatDB } from "../lib/chat-db";
 
 // StreamingUpdate interface to match API
 interface StreamingUpdate {
@@ -30,19 +31,69 @@ function generateWelcomeMessage(websiteName?: string): string {
 }
 
 export function useChat(websiteId: string, websiteName?: string) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      type: 'assistant',
-      content: generateWelcomeMessage(websiteName), 
-      timestamp: new Date(),
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRateLimited, setIsRateLimited] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const rateLimitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const chatDB = getChatDB();
+
+  // Initialize chat from IndexedDB
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeChat = async () => {
+      try {
+        // Load existing messages from IndexedDB
+        const existingMessages = await chatDB.getMessages(websiteId);
+        
+        if (isMounted) {
+          if (existingMessages.length === 0) {
+            // No existing chat, create welcome message
+            const welcomeMessage: Message = {
+              id: '1',
+              type: 'assistant',
+              content: generateWelcomeMessage(websiteName),
+              timestamp: new Date(),
+            };
+            
+            // Save welcome message to IndexedDB and set in state
+            await chatDB.saveMessage(welcomeMessage, websiteId);
+            setMessages([welcomeMessage]);
+          } else {
+            // Load existing messages
+            setMessages(existingMessages);
+          }
+          
+          // Update chat metadata
+          await chatDB.createOrUpdateChat(websiteId, websiteName);
+          setIsInitialized(true);
+        }
+      } catch (error) {
+        console.error('Failed to initialize chat from IndexedDB:', error);
+        
+        // Fallback to welcome message in memory only
+        if (isMounted) {
+          const welcomeMessage: Message = {
+            id: '1',
+            type: 'assistant',
+            content: generateWelcomeMessage(websiteName),
+            timestamp: new Date(),
+          };
+          setMessages([welcomeMessage]);
+          setIsInitialized(true);
+        }
+      }
+    };
+
+    initializeChat();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [websiteId, websiteName, chatDB]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -71,7 +122,7 @@ export function useChat(websiteId: string, websiteName?: string) {
 
   const sendMessage = useCallback(async (content?: string) => {
     const messageContent = content || inputValue.trim();
-    if (!messageContent || isLoading || isRateLimited) return;
+    if (!messageContent || isLoading || isRateLimited || !isInitialized) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -79,6 +130,13 @@ export function useChat(websiteId: string, websiteName?: string) {
       content: messageContent,
       timestamp: new Date(),
     };
+
+    // Save user message to IndexedDB immediately
+    try {
+      await chatDB.saveMessage(userMessage, websiteId);
+    } catch (error) {
+      console.error('Failed to save user message to IndexedDB:', error);
+    }
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue("");
@@ -188,20 +246,29 @@ export function useChat(websiteId: string, websiteName?: string) {
                   ));
                   scrollToBottom();
                 } else if (update.type === 'complete') {
+                  const completedMessage = {
+                    id: assistantId,
+                    type: 'assistant' as const,
+                    content: update.content,
+                    timestamp: new Date(),
+                    hasVisualization: update.data?.hasVisualization || false,
+                    chartType: update.data?.chartType as any,
+                    data: update.data?.data,
+                    responseType: update.data?.responseType,
+                    metricValue: update.data?.metricValue,
+                    metricLabel: update.data?.metricLabel,
+                    debugInfo: update.debugInfo,
+                  };
+
+                  // Save completed assistant message to IndexedDB
+                  try {
+                    await chatDB.saveMessage(completedMessage, websiteId);
+                  } catch (error) {
+                    console.error('Failed to save assistant message to IndexedDB:', error);
+                  }
+
                   setMessages(prev => prev.map(msg => 
-                    msg.id === assistantId 
-                      ? { 
-                          ...msg, 
-                          content: update.content,
-                          hasVisualization: update.data?.hasVisualization || false,
-                          chartType: update.data?.chartType as any,
-                          data: update.data?.data,
-                          responseType: update.data?.responseType,
-                          metricValue: update.data?.metricValue,
-                          metricLabel: update.data?.metricLabel,
-                          debugInfo: update.debugInfo,
-                        }
-                      : msg
+                    msg.id === assistantId ? completedMessage : msg
                   ));
                   scrollToBottom();
                   break;
@@ -237,10 +304,10 @@ export function useChat(websiteId: string, websiteName?: string) {
             }
           : msg
       ));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [inputValue, isLoading, isRateLimited, websiteId, messages, scrollToBottom]);
+          } finally {
+        setIsLoading(false);
+      }
+    }, [inputValue, isLoading, isRateLimited, isInitialized, websiteId, messages, scrollToBottom, chatDB]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -249,15 +316,37 @@ export function useChat(websiteId: string, websiteName?: string) {
     }
   }, [sendMessage]);
 
-  const resetChat = useCallback(() => {
-    setMessages([
-      {
+  const resetChat = useCallback(async () => {
+    try {
+      // Clear messages from IndexedDB
+      await chatDB.clearMessages(websiteId);
+      
+      // Create new welcome message
+      const welcomeMessage: Message = {
         id: '1',
         type: 'assistant',
         content: generateWelcomeMessage(websiteName),
         timestamp: new Date(),
-      }
-    ]);
+      };
+      
+      // Save welcome message to IndexedDB
+      await chatDB.saveMessage(welcomeMessage, websiteId);
+      
+      // Update state
+      setMessages([welcomeMessage]);
+    } catch (error) {
+      console.error('Failed to reset chat in IndexedDB:', error);
+      
+      // Fallback to memory-only reset
+      const welcomeMessage: Message = {
+        id: '1',
+        type: 'assistant',
+        content: generateWelcomeMessage(websiteName),
+        timestamp: new Date(),
+      };
+      setMessages([welcomeMessage]);
+    }
+    
     setInputValue("");
     setIsRateLimited(false);
     
@@ -265,7 +354,7 @@ export function useChat(websiteId: string, websiteName?: string) {
     if (rateLimitTimeoutRef.current) {
       clearTimeout(rateLimitTimeoutRef.current);
     }
-  }, [websiteName]);
+  }, [websiteName, websiteId, chatDB]);
 
   return {
     messages,
@@ -273,6 +362,7 @@ export function useChat(websiteId: string, websiteName?: string) {
     setInputValue,
     isLoading,
     isRateLimited,
+    isInitialized,
     scrollAreaRef,
     sendMessage,
     handleKeyPress,

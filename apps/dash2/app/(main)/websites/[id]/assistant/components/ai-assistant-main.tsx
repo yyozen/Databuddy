@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useMemo } from "react";
+import React, { Suspense, useMemo, useState, useCallback } from "react";
 import type { WebsiteDataTabProps } from "../../_components/utils/types";
 import { useChat } from "../hooks/use-chat";
 import type { Message } from "../types/message";
@@ -9,7 +9,14 @@ import VisualizationSection, { VisualizationSkeleton } from "./visualization-sec
 import { cn } from "@/lib/utils";
 
 export default function AIAssistantMain(props: WebsiteDataTabProps) {
-  const chat = useChat(props.websiteId, props.websiteData?.name);
+  const [currentWebsiteId, setCurrentWebsiteId] = useState(props.websiteId);
+  const [currentWebsiteName, setCurrentWebsiteName] = useState(props.websiteData?.name);
+  const chat = useChat(currentWebsiteId, currentWebsiteName);
+
+  const handleSelectChat = useCallback((websiteId: string, websiteName?: string) => {
+    setCurrentWebsiteId(websiteId);
+    setCurrentWebsiteName(websiteName);
+  }, []);
   
   const latestVisualizationMessage = chat.messages
     .slice()
@@ -29,23 +36,18 @@ export default function AIAssistantMain(props: WebsiteDataTabProps) {
     }
   }
 
-  // Determine if we should show the visualization panel
   const shouldShowVisualization = useMemo(() => {
-    return latestVisualizationMessage && 
-           latestVisualizationMessage.data && 
-           latestVisualizationMessage.chartType && 
-           latestVisualizationMessage.responseType === 'chart';
+    return latestVisualizationMessage?.data && 
+           latestVisualizationMessage?.chartType && 
+           latestVisualizationMessage?.responseType === 'chart';
   }, [latestVisualizationMessage]);
 
-  // Check if we have any recent activity that might benefit from showing the panel
   const hasRecentActivity = useMemo(() => {
     return chat.messages.length > 1; // More than just the welcome message
   }, [chat.messages.length]);
 
   return (
-    // Use flex row for layout, allowing children to take available space
     <div className="flex flex-1 lg:flex-row flex-col gap-3 overflow-hidden">
-      {/* Chat Section - expands to take more space when visualization is hidden */}
       <div 
         className={cn(
           "flex flex-col overflow-hidden transition-all duration-500 ease-in-out",
@@ -57,15 +59,19 @@ export default function AIAssistantMain(props: WebsiteDataTabProps) {
         <Suspense fallback={<ChatSkeleton />}>
           <ChatSection 
             {...props} 
+            websiteId={currentWebsiteId}
+            websiteData={{ ...props.websiteData, name: currentWebsiteName }}
             messages={chat.messages}
             inputValue={chat.inputValue}
             setInputValue={chat.setInputValue}
             isLoading={chat.isLoading}
             isRateLimited={chat.isRateLimited}
+            isInitialized={chat.isInitialized}
             scrollAreaRef={chat.scrollAreaRef}
             sendMessage={chat.sendMessage}
             handleKeyPress={chat.handleKeyPress}
             onResetChat={chat.resetChat}
+            onSelectChat={handleSelectChat}
           />
         </Suspense>
       </div>

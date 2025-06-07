@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Send, Sparkles, MessageSquare, RotateCcw, Zap, Brain, TrendingUp, BarChart3, Hash } from "lucide-react";
+import { Send, Sparkles, MessageSquare, RotateCcw, Zap, Brain, TrendingUp, BarChart3, Hash, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WebsiteDataTabProps } from "../../_components/utils/types";
 import type { Message } from "../types/message";
 import { MessageBubble } from "./message-bubble";
 import { LoadingMessage } from "./loading-message";
+import { ChatHistorySidebar } from "./chat-history-sidebar";
 
 interface ChatSectionProps extends WebsiteDataTabProps {
   messages: Message[];
@@ -20,10 +21,12 @@ interface ChatSectionProps extends WebsiteDataTabProps {
   setInputValue: (value: string) => void;
   isLoading: boolean;
   isRateLimited: boolean;
+  isInitialized: boolean;
   scrollAreaRef: React.RefObject<HTMLDivElement | null>;
   sendMessage: (content?: string) => Promise<void>;
   handleKeyPress: (e: React.KeyboardEvent) => void;
-  onResetChat: () => void;
+  onResetChat: () => Promise<void>;
+  onSelectChat?: (websiteId: string, websiteName?: string) => void;
 }
 
 export function ChatSkeleton() {
@@ -75,6 +78,7 @@ export default function ChatSection({
   setInputValue,
   isLoading,
   isRateLimited,
+  isInitialized,
   scrollAreaRef,
   sendMessage,
   handleKeyPress,
@@ -82,6 +86,7 @@ export default function ChatSection({
 }: ChatSectionProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputFocused, setInputFocused] = useState(false);
+  const [showChatHistory, setShowChatHistory] = useState(false);
 
   // Calculate message statistics
   const messageStats = {
@@ -136,16 +141,28 @@ export default function ChatSection({
             </p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onResetChat}
-          className="h-9 w-9 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
-          title="Reset chat"
-          disabled={isLoading}
-        >
-          <RotateCcw className={cn("h-4 w-4 transition-transform duration-200", isLoading && "animate-spin")} />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowChatHistory(true)}
+            className="h-9 w-9 flex-shrink-0 hover:bg-primary/10 hover:text-primary transition-all duration-200"
+            title="Chat history"
+            disabled={isLoading}
+          >
+            <History className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onResetChat}
+            className="h-9 w-9 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
+            title="Reset chat"
+            disabled={isLoading}
+          >
+            <RotateCcw className={cn("h-4 w-4 transition-transform duration-200", isLoading && "animate-spin")} />
+          </Button>
+        </div>
       </div>
       
       {/* Messages Area */}
@@ -153,7 +170,7 @@ export default function ChatSection({
         <ScrollArea ref={scrollAreaRef} className="h-full">
           <div className="px-4 py-3">
             {/* Welcome State */}
-            {!hasMessages && !isLoading && (
+            {!hasMessages && !isLoading && isInitialized && (
               <div className="space-y-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
                 <div className="text-center py-8">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
@@ -183,7 +200,7 @@ export default function ChatSection({
                       )}
                       style={{ animationDelay: `${index * 100}ms` }}
                       onClick={() => sendMessage(question.text)}
-                      disabled={isLoading || isRateLimited}
+                      disabled={isLoading || isRateLimited || !isInitialized}
                     >
                       <question.icon className="h-4 w-4 mr-3 flex-shrink-0 text-primary/70" />
                       <div className="flex-1">
@@ -250,7 +267,7 @@ export default function ChatSection({
             />
             <Button
               onClick={() => sendMessage()}
-              disabled={!inputValue.trim() || isLoading || isRateLimited}
+              disabled={!inputValue.trim() || isLoading || isRateLimited || !isInitialized}
               size="icon"
               className={cn(
                 "h-11 w-11 flex-shrink-0 rounded-xl",
@@ -258,7 +275,7 @@ export default function ChatSection({
                 "hover:from-primary/90 hover:to-primary/70",
                 "disabled:from-muted disabled:to-muted",
                 "transition-all duration-200 shadow-lg",
-                (!inputValue.trim() || isRateLimited) && !isLoading && "opacity-50"
+                (!inputValue.trim() || isRateLimited || !isInitialized) && !isLoading && "opacity-50"
               )}
               title="Send message"
             >
@@ -294,6 +311,18 @@ export default function ChatSection({
           </div>
         </div>
       </div>
+
+      {/* Chat History Sidebar */}
+      <ChatHistorySidebar
+        currentWebsiteId={websiteId}
+        currentWebsiteName={websiteData?.name}
+        isOpen={showChatHistory}
+        onClose={() => setShowChatHistory(false)}
+        onSelectChat={(websiteId, websiteName) => {
+          setShowChatHistory(false);
+          onSelectChat?.(websiteId, websiteName);
+        }}
+      />
     </div>
   );
 } 
