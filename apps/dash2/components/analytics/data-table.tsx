@@ -32,7 +32,7 @@ interface DataTableProps<TData extends RowData, TValue> {
   initialPageSize?: number;
   emptyMessage?: string;
   className?: string;
-  onRowClick?: (row: TData) => void;
+  onRowClick?: (field: string, value: string | number) => void;
   minHeight?: string | number;
   showSearch?: boolean;
 }
@@ -173,6 +173,18 @@ export function DataTable<TData extends RowData, TValue>(
   });
 
   const displayData = table.getRowModel().rows;
+
+  const getFieldFromTabId = (tabId: string): string => {
+    const mapping: Record<string, string> = {
+      'errors_by_page': 'path',
+      'errors_by_browser': 'browser_name',
+      'errors_by_os': 'os_name',
+      'errors_by_country': 'country',
+      'errors_by_device': 'device_type',
+      'error_types': 'error_message'
+    };
+    return mapping[tabId] || 'name';
+  };
 
   // Enhanced tab switching with transition
   const handleTabChange = React.useCallback((tabId: string) => {
@@ -418,37 +430,40 @@ export function DataTable<TData extends RowData, TValue>(
                           onRowClick && "cursor-pointer hover:bg-muted/30 focus-within:bg-muted/30 active:bg-muted/40",
                           rowIndex % 2 === 0 ? "bg-background/50" : "bg-muted/10"
                         )}
-                        onClick={() => onRowClick?.(row.original)}
+                        onClick={() => {
+                          if (onRowClick && row.original.name) {
+                            const field = getFieldFromTabId(activeTab);
+                            onRowClick(field, row.original.name);
+                          }
+                        }}
                         tabIndex={onRowClick ? 0 : -1}
                         role={onRowClick ? "button" : undefined}
                         aria-label={onRowClick ? `View details for row ${rowIndex + 1}` : undefined}
                         onKeyDown={(e) => {
                           if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
                             e.preventDefault();
-                            onRowClick(row.original);
+                            if (row.original.name) {
+                              const field = getFieldFromTabId(activeTab);
+                              onRowClick(field, row.original.name);
+                            }
                           }
                         }}
                         style={{
-                          background: percentage > 0 ? gradient.background : undefined,
-                          boxShadow: percentage > 0 ? `inset 3px 0 0 ${gradient.borderColor}` : undefined,
+                          background: onRowClick ? gradient.background : undefined,
+                          borderLeft: onRowClick ? '2px solid transparent' : undefined,
                           animationDelay: `${rowIndex * 30}ms`,
                           animationFillMode: 'both'
                         }}
                         onMouseEnter={(e) => {
-                          if (percentage > 0) {
-                            const target = e.currentTarget as HTMLElement;
-                            target.style.background = gradient.hoverBackground;
-                          } else {
-                            const target = e.currentTarget as HTMLElement;
+                          if (onRowClick) {
+                            e.currentTarget.style.background = gradient.hoverBackground;
+                            e.currentTarget.style.borderLeftColor = gradient.accentColor;
                           }
                         }}
                         onMouseLeave={(e) => {
-                          const target = e.currentTarget as HTMLElement;
-                          if (percentage > 0) {
-                            target.style.background = gradient.background;
-                            target.style.boxShadow = `inset 3px 0 0 ${gradient.borderColor}`;
-                          } else {
-                            target.style.boxShadow = '';
+                          if (onRowClick) {
+                            e.currentTarget.style.background = gradient.background;
+                            e.currentTarget.style.borderLeftColor = 'transparent';
                           }
                         }}
                       >

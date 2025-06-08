@@ -74,10 +74,10 @@ function PerformanceSummaryCard({ summary }: { summary: PerformanceSummary }) {
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div className={`p-4 rounded-lg border ${getScoreColor(summary.performanceScore)}`}>
+      <div className="p-4 rounded-lg border bg-background">
         <div className="flex items-center gap-2 mb-2">
           {getScoreIcon(summary.performanceScore)}
-          <span className="text-sm font-medium">Performance Score</span>
+          <span className="text-sm font-medium text-muted-foreground">Performance Score</span>
         </div>
         <div className="text-2xl font-bold">{summary.performanceScore}/100</div>
       </div>

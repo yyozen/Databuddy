@@ -61,6 +61,7 @@ export interface ParametersResponse {
     utm: string[];
     referrers: string[];
     performance: string[];
+    errors: string[];
   };
 }
 
@@ -139,6 +140,52 @@ export interface PerformanceData {
   avg_render_time?: number;
 }
 
+// Error-related data interfaces
+export interface ErrorData {
+  error_message: string;
+  error_stack?: string;
+  page_url: string;
+  anonymous_id: string;
+  session_id: string;
+  time: string;
+  browser_name: string;
+  os_name: string;
+  device_type: string;
+  country: string;
+  region?: string;
+  city?: string;
+}
+
+export interface ErrorTypeData {
+  name: string; // error message
+  total_occurrences: number;
+  affected_users: number;
+  affected_sessions: number;
+  last_occurrence: string;
+  first_occurrence: string;
+}
+
+export interface ErrorBreakdownData {
+  name: string; // page, browser, os, country, device
+  total_errors: number;
+  unique_error_types: number;
+  affected_users: number;
+  affected_sessions: number;
+}
+
+export interface ErrorTrendData {
+  date: string;
+  total_errors: number;
+  unique_error_types: number;
+  affected_users: number;
+  affected_sessions: number;
+}
+
+export interface SessionsSummaryData {
+  total_sessions: number;
+  total_users: number;
+}
+
 // Parameter type mapping for better type safety
 export type ParameterDataMap = {
   device_type: DeviceTypeData;
@@ -161,6 +208,16 @@ export type ParameterDataMap = {
   performance_by_browser: PerformanceData;
   performance_by_os: PerformanceData;
   performance_by_region: PerformanceData;
+  // Error-related parameters
+  recent_errors: ErrorData;
+  error_types: ErrorTypeData;
+  errors_by_page: ErrorBreakdownData;
+  errors_by_browser: ErrorBreakdownData;
+  errors_by_os: ErrorBreakdownData;
+  errors_by_country: ErrorBreakdownData;
+  errors_by_device: ErrorBreakdownData;
+  error_trends: ErrorTrendData;
+  sessions_summary: SessionsSummaryData;
 };
 
 // Helper type to extract data types from parameters
@@ -656,4 +713,34 @@ export function useComprehensiveAnalytics(
   ];
 
   return useBatchDynamicQuery(websiteId, dateRange, queries, options);
+}
+
+/**
+ * Enhanced Error Data Hook for comprehensive error analytics
+ */
+export function useEnhancedErrorData(
+  websiteId: string,
+  dateRange: DateRange,
+  options?: Partial<UseQueryOptions<BatchQueryResponse>> & { filters?: DynamicQueryFilter[] }
+) {
+  const filters = options?.filters || [];
+
+  return useBatchDynamicQuery(
+    websiteId,
+    dateRange,
+    [
+      { id: 'recent_errors', parameters: ['recent_errors'], limit: 100, filters },
+      { id: 'error_types', parameters: ['error_types'], limit: 100, filters },
+      { id: 'errors_by_page', parameters: ['errors_by_page'], filters },
+      { id: 'errors_by_browser', parameters: ['errors_by_browser'], filters },
+      { id: 'errors_by_os', parameters: ['errors_by_os'], filters },
+      { id: 'errors_by_country', parameters: ['errors_by_country'], filters },
+      { id: 'errors_by_device', parameters: ['errors_by_device'], filters },
+      { id: 'error_trends', parameters: ['error_trends'], limit: 30, filters },
+      { id: 'sessions_summary', parameters: ['sessions_summary'], filters },
+    ],
+    {
+      ...options,
+    }
+  );
 } 

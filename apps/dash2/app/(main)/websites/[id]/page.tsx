@@ -51,10 +51,6 @@ const WebsiteSettingsTab = dynamic(
   () => import("./_components/tabs/settings-tab").then(mod => ({ default: mod.WebsiteSettingsTab })),
   { loading: () => <TabLoadingSkeleton />, ssr: false }
 );
-const WebsiteErrorsTab = dynamic(
-  () => import("./_components/tabs/errors-tab").then(mod => ({ default: mod.WebsiteErrorsTab })),
-  { loading: () => <TabLoadingSkeleton />, ssr: false }
-);
 const WebsiteTrackingSetupTab = dynamic(
   () => import("./_components/tabs/tracking-setup-tab").then(mod => ({ default: mod.WebsiteTrackingSetupTab })),
   { loading: () => <TabLoadingSkeleton />, ssr: false }
@@ -171,7 +167,6 @@ function WebsiteDetailsPage() {
         case "audience": return <WebsiteAudienceTab {...tabProps} />;
         case "content": return <WebsiteContentTab {...tabProps} />;
         case "performance": return <WebsitePerformanceTab {...tabProps} />;
-        case "errors": return <WebsiteErrorsTab {...tabProps} />;
         case "settings": return <WebsiteSettingsTab {...settingsProps} />;
         case "tracking-setup": return <WebsiteTrackingSetupTab {...settingsProps} />;
         default: return null;

@@ -49,6 +49,14 @@ queryRouter.use('*', authMiddleware)
 queryRouter.use('*', websiteAuthHook)
 queryRouter.use('*', timezoneMiddleware)
 
+type ParameterBuilder = (
+  websiteId: string,
+  startDate: string,
+  endDate: string,
+  limit: number,
+  offset: number
+) => string;
+
 const processLanguageData = (data: any[]) => 
   data.map(item => ({
     ...item,
@@ -57,7 +65,7 @@ const processLanguageData = (data: any[]) =>
   }))
 
 // Dynamic parameter registry - easily extensible
-const PARAMETER_BUILDERS = {
+const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   // Device & Browser
   device_type: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
     SELECT 
@@ -267,6 +275,40 @@ const PARAMETER_BUILDERS = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
+  utm_content: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT 
+      utm_content as name,
+      COUNT(DISTINCT anonymous_id) as visitors,
+      COUNT(*) as pageviews,
+      COUNT(DISTINCT session_id) as sessions
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'screen_view'
+      AND utm_content != ''
+    GROUP BY utm_content
+    ORDER BY visitors DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
+
+  utm_term: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT
+      utm_term as name,
+      COUNT(DISTINCT anonymous_id) as visitors,
+      COUNT(*) as pageviews,
+      COUNT(DISTINCT session_id) as sessions
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'screen_view'
+      AND utm_term != ''
+    GROUP BY utm_term
+    ORDER BY visitors DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
+
   // Referrers
   referrer: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
     SELECT 
@@ -421,6 +463,174 @@ const PARAMETER_BUILDERS = {
     GROUP BY region, country
     ORDER BY avg_load_time DESC
     LIMIT ${limit} OFFSET ${offset}
+  `,
+
+  // Error-related queries
+  recent_errors: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT 
+      error_message,
+      error_stack,
+      path as page_url,
+      anonymous_id,
+      session_id,
+      time,
+      browser_name,
+      os_name,
+      device_type,
+      country,
+      region,
+      city
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'error'
+      AND error_message != ''
+    ORDER BY time DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
+
+  error_types: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT 
+      error_message as name,
+      COUNT(*) as total_occurrences,
+      COUNT(DISTINCT anonymous_id) as affected_users,
+      COUNT(DISTINCT session_id) as affected_sessions,
+      MAX(time) as last_occurrence,
+      MIN(time) as first_occurrence
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'error'
+      AND error_message != ''
+    GROUP BY error_message
+    ORDER BY total_occurrences DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
+
+  errors_by_page: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT 
+      path as name,
+      COUNT(*) as total_errors,
+      COUNT(DISTINCT error_message) as unique_error_types,
+      COUNT(DISTINCT anonymous_id) as affected_users,
+      COUNT(DISTINCT session_id) as affected_sessions
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'error'
+      AND error_message != ''
+      AND path != ''
+    GROUP BY path
+    ORDER BY total_errors DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
+
+  errors_by_browser: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT 
+      browser_name as name,
+      COUNT(*) as total_errors,
+      COUNT(DISTINCT error_message) as unique_error_types,
+      COUNT(DISTINCT anonymous_id) as affected_users,
+      COUNT(DISTINCT session_id) as affected_sessions
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'error'
+      AND error_message != ''
+      AND browser_name != ''
+    GROUP BY browser_name
+    ORDER BY total_errors DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
+
+  errors_by_os: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT 
+      os_name as name,
+      COUNT(*) as total_errors,
+      COUNT(DISTINCT error_message) as unique_error_types,
+      COUNT(DISTINCT anonymous_id) as affected_users,
+      COUNT(DISTINCT session_id) as affected_sessions
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'error'
+      AND error_message != ''
+      AND os_name != ''
+    GROUP BY os_name
+    ORDER BY total_errors DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
+
+  errors_by_country: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT 
+      country as name,
+      COUNT(*) as total_errors,
+      COUNT(DISTINCT error_message) as unique_error_types,
+      COUNT(DISTINCT anonymous_id) as affected_users,
+      COUNT(DISTINCT session_id) as affected_sessions
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'error'
+      AND error_message != ''
+      AND country != ''
+    GROUP BY country
+    ORDER BY total_errors DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
+
+  errors_by_device: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT 
+      device_type as name,
+      COUNT(*) as total_errors,
+      COUNT(DISTINCT error_message) as unique_error_types,
+      COUNT(DISTINCT anonymous_id) as affected_users,
+      COUNT(DISTINCT session_id) as affected_sessions
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'error'
+      AND error_message != ''
+      AND device_type != ''
+    GROUP BY device_type
+    ORDER BY total_errors DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
+
+  error_trends: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT 
+      toDate(time) as date,
+      COUNT(*) as total_errors,
+      COUNT(DISTINCT error_message) as unique_error_types,
+      COUNT(DISTINCT anonymous_id) as affected_users,
+      COUNT(DISTINCT session_id) as affected_sessions
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'error'
+      AND error_message != ''
+    GROUP BY toDate(time)
+    ORDER BY date DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
+
+  sessions_summary: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT
+      COUNT(DISTINCT session_id) as total_sessions,
+      COUNT(DISTINCT anonymous_id) as total_users
+    FROM analytics.events
+    WHERE client_id = '${websiteId}'
+      AND time >= '${startDate}'
+      AND time <= '${endDate}'
+      AND event_name = 'screen_view'
   `
 }
 
@@ -782,9 +992,10 @@ queryRouter.get('/parameters', async (c) => {
       device: ['device_type', 'browser_name', 'os_name'],
       geography: ['country', 'region', 'timezone', 'language'],
       pages: ['top_pages', 'exit_page'],
-      utm: ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'],
+      utm: ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'],
       referrers: ['referrer'],
-      performance: ['slow_pages', 'performance_by_country', 'performance_by_device', 'performance_by_browser', 'performance_by_os', 'performance_by_region']
+      performance: ['slow_pages', 'performance_by_country', 'performance_by_device', 'performance_by_browser', 'performance_by_os', 'performance_by_region'],
+      errors: ['recent_errors', 'error_types', 'errors_by_page', 'errors_by_browser', 'errors_by_os', 'errors_by_country', 'errors_by_device', 'error_trends', 'sessions_summary']
     }
   })
 })

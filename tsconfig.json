@@ -6,6 +6,6 @@
         },
         "esModuleInterop": true
     },
-    "exclude": ["node_modules", "dist", ".next", "turbo"],
+    "exclude": ["node_modules", "dist", ".next", "turbo", ".turbo"],
     "include": ["apps/**/*", "packages/**/*", "lib"]
 }
