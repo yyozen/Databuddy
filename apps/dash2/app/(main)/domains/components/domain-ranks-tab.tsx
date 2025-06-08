@@ -5,19 +5,107 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, RefreshCw, AlertCircle, TrendingDown, Globe } from "lucide-react";
 import { FaviconImage } from "@/components/analytics/favicon-image";
 import { useDomainManagement } from "../hooks/use-domain-management";
 import { useDomainRanks } from "@/hooks/use-domain-info";
 import { getRankColor } from "../utils";
 import { DomainRankDetails } from "./domain-rank-details";
 
+// Loading skeleton for domain rank cards
+const DomainRankSkeleton = ({ index }: { index: number }) => (
+  <Card className="hover:shadow-md transition-all duration-200">
+    <CardContent className="p-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="relative">
+            <Skeleton className="h-10 w-10 rounded-full" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className={`h-4 ${index % 2 === 0 ? 'w-32' : 'w-24'}`} />
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-center space-y-2">
+            <Skeleton className="h-8 w-12 rounded" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-8 w-24 rounded" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-4 pt-4 border-t space-y-3">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-8" />
+        </div>
+        <Skeleton className="h-2 w-full rounded-full" />
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Enhanced loading state component
+const LoadingState = () => (
+  <div className="space-y-4">
+    {Array.from({ length: 3 }, (_, i) => (
+      <DomainRankSkeleton key={`domain-rank-skeleton-${i + 1}`} index={i} />
+    ))}
+  </div>
+);
+
+// Error state component
+const ErrorState = ({ error, onRetry }: { error: Error | null; onRetry: () => void }) => (
+  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+    <div className="bg-red-100 dark:bg-red-950/20 rounded-full h-16 w-16 flex items-center justify-center mb-4">
+      <AlertCircle className="h-8 w-8 text-red-500" />
+    </div>
+    <h3 className="text-lg font-semibold mb-2">Failed to load domain rankings</h3>
+    <p className="text-muted-foreground mb-6 max-w-md text-sm leading-relaxed">
+      {error?.message || "Unable to fetch domain ranking data. This might be a temporary issue."}
+    </p>
+    <Button onClick={onRetry} className="transition-all duration-200 hover:scale-105">
+      <RefreshCw className="h-4 w-4 mr-2" />
+      Try again
+    </Button>
+  </div>
+);
+
+// Empty state component
+const EmptyState = () => (
+  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+    <div className="bg-muted/30 rounded-full h-16 w-16 flex items-center justify-center mb-4">
+      <TrendingDown className="h-8 w-8 text-muted-foreground" />
+    </div>
+    <h3 className="text-lg font-semibold mb-2">No domain rankings available</h3>
+    <p className="text-muted-foreground mb-6 max-w-md text-sm leading-relaxed">
+      Add and verify domains to see their ranking data. Domain rankings help you understand your site's authority and search performance.
+    </p>
+  </div>
+);
+
 export function DomainRanksTab() {
   const { state } = useDomainManagement();
-  const { ranks, isLoading: isLoadingRanks } = useDomainRanks();
+  const { 
+    ranks, 
+    isLoading, 
+    isError, 
+    error, 
+    refetch, 
+    isFetching, 
+    isRefetching 
+  } = useDomainRanks();
   const [selectedRankDetails, setSelectedRankDetails] = useState<{domainName: string; domainId: string} | null>(null);
 
-  if (isLoadingRanks) {
+  // Show loading state
+  if (isLoading) {
     return (
       <Card className="rounded-lg border bg-background shadow-sm h-full flex flex-col">
         <CardHeader>
@@ -30,21 +118,27 @@ export function DomainRanksTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 overflow-auto">
-          <div className="space-y-4">
-            {Array.from({ length: 3 }, (_, i) => (
-              <Card key={`skeleton-${i+1}`}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <Skeleton className="h-4 w-32" />
-                    </div>
-                    <Skeleton className="h-6 w-16" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <LoadingState />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (isError) {
+    return (
+      <Card className="rounded-lg border bg-background shadow-sm h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Domain Rankings
+          </CardTitle>
+          <CardDescription>
+            View Domain Rank (DR) scores for your verified domains. DR is a metric that represents the strength of a domain's backlink profile.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <ErrorState error={error} onRetry={() => refetch()} />
         </CardContent>
       </Card>
     );
@@ -55,6 +149,7 @@ export function DomainRanksTab() {
     rank: ranks[domain.id]?.page_rank_decimal || 0
   })).sort((a, b) => b.rank - a.rank);
 
+  // Show empty state when no domains
   if (rankedDomains.length === 0) {
     return (
       <Card className="rounded-lg border bg-background shadow-sm h-full flex flex-col">
@@ -67,12 +162,8 @@ export function DomainRanksTab() {
             View Domain Rank (DR) scores for your verified domains. DR is a metric that represents the strength of a domain's backlink profile.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 overflow-auto">
-          <div className="text-center py-12">
-            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Domain Ranks Available</h3>
-            <p className="text-muted-foreground">Add and verify domains to see their rankings.</p>
-          </div>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <EmptyState />
         </CardContent>
       </Card>
     );
@@ -82,19 +173,34 @@ export function DomainRanksTab() {
     <>
       <Card className="rounded-lg border bg-background shadow-sm h-full flex flex-col">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Domain Rankings
-          </CardTitle>
-          <CardDescription>
-            View Domain Rank (DR) scores for your verified domains. DR is a metric that represents the strength of a domain's backlink profile.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Domain Rankings
+              </CardTitle>
+              <CardDescription>
+                View Domain Rank (DR) scores for your verified domains. DR is a metric that represents the strength of a domain's backlink profile.
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="flex-shrink-0"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+              {isFetching ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-auto">
           <div className="space-y-4">
             {rankedDomains.map(domain => {
               const rankData = ranks[domain.id];
               const hasData = rankData && rankData.status_code === 200;
+              const isLoading = !rankData; // Individual domain loading state
               
               return (
                 <Card key={domain.id} className="hover:shadow-md transition-all duration-200">
@@ -115,47 +221,79 @@ export function DomainRanksTab() {
                               }`} />
                             </div>
                           )}
+                          {isLoading && (
+                            <div className="absolute -bottom-1 -right-1 bg-background border rounded-full w-5 h-5 flex items-center justify-center">
+                              <RefreshCw className="h-2 w-2 animate-spin text-muted-foreground" />
+                            </div>
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <h4 className="font-semibold truncate">{domain.name}</h4>
                           <div className="flex items-center gap-4 mt-1">
-                            <p className="text-sm text-muted-foreground">
-                              Global: {hasData && rankData.rank ? `#${rankData.rank.toLocaleString()}` : 'N/A'}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Score: {hasData ? rankData.page_rank_decimal.toFixed(1) : 'N/A'}/100
-                            </p>
+                            {isLoading ? (
+                              <>
+                                <Skeleton className="h-3 w-20" />
+                                <Skeleton className="h-3 w-16" />
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-sm text-muted-foreground">
+                                  Global: {hasData && rankData.rank ? `#${rankData.rank.toLocaleString()}` : 'N/A'}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Score: {hasData ? rankData.page_rank_decimal.toFixed(1) : 'N/A'}/100
+                                </p>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-center">
-                          <div className={`text-3xl font-bold ${hasData ? getRankColor(rankData.page_rank_decimal) : 'text-muted-foreground'}`}>
-                            {hasData ? rankData.page_rank_decimal.toFixed(1) : '—'}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">DR Score</p>
+                          {isLoading ? (
+                            <div className="space-y-2">
+                              <Skeleton className="h-8 w-12 rounded" />
+                              <Skeleton className="h-3 w-16" />
+                            </div>
+                          ) : (
+                            <>
+                              <div className={`text-3xl font-bold ${hasData ? getRankColor(rankData.page_rank_decimal) : 'text-muted-foreground'}`}>
+                                {hasData ? rankData.page_rank_decimal.toFixed(1) : '—'}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">DR Score</p>
+                            </>
+                          )}
                         </div>
                         <div className="flex flex-col gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedRankDetails({domainName: domain.name, domainId: domain.id})}
-                            disabled={!hasData}
-                          >
-                            View Details
-                          </Button>
-                          {domain.verificationStatus === "VERIFIED" && hasData && (
-                            <Badge variant="secondary" className="text-xs">
-                              {rankData.page_rank_decimal >= 70 ? 'Excellent' :
-                               rankData.page_rank_decimal >= 40 ? 'Good' :
-                               rankData.page_rank_decimal >= 20 ? 'Fair' : 'Poor'}
-                            </Badge>
+                          {isLoading ? (
+                            <>
+                              <Skeleton className="h-8 w-24 rounded" />
+                              <Skeleton className="h-5 w-16 rounded-full" />
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedRankDetails({domainName: domain.name, domainId: domain.id})}
+                                disabled={!hasData}
+                              >
+                                View Details
+                              </Button>
+                              {domain.verificationStatus === "VERIFIED" && hasData && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {rankData.page_rank_decimal >= 70 ? 'Excellent' :
+                                   rankData.page_rank_decimal >= 40 ? 'Good' :
+                                   rankData.page_rank_decimal >= 20 ? 'Fair' : 'Poor'}
+                                </Badge>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
                     </div>
                     
-                    {hasData && (
+                    {hasData && !isLoading && (
                       <div className="mt-4 pt-4 border-t">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Authority Progress</span>
@@ -173,6 +311,16 @@ export function DomainRanksTab() {
                             />
                           </div>
                         </div>
+                      </div>
+                    )}
+
+                    {isLoading && (
+                      <div className="mt-4 pt-4 border-t space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-3 w-8" />
+                        </div>
+                        <Skeleton className="h-2 w-full rounded-full" />
                       </div>
                     )}
                   </CardContent>
