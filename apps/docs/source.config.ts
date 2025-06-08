@@ -6,8 +6,12 @@ import {
 } from 'fumadocs-mdx/config';
 import { z } from 'zod';
 
-// Blog frontmatter schema
-const blogFrontmatterSchema = frontmatterSchema.extend({
+// Simplified blog frontmatter schema - separate from docs schema
+const blogFrontmatterSchema = z.object({
+  title: z.string(),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  full: z.boolean().optional(),
   author: z.string(),
   publishedAt: z.string(),
   lastModified: z.string().optional(),
