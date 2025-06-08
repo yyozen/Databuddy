@@ -9,11 +9,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { ListFilterIcon, DatabaseIcon, ArrowUpDown, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { ListFilterIcon, DatabaseIcon, ArrowUpDown, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Search, X, ChevronDown, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { type ColumnDef, type RowData, flexRender, getCoreRowModel, useReactTable, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, type SortingState, type PaginationState } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import React from "react";
+import React, { useState, useCallback, useMemo, Fragment } from "react";
 
 interface TabConfig<TData> {
   id: string;
@@ -35,14 +35,19 @@ interface DataTableProps<TData extends { name: string | number }, TValue> {
   onRowClick?: (field: string, value: string | number) => void;
   minHeight?: string | number;
   showSearch?: boolean;
+  // Expandable rows functionality
+  getSubRows?: (row: TData) => TData[] | undefined;
+  renderSubRow?: (subRow: TData, parentRow: TData, index: number) => React.ReactNode;
+  expandable?: boolean;
 }
 
 // Helper function to get percentage value from row data
 function getRowPercentage(row: any): number {
   // Try to find percentage in common property names
-  if (typeof row.percentage === 'number') return row.percentage;
-  if (typeof row.percent === 'number') return row.percent;
-  if (typeof row.share === 'number') return row.share;
+  if (row.marketShare !== undefined) return Number.parseFloat(row.marketShare) || 0;
+  if (row.percentage !== undefined) return Number.parseFloat(row.percentage) || 0;
+  if (row.percent !== undefined) return Number.parseFloat(row.percent) || 0;
+  if (row.share !== undefined) return Number.parseFloat(row.share) || 0;
   return 0;
 }
 
@@ -132,7 +137,10 @@ export function DataTable<TData extends { name: string | number }, TValue>(
     className,
     onRowClick,
     minHeight = 200,
-    showSearch = true
+    showSearch = true,
+    getSubRows,
+    renderSubRow,
+    expandable = false
   }: DataTableProps<TData, TValue>
 ) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -143,6 +151,7 @@ export function DataTable<TData extends { name: string | number }, TValue>(
   });
   const [activeTab, setActiveTab] = React.useState(tabs?.[0]?.id || '');
   const [isTransitioning, setIsTransitioning] = React.useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Use tab data if tabs are provided, otherwise use direct data/columns
   const currentTabData = tabs?.find(tab => tab.id === activeTab);
@@ -186,6 +195,19 @@ export function DataTable<TData extends { name: string | number }, TValue>(
     return mapping[tabId] || 'name';
   };
 
+  // Toggle row expansion
+  const toggleRowExpansion = useCallback((rowId: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowId)) {
+        newSet.delete(rowId);
+      } else {
+        newSet.add(rowId);
+      }
+      return newSet;
+    });
+  }, []);
+
   // Enhanced tab switching with transition
   const handleTabChange = React.useCallback((tabId: string) => {
     if (tabId === activeTab) return;
@@ -196,6 +218,8 @@ export function DataTable<TData extends { name: string | number }, TValue>(
       // Reset pagination and search when switching tabs to prevent state leakage
       setPagination(prev => ({ ...prev, pageIndex: 0 }));
       setGlobalFilter('');
+      // Reset expanded rows when switching tabs
+      setExpandedRows(new Set());
       setIsTransitioning(false);
     }, 150);
   }, [activeTab]);
@@ -418,71 +442,141 @@ export function DataTable<TData extends { name: string | number }, TValue>(
                 </TableHeader>
                 <TableBody className="overflow-hidden">
                   {displayData.map((row, rowIndex) => {
+                    const subRows = expandable && getSubRows ? getSubRows(row.original) : undefined;
+                    const hasSubRows = subRows && subRows.length > 0;
+                    const isExpanded = expandedRows.has(row.id);
                     const percentage = getRowPercentage(row.original);
                     const gradient = getPercentageGradient(percentage);
                     
                     return (
-                      <TableRow 
-                        key={row.id}
-                        className={cn(
-                          "h-12 border-border/20 relative transition-all duration-200 animate-in fade-in-0",
-                          "hover:bg-muted/20 focus-within:bg-muted/20",
-                          onRowClick && "cursor-pointer hover:bg-muted/30 focus-within:bg-muted/30 active:bg-muted/40",
-                          rowIndex % 2 === 0 ? "bg-background/50" : "bg-muted/10"
-                        )}
-                        onClick={() => {
-                          if (onRowClick && row.original.name) {
-                            const field = getFieldFromTabId(activeTab);
-                            onRowClick(field, row.original.name);
-                          }
-                        }}
-                        tabIndex={onRowClick ? 0 : -1}
-                        role={onRowClick ? "button" : undefined}
-                        aria-label={onRowClick ? `View details for row ${rowIndex + 1}` : undefined}
-                        onKeyDown={(e) => {
-                          if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
-                            e.preventDefault();
-                            if (row.original.name) {
+                      <Fragment key={row.id}>
+                        <TableRow 
+                          className={cn(
+                            "h-12 border-border/20 relative transition-all duration-200 animate-in fade-in-0",
+                            "hover:bg-muted/20 focus-within:bg-muted/20",
+                            onRowClick && !hasSubRows && "cursor-pointer hover:bg-muted/30 focus-within:bg-muted/30 active:bg-muted/40",
+                            hasSubRows && "cursor-pointer",
+                            rowIndex % 2 === 0 ? "bg-background/50" : "bg-muted/10"
+                          )}
+                          onClick={() => {
+                            if (hasSubRows) {
+                              toggleRowExpansion(row.id);
+                            } else if (onRowClick && row.original.name) {
                               const field = getFieldFromTabId(activeTab);
                               onRowClick(field, row.original.name);
                             }
+                          }}
+                          tabIndex={onRowClick || hasSubRows ? 0 : -1}
+                          role={onRowClick || hasSubRows ? "button" : undefined}
+                          aria-expanded={hasSubRows ? isExpanded : undefined}
+                          aria-label={
+                            hasSubRows 
+                              ? `${isExpanded ? 'Collapse' : 'Expand'} details for row ${rowIndex + 1}` 
+                              : onRowClick 
+                                ? `View details for row ${rowIndex + 1}` 
+                                : undefined
                           }
-                        }}
-                        style={{
-                          background: onRowClick ? gradient.background : undefined,
-                          borderLeft: onRowClick ? '2px solid transparent' : undefined,
-                          animationDelay: `${rowIndex * 30}ms`,
-                          animationFillMode: 'both'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (onRowClick) {
-                            e.currentTarget.style.background = gradient.hoverBackground;
-                            e.currentTarget.style.borderLeftColor = gradient.accentColor;
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (onRowClick) {
-                            e.currentTarget.style.background = gradient.background;
-                            e.currentTarget.style.borderLeftColor = 'transparent';
-                          }
-                        }}
-                      >
-                        {row.getVisibleCells().map((cell, cellIndex) => (
-                          <TableCell 
-                            key={cell.id}
-                            className={cn(
-                              "py-3 text-sm font-medium transition-colors duration-150 px-4",
-                              cellIndex === 0 && "font-semibold text-foreground",
-                              (cell.column.columnDef.meta as any)?.className
-                            )}
-                            style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                          onKeyDown={(e) => {
+                            if ((onRowClick || hasSubRows) && (e.key === 'Enter' || e.key === ' ')) {
+                              e.preventDefault();
+                              if (hasSubRows) {
+                                toggleRowExpansion(row.id);
+                              } else if (onRowClick && row.original.name) {
+                                const field = getFieldFromTabId(activeTab);
+                                onRowClick(field, row.original.name);
+                              }
+                            }
+                          }}
+                          style={{
+                            background: percentage > 0 ? gradient.background : undefined,
+                            animationDelay: `${rowIndex * 30}ms`,
+                            animationFillMode: 'both'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (percentage > 0) {
+                              e.currentTarget.style.background = gradient.hoverBackground;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (percentage > 0) {
+                              e.currentTarget.style.background = gradient.background;
+                            }
+                          }}
+                        >
+                          {row.getVisibleCells().map((cell, cellIndex) => (
+                            <TableCell 
+                              key={cell.id}
+                              className={cn(
+                                "py-3 text-sm font-medium transition-colors duration-150 px-4",
+                                cellIndex === 0 && "font-semibold text-foreground",
+                                (cell.column.columnDef.meta as any)?.className
+                              )}
+                              style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                            >
+                              <div className="flex items-center gap-2">
+                                {/* Expansion toggle - only on first cell and if row has sub-rows */}
+                                {cellIndex === 0 && hasSubRows && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleRowExpansion(row.id);
+                                    }}
+                                    className="flex-shrink-0 p-0.5 hover:bg-muted rounded transition-colors"
+                                    aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                    ) : (
+                                      <ChevronRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                    )}
+                                  </button>
+                                )}
+                                <div className="truncate flex-1">
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </div>
+                              </div>
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                        
+                        {/* Sub-rows */}
+                        {hasSubRows && isExpanded && subRows.map((subRow, subIndex) => (
+                          <TableRow
+                            key={`${row.id}-sub-${subIndex}`}
+                            className="border-border/10 bg-muted/5 hover:bg-muted/10 transition-colors"
                           >
-                            <div className="truncate">
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </div>
-                          </TableCell>
+                            {renderSubRow ? (
+                              <TableCell 
+                                colSpan={row.getVisibleCells().length}
+                                className="p-0"
+                              >
+                                {renderSubRow(subRow, row.original, subIndex)}
+                              </TableCell>
+                            ) : (
+                              // Default sub-row rendering - show the same data but indented
+                              row.getVisibleCells().map((cell, cellIndex) => (
+                                <TableCell
+                                  key={`sub-${cell.id}`}
+                                  className={cn(
+                                    "py-2 text-sm text-muted-foreground",
+                                    cellIndex === 0 ? "pl-8" : "px-3"
+                                  )}
+                                  style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                                >
+                                  <div className="truncate">
+                                    {cellIndex === 0 ? (
+                                      <span className="text-xs">↳ {(subRow as any)[cell.column.id] || ''}</span>
+                                    ) : (
+                                      (subRow as any)[cell.column.id] || ''
+                                    )}
+                                  </div>
+                                </TableCell>
+                              ))
+                            )}
+                          </TableRow>
                         ))}
-                      </TableRow>
+                      </Fragment>
                     );
                   })}
                 </TableBody>

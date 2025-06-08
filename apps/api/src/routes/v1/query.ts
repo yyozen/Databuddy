@@ -65,6 +65,111 @@ const processLanguageData = (data: any[]) =>
     code: item.name
   }))
 
+// Helper function to group browser version data
+function processBrowserGroupedData(rawData: any[]): any[] {
+  const browserGroups: Record<string, any> = {}
+  
+  for (const item of rawData) {
+    const browserName = item.browser_name
+    const version = {
+      name: String(item.browser_version || ''),
+      version: String(item.browser_version || ''),
+      visitors: Number(item.visitors) || 0,
+      pageviews: Number(item.pageviews) || 0,
+      sessions: Number(item.sessions) || 0
+    }
+    
+    if (!browserGroups[browserName]) {
+      browserGroups[browserName] = {
+        name: browserName,
+        visitors: 0,
+        pageviews: 0,
+        sessions: 0,
+        versions: []
+      }
+    }
+    
+    browserGroups[browserName].visitors += version.visitors
+    browserGroups[browserName].pageviews += version.pageviews
+    browserGroups[browserName].sessions += version.sessions
+    browserGroups[browserName].versions.push(version)
+  }
+  
+  // Convert to array and sort
+  return Object.values(browserGroups)
+    .map((browser: any) => ({
+      ...browser,
+      versions: browser.versions.sort((a: any, b: any) => b.visitors - a.visitors)
+    }))
+    .sort((a: any, b: any) => b.visitors - a.visitors)
+}
+
+// Helper function to process timezone data
+function processTimezoneData(rawData: any[]): any[] {
+  return rawData.map(item => {
+    const tz = item.name
+    let displayName = tz
+    
+    // Common timezone mappings
+    const timezoneNames: Record<string, string> = {
+      'UTC': 'UTC (Coordinated Universal Time)',
+      'GMT': 'GMT (Greenwich Mean Time)',
+      'America/New_York': 'Eastern Time (US & Canada)',
+      'America/Chicago': 'Central Time (US & Canada)',
+      'America/Denver': 'Mountain Time (US & Canada)',
+      'America/Los_Angeles': 'Pacific Time (US & Canada)',
+      'America/Anchorage': 'Alaska Time',
+      'Pacific/Honolulu': 'Hawaii Time',
+      'Europe/London': 'Greenwich Mean Time (UK)',
+      'Europe/Paris': 'Central European Time',
+      'Europe/Berlin': 'Central European Time',
+      'Europe/Rome': 'Central European Time',
+      'Europe/Madrid': 'Central European Time',
+      'Europe/Amsterdam': 'Central European Time',
+      'Europe/Helsinki': 'Eastern European Time',
+      'Europe/Athens': 'Eastern European Time',
+      'Europe/Moscow': 'Moscow Standard Time',
+      'Asia/Tokyo': 'Japan Standard Time',
+      'Asia/Shanghai': 'China Standard Time',
+      'Asia/Beijing': 'China Standard Time',
+      'Asia/Kolkata': 'India Standard Time',
+      'Asia/Mumbai': 'India Standard Time',
+      'Asia/Dubai': 'Gulf Standard Time',
+      'Australia/Sydney': 'Australian Eastern Time',
+      'Australia/Melbourne': 'Australian Eastern Time',
+      'Australia/Perth': 'Australian Western Time',
+      'Pacific/Auckland': 'New Zealand Standard Time',
+      'America/Sao_Paulo': 'Brasília Time',
+      'America/Argentina/Buenos_Aires': 'Argentina Time',
+      'Africa/Cairo': 'Eastern European Time',
+      'Africa/Johannesburg': 'South Africa Standard Time'
+    }
+    
+    displayName = timezoneNames[tz] || tz.replace(/_/g, ' ').replace('/', ' / ')
+    
+    // Try to get current time in timezone
+    let currentTime = ''
+    try {
+      const now = new Date()
+      currentTime = now.toLocaleTimeString('en-US', { 
+        timeZone: tz,
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch {
+      // If timezone is invalid, skip time display
+    }
+    
+    return {
+      ...item,
+      name: displayName,
+      code: tz,
+      current_time: currentTime
+    }
+  })
+}
+
 // SQL escaping function to prevent injection
 function escapeSqlString(value: string | number): string {
   if (typeof value === 'number') {
@@ -159,12 +264,32 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
 
   browser_name: createQueryBuilder({
     metricSet: METRICS.standard,
-    nameColumn: 'browser_name',
-    groupByColumns: ['browser_name'],
+    nameColumn: "CONCAT(browser_name, ' ', browser_version)",
+    groupByColumns: ['browser_name', 'browser_version'],
     eventName: 'screen_view',
-    extraWhere: "browser_name != ''",
+    extraWhere: "browser_name != '' AND browser_version IS NOT NULL AND browser_version != ''",
     orderBy: 'visitors DESC'
   }),
+
+  browsers_grouped: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+    SELECT 
+      browser_name,
+      browser_version,
+      uniq(anonymous_id) as visitors,
+      COUNT(*) as pageviews,
+      uniq(session_id) as sessions
+    FROM analytics.events
+    WHERE client_id = ${escapeSqlString(websiteId)}
+      AND time >= ${escapeSqlString(startDate)}
+      AND time <= ${escapeSqlString(endDate)}
+      AND event_name = 'screen_view'
+      AND browser_name != ''
+      AND browser_version IS NOT NULL 
+      AND browser_version != ''
+    GROUP BY browser_name, browser_version
+    ORDER BY visitors DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `,
 
   os_name: createQueryBuilder({
     metricSet: METRICS.standard,
@@ -315,10 +440,10 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
 
   performance_by_browser: createQueryBuilder({
     metricSet: METRICS.performance,
-    nameColumn: 'browser_name',
-    groupByColumns: ['browser_name'],
+    nameColumn: "CONCAT(browser_name, ' ', browser_version)",
+    groupByColumns: ['browser_name', 'browser_version'],
     eventName: 'screen_view',
-    extraWhere: "load_time > 0 AND browser_name != ''",
+    extraWhere: "load_time > 0 AND browser_name != '' AND browser_version IS NOT NULL AND browser_version != ''",
     orderBy: 'avg_load_time DESC'
   }),
 
@@ -350,6 +475,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
       session_id,
       time,
       browser_name,
+      browser_version,
       os_name,
       device_type,
       country,
@@ -394,10 +520,10 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
 
   errors_by_browser: createQueryBuilder({
     metricSet: METRICS.errors,
-    nameColumn: 'browser_name',
-    groupByColumns: ['browser_name'],
+    nameColumn: "CONCAT(browser_name, ' ', browser_version)",
+    groupByColumns: ['browser_name', 'browser_version'],
     eventName: 'error',
-    extraWhere: "error_message != '' AND browser_name != ''",
+    extraWhere: "error_message != '' AND browser_name != '' AND browser_version IS NOT NULL AND browser_version != ''",
     orderBy: 'total_errors DESC'
   }),
 
@@ -578,73 +704,24 @@ function processUnifiedResults(
       const rawData = queryResults[parameter] || []
       
       // Post-process data based on parameter type
-      let processedData = rawData
+      let processedData: any[]
       
-      if (parameter === 'language') {
-        processedData = processLanguageData(rawData)
-      } else if (parameter === 'timezone') {
-        processedData = rawData.map(item => {
-          const tz = item.name
-          let displayName = tz
+      switch (parameter) {
+        case 'language':
+          processedData = processLanguageData(rawData)
+          break
           
-          // Common timezone mappings
-          const timezoneNames: Record<string, string> = {
-            'UTC': 'UTC (Coordinated Universal Time)',
-            'GMT': 'GMT (Greenwich Mean Time)',
-            'America/New_York': 'Eastern Time (US & Canada)',
-            'America/Chicago': 'Central Time (US & Canada)',
-            'America/Denver': 'Mountain Time (US & Canada)',
-            'America/Los_Angeles': 'Pacific Time (US & Canada)',
-            'America/Anchorage': 'Alaska Time',
-            'Pacific/Honolulu': 'Hawaii Time',
-            'Europe/London': 'Greenwich Mean Time (UK)',
-            'Europe/Paris': 'Central European Time',
-            'Europe/Berlin': 'Central European Time',
-            'Europe/Rome': 'Central European Time',
-            'Europe/Madrid': 'Central European Time',
-            'Europe/Amsterdam': 'Central European Time',
-            'Europe/Helsinki': 'Eastern European Time',
-            'Europe/Athens': 'Eastern European Time',
-            'Europe/Moscow': 'Moscow Standard Time',
-            'Asia/Tokyo': 'Japan Standard Time',
-            'Asia/Shanghai': 'China Standard Time',
-            'Asia/Beijing': 'China Standard Time',
-            'Asia/Kolkata': 'India Standard Time',
-            'Asia/Mumbai': 'India Standard Time',
-            'Asia/Dubai': 'Gulf Standard Time',
-            'Australia/Sydney': 'Australian Eastern Time',
-            'Australia/Melbourne': 'Australian Eastern Time',
-            'Australia/Perth': 'Australian Western Time',
-            'Pacific/Auckland': 'New Zealand Standard Time',
-            'America/Sao_Paulo': 'Brasília Time',
-            'America/Argentina/Buenos_Aires': 'Argentina Time',
-            'Africa/Cairo': 'Eastern European Time',
-            'Africa/Johannesburg': 'South Africa Standard Time'
-          }
+        case 'browsers_grouped':
+          processedData = processBrowserGroupedData(rawData)
+          break
           
-          displayName = timezoneNames[tz] || tz.replace(/_/g, ' ').replace('/', ' / ')
+        case 'timezone':
+          processedData = processTimezoneData(rawData)
+          break
           
-          // Try to get current time in timezone
-          let currentTime = ''
-          try {
-            const now = new Date()
-            currentTime = now.toLocaleTimeString('en-US', { 
-              timeZone: tz,
-              hour12: false,
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          } catch {
-            // If timezone is invalid, skip time display
-          }
-          
-          return {
-            ...item,
-            name: displayName,
-            code: tz,
-            current_time: currentTime
-          }
-        })
+        default:
+          processedData = rawData
+          break
       }
       
       return {
@@ -745,10 +822,24 @@ async function processBatchQueries(
               const result = await chQuery<Record<string, any>>(sql)
               
               // Post-process data based on parameter type (same as unified processing)
-              let processedData = result
+              let processedData: any[]
               
-              if (parameter === 'language') {
-                processedData = processLanguageData(result)
+              switch (parameter) {
+                case 'language':
+                  processedData = processLanguageData(result)
+                  break
+                  
+                case 'browsers_grouped':
+                  processedData = processBrowserGroupedData(result)
+                  break
+                  
+                case 'timezone':
+                  processedData = processTimezoneData(result)
+                  break
+                  
+                default:
+                  processedData = result
+                  break
               }
               
               return { parameter, data: processedData, success: true }
@@ -822,7 +913,6 @@ queryRouter.post(
 
       const queries = Array.isArray(requestData) ? requestData : [requestData]
       
-      // Add IDs to queries if not provided
       const queriesWithIds = queries.map((query, index) => ({
         ...query,
         id: query.id || `query_${index}`
@@ -866,7 +956,7 @@ queryRouter.get('/parameters', async (c) => {
     success: true,
     parameters: Object.keys(PARAMETER_BUILDERS),
     categories: {
-      device: ['device_type', 'browser_name', 'os_name'],
+      device: ['device_type', 'browser_name', 'browsers_grouped', 'os_name'],
       geography: ['country', 'region', 'timezone', 'language'],
       pages: ['top_pages', 'exit_page'],
       utm: ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'],

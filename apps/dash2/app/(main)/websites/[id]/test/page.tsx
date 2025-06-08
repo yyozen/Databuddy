@@ -4,6 +4,7 @@ import { useState, use } from "react";
 import { 
   useAvailableParameters,
   useBatchDynamicQuery,
+  useDynamicQuery,
   type DynamicQueryRequest
 } from "@/hooks/use-dynamic-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,6 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import { SettingsIcon, ZapIcon } from "lucide-react";
 import { MinimalTable } from "./components/minimal-table";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import { useMemo } from "react";
+import { BrowserIcon } from "@/components/icon";
+
+// Simple percentage badge component
+const PercentageBadge = ({ percentage }: { percentage: number }) => (
+  <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+    {percentage.toFixed(1)}%
+  </div>
+);
 
 type WebsitePlaceholder = {
   id: string;
@@ -43,6 +53,24 @@ const COLUMN_TEMPLATES = {
     header,
     cell: info => <span className="font-medium">{info.getValue()}</span>,
   }),
+  browser: () => columnHelper.accessor('name', {
+    header: 'Browser & Version',
+    cell: info => {
+      const fullName = info.getValue();
+      if (typeof fullName === 'string' && fullName.includes(' ')) {
+        const parts = fullName.split(' ');
+        const browserName = parts[0];
+        const version = parts.slice(1).join(' ');
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium">{browserName}</span>
+            <span className="text-xs text-muted-foreground">v{version}</span>
+          </div>
+        );
+      }
+      return <span className="font-medium">{fullName}</span>;
+    },
+  }),
   visitors: () => columnHelper.accessor('visitors', {
     header: 'Visitors',
     cell: info => <span className="text-muted-foreground">{info.getValue()?.toLocaleString()}</span>,
@@ -74,13 +102,19 @@ const TAB_CONFIGS = [
   {
     id: 'devices',
     label: 'Devices',
-    queries: ['device_type', 'browser_name', 'os_name'],
+    queries: ['device_type', 'os_name'],
     columns: [COLUMN_TEMPLATES.name(), COLUMN_TEMPLATES.visitors(), COLUMN_TEMPLATES.pageviews()],
+  },
+  {
+    id: 'browsers',
+    label: 'Browsers',
+    queries: ['browser_name'],
+    columns: [COLUMN_TEMPLATES.browser(), COLUMN_TEMPLATES.visitors(), COLUMN_TEMPLATES.pageviews()],
   },
   {
     id: 'geography',
     label: 'Geography', 
-    queries: ['country', 'city'],
+    queries: ['country'],
     columns: [COLUMN_TEMPLATES.name('Location'), COLUMN_TEMPLATES.visitors(), COLUMN_TEMPLATES.pageviews()],
   },
   {
@@ -180,6 +214,184 @@ function AvailableParametersExample({ websiteId }: { websiteId: string }) {
   );
 }
 
+function BrowserAnalysis({ websiteId, dateRange }: { websiteId: string, dateRange: any }) {
+  // Use the new grouped browser parameter directly from API
+  const { data: groupedData, isLoading, errors } = useDynamicQuery(
+    websiteId,
+    dateRange,
+    {
+      id: 'browsers-grouped',
+      parameters: ['browsers_grouped'],
+      limit: 50,
+    }
+  );
+
+  // Extract grouped browser data from API response
+  const groupedBrowserData = useMemo(() => {
+    const rawData = groupedData?.browsers_grouped || [];
+    
+    // Add market share calculation and format for UI
+    const totalVisitors = rawData.reduce((sum: number, browser: any) => sum + (browser.visitors || 0), 0);
+    
+    return rawData.map((browser: any) => {
+      const marketShare = totalVisitors > 0 
+        ? Math.round((browser.visitors / totalVisitors) * 100)
+        : 0;
+      
+      return {
+        id: browser.name,
+        browserName: browser.name,
+        name: browser.name,
+        version: `${browser.versions?.length || 0} versions`,
+        visitors: browser.visitors || 0,
+        pageviews: browser.pageviews || 0,
+        sessions: browser.sessions || 0,
+        marketShare: marketShare.toString(),
+        versions: (browser.versions || []).map((v: any) => ({
+          ...v,
+          name: v.version || 'Unknown Version'
+        }))
+      };
+    });
+  }, [groupedData]);
+
+  // Browser icon component
+  const getBrowserIcon = (browserName: string, size: "sm" | "md" | "lg" = "md") => {
+    return (
+      <BrowserIcon 
+        name={browserName}
+        size={size}
+        fallback={
+          <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs font-medium">
+            {browserName.charAt(0).toUpperCase()}
+          </div>
+        }
+      />
+    );
+  };
+
+
+
+  const browserColumns: ColumnDef<any>[] = [
+    columnHelper.accessor('browserName', {
+      header: 'Browser',
+      cell: info => (
+        <div className="flex items-center gap-3">
+          {getBrowserIcon(info.getValue() as string, "md")}
+          <div>
+            <div className="font-semibold text-foreground">{info.getValue() as string}</div>
+            <div className="text-xs text-muted-foreground">
+              {info.row.original.versions?.length || 0} versions detected
+            </div>
+          </div>
+        </div>
+      ),
+    }),
+    columnHelper.accessor('visitors', {
+      header: 'Visitors',
+      cell: info => (
+        <div>
+          <div className="font-medium">{info.getValue()?.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">unique users</div>
+        </div>
+      ),
+    }),
+    columnHelper.accessor('pageviews', {
+      header: 'Pageviews',
+      cell: info => (
+        <div>
+          <div className="font-medium">{info.getValue()?.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">total views</div>
+        </div>
+      ),
+    }),
+    columnHelper.accessor('marketShare', {
+      header: 'Share',
+      cell: info => {
+        const percentage = Number.parseInt(info.getValue() as string, 10);
+        return <PercentageBadge percentage={percentage} />;
+      },
+    }),
+  ];
+
+  return (
+    <Card className="border-0 shadow-sm bg-card/50 backdrop-blur-sm">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-blue-500/10">
+            <ZapIcon className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <CardTitle className="text-base font-semibold">Browser Version Analysis</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Expandable browser breakdown showing all versions per browser
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {errors.length > 0 && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">
+              Errors: {errors.map(e => e.error).join(', ')}
+            </p>
+          </div>
+        )}
+        
+        <MinimalTable
+          data={groupedBrowserData}
+          columns={browserColumns}
+          title="Browser Versions"
+          description={`${groupedBrowserData.length} browsers with expandable version details`}
+          isLoading={isLoading}
+          initialPageSize={15}
+          showSearch={true}
+          emptyMessage="No browser data available"
+          className="border-0 shadow-none bg-transparent"
+          expandable={true}
+          getSubRows={(row) => row.versions}
+          renderSubRow={(subRow, parentRow, index) => {
+            const percentage = Math.round(((subRow.visitors || 0) / (parentRow.visitors || 1)) * 100);
+            const gradientConfig = percentage >= 40 ? {
+              bg: 'linear-gradient(90deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.06) 100%)',
+              border: 'rgba(34, 197, 94, 0.2)'
+            } : percentage >= 25 ? {
+              bg: 'linear-gradient(90deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.06) 100%)',
+              border: 'rgba(59, 130, 246, 0.2)'
+            } : percentage >= 10 ? {
+              bg: 'linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%)',
+              border: 'rgba(245, 158, 11, 0.2)'
+            } : {
+              bg: 'linear-gradient(90deg, rgba(107, 114, 128, 0.08) 0%, rgba(107, 114, 128, 0.04) 100%)',
+              border: 'rgba(107, 114, 128, 0.15)'
+            };
+            
+                          return (
+                <div 
+                  className="grid grid-cols-4 gap-3 py-1.5 px-4 text-sm border-l-2 transition-all duration-200"
+                  style={{ 
+                    background: gradientConfig.bg,
+                    borderLeftColor: gradientConfig.border
+                  }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                    <span className="font-medium">{subRow.version || 'Unknown'}</span>
+                  </div>
+                  <div className="text-right font-medium">{subRow.visitors?.toLocaleString()}</div>
+                  <div className="text-right font-medium">{subRow.pageviews?.toLocaleString()}</div>
+                  <div className="text-right">
+                    <PercentageBadge percentage={percentage} />
+                  </div>
+                </div>
+              );
+          }}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
 function AnalyticsTable({ websiteId, dateRange }: { websiteId: string, dateRange: any }) {
   // Generate batch queries from tab configs
   const batchQueries = TAB_CONFIGS.map(tab => ({
@@ -261,6 +473,9 @@ export default function TestComponentsPage({ params: paramsPromise }: { params: 
     <div className="container mx-auto p-6 space-y-6 max-w-6xl">
       {/* Parameters Overview */}
       <AvailableParametersExample websiteId={websiteId} />
+      
+      {/* Browser Version Analysis */}
+      <BrowserAnalysis websiteId={websiteId} dateRange={dateRange} />
       
       {/* Analytics Dashboard */}
       <AnalyticsTable websiteId={websiteId} dateRange={dateRange} />

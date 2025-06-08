@@ -11,11 +11,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { ListFilterIcon, DatabaseIcon, ArrowUpDown, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ListFilterIcon, DatabaseIcon, ArrowUpDown, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Search, ChevronDown, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { type ColumnDef, type RowData, flexRender, getCoreRowModel, useReactTable, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, type SortingState, type PaginationState } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import React from "react";
+import { useMemo, useState, useCallback, Fragment } from "react";
 
 interface TabConfig<TData> {
   id: string;
@@ -37,18 +37,23 @@ interface MinimalTableProps<TData extends RowData, TValue> {
   onRowClick?: (row: TData) => void;
   minHeight?: string | number;
   showSearch?: boolean;
+  // Expandable rows functionality
+  getSubRows?: (row: TData) => TData[] | undefined;
+  renderSubRow?: (subRow: TData, parentRow: TData, index: number) => React.ReactNode;
+  expandable?: boolean;
 }
 
 // Helper function to get percentage value from row data
 function getRowPercentage(row: any): number {
   // Try to find percentage in common property names
-  if (typeof row.percentage === 'number') return row.percentage;
-  if (typeof row.percent === 'number') return row.percent;
-  if (typeof row.share === 'number') return row.share;
+  if (row.marketShare !== undefined) return Number.parseFloat(row.marketShare) || 0;
+  if (row.percentage !== undefined) return Number.parseFloat(row.percentage) || 0;
+  if (row.percent !== undefined) return Number.parseFloat(row.percent) || 0;
+  if (row.share !== undefined) return Number.parseFloat(row.share) || 0;
   return 0;
 }
 
-// Enhanced helper function for gradient colors with sophisticated aesthetics
+// Enhanced helper function for gradient colors with prominent percentage bars
 function getPercentageGradient(percentage: number): { 
   background: string; 
   hoverBackground: string;
@@ -56,39 +61,39 @@ function getPercentageGradient(percentage: number): {
   accentColor: string;
   glowColor: string;
 } {
-  if (percentage >= 50) {
+  if (percentage >= 40) {
     return {
-      background: `linear-gradient(90deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.15) ${percentage * 0.8}%, rgba(34, 197, 94, 0.12) ${percentage}%, rgba(34, 197, 94, 0.02) ${percentage + 5}%, transparent 100%)`,
-      hoverBackground: `linear-gradient(90deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.22) ${percentage * 0.8}%, rgba(34, 197, 94, 0.18) ${percentage}%, rgba(34, 197, 94, 0.04) ${percentage + 5}%, transparent 100%)`,
-      borderColor: 'rgba(34, 197, 94, 0.3)',
+      background: `linear-gradient(90deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.25) ${percentage * 0.6}%, rgba(34, 197, 94, 0.2) ${percentage}%, rgba(34, 197, 94, 0.05) ${percentage + 3}%, transparent 100%)`,
+      hoverBackground: `linear-gradient(90deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.35) ${percentage * 0.6}%, rgba(34, 197, 94, 0.3) ${percentage}%, rgba(34, 197, 94, 0.08) ${percentage + 3}%, transparent 100%)`,
+      borderColor: 'rgba(34, 197, 94, 0.4)',
       accentColor: 'rgba(34, 197, 94, 0.8)',
-      glowColor: 'rgba(34, 197, 94, 0.2)'
+      glowColor: 'rgba(34, 197, 94, 0.3)'
     };
   }
   if (percentage >= 25) {
     return {
-      background: `linear-gradient(90deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.15) ${percentage * 0.8}%, rgba(59, 130, 246, 0.12) ${percentage}%, rgba(59, 130, 246, 0.02) ${percentage + 5}%, transparent 100%)`,
-      hoverBackground: `linear-gradient(90deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.22) ${percentage * 0.8}%, rgba(59, 130, 246, 0.18) ${percentage}%, rgba(59, 130, 246, 0.04) ${percentage + 5}%, transparent 100%)`,
-      borderColor: 'rgba(59, 130, 246, 0.3)',
+      background: `linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.25) ${percentage * 0.6}%, rgba(59, 130, 246, 0.2) ${percentage}%, rgba(59, 130, 246, 0.05) ${percentage + 3}%, transparent 100%)`,
+      hoverBackground: `linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.35) ${percentage * 0.6}%, rgba(59, 130, 246, 0.3) ${percentage}%, rgba(59, 130, 246, 0.08) ${percentage + 3}%, transparent 100%)`,
+      borderColor: 'rgba(59, 130, 246, 0.4)',
       accentColor: 'rgba(59, 130, 246, 0.8)',
-      glowColor: 'rgba(59, 130, 246, 0.2)'
+      glowColor: 'rgba(59, 130, 246, 0.3)'
     };
   }
   if (percentage >= 10) {
     return {
-      background: `linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.15) ${percentage * 0.8}%, rgba(245, 158, 11, 0.12) ${percentage}%, rgba(245, 158, 11, 0.02) ${percentage + 5}%, transparent 100%)`,
-      hoverBackground: `linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.22) ${percentage * 0.8}%, rgba(245, 158, 11, 0.18) ${percentage}%, rgba(245, 158, 11, 0.04) ${percentage + 5}%, transparent 100%)`,
-      borderColor: 'rgba(245, 158, 11, 0.3)',
+      background: `linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.25) ${percentage * 0.6}%, rgba(245, 158, 11, 0.2) ${percentage}%, rgba(245, 158, 11, 0.05) ${percentage + 3}%, transparent 100%)`,
+      hoverBackground: `linear-gradient(90deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.35) ${percentage * 0.6}%, rgba(245, 158, 11, 0.3) ${percentage}%, rgba(245, 158, 11, 0.08) ${percentage + 3}%, transparent 100%)`,
+      borderColor: 'rgba(245, 158, 11, 0.4)',
       accentColor: 'rgba(245, 158, 11, 0.8)',
-      glowColor: 'rgba(245, 158, 11, 0.2)'
+      glowColor: 'rgba(245, 158, 11, 0.3)'
     };
   }
   return {
-    background: `linear-gradient(90deg, rgba(107, 114, 128, 0.06) 0%, rgba(107, 114, 128, 0.12) ${percentage * 0.8}%, rgba(107, 114, 128, 0.1) ${percentage}%, rgba(107, 114, 128, 0.02) ${percentage + 5}%, transparent 100%)`,
-    hoverBackground: `linear-gradient(90deg, rgba(107, 114, 128, 0.1) 0%, rgba(107, 114, 128, 0.18) ${percentage * 0.8}%, rgba(107, 114, 128, 0.15) ${percentage}%, rgba(107, 114, 128, 0.03) ${percentage + 5}%, transparent 100%)`,
-    borderColor: 'rgba(107, 114, 128, 0.2)',
+    background: `linear-gradient(90deg, rgba(107, 114, 128, 0.12) 0%, rgba(107, 114, 128, 0.2) ${percentage * 0.6}%, rgba(107, 114, 128, 0.15) ${percentage}%, rgba(107, 114, 128, 0.03) ${percentage + 3}%, transparent 100%)`,
+    hoverBackground: `linear-gradient(90deg, rgba(107, 114, 128, 0.15) 0%, rgba(107, 114, 128, 0.28) ${percentage * 0.6}%, rgba(107, 114, 128, 0.22) ${percentage}%, rgba(107, 114, 128, 0.05) ${percentage + 3}%, transparent 100%)`,
+    borderColor: 'rgba(107, 114, 128, 0.3)',
     accentColor: 'rgba(107, 114, 128, 0.7)',
-    glowColor: 'rgba(107, 114, 128, 0.15)'
+    glowColor: 'rgba(107, 114, 128, 0.2)'
   };
 }
 
@@ -134,22 +139,26 @@ export function MinimalTable<TData extends RowData, TValue>(
     className,
     onRowClick,
     minHeight = 200,
-    showSearch = true
+    showSearch = true,
+    getSubRows,
+    renderSubRow,
+    expandable = false
   }: MinimalTableProps<TData, TValue>
 ) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = React.useState('');
-  const [pagination, setPagination] = React.useState<PaginationState>({
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: initialPageSize ?? 10,
   });
-  const [activeTab, setActiveTab] = React.useState(tabs?.[0]?.id || '');
-  const [isTransitioning, setIsTransitioning] = React.useState(false);
+  const [activeTab, setActiveTab] = useState(tabs?.[0]?.id || '');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Use tab data if tabs are provided, otherwise use direct data/columns
   const currentTabData = tabs?.find(tab => tab.id === activeTab);
-  const tableData = React.useMemo(() => currentTabData?.data || data || [], [currentTabData?.data, data]);
-  const tableColumns = React.useMemo(() => currentTabData?.columns || columns || [], [currentTabData?.columns, columns]);
+  const tableData = useMemo(() => currentTabData?.data || data || [], [currentTabData?.data, data]);
+  const tableColumns = useMemo(() => currentTabData?.columns || columns || [], [currentTabData?.columns, columns]);
 
   const table = useReactTable({
     data: tableData,
@@ -171,7 +180,7 @@ export function MinimalTable<TData extends RowData, TValue>(
   const displayData = table.getRowModel().rows;
 
   // Enhanced tab switching with transition
-  const handleTabChange = React.useCallback((tabId: string) => {
+  const handleTabChange = useCallback((tabId: string) => {
     if (tabId === activeTab) return;
     
     setIsTransitioning(true);
@@ -179,9 +188,24 @@ export function MinimalTable<TData extends RowData, TValue>(
       setActiveTab(tabId);
       // Reset pagination when switching tabs
       setPagination(prev => ({ ...prev, pageIndex: 0 }));
+      // Reset expanded rows when switching tabs
+      setExpandedRows(new Set());
       setIsTransitioning(false);
     }, 150);
   }, [activeTab]);
+
+  // Toggle row expansion
+  const toggleRowExpansion = useCallback((rowId: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowId)) {
+        newSet.delete(rowId);
+      } else {
+        newSet.add(rowId);
+      }
+      return newSet;  
+    });
+  }, []);
 
   if (isLoading) {
     return (
@@ -310,7 +334,7 @@ export function MinimalTable<TData extends RowData, TValue>(
               </h4>
               <p className="text-xs text-muted-foreground max-w-[200px]">
                 {globalFilter 
-                  ? `Try adjusting your search terms or clearing filters`
+                  ? 'Try adjusting your search terms or clearing filters'
                   : 'Data will appear here when available'
                 }
               </p>
@@ -387,42 +411,142 @@ export function MinimalTable<TData extends RowData, TValue>(
                 </TableHeader>
                 <TableBody className="overflow-hidden">
                   {displayData.map((row, index) => {
+                    const subRows = expandable && getSubRows ? getSubRows(row.original) : undefined;
+                    const hasSubRows = subRows && subRows.length > 0;
+                    const isExpanded = expandedRows.has(row.id);
+                    const percentage = getRowPercentage(row.original);
+                    const gradient = getPercentageGradient(percentage);
+                    
                     return (
-                      <TableRow 
-                        key={row.id}
-                        className={cn(
-                          "group h-11 border-border/20 transition-all duration-200 relative",
-                          "hover:bg-muted/20 focus-within:bg-muted/20",
-                          onRowClick && "cursor-pointer hover:bg-muted/30 focus-within:bg-muted/30 active:bg-muted/40",
-                          index % 2 === 0 ? "bg-background/50" : "bg-muted/10"
-                        )}
-                        onClick={() => onRowClick?.(row.original)}
-                        tabIndex={onRowClick ? 0 : -1}
-                        role={onRowClick ? "button" : undefined}
-                        aria-label={onRowClick ? `View details for row ${index + 1}` : undefined}
-                        onKeyDown={(e) => {
-                          if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
-                            e.preventDefault();
-                            onRowClick(row.original);
+                        <Fragment key={row.id}>
+                        <TableRow 
+                          className={cn(
+                            "group h-11 border-border/20 transition-all duration-200 relative",
+                            "hover:bg-muted/20 focus-within:bg-muted/20",
+                            onRowClick && !hasSubRows && "cursor-pointer hover:bg-muted/30 focus-within:bg-muted/30 active:bg-muted/40",
+                            index % 2 === 0 ? "bg-background/50" : "bg-muted/10"
+                          )}
+                          style={{
+                            background: percentage > 0 ? gradient.background : undefined,
+                            borderLeft: percentage > 0 ? '2px solid transparent' : undefined,
+                            boxShadow: percentage > 0 ? `inset 3px 0 0 ${gradient.borderColor}` : undefined,
+                            animationDelay: `${index * 30}ms`,
+                            animationFillMode: 'both'
+                          }}
+                          onClick={() => {
+                            if (hasSubRows) {
+                              toggleRowExpansion(row.id);
+                            } else {
+                              onRowClick?.(row.original);
+                            }
+                          }}
+                          tabIndex={onRowClick || hasSubRows ? 0 : -1}
+                          role={onRowClick || hasSubRows ? "button" : undefined}
+                          aria-expanded={hasSubRows ? isExpanded : undefined}
+                          aria-label={
+                            hasSubRows 
+                              ? `${isExpanded ? 'Collapse' : 'Expand'} details for row ${index + 1}` 
+                              : onRowClick 
+                                ? `View details for row ${index + 1}` 
+                                : undefined
                           }
-                        }}
-                      >
-                        {row.getVisibleCells().map((cell, cellIndex) => (
-                          <TableCell 
-                            key={cell.id}
-                            className={cn(
-                              "py-2.5 px-3 text-sm font-medium text-foreground/90",
-                              cellIndex === 0 && "font-semibold text-foreground",
-                              (cell.column.columnDef.meta as any)?.className
-                            )}
-                            style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                          onKeyDown={(e) => {
+                            if ((onRowClick || hasSubRows) && (e.key === 'Enter' || e.key === ' ')) {
+                              e.preventDefault();
+                              if (hasSubRows) {
+                                toggleRowExpansion(row.id);
+                              } else {
+                                onRowClick?.(row.original);
+                              }
+                            }
+                          }}
+                          onMouseEnter={(e) => {
+                            if (percentage > 0) {
+                              const target = e.currentTarget as HTMLElement;
+                              target.style.background = gradient.hoverBackground;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (percentage > 0) {
+                              const target = e.currentTarget as HTMLElement;
+                              target.style.background = gradient.background;
+                            }
+                          }}
+                        >
+                          {row.getVisibleCells().map((cell, cellIndex) => (
+                            <TableCell 
+                              key={cell.id}
+                              className={cn(
+                                "py-2.5 px-3 text-sm font-medium text-foreground/90",
+                                cellIndex === 0 && "font-semibold text-foreground",
+                                (cell.column.columnDef.meta as any)?.className
+                              )}
+                              style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                            >
+                              <div className="flex items-center gap-2">
+                                {/* Expansion toggle - only on first cell and if row has sub-rows */}
+                                {cellIndex === 0 && hasSubRows && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleRowExpansion(row.id);
+                                    }}
+                                    className="flex-shrink-0 p-0.5 hover:bg-muted rounded transition-colors"
+                                    aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                    ) : (
+                                      <ChevronRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                    )}
+                                  </button>
+                                )}
+                                <div className="truncate flex-1">
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </div>
+                              </div>
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                        
+                        {/* Sub-rows */}
+                        {hasSubRows && isExpanded && subRows.map((subRow, subIndex) => (
+                          <TableRow
+                            key={`${row.id}-sub-${subIndex}`}
+                            className="border-border/10 bg-muted/5 hover:bg-muted/10 transition-colors p-0"
                           >
-                            <div className="truncate">
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </div>
-                          </TableCell>
+                            {renderSubRow ? (
+                              <TableCell 
+                                colSpan={row.getVisibleCells().length}
+                                className="p-0"
+                              >
+                                {renderSubRow(subRow, row.original, subIndex)}
+                              </TableCell>
+                            ) : (
+                              // Default sub-row rendering - show the same data but indented
+                              row.getVisibleCells().map((cell, cellIndex) => (
+                                <TableCell
+                                  key={`sub-${cell.id}`}
+                                  className={cn(
+                                    "py-2 text-sm text-muted-foreground",
+                                    cellIndex === 0 ? "pl-8" : "px-3"
+                                  )}
+                                  style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                                >
+                                  <div className="truncate">
+                                    {cellIndex === 0 ? (
+                                      <span className="text-xs">↳ {(subRow as any)[cell.column.id] || ''}</span>
+                                    ) : (
+                                      (subRow as any)[cell.column.id] || ''
+                                    )}
+                                  </div>
+                                </TableCell>
+                              ))
+                            )}
+                          </TableRow>
                         ))}
-                      </TableRow>
+                                               </Fragment>
                     );
                   })}
                 </TableBody>

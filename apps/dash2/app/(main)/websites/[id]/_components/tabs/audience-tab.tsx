@@ -5,19 +5,19 @@ import type { ColumnDef } from "@tanstack/react-table";
 
 import { DataTable } from "@/components/analytics/data-table";
 import { useWebsiteAnalytics } from "@/hooks/use-analytics";
-import { useEnhancedGeographicData } from "@/hooks/use-dynamic-query";
+import { useEnhancedGeographicData, useDeviceData, useDynamicQuery } from "@/hooks/use-dynamic-query";
 import type { FullTabProps } from "../utils/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardHeader, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Globe, Laptop, Smartphone, Tablet, Monitor, HelpCircle, Languages, Wifi, WifiOff, MapPin, Clock } from 'lucide-react';
 import { getLanguageName } from "@databuddy/shared";
 import { 
-  processDeviceData, 
   processBrowserData, 
   TechnologyIcon,
   PercentageBadge,
   type TechnologyTableEntry,
 } from "../utils/technology-helpers";
+import { BrowserIcon } from "@/components/icon";
 
 // Define types for geographic data with percentage
 interface GeographicEntry {
@@ -86,6 +86,27 @@ export function WebsiteAudienceTab({
     error: geographicError
   } = useEnhancedGeographicData(websiteId, dateRange);
 
+  const {
+    data: techData,
+    isLoading: isLoadingTech,
+    refetch: refetchTech
+  } = useDeviceData(websiteId, dateRange);
+
+  // Fetch grouped browser data with versions
+  const { 
+    data: groupedBrowserData, 
+    isLoading: isLoadingBrowsers, 
+    refetch: refetchBrowsers 
+  } = useDynamicQuery(
+    websiteId,
+    dateRange,
+    {
+      id: 'browsers-grouped',
+      parameters: ['browsers_grouped'],
+      limit: 50,
+    }
+  );
+
   // Handle refresh - coordinate both data sources
   useEffect(() => {
     let isMounted = true;
@@ -93,10 +114,12 @@ export function WebsiteAudienceTab({
     if (isRefreshing) {
       const doRefresh = async () => {
         try {
-          // Refresh both data sources simultaneously
-          const [analyticsResult, geographicResult] = await Promise.allSettled([
+          // Refresh all data sources simultaneously
+          const [analyticsResult, geographicResult, techResult, browserResult] = await Promise.allSettled([
             refetchAnalytics(),
-            refetchGeographic()
+            refetchGeographic(),
+            refetchTech(),
+            refetchBrowsers()
           ]);
           
           // Log any specific failures for debugging
@@ -105,6 +128,12 @@ export function WebsiteAudienceTab({
           }
           if (geographicResult.status === 'rejected') {
             console.error("Failed to refresh geographic data:", geographicResult.reason);
+          }
+          if (techResult.status === 'rejected') {
+            console.error("Failed to refresh tech data:", techResult.reason);
+          }
+          if (browserResult.status === 'rejected') {
+            console.error("Failed to refresh browser data:", browserResult.reason);
           }
         } catch (error) {
           console.error("Failed to refresh data:", error);
@@ -121,18 +150,37 @@ export function WebsiteAudienceTab({
     return () => {
       isMounted = false;
     };
-  }, [isRefreshing, refetchAnalytics, refetchGeographic, setIsRefreshing]);
+  }, [isRefreshing, refetchAnalytics, refetchGeographic, refetchTech, refetchBrowsers, setIsRefreshing]);
 
-  // Technology data processing using the same helpers as overview
-  const processedDeviceData = useMemo(() => 
-    processDeviceData(analytics.device_types || []), 
-    [analytics.device_types]
-  );
-
-  const processedBrowserData = useMemo(() => 
-    processBrowserData(analytics.browser_versions || []), 
-    [analytics.browser_versions]
-  );
+  // Process grouped browser data with versions for expandable table
+  const processedBrowserData = useMemo(() => {
+    const rawData = groupedBrowserData?.browsers_grouped || [];
+    
+    // Add market share calculation and format for UI
+    const totalVisitors = rawData.reduce((sum: number, browser: any) => sum + (browser.visitors || 0), 0);
+    
+    return rawData.map((browser: any) => {
+      const marketShare = totalVisitors > 0 
+        ? Math.round((browser.visitors / totalVisitors) * 100)
+        : 0;
+      
+      return {
+        id: browser.name,
+        browserName: browser.name,
+        name: browser.name,
+        visitors: browser.visitors || 0,
+        pageviews: browser.pageviews || 0,
+        sessions: browser.sessions || 0,
+        percentage: marketShare,
+        marketShare: marketShare.toString(),
+        versions: (browser.versions || []).map((v: any) => ({
+          ...v,
+          name: v.version || 'Unknown Version',
+          version: v.version || 'Unknown Version'
+        }))
+      };
+    });
+  }, [groupedBrowserData]);
 
   // Process connection types data with percentages
   const processedConnectionData = useMemo((): ConnectionEntry[] => {
@@ -148,37 +196,6 @@ export function WebsiteAudienceTab({
       category: 'connection' as const
     })).sort((a, b) => b.visitors - a.visitors);
   }, [analytics.connection_types]);
-
-  // Process language data with percentages
-  const processedLanguageData = useMemo((): TechnologyTableEntry[] => {
-    if (!analytics.languages?.length) return [];
-    
-    // Group languages by base language code (before the hyphen)
-    const languageGroups: Record<string, number> = {};
-    
-    for (const item of analytics.languages) {
-      if (!item.language) continue; // Skip items with undefined language
-      const baseLanguage = item.language.split('-')[0]; // Get 'en' from 'en-US'
-      languageGroups[baseLanguage] = (languageGroups[baseLanguage] || 0) + (item.visitors || 0);
-    }
-    
-    const totalVisitors = Object.values(languageGroups).reduce((sum, count) => sum + count, 0);
-    
-    return Object.entries(languageGroups)
-      .sort(([,a], [,b]) => (b as number) - (a as number))
-      .slice(0, 10)
-      .map(([baseLanguage, visitors]) => {
-        const languageName = getLanguageName(baseLanguage);
-        
-        return {
-          name: languageName !== 'Unknown' ? languageName : baseLanguage.toUpperCase(),
-          visitors,
-          percentage: totalVisitors > 0 ? Math.round((visitors / totalVisitors) * 100) : 0,
-          iconComponent: <Languages className="h-4 w-4 text-primary" />,
-          category: 'language'
-        };
-      });
-  }, [analytics.languages]);
 
   // Process geographic data from batch query results
   const processedGeographicData = useMemo(() => {
@@ -206,28 +223,59 @@ export function WebsiteAudienceTab({
   }, [geographicResults]);
 
   // Combine loading states - ensure all data sources are synchronized
-  const isLoading = loading.summary || isLoadingGeographic || isRefreshing;
+  const isLoading = loading.summary || isLoadingGeographic || isLoadingTech || isLoadingBrowsers || isRefreshing;
 
-  // Technology table columns using modern approach
-  const technologyColumns = useMemo((): ColumnDef<TechnologyTableEntry, unknown>[] => [
+  // Browser table columns with expandable functionality
+  const browserColumns = useMemo((): ColumnDef<any, unknown>[] => [
     {
-      id: 'name',
-      accessorKey: 'name',
-      header: 'Name',
+      id: 'browserName',
+      accessorKey: 'browserName',
+      header: 'Browser',
       cell: (info) => {
-        const entry = info.row.original;
+        const browserName = info.getValue() as string;
+        const row = info.row.original;
         return (
           <div className="flex items-center gap-3">
-            <TechnologyIcon entry={entry} size="md" />
-            <span className="font-medium">{entry.name}</span>
+            <BrowserIcon 
+              name={browserName}
+              size="md"
+              fallback={
+                <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs font-medium">
+                  {browserName.charAt(0).toUpperCase()}
+                </div>
+              }
+            />
+            <div>
+              <div className="font-semibold text-foreground">{browserName}</div>
+              <div className="text-xs text-muted-foreground">
+                {row.versions?.length || 0} versions detected
+              </div>
+            </div>
           </div>
         );
-      }
+      },
     },
     {
       id: 'visitors',
       accessorKey: 'visitors',
-      header: 'Visitors'
+      header: 'Visitors',
+      cell: (info) => (
+        <div>
+          <div className="font-medium">{info.getValue()?.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">unique users</div>
+        </div>
+      ),
+    },
+    {
+      id: 'pageviews',
+      accessorKey: 'pageviews',
+      header: 'Pageviews',
+      cell: (info) => (
+        <div>
+          <div className="font-medium">{info.getValue()?.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">total views</div>
+        </div>
+      ),
     },
     {
       id: 'percentage',
@@ -515,30 +563,54 @@ export function WebsiteAudienceTab({
       {/* Technology Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DataTable 
-          data={processedDeviceData}
-          columns={technologyColumns}
-          title="Device Types"
-          description="Visitors by device type"
+          data={processedBrowserData}
+          columns={browserColumns}
+          title="Browser Versions"
+          description="Expandable browser breakdown showing all versions per browser"
           isLoading={isLoading}
           initialPageSize={8}
           minHeight={200}
           showSearch={false}
+          expandable={true}
+          getSubRows={(row) => row.versions}
+          renderSubRow={(subRow, parentRow, index) => {
+            const percentage = Math.round(((subRow.visitors || 0) / (parentRow.visitors || 1)) * 100);
+            const gradientConfig = percentage >= 40 ? {
+              bg: 'linear-gradient(90deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.06) 100%)',
+              border: 'rgba(34, 197, 94, 0.2)'
+            } : percentage >= 25 ? {
+              bg: 'linear-gradient(90deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.06) 100%)',
+              border: 'rgba(59, 130, 246, 0.2)'
+            } : percentage >= 10 ? {
+              bg: 'linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%)',
+              border: 'rgba(245, 158, 11, 0.2)'
+            } : {
+              bg: 'linear-gradient(90deg, rgba(107, 114, 128, 0.08) 0%, rgba(107, 114, 128, 0.04) 100%)',
+              border: 'rgba(107, 114, 128, 0.15)'
+            };
+            
+            return (
+              <div 
+                className="grid grid-cols-4 gap-3 py-1.5 px-4 text-sm border-l-2 transition-all duration-200"
+                style={{ 
+                  background: gradientConfig.bg,
+                  borderLeftColor: gradientConfig.border
+                }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                  <span className="font-medium">{subRow.version || 'Unknown'}</span>
+                </div>
+                <div className="text-right font-medium">{subRow.visitors?.toLocaleString()}</div>
+                <div className="text-right font-medium">{subRow.pageviews?.toLocaleString()}</div>
+                <div className="text-right">
+                  <PercentageBadge percentage={percentage} />
+                </div>
+              </div>
+            );
+          }}
         />
         
-        <DataTable 
-          data={processedBrowserData}
-          columns={technologyColumns}
-          title="Browsers"
-          description="Visitors by browser"
-          isLoading={isLoading}
-          initialPageSize={8}
-          minHeight={200}
-          showSearch={false}
-        />
-      </div>
-      
-      {/* Connection and Language */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DataTable 
           data={processedConnectionData}
           columns={connectionColumns}
@@ -549,19 +621,8 @@ export function WebsiteAudienceTab({
           minHeight={200}
           showSearch={false}
         />
-        
-        <DataTable 
-          data={processedLanguageData}
-          columns={technologyColumns}
-          title="Languages"
-          description="Visitors by preferred language"
-          isLoading={isLoading}
-          initialPageSize={8}
-          minHeight={200}
-          showSearch={false}
-        />
       </div>
-
+      
       {/* Enhanced Geographic Data */}
       <div className="grid grid-cols-1 gap-4">
         <DataTable 
@@ -766,4 +827,4 @@ export function WebsiteAudienceTab({
       </Card>
     </div>
   );
-} 
+}

@@ -82,46 +82,23 @@ export function PublicIcon({
       </div>
     );
   }
-
-  // Try different file extensions
-  const extensions = ['svg', 'png', 'webp'];
   
   return (
     <div className={cn("relative flex-shrink-0", className)} style={{ width: iconSize, height: iconSize }}>
-      {extensions.map((ext, index) => (
         <Image
-          key={`${iconName}-${ext}`}
-          src={`/${folder}/${iconName}.${ext}`}
+          key={`${iconName}`}
+          src={`/${folder}/${iconName}.svg`}
           alt={name}
           width={iconSize}
           height={iconSize}
           className={cn(
             "object-contain",
-            index > 0 ? "absolute inset-0" : ""
           )}
-          style={{
-            display: index === 0 ? 'block' : 'none'
-          }}
           onError={(e) => {
             const img = e.target as HTMLImageElement;
             img.style.display = 'none';
-            const nextImg = img.nextElementSibling as HTMLImageElement;
-            if (nextImg) {
-              nextImg.style.display = 'block';
-            }
-          }}
-          onLoad={(e) => {
-            // Hide subsequent images when one loads successfully
-            const img = e.target as HTMLImageElement;
-            const siblings = img.parentElement?.querySelectorAll('img');
-            siblings?.forEach((sibling, i) => {
-              if (i > index) {
-                (sibling as HTMLImageElement).style.display = 'none';
-              }
-            });
           }}
         />
-      ))}
     </div>
   );
 }

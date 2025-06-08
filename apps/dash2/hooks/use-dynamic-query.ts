@@ -187,9 +187,24 @@ export interface SessionsSummaryData {
 }
 
 // Parameter type mapping for better type safety
+export interface GroupedBrowserData {
+  name: string; // browser name (e.g., "Chrome", "Firefox")
+  visitors: number;
+  pageviews: number;
+  sessions: number;
+  versions: {
+    name: string; // version number
+    version: string;
+    visitors: number;
+    pageviews: number;
+    sessions: number;
+  }[];
+}
+
 export type ParameterDataMap = {
   device_type: DeviceTypeData;
   browser_name: BrowserData;
+  browsers_grouped: GroupedBrowserData;
   os_name: BrowserData;
   country: CountryData;
   region: RegionData;
