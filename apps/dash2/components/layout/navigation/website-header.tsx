@@ -2,12 +2,10 @@ import Link from "next/link";
 import { ChevronLeft, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { WebsiteBasic } from "@databuddy/shared";
 
 interface WebsiteHeaderProps {
-  website: {
-    name?: string | null;
-    domain: string;
-  } | null | undefined;
+  website: WebsiteBasic | null | undefined;
 }
 
 export function WebsiteHeader({ website }: WebsiteHeaderProps) {

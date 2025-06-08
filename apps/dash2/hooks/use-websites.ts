@@ -3,26 +3,10 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { Website, CreateWebsiteData } from '@databuddy/shared';
 
-export interface Website {
-  id: string;
-  name: string | null;
-  domain: string;
-  userId?: string | null;
-  projectId?: string | null;
-  domainId?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  status?: "ACTIVE" | "INACTIVE" | "PENDING" | "HEALTHY" | "UNHEALTHY";
-  deletedAt?: string | null;
-}
-
-export interface CreateWebsiteData {
-  name: string;
-  domainId: string;
-  domain: string;
-  subdomain?: string;
-}
+// Re-export types for backward compatibility
+export type { Website, CreateWebsiteData };
 
 // API client functions
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';

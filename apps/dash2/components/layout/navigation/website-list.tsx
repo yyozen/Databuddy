@@ -4,12 +4,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-
-interface Website {
-  id: string;
-  name?: string;
-  domain: string;
-}
+import type { Website } from "@databuddy/shared";
 
 interface WebsiteListProps {
   websites: Website[] | undefined;
