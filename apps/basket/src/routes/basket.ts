@@ -42,10 +42,8 @@ const basketRouter = new Hono<{ Variables: AppVariables & { enriched?: any } }>(
 basketRouter.use(websiteAuthHook());
 
 const enrichEvent = (properties: Record<string, any>, enriched: any) => {
-  // Validate and sanitize all properties first
   const validatedProperties = validateProperties(properties);
   
-  // Get the current domain from the URL with safe parsing
   let currentDomain = '';
   try {
     const urlPath = validatedProperties.__path || enriched.path;
@@ -53,16 +51,15 @@ const enrichEvent = (properties: Record<string, any>, enriched: any) => {
       currentDomain = new URL(urlPath).hostname;
     }
   } catch (e) {
-    logger.warn('Invalid URL path provided', { path: validatedProperties.__path || enriched.path });
+    logger.warn(new Error(`Invalid URL path provided: ${validatedProperties.__path || enriched.path}`));
     currentDomain = '';
   }
   
-  // Check if referrer is from the same domain
   let referrer = validatedProperties.__referrer || enriched.referrer;
   let referrerType = validatedProperties.__referrer_type;
   let referrerName = validatedProperties.__referrer_name;
   
-  if (referrer && currentDomain) {
+  if (referrer && currentDomain && referrer !== 'direct') {
     try {
       const referrerUrl = new URL(referrer as string);
       if (referrerUrl.hostname === currentDomain) {
@@ -72,7 +69,6 @@ const enrichEvent = (properties: Record<string, any>, enriched: any) => {
       }
     } catch (e) {
       logger.warn(new Error(`Invalid referrer URL: ${referrer}`));
-      // If URL parsing fails, keep the original referrer
     }
   }
 
