@@ -252,7 +252,7 @@ export function WebsitePerformanceTab({
       return { avgLoadTime: 0, fastPages: 0, slowPages: 0, totalPages: 0, performanceScore: 0 };
     }
 
-    const totalLoadTime = pages.reduce((sum, page) => sum + page.avg_load_time, 0);
+    const totalLoadTime = pages.reduce((sum: number, page: PerformanceEntry) => sum + page.avg_load_time, 0);
     const avgLoadTime = totalLoadTime / pages.length;
     const fastPages = pages.filter(page => page.avg_load_time < 1000).length;
     const slowPages = pages.filter(page => page.avg_load_time > 3000).length;

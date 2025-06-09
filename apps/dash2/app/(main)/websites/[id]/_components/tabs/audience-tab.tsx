@@ -10,10 +10,8 @@ import type { FullTabProps } from "../utils/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardHeader, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Globe, Laptop, Smartphone, Tablet, Monitor, HelpCircle, Languages, Wifi, WifiOff, MapPin, Clock } from 'lucide-react';
-import { getLanguageName } from "@databuddy/shared";
 import { 
-  processBrowserData, 
-  TechnologyIcon,
+
   PercentageBadge,
   type TechnologyTableEntry,
 } from "../utils/technology-helpers";
@@ -31,8 +29,29 @@ interface ConnectionEntry extends TechnologyTableEntry {
   category: 'connection';
 }
 
-interface LanguageEntry extends TechnologyTableEntry {
-  category: 'language';
+// Define types for raw data items
+interface BaseDataItem {
+  name: string;
+  visitors: number;
+  pageviews?: number;
+}
+
+interface ConnectionDataItem extends BaseDataItem {
+  name: string;
+  visitors: number;
+}
+
+interface BrowserDataItem {
+  visitors: number;
+  pageviews?: number;
+  browser_name?: string;
+  browser_version?: string;
+  name?: string;
+  versions?: Array<{
+    version: string;
+    visitors: number;
+    pageviews?: number;
+  }>;
 }
 
 // Helper function to get connection icon
@@ -51,12 +70,12 @@ const getConnectionIcon = (connection: string) => {
 };
 
 // Helper function to calculate percentages
-const addPercentages = (data: any[], totalField: 'visitors' | 'pageviews' = 'visitors'): GeographicEntry[] => {
+const addPercentages = (data: BaseDataItem[], totalField: 'visitors' | 'pageviews' = 'visitors'): GeographicEntry[] => {
   if (!data?.length) return [];
   
-  const total = data.reduce((sum: number, item: any) => sum + (item[totalField] || 0), 0);
+  const total = data.reduce((sum: number, item: BaseDataItem) => sum + (item[totalField] || 0), 0);
   
-  return data.map(item => ({
+  return data.map((item: BaseDataItem) => ({
     name: item.name || 'Unknown',
     visitors: item.visitors || 0,
     pageviews: item.pageviews || 0,
@@ -157,13 +176,13 @@ export function WebsiteAudienceTab({
 
   // Process grouped browser data with versions for expandable table
   const processedBrowserData = useMemo(() => {
-    const rawData = processedData.browsers;
+    const rawData: BrowserDataItem[] = processedData.browsers;
     
     // If the data is already grouped with versions (new format), use it directly
     if (rawData.length > 0 && rawData[0].versions) {
-      const totalVisitors = rawData.reduce((sum: number, browser: any) => sum + (browser.visitors || 0), 0);
+      const totalVisitors = rawData.reduce((sum: number, browser: BrowserDataItem) => sum + (browser.visitors || 0), 0);
       
-      return rawData.map((browser: any) => {
+      return rawData.map((browser: BrowserDataItem) => {
         const marketShare = totalVisitors > 0 
           ? Math.round((browser.visitors / totalVisitors) * 100)
           : 0;
@@ -174,9 +193,9 @@ export function WebsiteAudienceTab({
           id: browser.name,
           percentage: marketShare,
           marketShare: marketShare.toString(),
-          versions: browser.versions.sort((a: any, b: any) => (b.visitors || 0) - (a.visitors || 0))
+          versions: browser.versions?.sort((a, b) => (b.visitors || 0) - (a.visitors || 0)) || []
         };
-      }).sort((a: any, b: any) => (b.visitors || 0) - (a.visitors || 0));
+      }).sort((a, b) => (b.visitors || 0) - (a.visitors || 0));
     }
     
     // Fallback: Group browsers by name and aggregate versions (legacy format)
@@ -227,12 +246,12 @@ export function WebsiteAudienceTab({
 
   // Process connection types data with percentages
   const processedConnectionData = useMemo((): ConnectionEntry[] => {
-    const connectionData = processedData.device.connection_type;
+    const connectionData: ConnectionDataItem[] = processedData.device.connection_type;
     if (!connectionData?.length) return [];
     
-    const totalVisitors = connectionData.reduce((sum: number, item: any) => sum + item.visitors, 0);
+    const totalVisitors = connectionData.reduce((sum: number, item: ConnectionDataItem) => sum + item.visitors, 0);
     
-    return connectionData.map(item => ({
+    return connectionData.map((item: ConnectionDataItem) => ({
       name: item.name || 'Unknown',
       visitors: item.visitors,
       percentage: totalVisitors > 0 ? Math.round((item.visitors / totalVisitors) * 100) : 0,

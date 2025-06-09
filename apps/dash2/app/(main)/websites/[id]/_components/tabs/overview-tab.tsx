@@ -175,7 +175,7 @@ export function WebsiteOverviewTab({
   const processedTopPages = useMemo(() => {
     if (!analytics.top_pages?.length) return [];
     
-    const totalPageviews = analytics.top_pages.reduce((sum, page) => sum + (page.pageviews || 0), 0);
+          const totalPageviews = analytics.top_pages.reduce((sum: number, page: any) => sum + (page.pageviews || 0), 0);
     
     return analytics.top_pages.map(page => ({
       ...page,
