@@ -230,12 +230,18 @@ export function WebsitePerformanceTab({
     }
 
     return {
-      pages: normalizeData(performanceResults.find(r => r.queryId === 'pages')?.data?.slow_pages),
-      countries: normalizeData(performanceResults.find(r => r.queryId === 'countries')?.data?.performance_by_country),
-      devices: normalizeData(performanceResults.find(r => r.queryId === 'devices')?.data?.performance_by_device),
-      browsers: normalizeData(performanceResults.find(r => r.queryId === 'browsers')?.data?.performance_by_browser),
-      operating_systems: normalizeData(performanceResults.find(r => r.queryId === 'operating_systems')?.data?.performance_by_os),
-      regions: normalizeData(performanceResults.find(r => r.queryId === 'regions')?.data?.performance_by_region),
+      pages: normalizeData(performanceResults.find(r => r.queryId === 'pages')?.data?.slow_pages)
+        ?.sort((a, b) => a.avg_load_time - b.avg_load_time), // Sort by fastest first
+      countries: normalizeData(performanceResults.find(r => r.queryId === 'countries')?.data?.performance_by_country)
+        ?.sort((a, b) => a.avg_load_time - b.avg_load_time),
+      devices: normalizeData(performanceResults.find(r => r.queryId === 'devices')?.data?.performance_by_device)
+        ?.sort((a, b) => a.avg_load_time - b.avg_load_time),
+      browsers: normalizeData(performanceResults.find(r => r.queryId === 'browsers')?.data?.performance_by_browser)
+        ?.sort((a, b) => a.avg_load_time - b.avg_load_time),
+      operating_systems: normalizeData(performanceResults.find(r => r.queryId === 'operating_systems')?.data?.performance_by_os)
+        ?.sort((a, b) => a.avg_load_time - b.avg_load_time),
+      regions: normalizeData(performanceResults.find(r => r.queryId === 'regions')?.data?.performance_by_region)
+        ?.sort((a, b) => a.avg_load_time - b.avg_load_time),
     };
   }, [performanceResults]);
 
