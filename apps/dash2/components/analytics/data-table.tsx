@@ -248,7 +248,7 @@ export function DataTable<TData extends { name: string | number }, TValue>(
 
   if (isLoading) {
     return (
-      <Card className={cn("w-full border-0 shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden", className)}>
+      <Card className={cn("w-full border shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden", className)}>
         <CardHeader className="px-2 sm:px-3 pb-2">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
@@ -280,7 +280,7 @@ export function DataTable<TData extends { name: string | number }, TValue>(
   }
 
   return (
-    <Card className={cn("w-full border-0 shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden", className)}>
+    <Card className={cn("w-full border shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden", className)}>
       <CardHeader className="px-2 sm:px-3 pb-2">
         <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
