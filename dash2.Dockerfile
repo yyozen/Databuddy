@@ -4,6 +4,8 @@ FROM oven/bun:1-slim AS builder
 
 # Copy dependency files
 COPY ./ /app
+COPY package.json bun.lock turbo.json ./
+COPY packages/ ./packages/
 WORKDIR /app
 
 # Install dependencies
@@ -12,9 +14,6 @@ RUN bun run build
 
 # Production stage
 FROM oven/bun:1-slim
-
-
-
 # Copy built files from builder
 COPY --from=builder /app /app
 WORKDIR /app
