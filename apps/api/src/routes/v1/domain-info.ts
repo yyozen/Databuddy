@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';  
 import { db, eq, domains } from '@databuddy/db';
 import { redis } from '@databuddy/redis';
 import type { AppVariables } from '../../types';
@@ -9,13 +8,8 @@ import { logger } from '../../lib/logger';
 
 const OPR_API_KEY = process.env.OPR_API_KEY;
 const OPR_API_URL = 'https://openpagerank.com/api/v1.0/getPageRank';
-const OPR_HISTORY_URL = 'https://openpagerank.com/openpagerank/get_rank_history';
-const OPR_DISTRIBUTION_URL = 'https://openpagerank.com/openpagerank/get_rank_distribution';
-const CACHE_TTL = 3600; // 1 hour
-const HISTORY_CACHE_TTL = 86400; // 24 hours (history changes less frequently)
+const CACHE_TTL = 3600; // 1 hou
 const CACHE_PREFIX = 'domain-rank:';
-const HISTORY_CACHE_PREFIX = 'domain-history:';
-const DISTRIBUTION_CACHE_PREFIX = 'domain-distribution:';
 const RATE_LIMIT_PREFIX = 'opr-rate-limit:';
 const RATE_LIMIT_WINDOW = 3600; // 1 hour
 const RATE_LIMIT_MAX_REQUESTS = 1000; // Adjust based on your OPR plan
@@ -35,24 +29,8 @@ const oprResponseSchema = z.object({
   last_updated: z.string(),
 });
 
-const historyEntrySchema = z.object({
-  date: z.string(),
-  pagerank: z.number(),
-});
-
-const historyResponseSchema = z.object({
-  url: z.string(),
-  rank_history: z.array(historyEntrySchema),
-});
-
-const distributionResponseSchema = z.object({
-  rank_distribution: z.record(z.string(), z.number()),
-});
 
 type DomainRank = z.infer<typeof domainRankSchema>;
-type HistoryEntry = z.infer<typeof historyEntrySchema>;
-type HistoryResponse = z.infer<typeof historyResponseSchema>;
-type DistributionResponse = z.infer<typeof distributionResponseSchema>;
 
 // Rate limiting helper
 async function checkRateLimit(): Promise<boolean> {
@@ -172,10 +150,13 @@ export const domainInfoRouter = new Hono<{ Variables: AppVariables }>();
 domainInfoRouter.use('*', authMiddleware);
 
 domainInfoRouter.get('/:domain_id', 
-  zValidator('param', z.object({ domain_id: z.string().min(1) })), 
   async (c) => {
-    const { domain_id } = c.req.valid('param');
+    const { domain_id } = c.req.param();
     const user = c.get('user');
+
+    if (!user || !user.id) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
 
     try {
       const domain = await db.query.domains.findFirst({
@@ -203,6 +184,10 @@ domainInfoRouter.get('/:domain_id',
 
 domainInfoRouter.get('/batch/all', async (c) => {
   const user = c.get('user');
+
+  if (!user || !user.id) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
 
   try {
     const userDomains = await db.query.domains.findMany({

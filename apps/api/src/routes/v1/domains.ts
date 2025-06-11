@@ -1,6 +1,4 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
 import { db, domains, eq, projectAccess, and, or, inArray } from '@databuddy/db';
 import type { AppVariables } from '../../types';
 import { authMiddleware } from '../../middleware/auth';
@@ -12,17 +10,6 @@ import { randomUUID, randomBytes } from "node:crypto";
 // DNS resolver setup
 const resolver = new Resolver();
 resolver.setServers(["8.8.8.8", "1.1.1.1"]);
-
-// Validation schemas
-const createDomainSchema = z.object({
-  name: z.string().min(1, 'Domain name is required'),
-  userId: z.string().optional(),
-  projectId: z.string().optional(),
-});
-
-const updateDomainSchema = z.object({
-  name: z.string().min(1, 'Domain name is required').optional(),
-});
 
 // Types for domain context
 type DomainsContext = {
@@ -41,7 +28,7 @@ async function _getUserProjectIds(userId: string): Promise<string[]> {
     
     return projects.map(access => access.projectId);
   } catch (error) {
-    logger.error('[Domain API] Error fetching project IDs:', error);
+    logger.error('[Domain API] Error fetching project IDs:', {error, userId});
     return [];
   }
 }
@@ -110,6 +97,10 @@ domainsRouter.use('*', authMiddleware);
 domainsRouter.get('/', async (c) => {
   const user = c.get('user');
 
+  if (!user || !user.id) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
+
   try {
     const userDomains = await db.query.domains.findMany({
       where: eq(domains.userId, user.id),
@@ -126,10 +117,10 @@ domainsRouter.get('/', async (c) => {
     });
 
     const { response, status } = createResponse(true, userDomains);
-    return c.json(response, status);
+    return c.json(response, status as any);
   } catch (error) {
     const { response, status } = handleError('Fetching domains', error, { userId: user.id });
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 });
 
@@ -141,18 +132,22 @@ domainsRouter.get('/:id', async (c) => {
   const user = c.get('user');
   const { id } = c.req.param();
 
+  if (!user || !user.id) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
+
   try {
     const domain = await findAccessibleDomain(user, id);
     if (!domain) {
       const { response, status } = createResponse(false, undefined, 'Domain not found', 404);
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
 
     const { response, status } = createResponse(true, domain);
-    return c.json(response, status);
+    return c.json(response, status as any);
   } catch (error) {
     const { response, status } = handleError('Fetching domain', error, { domainId: id, userId: user.id });
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 });
 
@@ -164,6 +159,10 @@ domainsRouter.get('/project/:projectId', async (c) => {
   const user = c.get('user');
   const { projectId } = c.req.param();
 
+  if (!user || !user.id) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
+
   try {
     const access = await db.query.projectAccess.findFirst({
       where: and(eq(projectAccess.projectId, projectId), eq(projectAccess.userId, user.id)),
@@ -172,7 +171,7 @@ domainsRouter.get('/project/:projectId', async (c) => {
     
     if (!access) {
       const { response, status } = createResponse(false, undefined, "You don't have access to this project", 403);
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
 
     const projectDomains = await db.query.domains.findMany({
@@ -190,10 +189,10 @@ domainsRouter.get('/project/:projectId', async (c) => {
     });
 
     const { response, status } = createResponse(true, projectDomains);
-    return c.json(response, status);
+    return c.json(response, status as any);
   } catch (error) {
     const { response, status } = handleError('Fetching project domains', error, { projectId, userId: user.id });
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 });
 
@@ -201,9 +200,13 @@ domainsRouter.get('/project/:projectId', async (c) => {
  * Create domain - Optimized with parallel checks
  * POST /domains
  */
-domainsRouter.post('/', zValidator('json', createDomainSchema), async (c) => {
+domainsRouter.post('/', async (c) => {
   const user = c.get('user');
-  const data = c.req.valid('json');
+  const data = await c.req.json();
+
+  if (!user || !user.id) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
 
   try {
     logger.info(`[Domain API] Creating domain: ${data.name}`);
@@ -216,7 +219,7 @@ domainsRouter.post('/', zValidator('json', createDomainSchema), async (c) => {
     
     if (existingDomain) {
       const { response, status } = createResponse(false, undefined, 'Domain already exists', 400);
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
 
     const verificationToken = generateVerificationToken();
@@ -234,10 +237,10 @@ domainsRouter.post('/', zValidator('json', createDomainSchema), async (c) => {
     logger.info('[Domain API] Domain created successfully:', { id: domainId });
 
     const { response, status } = createResponse(true, createdDomain);
-    return c.json(response, status);
+    return c.json(response, status as any);
   } catch (error) {
     const { response, status } = handleError('Domain creation', error, { domainName: data.name, userId: user.id });
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 });
 
@@ -245,10 +248,14 @@ domainsRouter.post('/', zValidator('json', createDomainSchema), async (c) => {
  * Update domain - Optimized
  * PATCH /domains/:id
  */
-domainsRouter.patch('/:id', zValidator('json', updateDomainSchema), async (c) => {
+domainsRouter.patch('/:id', async (c) => {
   const user = c.get('user');
   const { id } = c.req.param();
-  const data = c.req.valid('json');
+  const data = await c.req.json();
+
+  if (!user || !user.id) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
 
   try {
     logger.info(`[Domain API] Updating domain: ${id}`);
@@ -256,7 +263,7 @@ domainsRouter.patch('/:id', zValidator('json', updateDomainSchema), async (c) =>
     const domain = await findAccessibleDomain(user, id);
     if (!domain) {
       const { response, status } = createResponse(false, undefined, 'Domain not found', 404);
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
 
     const [updatedDomain] = await db.update(domains).set({
@@ -267,10 +274,10 @@ domainsRouter.patch('/:id', zValidator('json', updateDomainSchema), async (c) =>
     logger.info('[Domain API] Domain updated successfully:', { id });
 
     const { response, status } = createResponse(true, updatedDomain);
-    return c.json(response, status);
+    return c.json(response, status as any);
   } catch (error) {
     const { response, status } = handleError('Domain update', error, { domainId: id, userId: user.id });
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 });
 
@@ -282,13 +289,17 @@ domainsRouter.delete('/:id', async (c) => {
   const user = c.get('user');
   const { id } = c.req.param();
 
+  if (!user || !user.id) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
+
   try {
     logger.info(`[Domain API] Deleting domain: ${id}`);
     
     const domain = await findAccessibleDomain(user, id);
     if (!domain) {
       const { response, status } = createResponse(false, undefined, 'Domain not found', 404);
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
 
     await db.delete(domains).where(eq(domains.id, id));
@@ -296,10 +307,10 @@ domainsRouter.delete('/:id', async (c) => {
     logger.info('[Domain API] Domain deleted successfully:', { id });
 
     const { response, status } = createResponse(true, { success: true });
-    return c.json(response, status);
+    return c.json(response, status as any);
   } catch (error) {
     const { response, status } = handleError('Domain deletion', error, { domainId: id, userId: user.id });
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 });
 
@@ -311,9 +322,13 @@ domainsRouter.post('/:id/verify', async (c) => {
   const user = c.get('user');
   const { id } = c.req.param();
 
+  if (!user || !user.id) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
+
   if (!id) {
     const { response, status } = createResponse(false, undefined, 'Invalid domain ID', 400);
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 
   try {
@@ -322,12 +337,12 @@ domainsRouter.post('/:id/verify', async (c) => {
     const domain = await findAccessibleDomain(user, id);
     if (!domain) {
       const { response, status } = createResponse(false, undefined, 'Domain not found', 404);
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
 
     if (!domain.name) {
       const { response, status } = createResponse(false, undefined, 'Invalid domain name', 400);
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
 
     const isLocalhost = domain.name.includes("localhost") || domain.name.includes("127.0.0.1");
@@ -343,7 +358,7 @@ domainsRouter.post('/:id/verify', async (c) => {
         verified: true, 
         message: "Localhost domain automatically verified" 
       });
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
     
     // Check if already verified
@@ -352,7 +367,7 @@ domainsRouter.post('/:id/verify', async (c) => {
         verified: true, 
         message: "Domain already verified" 
       });
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
     
     const rootDomain = domain.name.replace(/^www\./, "");
@@ -363,7 +378,7 @@ domainsRouter.post('/:id/verify', async (c) => {
         verified: false, 
         message: "Missing verification token. Please regenerate the token and try again." 
       });
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
     
     const dnsRecord = `_databuddy.${rootDomain}`;
@@ -393,7 +408,7 @@ domainsRouter.post('/:id/verify', async (c) => {
         verified: false, 
         message: errorMessage 
       });
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
     
     if (!txtRecords || txtRecords.length === 0) {
@@ -403,7 +418,7 @@ domainsRouter.post('/:id/verify', async (c) => {
         verified: false, 
         message: "No DNS records found. Please add the TXT record and wait for DNS propagation (which can take up to 24-48 hours)." 
       });
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
     
     const isVerified = txtRecords.some(record => 
@@ -433,10 +448,10 @@ domainsRouter.post('/:id/verify', async (c) => {
       verified: isVerified, 
       message 
     });
-    return c.json(response, status);
+    return c.json(response, status as any);
   } catch (error) {
     const { response, status } = handleError('Domain verification', error, { domainId: id, userId: user.id });
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 });
 
@@ -448,13 +463,17 @@ domainsRouter.post('/:id/regenerate-token', async (c) => {
   const user = c.get('user');
   const { id } = c.req.param();
 
+  if (!user || !user.id) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
+
   try {
     logger.info(`[Domain API] Regenerating token for domain: ${id}`);
     
     const domain = await findAccessibleDomain(user, id);
     if (!domain) {
       const { response, status } = createResponse(false, undefined, 'Domain not found', 404);
-      return c.json(response, status);
+      return c.json(response, status as any);
     }
 
     const verificationToken = generateVerificationToken();
@@ -469,10 +488,10 @@ domainsRouter.post('/:id/regenerate-token', async (c) => {
     logger.info('[Domain API] Token regenerated successfully:', { id });
 
     const { response, status } = createResponse(true, updatedDomain);
-    return c.json(response, status);
+    return c.json(response, status as any);
   } catch (error) {
     const { response, status } = handleError('Token regeneration', error, { domainId: id, userId: user.id });
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 });
 

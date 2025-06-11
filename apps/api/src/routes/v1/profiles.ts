@@ -19,27 +19,23 @@ const mapCountryCode = (country: string): string => {
 // Apply timezone middleware
 profilesRouter.use('*', timezoneMiddleware);
 
-const analyticsQuerySchema = z.object({
-    website_id: z.string().min(1, 'Website ID is required'),
-    start_date: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/, 'Invalid date format (YYYY-MM-DD)').optional(),
-    end_date: z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/, 'Invalid date format (YYYY-MM-DD)').optional(),
-    interval: z.enum(['day', 'week', 'month', 'auto']).default('day'),
-    granularity: z.enum(['daily', 'hourly']).default('daily'),
-    limit: z.coerce.number().int().min(1).max(1000).default(30),
-    page: z.coerce.number().int().min(1).default(1),
-}).merge(timezoneQuerySchema);
-
 // GET /analytics/profiles - retrieves visitor profiles with their sessions
 profilesRouter.get('/', async (c) => {
     const params = await c.req.query();
     const timezoneInfo = useTimezone(c);
+    if (!params.page) {
+        return c.json({
+            success: false,
+            error: "Page is required"
+        }, 400);
+    }
     
     try {
       const endDate = params.end_date || new Date().toISOString().split('T')[0];
       const startDate = params.start_date || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const profilesLimit = params.limit;
       const page = params.page || 1;
-      const offset = (page - 1) * profilesLimit;
+      const offset = (Number(page) - 1) * Number(profilesLimit);
       
       // 1. Get paginated unique visitor IDs with their basic stats
       const visitorIdsBuilder = createSqlBuilder();
@@ -56,7 +52,7 @@ profilesRouter.get('/', async (c) => {
       };
       visitorIdsBuilder.sb.groupBy = { visitor_id: 'anonymous_id' };
       visitorIdsBuilder.sb.orderBy = { session_count: 'session_count DESC', last_visit: 'last_visit DESC' };
-      visitorIdsBuilder.sb.limit = profilesLimit;
+      visitorIdsBuilder.sb.limit = Number(profilesLimit);
       visitorIdsBuilder.sb.offset = offset;
       
       const visitorIdsResult = await chQuery(visitorIdsBuilder.getSql());
@@ -68,7 +64,7 @@ profilesRouter.get('/', async (c) => {
           date_range: { start_date: startDate, end_date: endDate },
           total_visitors: 0,
           returning_visitors: 0,
-          pagination: { page, limit: profilesLimit, hasNext: false,  hasPrev: page > 1 },
+          pagination: { page: Number(page), limit: Number(profilesLimit), hasNext: false,  hasPrev: Number(page) > 1 },
           timezone: { timezone: timezoneInfo.timezone, detected: timezoneInfo.detected, source: timezoneInfo.source }
         });
       }
@@ -182,7 +178,7 @@ profilesRouter.get('/', async (c) => {
         profiles.push(profile);
       }
       
-      const hasNext = page * profilesLimit < totalVisitors;
+      const hasNext = Number(page) * Number(profilesLimit) < totalVisitors;
 
       return c.json({
         success: true,
@@ -190,7 +186,7 @@ profilesRouter.get('/', async (c) => {
         date_range: { start_date: startDate, end_date: endDate },
         total_visitors: totalVisitors, 
         returning_visitors: returningVisitors,
-        pagination: { page, limit: profilesLimit, hasNext, hasPrev: page > 1 },
+        pagination: { page: Number(page), limit: Number(profilesLimit), hasNext, hasPrev: Number(page) > 1 },
         timezone: { timezone: timezoneInfo.timezone, detected: timezoneInfo.detected, source: timezoneInfo.source }
       });
     } catch (error) {

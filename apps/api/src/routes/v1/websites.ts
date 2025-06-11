@@ -1,27 +1,10 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
 import { db, websites, domains, projectAccess, eq, and, or, inArray } from '@databuddy/db';
 import { authMiddleware } from '../../middleware/auth';
 import { logger } from '../../lib/logger';
 import { nanoid } from 'nanoid';
 import { cacheable } from '@databuddy/redis';
 import type { AppVariables } from '../../types';
-
-// Validation schemas
-const createWebsiteSchema = z.object({
-  name: z.string().min(1),
-  domainId: z.string().min(1),
-  domain: z.string().min(1),
-  subdomain: z.string().optional()
-});
-
-const updateWebsiteSchema = z.object({
-  name: z.string().min(1)
-});
-
-const getWebsiteByIdSchema = z.object({
-  id: z.string().min(1)
-});
 
 type WebsitesContext = {
   Variables: AppVariables & {
@@ -46,7 +29,7 @@ async function _getUserProjectIds(userId: string): Promise<string[]> {
     
     return projects.map(access => access.projectId);
   } catch (error) {
-    logger.error('[Website API] Error fetching project IDs:', error);
+    logger.error('[Website API] Error fetching project IDs:', { error });
     return [];
   }
 }
@@ -78,7 +61,7 @@ async function checkWebsiteAccess(id: string, userId: string) {
       )
     });
   } catch (error) {
-    logger.error('[Website API] Error checking website access:', error);
+    logger.error('[Website API] Error checking website access:', { error });
     return null;
   }
 }
@@ -100,7 +83,7 @@ async function _verifyDomainAccess(domainId: string, userId: string): Promise<bo
 
     return !!domain;
   } catch (error) {
-    logger.error('[Website API] Error verifying domain access:', error);
+    logger.error('[Website API] Error verifying domain access:', { error });
     return false;
   }
 }
@@ -168,7 +151,7 @@ websitesRouter.post('/', async (c) => {
       data: website
     });
   } catch (error) {
-    logger.error('[Website API] Error creating website:', error);
+    logger.error('[Website API] Error creating website:', { error });
     
     if (error instanceof Error) {
       return c.json({ 
@@ -198,7 +181,7 @@ websitesRouter.patch('/:id', async (c) => {
 
     const website = await checkWebsiteAccess(id, user.id);
     if (!website) {
-      logger.info('[Website API] Website not found or no access:', id);
+      logger.info('[Website API] Website not found or no access:', { id });
       return c.json({ 
         success: false, 
         error: "Website not found" 
@@ -218,7 +201,7 @@ websitesRouter.patch('/:id', async (c) => {
       data: updatedWebsite
     });
   } catch (error) {
-    logger.error('[Website API] Error updating website:', error);
+    logger.error('[Website API] Error updating website:', { error });
     if (error instanceof Error) {
       return c.json({ 
         success: false, 
@@ -251,7 +234,7 @@ websitesRouter.get('/', async (c) => {
       data: userWebsites
     });
   } catch (error) {
-    logger.error('[Website API] Error fetching user websites:', error);
+    logger.error('[Website API] Error fetching user websites:', { error });
     return c.json({ 
       success: false, 
       error: "Failed to fetch websites" 
@@ -294,7 +277,7 @@ websitesRouter.get('/project/:projectId', async (c) => {
       data: projectWebsites
     });
   } catch (error) {
-    logger.error('[Website API] Error fetching project websites:', error);
+    logger.error('[Website API] Error fetching project websites:', { error });
     return c.json({ 
       success: false, 
       error: "Failed to fetch project websites" 
@@ -347,7 +330,7 @@ websitesRouter.get('/:id', async (c) => {
       data: website
     });
   } catch (error) {
-    logger.error('[Website API] Error fetching website:', error);
+    logger.error('[Website API] Error fetching website:', { error });
     return c.json({ 
       success: false, 
       error: "Failed to fetch website" 
@@ -381,7 +364,7 @@ websitesRouter.delete('/:id', async (c) => {
       data: { success: true }
     });
   } catch (error) {
-    logger.error('[Website API] Error deleting website:', error);
+    logger.error('[Website API] Error deleting website:', { error });
     return c.json({ 
       success: false, 
       error: "Failed to delete website" 

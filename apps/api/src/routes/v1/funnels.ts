@@ -1,11 +1,9 @@
 import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { eq, and, isNull, desc } from 'drizzle-orm'
 
 import { authMiddleware } from '../../middleware/auth'
 import { websiteAuthHook } from '../../middleware/website'
-import { timezoneMiddleware } from '../../middleware/timezone'
 import { logger } from '../../lib/logger'
 import { db, funnelDefinitions, funnelGoals, chQuery } from '@databuddy/db'
 
@@ -145,12 +143,11 @@ funnelRouter.get('/:id', async (c) => {
 // Create a new funnel
 funnelRouter.post(
   '/',
-  zValidator('json', createFunnelSchema),
   async (c) => {
     try {
       const website = c.get('website')
       const user = c.get('user')
-      const { name, description, steps } = c.req.valid('json')
+      const { name, description, steps } = await c.req.json()
       
       const funnelId = crypto.randomUUID()
       
@@ -196,12 +193,11 @@ funnelRouter.post(
 // Update a funnel
 funnelRouter.put(
   '/:id',
-  zValidator('json', updateFunnelSchema),
   async (c) => {
     try {
       const website = c.get('website')
       const funnelId = c.req.param('id')
-      const updates = c.req.valid('json')
+      const updates = await c.req.json()
       
       const [updatedFunnel] = await db
         .update(funnelDefinitions)
@@ -297,12 +293,11 @@ funnelRouter.delete('/:id', async (c) => {
 // Create a goal for a funnel
 funnelRouter.post(
   '/:id/goals',
-  zValidator('json', createGoalSchema),
   async (c) => {
     try {
       const website = c.get('website')
       const funnelId = c.req.param('id')
-      const { goalType, targetValue, description } = c.req.valid('json')
+      const { goalType, targetValue, description } = await c.req.json()
       
       // Verify funnel exists and belongs to website
       const funnel = await db

@@ -5,8 +5,7 @@
  */
 
 import { Hono } from 'hono';
-import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';  
 
 import { authMiddleware } from '../../middleware/auth';
 import { timezoneMiddleware, useTimezone, timezoneQuerySchema } from '../../middleware/timezone';
@@ -46,8 +45,8 @@ analyticsRouter.use('*', timezoneMiddleware);
  * Get summary statistics
  * GET /analytics/summary
  */
-analyticsRouter.get('/summary', zValidator('query', analyticsQuerySchema), async (c: any) => {
-  const params = c.req.valid('query');
+analyticsRouter.get('/summary', async (c: any) => {
+  const params = await c.req.query();
   const website = c.get('website');
 
   if (!website?.id) {

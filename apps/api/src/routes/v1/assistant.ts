@@ -5,8 +5,7 @@
  */
 
 import { Hono } from 'hono';
-import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';  
 import { chQuery } from '@databuddy/db';
 import type { AppVariables } from '../../types';
 import { authMiddleware } from '../../middleware/auth';
@@ -351,8 +350,8 @@ assistantRouter.use('*', websiteAuthHook);
  * Process AI request with streaming updates
  * POST /assistant/stream
  */
-assistantRouter.post('/stream', zValidator('json', chatRequestSchema), async (c) => {
-  const { message, website_id } = c.req.valid('json') as z.infer<typeof chatRequestSchema>;
+assistantRouter.post('/stream', async (c) => {
+  const { message, website_id } = await c.req.json();
   const website = c.get('website');
   const user = c.get('user');
 
@@ -401,7 +400,7 @@ assistantRouter.post('/stream', zValidator('json', chatRequestSchema), async (c)
         });
 
         const aiStart = Date.now();
-        const { context } = c.req.valid('json');
+        const { context } = await c.req.json();
         
         const fullPrompt = enhancedAnalysisPrompt(message, website_id, websiteHostname, context?.previousMessages);
         

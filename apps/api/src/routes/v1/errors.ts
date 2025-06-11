@@ -1,28 +1,17 @@
 import { createSqlBuilder } from "../../builders/analytics";
 
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";  
 import type { AppVariables } from "../../types";
-import { timezoneQuerySchema } from "../../middleware/timezone";
-import { z } from "zod";
 import { logger } from "../../lib/logger";
 import { chQuery } from "@databuddy/db";
 import { parseUserAgentDetails } from "../../utils/ua";
 
 export const errorsRouter = new Hono<{ Variables: AppVariables }>();
 
-const analyticsQuerySchema = z.object({
-    website_id: z.string().min(1, 'Website ID is required'),
-    start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional(),
-    end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional(),
-    limit: z.coerce.number().int().min(1).max(1000).default(30),
-    page: z.coerce.number().int().min(1).default(1)
-}).merge(timezoneQuerySchema);
-
 // Helper function to create error details builder (modified for pagination)
 function createErrorDetailsBuilder(websiteId: string, startDate: string, endDate: string, limit: number, page: number) {
   const builder = createSqlBuilder('events');
-  const offset = (page - 1) * limit;
+  const offset = (Number(page) - 1) * Number(limit);
   
   builder.sb.select = {
     time: 'time',
@@ -47,20 +36,20 @@ function createErrorDetailsBuilder(websiteId: string, startDate: string, endDate
     time: 'time DESC'
   };
   
-  builder.sb.limit = limit;
+  builder.sb.limit = Number(limit);
   builder.sb.offset = offset;
   
   return builder;
 }
 
-errorsRouter.get('/', zValidator('query', analyticsQuerySchema), async (c) => {
-  const params = c.req.valid('query');
+errorsRouter.get('/', async (c) => {
+  const params = await c.req.query();
 
   try {
     const endDate = params.end_date || new Date().toISOString().split('T')[0];
     const startDate = params.start_date || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const limit = params.limit;
-    const page = params.page;
+    const limit = Number(params.limit);
+    const page = Number(params.page);
 
     // --- Query 1: Error Types Summary and Pivoted Timeline --- 
     // Step 1.1: Get Top N Error Types

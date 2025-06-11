@@ -59,18 +59,19 @@ const formatSessionObject = (session: any, visitorSessionCount: number) => {
 sessionsRouter.get('/', async (c) => {
   const params = await c.req.query();
   const timezoneInfo = useTimezone(c);
-  
+  const page = Number(params.page);
+  const limit = Number(params.limit);
 
   try {
     const endDate = params.end_date || new Date().toISOString().split('T')[0];
     const startDate = params.start_date || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     
     // Calculate pagination
-    const offset = (params.page - 1) * params.limit;
+    const offset = (page - 1) * limit;
     
     // Get paginated sessions
-    const sessionsBuilder = createSessionsBuilder(params.website_id, startDate, endDate, params.limit);
-    sessionsBuilder.sb.limit = params.limit;
+    const sessionsBuilder = createSessionsBuilder(params.website_id, startDate, endDate, limit);
+    sessionsBuilder.sb.limit = limit;
     sessionsBuilder.sb.offset = offset;
     
     const sessionsResult = await chQuery(sessionsBuilder.getSql());
@@ -83,10 +84,10 @@ sessionsRouter.get('/', async (c) => {
       success: true,
       sessions: formattedSessions,
       pagination: {
-        page: params.page,
-        limit: params.limit,
-        hasNext: sessionsResult.length === params.limit,
-        hasPrev: params.page > 1
+        page,
+        limit,
+        hasNext: sessionsResult.length === limit,
+        hasPrev: page > 1
       },
       date_range: { start_date: startDate, end_date: endDate },
       timezone: {
