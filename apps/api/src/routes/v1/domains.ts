@@ -422,9 +422,15 @@ domainsRouter.post('/:id/verify', async (c) => {
     }
     
     const isVerified = txtRecords.some(record => 
-      Array.isArray(record) && record.some(txt => 
-        typeof txt === "string" && txt.includes(expectedToken)
-      )
+      Array.isArray(record) && record.some(txt => {
+        if (typeof txt !== "string") return false;
+        
+        // Trim quotes from both the DNS record and expected token for comparison
+        const cleanTxt = txt.replace(/^["']|["']$/g, '').trim();
+        const cleanToken = expectedToken.replace(/^["']|["']$/g, '').trim();
+        
+        return cleanTxt.includes(cleanToken);
+      })
     );
     
     const updateData = isVerified 
