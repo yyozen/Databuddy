@@ -183,7 +183,7 @@ export default function WebsitesPage() {
         {isError && <ErrorState onRetry={handleRetry} />}
 
         {/* Show empty state */}
-        {!isLoading && !isError && websites && websites.length === 0 && <EnhancedEmptyState />}
+        {!isLoading && !isError && websites && websites.length === 0 && <EnhancedEmptyState onAddWebsite={() => setDialogOpen(true)} />}
 
         {/* Show website grid */}
         {!isLoading && !isError && websites && websites.length > 0 && (
