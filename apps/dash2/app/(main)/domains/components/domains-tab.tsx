@@ -18,6 +18,7 @@ export function DomainsTab() {
   const {
     state,
     actions,
+    updateActions,
     toggleExpanded,
     handleVerifyDomain,
     handleDeleteDomain,
@@ -114,6 +115,7 @@ export function DomainsTab() {
               onRegenerate={() => handleRegenerateToken(domain.id)}
               onRetry={() => handleRetryFailedDomain(domain.id)}
               onCreate={() => handleCreateWebsite(domain.id, domain.name)}
+              updateActions={updateActions}
             />
           </div>
 
