@@ -791,115 +791,6 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
       AND event_name = 'screen_view'
   `,
 
-  // Real-time sessions (last 5 minutes)
-  realtime_sessions: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
-    WITH recent_sessions AS (
-      SELECT 
-        session_id,
-        anonymous_id,
-        MIN(time) as session_start,
-        MAX(time) as last_activity,
-        COUNT(*) as events_count,
-        countIf(event_name = 'screen_view') as page_views,
-        any(country) as country,
-        any(region) as region,
-        any(device_type) as device_type,
-        any(browser_name) as browser,
-        any(os_name) as os,
-        any(path) as current_page,
-        any(referrer) as referrer,
-        dateDiff('second', MIN(time), MAX(time)) as duration
-      FROM analytics.events
-      WHERE client_id = ${escapeSqlString(websiteId)}
-        AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
-        AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
-      GROUP BY session_id, anonymous_id
-      HAVING MAX(time) >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
-    )
-    SELECT 
-      session_id as name,
-      session_id,
-      anonymous_id as visitor_id,
-      session_start,
-      last_activity,
-      events_count,
-      page_views,
-      country,
-      region,
-      device_type,
-      browser,
-      os,
-      current_page,
-      referrer,
-      duration,
-      dateDiff('second', last_activity, now()) as seconds_since_last_activity
-    FROM recent_sessions
-    ORDER BY last_activity DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `,
-
-  // Real-time activity summary
-  realtime_summary: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
-    SELECT 
-      'summary' as name,
-      COUNT(DISTINCT session_id) as active_sessions,
-      COUNT(DISTINCT anonymous_id) as active_visitors,
-      COUNT(*) as total_events,
-      countIf(event_name = 'screen_view') as page_views,
-      countIf(event_name = 'error') as errors,
-      uniq(path) as unique_pages
-    FROM analytics.events
-    WHERE client_id = ${escapeSqlString(websiteId)}
-      AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
-      AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
-  `,
-
-  // Real-time top pages
-  realtime_top_pages: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
-    SELECT 
-      path as name,
-      COUNT(*) as page_views,
-      COUNT(DISTINCT session_id) as sessions,
-      COUNT(DISTINCT anonymous_id) as visitors
-    FROM analytics.events
-    WHERE client_id = ${escapeSqlString(websiteId)}
-      AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
-      AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
-      AND event_name = 'screen_view'
-      AND path != ''
-    GROUP BY path
-    ORDER BY page_views DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `,
-
-  // Real-time events stream
-  realtime_events: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
-    SELECT 
-      id as event_id,
-      time,
-      event_name,
-      path,
-      session_id,
-      anonymous_id as visitor_id,
-      country,
-      device_type,
-      browser_name as browser,
-      os_name as os,
-      referrer,
-      CASE 
-        WHEN event_name = 'screen_view' THEN 'Page View'
-        WHEN event_name = 'error' THEN 'Error'
-        WHEN event_name = 'page_exit' THEN 'Page Exit'
-        ELSE event_name
-      END as event_type
-    FROM analytics.events
-    WHERE client_id = ${escapeSqlString(websiteId)}
-      AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
-      AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
-    ORDER BY time DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `,
-
   // Category aliases for simplified parameter names
   pages: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => 
     PARAMETER_BUILDERS.top_pages(websiteId, startDate, endDate, limit, offset),
@@ -1400,9 +1291,7 @@ function buildUnifiedQuery(
       const builder = PARAMETER_BUILDERS[parameter as keyof typeof PARAMETER_BUILDERS]
       if (!builder) continue
       
-      // Check if endDate is already a full timestamp (contains 'T') or just a date
-      const formattedEndDate = adjEndDate.includes('T') ? adjEndDate : `${adjEndDate} 23:59:59`
-      let sql = builder(websiteId, adjStartDate, formattedEndDate, limit, offset, filters)
+      let sql = builder(websiteId, adjStartDate, `${adjEndDate} 23:59:59`, limit, offset, filters)
       
       // Apply filters if provided
       if (filters.length > 0) {
@@ -1627,9 +1516,7 @@ async function processBatchQueries(
           const results = await Promise.all(
             parameters.map(async (parameter: string) => {
               const builder = PARAMETER_BUILDERS[parameter as keyof typeof PARAMETER_BUILDERS]
-              // Check if endDate is already a full timestamp (contains 'T') or just a date
-              const formattedEndDate = adjEndDate.includes('T') ? adjEndDate : `${adjEndDate} 23:59:59`
-              let sql = builder(websiteId, adjStartDate, formattedEndDate, limit, offset, filters)
+              let sql = builder(websiteId, adjStartDate, `${adjEndDate} 23:59:59`, limit, offset, filters)
               
               if (filters.length > 0) {
                 const filterClauses = filters.map((filter: any) => {
@@ -1785,8 +1672,7 @@ queryRouter.get('/parameters', async (c) => {
       errors: ['recent_errors', 'error_types', 'errors_by_page', 'errors_by_browser', 'errors_by_os', 'errors_by_country', 'errors_by_device', 'error_trends', 'sessions_summary'],
       custom_events: ['custom_events', 'custom_event_details', 'custom_events_by_page', 'custom_events_by_user', 'custom_event_properties', 'custom_event_property_values'],
       user_journeys: ['user_journeys', 'journey_paths', 'journey_dropoffs', 'journey_entry_points'],
-      funnel_analysis: ['funnel_analysis', 'funnel_performance', 'funnel_steps_breakdown', 'funnel_user_segments'],
-      realtime: ['realtime_sessions', 'realtime_summary', 'realtime_top_pages', 'realtime_events']
+      funnel_analysis: ['funnel_analysis', 'funnel_performance', 'funnel_steps_breakdown', 'funnel_user_segments']
     }
   })
 })
