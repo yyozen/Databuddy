@@ -734,7 +734,7 @@ export function WebsiteAudienceTab({
       </div>
 
       {/* Screen Resolutions */}
-      <Card className="w-full border-0 shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden">
+      <Card className="w-full border shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden">
         <CardHeader className="px-3 pb-2">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
