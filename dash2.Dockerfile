@@ -19,6 +19,9 @@ RUN bun run build
 WORKDIR /build/apps/dash2
 ENV NODE_ENV=production 
 ENV REDIS_URL=redis://localhost
+ENV DATABASE_URL=postgres://localhost
+ENV CLICKHOUSE_URL=https://localhost
+ENV NEXT_PUBLIC_API_URL=https://localhost
 ENV PORT=3000
 ENV BUN_ENV=production 
 RUN bun install 
@@ -34,8 +37,9 @@ WORKDIR /app
 # Set environment variables
 ENV NODE_ENV=production 
 ENV REDIS_URL=redis://localhost
-ENV PORT=3000
-ENV BUN_ENV=production 
+ENV DATABASE_URL=postgres://localhost
+ENV CLICKHOUSE_URL=https://localhost
+ENV NEXT_PUBLIC_API_URL=https://localhost
 
 # Expose port
 EXPOSE 3000
