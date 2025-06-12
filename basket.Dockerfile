@@ -1,36 +1,36 @@
-# Build stage
-FROM oven/bun:1-slim AS builder
+FROM oven/bun AS build
 
 WORKDIR /app
 
-# Copy dependency files
-COPY package.json bun.lock turbo.json ./
-COPY apps/basket/package.json ./apps/basket/
+# Cache packages installation
+COPY package.json package.json
+COPY apps/basket/package.json ./apps/basket/package.json
+
+# Copy workspace packages that basket depends on
 COPY packages/ ./packages/
 
-# Install dependencies
 RUN bun install
 
-# Copy source code
-COPY apps/basket/ ./apps/basket/
+COPY apps/basket/src ./apps/basket/src
 
-# Production stage
-FROM oven/bun:1-slim
+ENV NODE_ENV=production
+
+RUN bun build \
+	--compile \
+	--minify-whitespace \
+	--minify-syntax \
+	--target bun \
+	--outfile server \
+	./apps/basket/src/index.ts
+
+FROM gcr.io/distroless/base
 
 WORKDIR /app
 
-# Copy built files from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/basket ./apps/basket
-COPY --from=builder /app/packages ./packages
+COPY --from=build /app/server server
 
-# Set environment variables
-ENV NODE_ENV=production \
-    PORT=4000 \
-    BUN_ENV=production
+ENV NODE_ENV=production
 
-# Expose port
+CMD ["./server"]
+
 EXPOSE 4000
-# Start API
-WORKDIR /app/apps/basket
-CMD ["bun", "run", "src/index.ts"]
