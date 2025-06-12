@@ -254,5 +254,65 @@ const app = new Elysia()
     
     return { status: 'error', message: 'Unknown event type' }
   })
+  .post('/batch', async ({ body, query, request }: { body: any, query: any, request: Request }) => {
+    // Validate payload size first
+    if (!validatePayloadSize(body, VALIDATION_LIMITS.PAYLOAD_MAX_SIZE)) {
+      return { status: 'error', message: 'Payload too large' }
+    }
+    
+    // Handle batch events
+    if (!Array.isArray(body)) {
+      return { status: 'error', message: 'Batch endpoint expects array of events' }
+    }
+    
+    if (body.length > VALIDATION_LIMITS.BATCH_MAX_SIZE) {
+      return { status: 'error', message: 'Batch too large' }
+    }
+    
+    const clientId = sanitizeString(query.client_id, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH)
+    
+    // Auth check
+    if (!clientId) {
+      return { status: 'error', message: 'Missing client ID' }
+    }
+    
+    const website = await getWebsiteById(clientId)
+    if (!website || website.status !== 'ACTIVE') {
+      return { status: 'error', message: 'Invalid or inactive client ID' }
+    }
+    
+    const origin = request.headers.get('origin')
+    if (origin && !isValidOrigin(origin, website.domain)) {
+      return { status: 'error', message: 'Origin not authorized' }
+    }
+    
+    const userAgent = sanitizeString(request.headers.get('user-agent'), VALIDATION_LIMITS.STRING_MAX_LENGTH) || ''
+    const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || ''
+    
+    // Process each event in the batch
+    const results = []
+    for (const event of body) {
+      const eventType = event.type || 'track'
+      
+      try {
+        if (eventType === 'track') {
+          await insertTrackEvent(event, clientId, userAgent, ip)
+          results.push({ status: 'success', type: 'track', eventId: event.eventId })
+        } else if (eventType === 'error') {
+          await insertError(event, clientId)
+          results.push({ status: 'success', type: 'error', eventId: event.payload?.eventId })
+        } else if (eventType === 'web_vitals') {
+          await insertWebVitals(event, clientId)
+          results.push({ status: 'success', type: 'web_vitals', eventId: event.payload?.eventId })
+        } else {
+          results.push({ status: 'error', message: 'Unknown event type', eventType })
+        }
+      } catch (error) {
+        results.push({ status: 'error', message: 'Processing failed', eventType, error: String(error) })
+      }
+    }
+    
+    return { status: 'success', batch: true, processed: results.length, results }
+  })
 
 export default app
