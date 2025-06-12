@@ -1,5 +1,4 @@
 import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 
 import { authMiddleware } from '../../middleware/auth'
@@ -26,7 +25,8 @@ const singleQuerySchema = z.object({
   parameters: z.array(z.string()).min(1),
   limit: z.number().min(1).max(1000).default(100),
   page: z.number().min(1).default(1),
-  filters: z.array(filterSchema).default([])
+  filters: z.array(filterSchema).default([]),
+  granularity: z.enum(['hourly', 'daily']).default('daily')
 });
 
 interface Website {
@@ -54,7 +54,8 @@ type ParameterBuilder = (
   startDate: string,
   endDate: string,
   limit: number,
-  offset: number
+  offset: number,
+  granularity?: 'hourly' | 'daily'
 ) => string;
 
 const processLanguageData = (data: any[]) => 
@@ -354,7 +355,7 @@ interface BuilderConfig {
 
 // Common SQL builder functions
 function createQueryBuilder(config: BuilderConfig): ParameterBuilder {
-  return (websiteId, startDate, endDate, limit, offset) => {
+  return (websiteId, startDate, endDate, limit, offset, granularity = 'daily') => {
     const whereClauses = [
       `client_id = ${escapeSqlString(websiteId)}`,
       `time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})`,
@@ -394,8 +395,8 @@ function createStandardQuery(nameColumn: string, groupByColumns: string[], extra
 }
 
 function createAlias(targetParameter: string): ParameterBuilder {
-  return (websiteId, startDate, endDate, limit, offset) => 
-    PARAMETER_BUILDERS[targetParameter](websiteId, startDate, endDate, limit, offset);
+  return (websiteId, startDate, endDate, limit, offset, granularity = 'daily') => 
+    PARAMETER_BUILDERS[targetParameter](websiteId, startDate, endDate, limit, offset, granularity);
 }
 
 
@@ -403,7 +404,7 @@ function createAlias(targetParameter: string): ParameterBuilder {
 // Parameter registry with consolidated builders
 const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   // Device & Browser
-  device_type: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  device_type: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       COALESCE(device_type, 'desktop') as name,
       uniq(anonymous_id) as visitors,
@@ -421,7 +422,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
 
   browser_name: createStandardQuery('browser_name', ['browser_name'], "browser_name != ''"),
   
-  browsers_grouped: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  browsers_grouped: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       CONCAT(browser_name, ' ', browser_version) as name,
       browser_name,
@@ -453,7 +454,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   language: createStandardQuery('language', ['language'], "language != '' AND language IS NOT NULL"),
 
   // Pages
-  top_pages: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  top_pages: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       path as name,
       uniq(anonymous_id) as visitors,
@@ -470,7 +471,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  exit_page: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  exit_page: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     WITH sessions AS (
       SELECT
         session_id,
@@ -518,7 +519,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   utm_campaign: createStandardQuery('utm_campaign', ['utm_campaign'], "utm_campaign != ''"),
   utm_content: createStandardQuery('utm_content', ['utm_content'], "utm_content != ''"),
   utm_term: createStandardQuery('utm_term', ['utm_term'], "utm_term != ''"),
-  referrer: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  referrer: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       referrer as name,
       uniq(anonymous_id) as visitors,
@@ -585,7 +586,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     orderBy: 'avg_load_time DESC'
   }),
 
-  recent_errors: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  recent_errors: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       message as error_message,
       stack as error_stack,
@@ -608,7 +609,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  error_types: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  error_types: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       message as name,
       COUNT(*) as total_occurrences,
@@ -626,7 +627,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  errors_by_page: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  errors_by_page: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       path as name,
       COUNT(*) as total_errors,
@@ -643,7 +644,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  errors_by_browser: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  errors_by_browser: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       CONCAT(browser_name, ' ', browser_version) as name,
       COUNT(*) as total_errors,
@@ -660,7 +661,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  errors_by_os: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  errors_by_os: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       os_name as name,
       COUNT(*) as total_errors,
@@ -677,7 +678,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  errors_by_country: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  errors_by_country: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       country as name,
       COUNT(*) as total_errors,
@@ -694,7 +695,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  errors_by_device: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  errors_by_device: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       device_type as name,
       COUNT(*) as total_errors,
@@ -711,7 +712,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  error_trends: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  error_trends: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       toDate(timestamp) as date,
       COUNT(*) as total_errors,
@@ -729,7 +730,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   `,
 
   // Web Vitals queries using dedicated web_vitals table
-  web_vitals_overview: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  web_vitals_overview: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       'overview' as name,
       COUNT(*) as total_measurements,
@@ -752,7 +753,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  web_vitals_by_page: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  web_vitals_by_page: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       path as name,
       COUNT(*) as total_measurements,
@@ -772,7 +773,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  web_vitals_by_device: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  web_vitals_by_device: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       device_type as name,
       COUNT(*) as total_measurements,
@@ -792,7 +793,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  web_vitals_trends: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  web_vitals_trends: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       toDate(timestamp) as date,
       COUNT(*) as total_measurements,
@@ -812,7 +813,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   `,
 
   // Custom Events queries
-  custom_events: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  custom_events: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       event_name as name,
       COUNT(*) as total_events,
@@ -834,7 +835,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  custom_event_details: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  custom_event_details: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       event_name,
       time,
@@ -859,7 +860,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  custom_events_by_page: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  custom_events_by_page: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       path as name,
       COUNT(*) as total_events,
@@ -880,7 +881,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  custom_events_by_user: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  custom_events_by_user: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       anonymous_id as name,
       COUNT(*) as total_events,
@@ -902,7 +903,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  custom_event_properties: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  custom_event_properties: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     WITH property_analysis AS (
       SELECT 
         event_name,
@@ -938,7 +939,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   `,
 
   // Summary metrics (replaces summary.ts functionality)
-  summary_metrics: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  summary_metrics: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     WITH session_metrics AS (
       SELECT
         session_id,
@@ -999,7 +1000,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   `,
 
   // Today's metrics
-  today_metrics: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  today_metrics: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     WITH session_metrics AS (
       SELECT
         session_id,
@@ -1028,69 +1029,134 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   `,
 
   // Events by date (for charts)
-  events_by_date: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
-    WITH date_range AS (
-      SELECT 
-        toDate(parseDateTimeBestEffort(${escapeSqlString(startDate)})) + number as date
-      FROM numbers(dateDiff('day', 
-        toDate(parseDateTimeBestEffort(${escapeSqlString(startDate)})), 
-        toDate(parseDateTimeBestEffort(${escapeSqlString(endDate)}))
-      ) + 1)
-    ),
-    daily_sessions AS (
-      SELECT
-        toDate(time) as date,
-        session_id,
-        countIf(event_name = 'screen_view') as page_count,
-        dateDiff('second', MIN(time), MAX(time)) as session_duration
-      FROM analytics.events
-      WHERE 
-        client_id = ${escapeSqlString(websiteId)}
-        AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
-        AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
-      GROUP BY date, session_id
-    ),
-    daily_visitors AS (
-      SELECT
-        toDate(time) as date,
-        count(distinct anonymous_id) as visitors
-      FROM analytics.events
-      WHERE 
-        client_id = ${escapeSqlString(websiteId)}
-        AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
-        AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
-        AND event_name = 'screen_view'
-      GROUP BY date
-    ),
-    daily_metrics AS (
-      SELECT
-        date,
-        sum(page_count) as pageviews,
-        count(distinct session_id) as sessions,
-        countIf(page_count = 1) as bounced_sessions,
-        AVG(CASE WHEN session_duration > 0 THEN session_duration ELSE NULL END) as avg_session_duration
-      FROM daily_sessions
-      GROUP BY date
-    )
-    SELECT
-      formatDateTime(dr.date, '%Y-%m-%d') as date,
-      COALESCE(dm.pageviews, 0) as pageviews,
-      COALESCE(dv.visitors, 0) as visitors,
-      COALESCE(dm.sessions, 0) as sessions,
-      CASE 
-        WHEN COALESCE(dm.sessions, 0) > 0 
-        THEN (COALESCE(dm.bounced_sessions, 0) / COALESCE(dm.sessions, 0)) * 100 
-        ELSE 0 
-      END as bounce_rate,
-      COALESCE(dm.avg_session_duration, 0) as avg_session_duration
-    FROM date_range dr
-    LEFT JOIN daily_metrics dm ON dr.date = dm.date
-    LEFT JOIN daily_visitors dv ON dr.date = dv.date
-    ORDER BY dr.date ASC
-  `,
+  events_by_date: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => {
+    if (granularity === 'hourly') {
+      return `
+        WITH hour_range AS (
+          SELECT 
+            toStartOfHour(parseDateTimeBestEffort(${escapeSqlString(startDate)})) + toIntervalHour(number) as hour
+          FROM numbers(dateDiff('hour', 
+            toStartOfHour(parseDateTimeBestEffort(${escapeSqlString(startDate)})), 
+            toStartOfHour(parseDateTimeBestEffort(${escapeSqlString(endDate)}))
+          ) + 1)
+        ),
+        hourly_sessions AS (
+          SELECT
+            toStartOfHour(time) as hour,
+            session_id,
+            countIf(event_name = 'screen_view') as page_count,
+            dateDiff('second', MIN(time), MAX(time)) as session_duration
+          FROM analytics.events
+          WHERE 
+            client_id = ${escapeSqlString(websiteId)}
+            AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
+            AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
+          GROUP BY hour, session_id
+        ),
+        hourly_visitors AS (
+          SELECT
+            toStartOfHour(time) as hour,
+            count(distinct anonymous_id) as visitors
+          FROM analytics.events
+          WHERE 
+            client_id = ${escapeSqlString(websiteId)}
+            AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
+            AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
+            AND event_name = 'screen_view'
+          GROUP BY hour
+        ),
+        hourly_metrics AS (
+          SELECT
+            hour,
+            sum(page_count) as pageviews,
+            count(distinct session_id) as sessions,
+            countIf(page_count = 1) as bounced_sessions,
+            AVG(CASE WHEN session_duration > 0 THEN session_duration ELSE NULL END) as avg_session_duration
+          FROM hourly_sessions
+          GROUP BY hour
+        )
+        SELECT
+          formatDateTime(hr.hour, '%Y-%m-%d %H:00:00') as date,
+          COALESCE(hm.pageviews, 0) as pageviews,
+          COALESCE(hv.visitors, 0) as visitors,
+          COALESCE(hm.sessions, 0) as sessions,
+          CASE 
+            WHEN COALESCE(hm.sessions, 0) > 0 
+            THEN (COALESCE(hm.bounced_sessions, 0) / COALESCE(hm.sessions, 0)) * 100 
+            ELSE 0 
+          END as bounce_rate,
+          COALESCE(hm.avg_session_duration, 0) as avg_session_duration
+        FROM hour_range hr
+        LEFT JOIN hourly_metrics hm ON hr.hour = hm.hour
+        LEFT JOIN hourly_visitors hv ON hr.hour = hv.hour
+        ORDER BY hr.hour ASC
+      `;
+    } else {
+      return `
+        WITH date_range AS (
+          SELECT 
+            toDate(parseDateTimeBestEffort(${escapeSqlString(startDate)})) + number as date
+          FROM numbers(dateDiff('day', 
+            toDate(parseDateTimeBestEffort(${escapeSqlString(startDate)})), 
+            toDate(parseDateTimeBestEffort(${escapeSqlString(endDate)}))
+          ) + 1)
+        ),
+        daily_sessions AS (
+          SELECT
+            toDate(time) as date,
+            session_id,
+            countIf(event_name = 'screen_view') as page_count,
+            dateDiff('second', MIN(time), MAX(time)) as session_duration
+          FROM analytics.events
+          WHERE 
+            client_id = ${escapeSqlString(websiteId)}
+            AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
+            AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
+          GROUP BY date, session_id
+        ),
+        daily_visitors AS (
+          SELECT
+            toDate(time) as date,
+            count(distinct anonymous_id) as visitors
+          FROM analytics.events
+          WHERE 
+            client_id = ${escapeSqlString(websiteId)}
+            AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
+            AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
+            AND event_name = 'screen_view'
+          GROUP BY date
+        ),
+        daily_metrics AS (
+          SELECT
+            date,
+            sum(page_count) as pageviews,
+            count(distinct session_id) as sessions,
+            countIf(page_count = 1) as bounced_sessions,
+            AVG(CASE WHEN session_duration > 0 THEN session_duration ELSE NULL END) as avg_session_duration
+          FROM daily_sessions
+          GROUP BY date
+        )
+        SELECT
+          formatDateTime(dr.date, '%Y-%m-%d') as date,
+          COALESCE(dm.pageviews, 0) as pageviews,
+          COALESCE(dv.visitors, 0) as visitors,
+          COALESCE(dm.sessions, 0) as sessions,
+          CASE 
+            WHEN COALESCE(dm.sessions, 0) > 0 
+            THEN (COALESCE(dm.bounced_sessions, 0) / COALESCE(dm.sessions, 0)) * 100 
+            ELSE 0 
+          END as bounce_rate,
+          COALESCE(dm.avg_session_duration, 0) as avg_session_duration
+        FROM date_range dr
+        LEFT JOIN daily_metrics dm ON dr.date = dm.date
+        LEFT JOIN daily_visitors dv ON dr.date = dv.date
+        ORDER BY dr.date ASC
+      `;
+    }
+  },
 
   // Entry pages
-  entry_pages: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  entry_pages: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     WITH session_entry AS (
       SELECT 
         session_id,
@@ -1117,7 +1183,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  sessions_summary: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  sessions_summary: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT
       uniq(session_id) as total_sessions,
       uniq(anonymous_id) as total_users
@@ -1130,7 +1196,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   `,
 
   // Test query to check if there's any data at all
-  test_data: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  test_data: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     SELECT 
       'test' as name,
       COUNT(DISTINCT anonymous_id) as visitors,
@@ -1144,10 +1210,8 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
       AND event_name = 'screen_view'
   `,
 
-  // Category aliases for simplified parameter names
 
-
-  custom_event_property_values: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, filters: any[] = []) => {
+  custom_event_property_values: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily', filters: any[] = []) => {
     const eventNameFilter = filters.find((f: any) => f.field === 'event_name');
     const propertyKeyFilter = filters.find((f: any) => f.field === 'property_key');
 
@@ -1178,7 +1242,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   },
 
   // Funnel Analysis queries
-  funnel_analysis: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, filters: any[] = []) => {
+  funnel_analysis: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily', filters: any[] = []) => {
     const funnelStepsFilter = filters.find((f: any) => f.field === 'funnel_steps');
     if (!funnelStepsFilter || !Array.isArray(funnelStepsFilter.value)) {
       return `SELECT '' as step_name, 0 as step_number, 0 as users, 0 as conversion_rate WHERE 1=0`;
@@ -1252,7 +1316,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     `;
   },
 
-  funnel_performance: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  funnel_performance: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     WITH funnel_sessions AS (
       SELECT DISTINCT
         session_id,
@@ -1281,7 +1345,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
   `,
 
   // Enhanced funnel analytics queries
-  funnel_steps_breakdown: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, filters: any[] = []) => {
+  funnel_steps_breakdown: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily', filters: any[] = []) => {
     const funnelIdFilter = filters.find((f: any) => f.field === 'funnel_id');
     if (!funnelIdFilter) {
       return `SELECT '' as step_name, 0 as step_number, 0 as users, 0 as total_users, 0 as conversion_rate, 0 as dropoffs, 0 as dropoff_rate WHERE 1=0`;
@@ -1332,7 +1396,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     `;
   },
 
-  funnel_user_segments: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, filters: any[] = []) => {
+  funnel_user_segments: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily', filters: any[] = []) => {
     const funnelIdFilter = filters.find((f: any) => f.field === 'funnel_id');
     if (!funnelIdFilter) {
       return `SELECT '' as segment_name, 0 as users, 0 as conversion_rate WHERE 1=0`;
@@ -1372,7 +1436,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
 
 
   // User Journey & Path Analysis queries
-  user_journeys: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  user_journeys: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     WITH ordered_events AS (
       SELECT 
         session_id,
@@ -1412,7 +1476,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  journey_paths: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  journey_paths: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     WITH session_paths AS (
       SELECT 
         session_id,
@@ -1457,7 +1521,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  journey_dropoffs: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  journey_dropoffs: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     WITH session_steps AS (
       SELECT 
         session_id,
@@ -1499,7 +1563,7 @@ const PARAMETER_BUILDERS: Record<string, ParameterBuilder> = {
     LIMIT ${limit} OFFSET ${offset}
   `,
 
-  journey_entry_points: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number) => `
+  journey_entry_points: (websiteId: string, startDate: string, endDate: string, limit: number, offset: number, granularity: 'hourly' | 'daily' = 'daily') => `
     WITH session_entry AS (
       SELECT 
         session_id,
@@ -1640,7 +1704,7 @@ function buildUnifiedQuery(
     const subQueries: string[] = []
     
     for (const { query, parameter } of items) {
-      const { startDate, endDate, limit, page, filters, timeZone } = query
+      const { startDate, endDate, limit, page, filters, timeZone, granularity } = query
       const offset = (page - 1) * limit
       
       const { startDate: adjStartDate, endDate: adjEndDate } = adjustDateRangeForTimezone(startDate, endDate, timeZone);
@@ -1648,7 +1712,7 @@ function buildUnifiedQuery(
       const builder = PARAMETER_BUILDERS[parameter as keyof typeof PARAMETER_BUILDERS]
       if (!builder) continue
       
-      let sql = builder(websiteId, adjStartDate, `${adjEndDate} 23:59:59`, limit, offset)
+      let sql = builder(websiteId, adjStartDate, `${adjEndDate} 23:59:59`, limit, offset, granularity)
       
       // Apply filters if provided
       if (filters.length > 0) {
@@ -1867,7 +1931,7 @@ async function processBatchQueries(
     return Promise.all(
       queries.map(async (query) => {
         try {
-          const { startDate, endDate, parameters, limit, page, filters, timeZone } = query
+          const { startDate, endDate, parameters, limit, page, filters, timeZone, granularity } = query
           const offset = (page - 1) * limit
 
           const { startDate: adjStartDate, endDate: adjEndDate } = adjustDateRangeForTimezone(startDate, endDate, timeZone);
@@ -1888,7 +1952,7 @@ async function processBatchQueries(
           const results = await Promise.all(
             parameters.map(async (parameter: string) => {
               const builder = PARAMETER_BUILDERS[parameter as keyof typeof PARAMETER_BUILDERS]
-              let sql = builder(websiteId, adjStartDate, `${adjEndDate} 23:59:59`, limit, offset)
+              let sql = builder(websiteId, adjStartDate, `${adjEndDate} 23:59:59`, limit, offset, granularity)
               
               if (filters.length > 0) {
                 const filterClauses = filters.map((filter: any) => {

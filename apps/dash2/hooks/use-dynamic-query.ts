@@ -9,6 +9,7 @@ export interface DynamicQueryRequest {
   limit?: number;
   page?: number;
   filters?: DynamicQueryFilter[];
+  granularity?: 'hourly' | 'daily';
 }
 
 export interface DynamicQueryFilter {
@@ -412,6 +413,7 @@ async function fetchDynamicQuery(
         limit: query.limit || 100,
         page: query.page || 1,
         filters: query.filters || [],
+        granularity: query.granularity || dateRange.granularity || 'daily',
       }))
     : {
         ...queryData,
@@ -421,6 +423,7 @@ async function fetchDynamicQuery(
         limit: queryData.limit || 100,
         page: queryData.page || 1,
         filters: queryData.filters || [],
+        granularity: queryData.granularity || dateRange.granularity || 'daily',
       };
 
   const response = await fetch(url, {

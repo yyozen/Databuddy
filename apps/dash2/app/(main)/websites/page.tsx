@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Plus, Globe, BarChart3, Sparkles, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -8,8 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useWebsites } from '@/hooks/use-websites';
 import { useDomains } from '@/hooks/use-domains';
 import { WebsiteDialog } from '@/components/website-dialog';
-import { WebsiteCard, WebsiteCardSkeleton } from './_components/website-card';
-import { EmptyState } from './[id]/_components/utils/ui-components';
+import { WebsiteCard } from './_components/website-card';
 import { cn } from '@/lib/utils';
 
 function WebsiteLoadingSkeleton() {
@@ -116,10 +115,6 @@ export default function WebsitesPage() {
   const { websites, isLoading, isError, refetch } = useWebsites();
   const { verifiedDomains } = useDomains();
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  const websiteIds = useMemo(() => {
-    return websites?.map(w => w.id) || [];
-  }, [websites]);
 
   const handleRetry = () => {
     refetch();
