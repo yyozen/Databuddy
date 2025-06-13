@@ -3,7 +3,7 @@ import basketRouter from './routes/basket';
 import stripeRouter from './routes/stripe';
 import { logger } from './lib/logger';
 
-export default new Elysia()
+const app = new Elysia()
   .onError(({ error }) => {
     logger.error(new Error(`${error instanceof Error ? error.name : 'Unknown'}: ${error instanceof Error ? error.message : 'Unknown'}`));
   })
@@ -21,4 +21,8 @@ export default new Elysia()
   .use(basketRouter)
   .use(stripeRouter)
   .get('/health', () => ({ status: 'ok', version: '1.0.0' }))
-  .listen(process.env.PORT || 4001)
+
+  export default {
+    port: process.env.PORT || 4000,
+    fetch: app.fetch,
+  }
