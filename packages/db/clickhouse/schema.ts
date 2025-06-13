@@ -107,7 +107,6 @@ CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.events (
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMM(time)
 ORDER BY (client_id, time, id)
-TTL toDateTime(time) + INTERVAL 24 MONTH
 SETTINGS index_granularity = 8192
 `;
 
@@ -145,7 +144,6 @@ CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.errors (
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMM(timestamp)
 ORDER BY (client_id, timestamp, id)
-TTL toDateTime(timestamp) + INTERVAL 12 MONTH
 SETTINGS index_granularity = 8192
 `;
 
@@ -182,7 +180,78 @@ CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.web_vitals (
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMM(timestamp)
 ORDER BY (client_id, timestamp, id)
-TTL toDateTime(timestamp) + INTERVAL 6 MONTH
+SETTINGS index_granularity = 8192
+`;
+
+// Stripe Payment Intents table
+const CREATE_STRIPE_PAYMENT_INTENTS_TABLE = `
+CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.stripe_payment_intents (
+  id String,
+  created DateTime64(3, 'UTC'),
+  status LowCardinality(String),
+  currency LowCardinality(String),
+  amount UInt64,
+  amount_received UInt64,
+  amount_capturable UInt64,
+  customer_id Nullable(String),
+  livemode UInt8,
+  metadata JSON,
+  payment_method_types Array(String),
+  failure_reason Nullable(String),
+  canceled_at Nullable(DateTime64(3, 'UTC')),
+  cancellation_reason Nullable(String),
+  description Nullable(String),
+  application_fee_amount Nullable(UInt64),
+  setup_future_usage Nullable(String),
+  anonymized_user_id Nullable(String),
+  session_id Nullable(String)
+) ENGINE = MergeTree()
+ORDER BY (created, id)
+SETTINGS index_granularity = 8192
+`;
+
+// Stripe Charges table
+const CREATE_STRIPE_CHARGES_TABLE = `
+CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.stripe_charges (
+  id String,
+  created DateTime64(3, 'UTC'),
+  status LowCardinality(String),
+  currency LowCardinality(String),
+  amount UInt64,
+  amount_captured UInt64,
+  amount_refunded UInt64,
+  paid UInt8,
+  refunded UInt8,
+  failure_code Nullable(String),
+  failure_message Nullable(String),
+  outcome_type Nullable(String),
+  risk_level LowCardinality(String),
+  card_brand LowCardinality(String),
+  payment_intent_id Nullable(String),
+  customer_id Nullable(String),
+  anonymized_user_id Nullable(String),
+  session_id Nullable(String)
+) ENGINE = MergeTree()
+ORDER BY (created, id)
+SETTINGS index_granularity = 8192
+`;
+
+// Stripe Refunds table
+const CREATE_STRIPE_REFUNDS_TABLE = `
+CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.stripe_refunds (
+  id String,
+  created DateTime64(3, 'UTC'),
+  amount UInt64,
+  status LowCardinality(String),
+  reason LowCardinality(String),
+  currency LowCardinality(String),
+  charge_id String,
+  payment_intent_id Nullable(String),
+  metadata JSON,
+  anonymized_user_id Nullable(String),
+  session_id Nullable(String)
+) ENGINE = MergeTree()
+ORDER BY (created, id)
 SETTINGS index_granularity = 8192
 `;
 
@@ -236,6 +305,64 @@ export interface WebVitalsEvent {
   country?: string;
   region?: string;
   created_at: number;
+}
+
+// Stripe table interfaces
+export interface StripePaymentIntent {
+  id: string;
+  created: number;
+  status: string;
+  currency: string;
+  amount: number;
+  amount_received: number;
+  amount_capturable: number;
+  customer_id?: string;
+  livemode: number;
+  metadata: Record<string, any>;
+  payment_method_types: string[];
+  failure_reason?: string;
+  canceled_at?: number;
+  cancellation_reason?: string;
+  description?: string;
+  application_fee_amount?: number;
+  setup_future_usage?: string;
+  anonymized_user_id?: string;
+  session_id?: string;
+}
+
+export interface StripeCharge {
+  id: string;
+  created: number;
+  status: string;
+  currency: string;
+  amount: number;
+  amount_captured: number;
+  amount_refunded: number;
+  paid: number;
+  refunded: number;
+  failure_code?: string;
+  failure_message?: string;
+  outcome_type?: string;
+  risk_level?: string;
+  card_brand?: string;
+  payment_intent_id?: string;
+  customer_id?: string;
+  anonymized_user_id?: string;
+  session_id?: string;
+}
+
+export interface StripeRefund {
+  id: string;
+  created: number;
+  amount: number;
+  status: string;
+  reason?: string;
+  currency: string;
+  charge_id: string;
+  payment_intent_id?: string;
+  metadata: Record<string, any>;
+  anonymized_user_id?: string;
+  session_id?: string;
 }
 
 // TypeScript interface that matches the ClickHouse schema
@@ -360,6 +487,9 @@ export async function initClickHouseSchema() {
       { name: 'events', query: CREATE_EVENTS_TABLE },
       { name: 'errors', query: CREATE_ERRORS_TABLE },
       { name: 'web_vitals', query: CREATE_WEB_VITALS_TABLE },
+      { name: 'stripe_payment_intents', query: CREATE_STRIPE_PAYMENT_INTENTS_TABLE },
+      { name: 'stripe_charges', query: CREATE_STRIPE_CHARGES_TABLE },
+      { name: 'stripe_refunds', query: CREATE_STRIPE_REFUNDS_TABLE },
     ];
     
     for (const table of tables) {

@@ -4,7 +4,7 @@
 // and your users schema as `user` (singular, based on previous linter hint).
 import { db } from "@databuddy/db";
 import { eq, or, like, desc } from "drizzle-orm";
-import { user, domains, websites, projects, projectAccess, chQuery } from "@databuddy/db";
+import { user, domains, websites, projects, chQuery } from "@databuddy/db";
 import { revalidatePath } from "next/cache";
 import { nanoid } from 'nanoid';
 // import { isAdminUser } from '@/lib/auth-admin'; // Placeholder for your admin auth check utility
@@ -67,8 +67,7 @@ export async function getUserBySlug(slug: string) {
         status: projects.status,
         createdAt: projects.createdAt,
       }).from(projects)
-        .innerJoin(projectAccess, eq(projects.id, projectAccess.projectId))
-        .where(eq(projectAccess.userId, userData.id)),
+        .where(eq(projects.organizationId, userData.id)),
     ]);
 
     // Return data with dates as strings
@@ -416,7 +415,7 @@ export async function deleteWebsite(websiteId: string) {
 }
 
 // Project Management Actions
-export async function addProject(userId: string, projectData: { name: string; type: 'WEBSITE' | 'MOBILE_APP' | 'DESKTOP_APP' | 'API' }) {
+export async function addProject(userId: string, projectData: { name: string; type: 'website' | 'mobile_app' | 'desktop_app' | 'api' }) {
   try {
     const projectId = nanoid();
     const now = new Date().toISOString();
@@ -427,20 +426,13 @@ export async function addProject(userId: string, projectData: { name: string; ty
         name: projectData.name,
         slug: projectData.name.toLowerCase().replace(/\s+/g, '-'),
         type: projectData.type,
-        status: 'ACTIVE',
+        status: 'active',
+        organizationId: userId,
         createdAt: now,
         updatedAt: now,
       });
 
-    await db.insert(projectAccess)
-      .values({
-        id: nanoid(),
-        userId,
-        projectId,
-        role: 'ADMIN',
-        createdAt: now,
-        updatedAt: now,
-      });
+
 
     revalidatePath('/users/[slug]', 'page');
     return { success: true };
@@ -452,7 +444,6 @@ export async function addProject(userId: string, projectData: { name: string; ty
 
 export async function removeProject(projectId: string) {
   try {
-    await db.delete(projectAccess).where(eq(projectAccess.projectId, projectId));
     await db.delete(projects).where(eq(projects.id, projectId));
     revalidatePath('/users/[slug]', 'page');
     return { success: true };
@@ -462,7 +453,7 @@ export async function removeProject(projectId: string) {
   }
 }
 
-export async function updateProjectStatus(projectId: string, status: 'ACTIVE' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED') {
+export async function updateProjectStatus(projectId: string, status: 'active' | 'completed' | 'on_hold' | 'cancelled') {
   try {
     await db.update(projects)
       .set({ 

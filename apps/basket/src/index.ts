@@ -1,5 +1,6 @@
 import { Elysia } from 'elysia'
 import basketRouter from './routes/basket';
+import stripeRouter from './routes/stripe';
 import { logger } from './lib/logger';
 
 export default new Elysia()
@@ -18,5 +19,6 @@ export default new Elysia()
   })
   .options('*', () => new Response(null, { status: 204 }))
   .use(basketRouter)
+  .use(stripeRouter)
   .get('/health', () => ({ status: 'ok', version: '1.0.0' }))
   .listen(process.env.PORT || 4001)

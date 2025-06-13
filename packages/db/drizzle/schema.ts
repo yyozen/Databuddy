@@ -341,6 +341,29 @@ export const user = pgTable("user", {
 	unique("user_email_unique").on(table.email),
 ]);
 
+export const userStripeConfig = pgTable("user_stripe_config", {
+	id: text().primaryKey().notNull(),
+	userId: text("user_id").notNull(),
+	webhookToken: text("webhook_token").notNull(),
+	stripeSecretKey: text("stripe_secret_key").notNull(),
+	stripePublishableKey: text("stripe_publishable_key"),
+	webhookSecret: text("webhook_secret").notNull(),
+	isLiveMode: boolean("is_live_mode").default(false).notNull(),
+	isActive: boolean("is_active").default(true).notNull(),
+	lastWebhookAt: timestamp("last_webhook_at", { mode: 'string' }),
+	webhookFailureCount: integer("webhook_failure_count").default(0).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).notNull(),
+}, (table) => [
+	uniqueIndex("user_stripe_config_userId_key").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	uniqueIndex("user_stripe_config_webhookToken_key").using("btree", table.webhookToken.asc().nullsLast().op("text_ops")),
+	foreignKey({
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "user_stripe_config_userId_fkey"
+	}).onUpdate("cascade").onDelete("cascade"),
+]);
+
 export const funnelGoals = pgTable("funnel_goals", {
 	id: text().primaryKey().notNull(),
 	funnelId: text().notNull(),
