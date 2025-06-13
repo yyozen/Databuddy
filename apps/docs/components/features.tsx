@@ -19,7 +19,7 @@ import LiquidChrome from "./bits/liquid";
 const features = [
 	{
 		id: 1,
-		label: "65x Faster Analytics",
+		label: "247x Faster Analytics",
 		title: "Boost site speed, improve SEO rankings & <strong>enhance user experience</strong>.",
 		description:
 			"247x smaller script than Google Analytics. Improve Core Web Vitals, boost performance, and enhance SEO while getting powerful insights.",

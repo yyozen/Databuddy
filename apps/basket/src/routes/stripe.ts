@@ -213,37 +213,17 @@ app.post('/stripe/webhook/:webhookToken', async ({ params, request, set }) => {
     const clientIp = getClientIp(request)
 
     // IP validation (conditional)
-    if (ENABLE_IP_VALIDATION && !isStripeIp(clientIp)) {
-        logSecurityEvent('invalid_source_ip', params.webhookToken, clientIp)
-        set.status = 403
-        return { error: 'Request not from Stripe' }
-    }
+    // if (ENABLE_IP_VALIDATION && !isStripeIp(clientIp)) {
+    //     logSecurityEvent('invalid_source_ip', params.webhookToken, clientIp)
+    //     set.status = 403
+    //     return { error: 'Request not from Stripe' }
+    // }
 
     const config = await getStripeConfigByToken(params.webhookToken)
     if (!config) {
         logSecurityEvent('invalid_webhook_token', params.webhookToken, clientIp)
         set.status = 404
         return { error: 'Webhook endpoint not found' }
-    }
-    
-    return handleWebhook(request, set, config)
-})
-
-// Legacy global endpoint
-app.post('/stripe', async ({ request, set }) => {
-    const clientIp = getClientIp(request)
-    
-    // IP validation (conditional)
-    if (ENABLE_IP_VALIDATION && !isStripeIp(clientIp)) {
-        logSecurityEvent('invalid_source_ip', 'global', clientIp)
-        set.status = 403
-        return { error: 'Request not from Stripe' }
-    }
-
-    const config = getGlobalStripeConfig()
-    if (!config) {
-        set.status = 500
-        return { error: 'Global Stripe configuration not found' }
     }
     
     return handleWebhook(request, set, config)

@@ -141,7 +141,7 @@ export const competitors: Competitor[] = [
     strengths: [
       "Privacy-First: Fully compliant with GDPR/CCPA, no cookies required, and complete data anonymization.",
       "AI-Powered Insights: Leverages AI to provide actionable insights and recommendations.",
-      "Performance Optimized: 65x faster than Google Analytics with minimal impact on website speed.",
+      "Performance Optimized: 247x faster than Google Analytics with minimal impact on website speed.",
       "User-Friendly: Intuitive dashboards and reports designed for non-technical users.",
       "Comprehensive Features: Offers a wide range of analytics capabilities without compromising on privacy or performance."
     ],
