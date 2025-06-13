@@ -304,6 +304,14 @@ export type ParameterDataMap = {
   utm_campaigns: UTMData;
   device_types: DeviceTypeData;
   browser_versions: BrowserData;
+  // Revenue parameters
+  revenue_summary: RevenueSummaryData;
+  revenue_trends: RevenueTrendData;
+  recent_transactions: RecentTransactionData;
+  recent_refunds: RecentRefundData;
+  revenue_by_country: RevenueBreakdownData;
+  revenue_by_currency: RevenueBreakdownData;
+  revenue_by_card_brand: RevenueBreakdownData;
 };
 
 // Helper type to extract data types from parameters
@@ -930,6 +938,50 @@ export interface JourneyEntryPoint {
   avg_pages_per_session: number;
 }
 
+// Revenue-specific data interfaces
+export interface RevenueSummaryData {
+  total_revenue: number;
+  total_transactions: number;
+  total_refunds: number;
+  avg_order_value: number;
+  success_rate: number;
+}
+
+export interface RevenueTrendData {
+  time: string;
+  revenue: number;
+  transactions: number;
+}
+
+export interface RecentTransactionData {
+  id: string;
+  created: string;
+  status: string;
+  currency: string;
+  amount: number;
+  customer_id?: string;
+  card_brand?: string;
+  session_id?: string;
+}
+
+export interface RecentRefundData {
+  id: string;
+  created: string;
+  status: string;
+  reason?: string;
+  currency: string;
+  amount: number;
+  payment_intent_id: string;
+  session_id?: string;
+}
+
+export interface RevenueBreakdownData {
+  name: string;
+  total_revenue: number;
+  total_transactions: number;
+  avg_order_value: number;
+}
+
 /**
  * Enhanced Error Data Hook for comprehensive error analytics
  */
@@ -1035,5 +1087,114 @@ export function useJourneyAnalytics(
     hasPathData: batchResult.hasDataForQuery('journey-paths', 'journey_paths'),
     hasDropoffData: batchResult.hasDataForQuery('journey-dropoffs', 'journey_dropoffs'),
     hasEntryPointData: batchResult.hasDataForQuery('journey-entry-points', 'journey_entry_points'),
+  };
+}
+
+/**
+ * Convenience hook for comprehensive revenue analytics using batch queries
+ */
+export function useRevenueAnalytics(
+  websiteId: string,
+  dateRange: DateRange,
+  options?: Partial<UseQueryOptions<BatchQueryResponse>>
+) {
+  const queries: DynamicQueryRequest[] = [
+    {
+      id: 'revenue-summary',
+      parameters: ['revenue_summary'],
+      limit: 1,
+    },
+    {
+      id: 'revenue-trends',
+      parameters: ['revenue_trends'],
+      limit: 100,
+    },
+    {
+      id: 'recent-transactions',
+      parameters: ['recent_transactions'],
+      limit: 50,
+    },
+    {
+      id: 'recent-refunds',
+      parameters: ['recent_refunds'],
+      limit: 50,
+    },
+    {
+      id: 'revenue-by-country',
+      parameters: ['revenue_by_country'],
+      limit: 20,
+    },
+    {
+      id: 'revenue-by-currency',
+      parameters: ['revenue_by_currency'],
+      limit: 10,
+    },
+    {
+      id: 'revenue-by-card-brand',
+      parameters: ['revenue_by_card_brand'],
+      limit: 10,
+    },
+  ];
+
+  const batchResult = useBatchDynamicQuery(websiteId, dateRange, queries, options);
+
+  // Convenient accessors with proper typing
+  const revenueData = useMemo(() => {
+    const summaryData = batchResult.getDataForQuery('revenue-summary', 'revenue_summary') as RevenueSummaryData[];
+    const summary = summaryData?.[0] || {
+      total_revenue: 0,
+      total_transactions: 0,
+      total_refunds: 0,
+      avg_order_value: 0,
+      success_rate: 0,
+    };
+
+    return {
+      summary,
+      trends: batchResult.getDataForQuery('revenue-trends', 'revenue_trends') as RevenueTrendData[],
+      recentTransactions: batchResult.getDataForQuery('recent-transactions', 'recent_transactions') as RecentTransactionData[],
+      recentRefunds: batchResult.getDataForQuery('recent-refunds', 'recent_refunds') as RecentRefundData[],
+      byCountry: batchResult.getDataForQuery('revenue-by-country', 'revenue_by_country') as RevenueBreakdownData[],
+      byCurrency: batchResult.getDataForQuery('revenue-by-currency', 'revenue_by_currency') as RevenueBreakdownData[],
+      byCardBrand: batchResult.getDataForQuery('revenue-by-card-brand', 'revenue_by_card_brand') as RevenueBreakdownData[],
+    };
+  }, [batchResult]);
+
+  // Calculate additional summary statistics
+  const summaryStats = useMemo(() => {
+    const { summary, trends, recentTransactions, recentRefunds } = revenueData;
+    
+    // Calculate growth from trends if available
+    const revenueGrowth = trends.length >= 2 ? 
+      ((trends[0]?.revenue || 0) - (trends[1]?.revenue || 0)) / (trends[1]?.revenue || 1) * 100 : 0;
+    
+    const transactionGrowth = trends.length >= 2 ? 
+      ((trends[0]?.transactions || 0) - (trends[1]?.transactions || 0)) / (trends[1]?.transactions || 1) * 100 : 0;
+
+    // Calculate refund rate
+    const refundRate = summary.total_transactions > 0 ? 
+      (summary.total_refunds / summary.total_transactions) * 100 : 0;
+
+    return {
+      revenueGrowth: Math.round(revenueGrowth * 100) / 100,
+      transactionGrowth: Math.round(transactionGrowth * 100) / 100,
+      refundRate: Math.round(refundRate * 100) / 100,
+      totalRecentTransactions: recentTransactions.length,
+      totalRecentRefunds: recentRefunds.length,
+    };
+  }, [revenueData]);
+
+  return {
+    ...batchResult,
+    revenueData,
+    summaryStats,
+    // Convenience methods
+    hasSummaryData: batchResult.hasDataForQuery('revenue-summary', 'revenue_summary'),
+    hasTrendsData: batchResult.hasDataForQuery('revenue-trends', 'revenue_trends'),
+    hasTransactionsData: batchResult.hasDataForQuery('recent-transactions', 'recent_transactions'),
+    hasRefundsData: batchResult.hasDataForQuery('recent-refunds', 'recent_refunds'),
+    hasCountryData: batchResult.hasDataForQuery('revenue-by-country', 'revenue_by_country'),
+    hasCurrencyData: batchResult.hasDataForQuery('revenue-by-currency', 'revenue_by_currency'),
+    hasCardBrandData: batchResult.hasDataForQuery('revenue-by-card-brand', 'revenue_by_card_brand'),
   };
 } 

@@ -187,6 +187,7 @@ SETTINGS index_granularity = 8192
 const CREATE_STRIPE_PAYMENT_INTENTS_TABLE = `
 CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.stripe_payment_intents (
   id String,
+  client_id String,
   created DateTime64(3, 'UTC'),
   status LowCardinality(String),
   currency LowCardinality(String),
@@ -204,9 +205,11 @@ CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.stripe_payment_intents (
   application_fee_amount Nullable(UInt64),
   setup_future_usage Nullable(String),
   anonymized_user_id Nullable(String),
-  session_id Nullable(String)
+  session_id Nullable(String),
+  created_at DateTime64(3, 'UTC') DEFAULT now()
 ) ENGINE = MergeTree()
-ORDER BY (created, id)
+PARTITION BY toYYYYMM(created)
+ORDER BY (client_id, created, id)
 SETTINGS index_granularity = 8192
 `;
 
@@ -214,6 +217,7 @@ SETTINGS index_granularity = 8192
 const CREATE_STRIPE_CHARGES_TABLE = `
 CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.stripe_charges (
   id String,
+  client_id String,
   created DateTime64(3, 'UTC'),
   status LowCardinality(String),
   currency LowCardinality(String),
@@ -230,9 +234,11 @@ CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.stripe_charges (
   payment_intent_id Nullable(String),
   customer_id Nullable(String),
   anonymized_user_id Nullable(String),
-  session_id Nullable(String)
+  session_id Nullable(String),
+  created_at DateTime64(3, 'UTC') DEFAULT now()
 ) ENGINE = MergeTree()
-ORDER BY (created, id)
+PARTITION BY toYYYYMM(created)
+ORDER BY (client_id, created, id)
 SETTINGS index_granularity = 8192
 `;
 
@@ -240,6 +246,7 @@ SETTINGS index_granularity = 8192
 const CREATE_STRIPE_REFUNDS_TABLE = `
 CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.stripe_refunds (
   id String,
+  client_id String,
   created DateTime64(3, 'UTC'),
   amount UInt64,
   status LowCardinality(String),
@@ -249,9 +256,11 @@ CREATE TABLE IF NOT EXISTS ${ANALYTICS_DATABASE}.stripe_refunds (
   payment_intent_id Nullable(String),
   metadata JSON,
   anonymized_user_id Nullable(String),
-  session_id Nullable(String)
+  session_id Nullable(String),
+  created_at DateTime64(3, 'UTC') DEFAULT now()
 ) ENGINE = MergeTree()
-ORDER BY (created, id)
+PARTITION BY toYYYYMM(created)
+ORDER BY (client_id, created, id)
 SETTINGS index_granularity = 8192
 `;
 
@@ -310,6 +319,7 @@ export interface WebVitalsEvent {
 // Stripe table interfaces
 export interface StripePaymentIntent {
   id: string;
+  client_id: string;
   created: number;
   status: string;
   currency: string;
@@ -332,6 +342,7 @@ export interface StripePaymentIntent {
 
 export interface StripeCharge {
   id: string;
+  client_id: string;
   created: number;
   status: string;
   currency: string;
@@ -353,6 +364,7 @@ export interface StripeCharge {
 
 export interface StripeRefund {
   id: string;
+  client_id: string;
   created: number;
   amount: number;
   status: string;

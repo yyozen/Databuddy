@@ -3,6 +3,33 @@ import Stripe from 'stripe'
 import { db, userStripeConfig, eq } from '@databuddy/db'
 import { clickHouse } from '@databuddy/db'
 
+/**
+ * STRIPE CHECKOUT SETUP GUIDE
+ * 
+ * To properly track revenue analytics, you MUST include client_id and session_id 
+ * in your Stripe Checkout session metadata when creating sessions server-side:
+ * 
+ * Example:
+ * ```typescript
+ * const session = await stripe.checkout.sessions.create({
+ *   payment_method_types: ['card'],
+ *   mode: 'payment',
+ *   line_items: [{ price: 'price_abc123', quantity: 1 }],
+ *   success_url: 'https://yourapp.com/success',
+ *   cancel_url: 'https://yourapp.com/cancel',
+ *   metadata: {
+ *     client_id: 'your_website_id',        // Required: Website/client identifier
+ *     session_id: 'user_session_id',       // Required: Anonymous user session ID
+ *     user_id: 'user_1234',               // Optional: Your internal user ID
+ *   },
+ *   client_reference_id: 'user_session_id' // Alternative way to pass session_id
+ * });
+ * ```
+ * 
+ * This metadata will be available in all webhook events (payment_intent.*, charge.*, refund.*)
+ * and allows proper linking between payment data and analytics events.
+ */
+
 const app = new Elysia()
 
 interface StripeConfig {
@@ -262,6 +289,27 @@ async function processWebhookEvent(event: Stripe.Event, config: StripeConfig) {
 }
 
 /**
+ * Extract client ID from Stripe metadata
+ */
+function extractClientId(stripeObject: any): string | null {
+    try {
+        // Try metadata first (recommended approach)
+        if (stripeObject.metadata?.client_id) {
+            return stripeObject.metadata.client_id
+        }
+        
+        // Fallback to other possible fields
+        if (stripeObject.metadata?.website_id) {
+            return stripeObject.metadata.website_id
+        }
+    } catch (error) {
+        console.warn('Error extracting client ID:', error)
+    }
+    
+    return null
+}
+
+/**
  * Extract session ID from Stripe metadata or client_reference_id
  */
 function extractSessionId(stripeObject: any): string | null {
@@ -275,6 +323,11 @@ function extractSessionId(stripeObject: any): string | null {
         if (stripeObject.metadata?.session_id) {
             return stripeObject.metadata.session_id
         }
+        
+        // Also try anonymous_user_id in metadata
+        if (stripeObject.metadata?.anonymous_user_id) {
+            return stripeObject.metadata.anonymous_user_id
+        }
     } catch (error) {
         console.warn('Error extracting session ID:', error)
     }
@@ -287,10 +340,20 @@ function extractSessionId(stripeObject: any): string | null {
  */
 async function insertPaymentIntent(pi: Stripe.PaymentIntent, config: StripeConfig) {
     try {
+        const clientId = extractClientId(pi)
+        const sessionId = extractSessionId(pi)
+        
+        if (!clientId) {
+            console.warn('No client_id found in PaymentIntent metadata:', pi.id)
+            // You might want to skip insertion or use a default value
+            return
+        }
+
         await clickHouse.insert({
             table: 'analytics.stripe_payment_intents',
             values: [{
                 id: pi.id,
+                client_id: clientId,
                 created: new Date(pi.created * 1000).toISOString().replace('T', ' ').replace('Z', ''),
                 status: pi.status,
                 currency: pi.currency,
@@ -307,11 +370,13 @@ async function insertPaymentIntent(pi: Stripe.PaymentIntent, config: StripeConfi
                 description: pi.description,
                 application_fee_amount: pi.application_fee_amount,
                 setup_future_usage: pi.setup_future_usage,
-                anonymized_user_id: config.userId !== 'global' ? config.userId : null,
-                session_id: extractSessionId(pi)
+                anonymized_user_id: sessionId, // This is the session_id from analytics events
+                session_id: sessionId // Keep both for compatibility
             }],
             format: 'JSONEachRow'
         })
+        
+        console.log(`✅ Inserted PaymentIntent ${pi.id} for client ${clientId} with session ${sessionId}`)
     } catch (error) {
         console.error('Error inserting payment intent:', error)
         throw error
@@ -323,12 +388,21 @@ async function insertPaymentIntent(pi: Stripe.PaymentIntent, config: StripeConfi
  */
 async function insertCharge(charge: Stripe.Charge, config: StripeConfig) {
     try {
+        const clientId = extractClientId(charge)
+        const sessionId = extractSessionId(charge)
         const card = charge.payment_method_details?.card
+
+        if (!clientId) {
+            console.warn('No client_id found in Charge metadata:', charge.id)
+            // You might want to skip insertion or use a default value
+            return
+        }
 
         await clickHouse.insert({
             table: 'analytics.stripe_charges',
             values: [{
                 id: charge.id,
+                client_id: clientId,
                 created: new Date(charge.created * 1000).toISOString().replace('T', ' ').replace('Z', ''),
                 status: charge.status,
                 currency: charge.currency,
@@ -344,11 +418,13 @@ async function insertCharge(charge: Stripe.Charge, config: StripeConfig) {
                 card_brand: card?.brand || null,
                 payment_intent_id: charge.payment_intent as string || null,
                 customer_id: charge.customer as string || null,
-                anonymized_user_id: config.userId !== 'global' ? config.userId : null,
-                session_id: extractSessionId(charge)
+                anonymized_user_id: sessionId, // This is the session_id from analytics events
+                session_id: sessionId // Keep both for compatibility
             }],
             format: 'JSONEachRow'
         })
+        
+        console.log(`✅ Inserted Charge ${charge.id} for client ${clientId} with session ${sessionId}`)
     } catch (error) {
         console.error('Error inserting charge:', error)
         throw error
@@ -360,10 +436,20 @@ async function insertCharge(charge: Stripe.Charge, config: StripeConfig) {
  */
 async function insertRefund(refund: Stripe.Refund, config: StripeConfig) {
     try {
+        const clientId = extractClientId(refund)
+        const sessionId = extractSessionId(refund)
+        
+        if (!clientId) {
+            console.warn('No client_id found in Refund metadata:', refund.id)
+            // You might want to skip insertion or use a default value
+            return
+        }
+
         await clickHouse.insert({
             table: 'analytics.stripe_refunds',
             values: [{
                 id: refund.id,
+                client_id: clientId,
                 created: new Date(refund.created * 1000).toISOString().replace('T', ' ').replace('Z', ''),
                 amount: refund.amount,
                 status: refund.status,
@@ -372,11 +458,13 @@ async function insertRefund(refund: Stripe.Refund, config: StripeConfig) {
                 charge_id: refund.charge as string,
                 payment_intent_id: refund.payment_intent as string || null,
                 metadata: refund.metadata,
-                anonymized_user_id: config.userId !== 'global' ? config.userId : null,
-                session_id: extractSessionId(refund)
+                anonymized_user_id: sessionId, // This is the session_id from analytics events
+                session_id: sessionId // Keep both for compatibility
             }],
             format: 'JSONEachRow'
         })
+        
+        console.log(`✅ Inserted Refund ${refund.id} for client ${clientId} with session ${sessionId}`)
     } catch (error) {
         console.error('Error inserting refund:', error)
         throw error
