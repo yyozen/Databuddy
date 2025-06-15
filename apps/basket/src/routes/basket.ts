@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia'
 import { AnalyticsEvent, ErrorEvent, WebVitalsEvent, clickHouse } from '@databuddy/db'
 import { createHash, randomUUID } from 'node:crypto'
-import { getGeo } from '../utils/ip-geo'
+import { getGeo, extractIpFromRequest } from '../utils/ip-geo'
 import { parseUserAgent } from '../utils/user-agent'
 import { getWebsiteById, isValidOrigin } from '../hooks/auth'
 import { 
@@ -239,7 +239,7 @@ const app = new Elysia()
     }
     
     const userAgent = sanitizeString(request.headers.get('user-agent'), VALIDATION_LIMITS.STRING_MAX_LENGTH) || ''
-    const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || ''
+    const ip = extractIpFromRequest(request)
     
     const saltKey = `salt:${Math.floor(Date.now() / (24 * 60 * 60 * 1000))}`
     
@@ -303,7 +303,7 @@ const app = new Elysia()
     }
     
     const userAgent = sanitizeString(request.headers.get('user-agent'), VALIDATION_LIMITS.STRING_MAX_LENGTH) || ''
-    const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || ''
+    const ip = extractIpFromRequest(request)
     
     // Process each event in the batch
     const results = []
