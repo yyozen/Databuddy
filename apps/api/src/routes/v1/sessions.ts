@@ -1,12 +1,11 @@
 import { logger } from "../../lib/logger";
-import { Hono } from "hono";
+import { Context, Hono } from "hono";
 import type { AppVariables } from "../../types";
 import { chQuery } from "@databuddy/db";
 import { createSqlBuilder } from "../../builders/analytics";
-import { createSessionEventsBuilder, createSessionsBuilder, createSessionsWithEventsBuilder, parseReferrers } from "../../builders";
+import { createSessionEventsBuilder, createSessionsBuilder, createSessionsWithEventsBuilder } from "../../builders";
 import { generateSessionName } from "../../utils/sessions";
-import { timezoneMiddleware, useTimezone, timezoneQuerySchema } from "../../middleware/timezone";
-import { z } from "zod";
+import { timezoneMiddleware, useTimezone } from "../../middleware/timezone";
 import { formatDuration } from "../../utils/dates";
 import { parseUserAgentDetails } from "../../utils/ua";
 import { parseReferrer } from "../../utils/referrer";
@@ -19,16 +18,6 @@ const mapCountryCode = (country: string): string => {
 
 // Apply timezone middleware
 sessionsRouter.use('*', timezoneMiddleware);
-
-const analyticsQuerySchema = z.object({
-  website_id: z.string().min(1, 'Website ID is required'),
-  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional(),
-  end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').optional(),
-  interval: z.enum(['day', 'week', 'month', 'auto']).default('day'),
-  granularity: z.enum(['daily', 'hourly']).default('daily'),
-  limit: z.coerce.number().int().min(1).max(1000).default(100),
-  page: z.coerce.number().int().min(1).default(1),
-}).merge(timezoneQuerySchema);
 
 const formatSessionObject = (session: any, visitorSessionCount: number) => {
   const durationFormatted = formatDuration(session.duration || 0);
@@ -91,7 +80,7 @@ const formatSessionObject = (session: any, visitorSessionCount: number) => {
   };
 };
 
-sessionsRouter.get('/', async (c) => {
+sessionsRouter.get('/', async (c: Context) => {
   const params = await c.req.query();
   const timezoneInfo = useTimezone(c);
   const page = Number(params.page);
@@ -135,7 +124,7 @@ sessionsRouter.get('/', async (c) => {
   }
 });
 
-sessionsRouter.get('/:session_id', async (c) => {
+sessionsRouter.get('/:session_id', async (c: Context) => {
   const { session_id } = c.req.param();
   const user = c.get('user');
   const website = c.get('website');

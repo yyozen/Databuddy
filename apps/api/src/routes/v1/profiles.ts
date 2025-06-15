@@ -48,7 +48,7 @@ profilesRouter.get('/', async (c: Context) => {
         date_filter: `time >= parseDateTimeBestEffort('${startDate}') AND time <= parseDateTimeBestEffort('${endDate} 23:59:59' )`
       };
       visitorIdsBuilder.sb.groupBy = { visitor_id: 'anonymous_id' };
-      visitorIdsBuilder.sb.orderBy = { session_count: 'session_count DESC', last_visit: 'last_visit DESC' };
+      visitorIdsBuilder.sb.orderBy = { last_visit: 'last_visit DESC', session_count: 'session_count DESC' };
       visitorIdsBuilder.sb.limit = Number(profilesLimit);
       visitorIdsBuilder.sb.offset = offset;
       
