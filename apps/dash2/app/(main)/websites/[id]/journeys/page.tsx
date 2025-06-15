@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { RefreshCw, TrendingUp, TrendingDown, Users, MousePointer, ArrowRight, ChevronRight, ExternalLink, Timer, Target } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, Users, MousePointer, ArrowRight, ChevronRight, ExternalLink, Timer, Target, Route } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -386,12 +387,11 @@ export default function JourneysPage() {
             header: "Bounce Rate",
             cell: (info: any) => {
                 const rate = info.getValue() as number;
-                // Debug log
-                console.log('Bounce rate value:', rate, 'Type:', typeof rate);
+                const safeRate = typeof rate === 'number' && !isNaN(rate) ? rate : 0;
                 return (
                     <div>
-                        <Badge variant={rate > 70 ? "destructive" : rate > 40 ? "secondary" : "default"}>
-                            {rate}%
+                        <Badge variant={safeRate > 70 ? "destructive" : safeRate > 40 ? "secondary" : "default"}>
+                            {safeRate.toFixed(1)}%
                         </Badge>
                     </div>
                 );
@@ -401,14 +401,18 @@ export default function JourneysPage() {
             id: "avg_pages_per_session",
             accessorKey: "avg_pages_per_session",
             header: "Pages/Session",
-            cell: (info: any) => (
-                <div>
+            cell: (info: any) => {
+                const value = info.getValue() as number;
+                const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+                return (
                     <div>
-                        <Target className="h-3 w-3 text-muted-foreground" />
-                        <span className="font-medium">{info.getValue()}</span>
+                        <div>
+                            <Target className="h-3 w-3 text-muted-foreground" />
+                            <span className="font-medium">{safeValue.toFixed(1)}</span>
+                        </div>
                     </div>
-                </div>
-            ),
+                );
+            },
         },
     ], []);
 
@@ -449,13 +453,26 @@ export default function JourneysPage() {
     if (batchError) {
         return (
             <div className="p-6 max-w-[1600px] mx-auto">
-                <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+                <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950 rounded-xl">
                     <CardContent className="pt-6">
-                        <div className="flex items-center gap-2">
-                            <TrendingDown className="h-5 w-5 text-red-600" />
-                            <p className="text-red-600 font-medium">Error loading journey data</p>
+                        <div className="flex flex-col items-center text-center space-y-3">
+                            <div className="p-3 rounded-full bg-destructive/10 border border-destructive/20">
+                                <TrendingDown className="h-6 w-6 text-destructive" />
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-destructive">Error loading journey data</h4>
+                                <p className="text-destructive/80 text-sm mt-1">{batchError.message}</p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRefresh}
+                                className="gap-2 rounded-lg"
+                            >
+                                <RefreshCw className="h-4 w-4" />
+                                Retry
+                            </Button>
                         </div>
-                        <p className="text-red-600/80 text-sm mt-2">{batchError.message}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -465,95 +482,110 @@ export default function JourneysPage() {
     return (
         <div className="p-3 sm:p-4 lg:p-6 max-w-[1600px] mx-auto space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                    <h1 className="text-3xl font-bold tracking-tight">User Journeys</h1>
-                    <p className="text-muted-foreground">
-                        Analyze how users navigate through your website and identify optimization opportunities
-                    </p>
-
+            <div className="border-b bg-gradient-to-r from-background via-background to-muted/20 -mx-3 sm:-mx-4 lg:-mx-6 px-3 sm:px-4 lg:px-6 pb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                                <Route className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">User Journeys</h1>
+                                <p className="text-muted-foreground text-sm sm:text-base">
+                                    Analyze user navigation patterns and identify optimization opportunities
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <Button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        variant="outline"
+                        size="default"
+                        className="gap-2 rounded-lg px-4 py-2 font-medium border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh Data
+                    </Button>
                 </div>
-                <Button
-                    onClick={handleRefresh}
-                    disabled={isRefreshing}
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                >
-                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    Refresh Data
-                </Button>
             </div>
 
             {/* Enhanced Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    title="Total Page Transitions"
-                    value={summaryStats.totalTransitions.toLocaleString()}
-                    icon={MousePointer}
-                    isLoading={isLoading}
-                    description="Times users navigated from one page to another"
-                />
-                <StatCard
-                    title="Multi-Page Users"
-                    value={summaryStats.totalUsers.toLocaleString()}
-                    icon={Users}
-                    isLoading={isLoading}
-                    description="Users who visited more than one page (excludes bounces)"
-                />
-                <StatCard
-                    title="Avg Journey Position"
-                    value={summaryStats.avgStepInJourney.toString()}
-                    icon={ChevronRight}
-                    isLoading={isLoading}
-                    description="Average step number when users make page transitions"
-                />
-                <StatCard
-                    title="Avg Page Exit Rate"
-                    value={`${summaryStats.avgExitRate}%`}
-                    icon={TrendingDown}
-                    isLoading={isLoading}
-                    description="Average % of visitors who leave from each page (not bounces)"
-                />
+            <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                    <MousePointer className="h-5 w-5 text-primary" />
+                    <h2 className="text-lg font-semibold text-foreground">Journey Overview</h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard
+                        title="Total Page Transitions"
+                        value={summaryStats.totalTransitions.toLocaleString()}
+                        icon={MousePointer}
+                        isLoading={isLoading}
+                        description="Times users navigated from one page to another"
+                    />
+                    <StatCard
+                        title="Multi-Page Users"
+                        value={summaryStats.totalUsers.toLocaleString()}
+                        icon={Users}
+                        isLoading={isLoading}
+                        description="Users who visited more than one page (excludes bounces)"
+                    />
+                    <StatCard
+                        title="Avg Journey Position"
+                        value={summaryStats.avgStepInJourney.toString()}
+                        icon={ChevronRight}
+                        isLoading={isLoading}
+                        description="Average step number when users make page transitions"
+                    />
+                    <StatCard
+                        title="Avg Page Exit Rate"
+                        value={`${summaryStats.avgExitRate}%`}
+                        icon={TrendingDown}
+                        isLoading={isLoading}
+                        description="Average % of visitors who leave from each page (not bounces)"
+                    />
+                </div>
             </div>
 
             {/* Quick Insights Cards */}
             {!isLoading && (hasJourneyData || hasPathData || hasDropoffData || hasEntryPointData) && (
-                <div className="space-y-3">
-                    {/* Drop-off Alert */}
-                    {journeyData.dropoffs.length > 0 && journeyData.dropoffs[0].exit_rate > 70 && (
-                        <ClosableAlert
-                            id={`high-dropoff-${journeyData.dropoffs[0].name}`}
-                            title="High Drop-off Page Alert"
-                            description={`The page "${getPageDisplayName(journeyData.dropoffs[0].name)}" has an unusually high exit rate. Many users leave your site from here instead of continuing their journey.`}
-                            icon={TrendingDown}
-                            variant="error"
-                        >
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-xs font-medium">
-                                        Page: {getPageDisplayName(journeyData.dropoffs[0].name)}
-                                    </span>
-                                    <Badge variant="destructive" className="text-xs">
-                                        {journeyData.dropoffs[0].exit_rate}% exit rate
-                                    </Badge>
+                <div className="space-y-4">
+                    <div className="space-y-3">
+                        {/* Drop-off Alert */}
+                        {journeyData.dropoffs.length > 0 && journeyData.dropoffs[0].exit_rate > 70 && (
+                            <ClosableAlert
+                                id={`high-dropoff-${journeyData.dropoffs[0].name}`}
+                                title="High Drop-off Page Alert"
+                                description={`The page "${getPageDisplayName(journeyData.dropoffs[0].name)}" has an unusually high exit rate. Many users leave your site from here instead of continuing their journey.`}
+                                icon={TrendingDown}
+                                variant="error"
+                            >
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-medium">
+                                            Page: {getPageDisplayName(journeyData.dropoffs[0].name)}
+                                        </span>
+                                        <Badge variant="destructive" className="text-xs">
+                                            {journeyData.dropoffs[0].exit_rate}% exit rate
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-muted-foreground">
+                                            {journeyData.dropoffs[0].exits.toLocaleString()} exits
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                            {journeyData.dropoffs[0].total_visits.toLocaleString()} total visits
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="text-muted-foreground">
-                                        {journeyData.dropoffs[0].exits.toLocaleString()} exits
-                                    </span>
-                                    <span className="text-muted-foreground">
-                                        {journeyData.dropoffs[0].total_visits.toLocaleString()} total visits
-                                    </span>
-                                </div>
-                            </div>
-                        </ClosableAlert>
-                    )}
+                            </ClosableAlert>
+                        )}
+                    </div>
                 </div>
             )}
 
-            {/* Main Data Table */}
-            <Card>
+            <div className="space-y-4">
                 <DataTable
                     tabs={tabs}
                     title="Journey Analysis"
@@ -562,7 +594,7 @@ export default function JourneysPage() {
                     initialPageSize={15}
                     minHeight={400}
                 />
-            </Card>
+            </div>
         </div>
     );
 } 
