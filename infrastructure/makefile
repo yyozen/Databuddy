@@ -46,7 +46,7 @@ deploy-app: insatall-dependencies
 		--extra-vars "google_client_id=$$GOOGLE_CLIENT_ID" \
 		--extra-vars "google_client_secret=$$GOOGLE_CLIENT_SECRET" \
 		--extra-vars "opr_api_key=$$OPR_API_KEY" \
-		--extra-vars "version=$$VERSION" \
+		--extra-vars "version=$$DATABUDDY_VERSION" \
 		--extra-vars "deployment_target-infra-nodes" 
 
 
