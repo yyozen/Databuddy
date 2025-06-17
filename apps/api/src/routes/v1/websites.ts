@@ -365,16 +365,6 @@ websitesRouter.get('/:id', async (c) => {
   }
 
   try {
-    if (user.role === 'ADMIN') {
-      const website = await db.query.websites.findFirst({
-        where: eq(websites.id, id)
-      });
-      return c.json({
-        success: true,
-        data: website
-      });
-    }
-
     const projectIds = await getUserProjectIds(user.id);
     
     const website = await db.query.websites.findFirst({
