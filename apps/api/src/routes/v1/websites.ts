@@ -256,16 +256,6 @@ websitesRouter.get('/', async (c) => {
     return c.json({ success: false, error: "Unauthorized" }, 401);
   }
 
-  if (user.role === 'ADMIN') {
-    const allWebsites = await db.query.websites.findMany({
-      orderBy: (websites, { desc }) => [desc(websites.createdAt)]
-    });
-    return c.json({
-      success: true,
-      data: allWebsites
-    });
-  }
-
   try {
     const userWebsites = await db.query.websites.findMany({
       where: eq(websites.userId, user.id),
