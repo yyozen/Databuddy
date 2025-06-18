@@ -31,8 +31,11 @@ RUN bun run build
 FROM oven/bun:1-slim
 
 # Copy built files from builder
-COPY --from=builder /build/apps/dashboard /app
 WORKDIR /app
+
+COPY --from=builder /build/node_modules ./node_modules
+COPY --from=builder /build/apps/dashboard ./apps/dashboard
+COPY --from=builder /build/packages ./packages
 
 # Set environment variables
 ENV NODE_ENV=production 
@@ -40,8 +43,10 @@ ENV REDIS_URL=redis://localhost
 ENV DATABASE_URL=postgres://localhost
 ENV CLICKHOUSE_URL=https://localhost
 ENV NEXT_PUBLIC_API_URL=https://localhost
-
+ENV HOSTNAME=0.0.0.0
 # Expose port
 EXPOSE 3000
+
+WORKDIR /app/apps/dashboard
 # Start API
 CMD ["bun", "run", "start"]

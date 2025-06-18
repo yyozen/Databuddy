@@ -5,7 +5,7 @@ x-databuddy-env:
     REDIS_URL: "redis://redis:6379"
     QUEUE_REDIS_URL: "redis://redis:6379"
     AI_API_KEY: "{{ai_api_key}}" # secret
-    BETTER_AUTH_SECRET: "{{better_auth_secret | regex_replace('\\$', '\\$\\$')}}" # secret
+    BETTER_AUTH_SECRET: "{{better_auth_secret | regex_replace('\\$', '$$')}}" # secret
     BETTER_AUTH_URL: "{{better_auth_url}}" 
     GITHUB_CLIENT_ID: "{{github_client_id}}"
     GITHUB_CLIENT_SECRET: "{{github_client_secret}}"  # secret
@@ -24,6 +24,14 @@ services:
     environment: *databuddy-env
     deploy:
       mode: global
+      update_config:
+        parallelism: 1
+        order: stop-first
+        failure_action: rollback
+        delay: 60s
+      rollback_config:
+        parallelism: 1
+        order: stop-first
       placement:
         constraints:
           - node.labels.app==true
@@ -36,12 +44,22 @@ services:
     networks:
       - databuddy_ingress
       - databuddy_aqua
+    expose:
+      - 3000
 
   dashboard:
     image: "registry.databuddy.cc/dashboard:{{version}}"
     environment: *databuddy-env
     deploy:
       mode: global
+      update_config:
+        parallelism: 1
+        order: stop-first
+        failure_action: rollback
+        delay: 60s
+      rollback_config:
+        parallelism: 1
+        order: stop-first
       placement:
         constraints:
           - node.labels.app==true
@@ -54,12 +72,22 @@ services:
     networks:
       - databuddy_ingress
       - databuddy_aqua
+    expose:
+      - 3000
   
   basket:
     image: "registry.databuddy.cc/basket:{{version}}"
     environment: *databuddy-env
     deploy:
       mode: global
+      update_config:
+        parallelism: 1
+        order: stop-first
+        failure_action: rollback
+        delay: 60s
+      rollback_config:
+        parallelism: 1
+        order: stop-first
       placement:
         constraints:
           - node.labels.app==true
@@ -72,6 +100,8 @@ services:
     networks:
       - databuddy_ingress
       - databuddy_aqua
+    expose:
+      - 3000
 
 networks:
   databuddy_ingress:
