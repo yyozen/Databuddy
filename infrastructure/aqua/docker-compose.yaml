@@ -78,6 +78,8 @@ services:
       timeout: 10s
     networks:
       - databuddy_aqua
+    volumes:
+      - "{{redis_dir_name}}:/data"
     stop_grace_period: 20m
     stop_signal: SIGKILL
     expose:
