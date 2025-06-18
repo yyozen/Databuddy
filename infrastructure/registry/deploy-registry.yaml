@@ -2,12 +2,12 @@
 - hosts: infra-nodes
   name: "Deploy Docker Registry"
   remote_user: ubuntu
-  gather_facts: yes
+  gather_facts: no
   become: yes
   vars:
     working_dir_name: "registry"
     registry_host: "registry.databuddy.cc"
-    registry_data_dir: "/tmp/data/registry"
+    registry_data_dir: "/tmp/registry/data"
 
   tasks:
 
