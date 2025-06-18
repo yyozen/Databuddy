@@ -55,6 +55,18 @@
         group: "{{postgres_gid}}"
         recurse: yes
       when: inventory_hostname in groups['clickhouse']
+    
+
+    - name: Create Data Dir For redis
+      become: true
+      ansible.builtin.file:
+        path: "{{redis_dir_name}}"
+        state: directory
+        mode: "0775"
+        owner: "{{postgres_uid}}"
+        group: "{{postgres_gid}}"
+        recurse: yes
+      when: inventory_hostname in groups['redis']
 
     
     - name: Create Data Dir For Clickhouse Logs

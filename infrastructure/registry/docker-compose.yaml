@@ -1,18 +1,21 @@
 version: '3'
 services:
   registry:
-    image: registry:latest
+    image: registry:3.0.0
     command: /etc/distribution/config.yml
     expose:
       - 5000
     environment:
-      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /tmp/data
       REGISTRY_AUTH: htpasswd
       REGISTRY_AUTH_HTPASSWD_REALM: Registry
       REGISTRY_AUTH_HTPASSWD_PATH: /run/secrets/registry_password_file
       REGISTRY_STORAGE_DELETE_ENABLED: 1
+      OTEL_TRACES_EXPORTER: none
+      REGISTRY_LOG_LEVEL: info
     secrets:
       - registry_password_file
+    volumes:
+      - "{{registry_data_dir}}:/var/lib/registry"
     restart: always
     networks:
       - databuddy_ingress
@@ -40,12 +43,6 @@ services:
       - "traefik.http.routers.registry.entrypoints=websecure"
       - "traefik.http.services.registry.loadbalancer.server.port=5000"
       - "traefik.docker.network=databuddy_ingress"
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:5000 || exit 1
-      interval: 120s
-      timeout: 60s
-      start_period: 180s
-      retries: 20
 
 networks:
   databuddy_ingress:

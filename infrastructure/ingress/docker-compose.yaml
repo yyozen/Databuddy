@@ -9,7 +9,7 @@ networks:
 services:
   reverse-proxy:
     # Use Traefik for routing and certificate handling.
-    image: traefik:v3.4.0
+    image: traefik:v3.4.1
     restart: unless-stopped
     command:
       - "--api.insecure=true"
