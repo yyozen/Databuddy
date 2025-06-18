@@ -118,40 +118,40 @@ export function DateRangePicker({
             <Popover open={isOpen} onOpenChange={setIsOpen}>
                 <PopoverTrigger asChild>
                     <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         disabled={disabled}
                         className={cn(
-                            "h-6 text-xs gap-1 whitespace-nowrap px-2 justify-start text-left font-normal",
+                            "h-8 text-sm gap-2 whitespace-nowrap px-3 justify-start text-left font-normal border shadow-xs transition-[color,box-shadow]",
                             !hasSelection && "text-muted-foreground"
                         )}
                     >
-                        <CalendarIcon size={16} className="h-3 w-3 shrink-0" />
-                        <span className="truncate text-xs font-medium">
+                        <CalendarIcon size={16} className="h-4 w-4 shrink-0" />
+                        <span className="truncate text-sm font-medium">
                             {getDisplayText()}
                         </span>
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
+                <PopoverContent className="w-auto p-0 border shadow-md rounded" align="end">
                     {/* Header showing current selection */}
-                    <div className="p-3 border-b">
-                        <div className="text-xs text-muted-foreground">
+                    <div className="p-4 border-b bg-muted/20">
+                        <div className="text-sm text-muted-foreground">
                             {tempRange?.from && tempRange?.to ? (
                                 <span className="text-foreground font-medium">
                                     {format(tempRange.from, "MMM d")} - {format(tempRange.to, "MMM d, yyyy")}
                                 </span>
                             ) : tempRange?.from ? (
                                 <span>
-                                    <span className="text-foreground">{format(tempRange.from, "MMM d")}</span>
+                                    <span className="text-foreground font-medium">{format(tempRange.from, "MMM d")}</span>
                                     <span className="text-muted-foreground"> → Select end date</span>
                                 </span>
                             ) : (
-                                "Select start date"
+                                <span className="font-medium">Select start date</span>
                             )}
                         </div>
                     </div>
 
-                    <div className="p-3">
+                    <div className="p-4">
                         <Calendar
                             initialFocus
                             mode="range"
@@ -168,13 +168,13 @@ export function DateRangePicker({
                     </div>
 
                     {/* Quick presets */}
-                    <div className="border-t p-3">
-                        <div className="text-xs font-medium text-muted-foreground mb-2">Quick select:</div>
+                    <div className="border-t p-4 bg-muted/20">
+                        <div className="text-sm font-medium text-muted-foreground mb-3">Quick select:</div>
                         <div className="flex gap-2 flex-wrap">
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 text-xs"
+                                className="h-8 text-sm transition-[color,box-shadow]"
                                 onClick={() => handlePreset(7)}
                             >
                                 Last 7 days
@@ -182,7 +182,7 @@ export function DateRangePicker({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 text-xs"
+                                className="h-8 text-sm transition-[color,box-shadow]"
                                 onClick={() => handlePreset(30)}
                             >
                                 Last 30 days
@@ -190,7 +190,7 @@ export function DateRangePicker({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 text-xs"
+                                className="h-8 text-sm transition-[color,box-shadow]"
                                 onClick={() => handlePreset(90)}
                             >
                                 Last 90 days
@@ -199,12 +199,12 @@ export function DateRangePicker({
                     </div>
 
                     {/* Actions */}
-                    <div className="border-t p-3 flex justify-between items-center bg-muted/20">
+                    <div className="border-t p-4 flex justify-between items-center bg-muted/20">
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleClear}
-                            className="text-muted-foreground hover:text-foreground h-8 cursor-pointer"
+                            className="text-muted-foreground hover:text-foreground h-8 transition-[color,box-shadow]"
                         >
                             Clear
                         </Button>
@@ -214,7 +214,7 @@ export function DateRangePicker({
                                 variant="ghost"
                                 size="sm"
                                 onClick={handleCancel}
-                                className="h-8 cursor-pointer"
+                                className="h-8 transition-[color,box-shadow]"
                             >
                                 Cancel
                             </Button>
@@ -222,7 +222,7 @@ export function DateRangePicker({
                                 size="sm"
                                 onClick={handleApply}
                                 disabled={!hasValidTempSelection}
-                                className="h-8 bg-primary hover:bg-primary/90 cursor-pointer"
+                                className="h-8 shadow-xs transition-[color,box-shadow]"
                             >
                                 Apply
                             </Button>
