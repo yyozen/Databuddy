@@ -30,7 +30,6 @@ function PerformanceMetricCell({ value, type = 'time' }: { value?: number; type?
   let showIcon = false;
 
   if (type === 'cls') {
-    // CLS is a score (0-1, lower is better)
     formatted = value.toFixed(3);
     colorClass = value < 0.1 ? "text-green-600" : value < 0.25 ? "text-yellow-600" : "text-red-400";
     showIcon = value < 0.1 || value >= 0.25;
