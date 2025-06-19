@@ -861,8 +861,6 @@ export function WebsiteOverviewTab({
           isLoading={isLoading}
           initialPageSize={7}
           minHeight={230}
-          isScrollable
-          scrollHeight={400}
         />
 
         <DataTable
@@ -872,8 +870,6 @@ export function WebsiteOverviewTab({
           isLoading={isLoading}
           initialPageSize={7}
           minHeight={230}
-          isScrollable
-          scrollHeight={400}
         />
       </div>
 
@@ -884,8 +880,6 @@ export function WebsiteOverviewTab({
         title="Custom Events"
         description="User-defined events and interactions with property breakdowns"
         isLoading={isLoading}
-        isScrollable
-        scrollHeight={400}
         initialPageSize={8}
         minHeight={200}
         emptyMessage="No custom events tracked yet"
@@ -962,8 +956,6 @@ export function WebsiteOverviewTab({
           initialPageSize={8}
           minHeight={200}
           showSearch={false}
-          isScrollable
-          scrollHeight={400}
         />
 
         <DataTable
@@ -975,8 +967,6 @@ export function WebsiteOverviewTab({
           initialPageSize={8}
           minHeight={200}
           showSearch={false}
-          isScrollable
-          scrollHeight={400}
         />
 
         <DataTable
@@ -988,8 +978,6 @@ export function WebsiteOverviewTab({
           initialPageSize={8}
           minHeight={200}
           showSearch={false}
-          isScrollable
-          scrollHeight={400}
         />
       </div>
     </div>
