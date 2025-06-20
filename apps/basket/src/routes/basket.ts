@@ -31,6 +31,40 @@ function saltAnonymousId(anonymousId: string, salt: string): string {
   return createHash('sha256').update(anonymousId + salt).digest('hex')
 }
 
+async function validateRequest(body: any, query: any, request: Request) {
+  if (!validatePayloadSize(body, VALIDATION_LIMITS.PAYLOAD_MAX_SIZE)) {
+    return { error: { status: 'error', message: 'Payload too large' } }
+  }
+  
+  const clientId = sanitizeString(query.client_id, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH)
+  if (!clientId) return { error: { status: 'error', message: 'Missing client ID' } }
+  
+  const website = await getWebsiteById(clientId)
+  if (!website || website.status !== 'ACTIVE') {
+    return { error: { status: 'error', message: 'Invalid or inactive client ID' } }
+  }
+  
+  const origin = request.headers.get('origin')
+  if (origin && !isValidOrigin(origin, website.domain)) {
+    return { error: { status: 'error', message: 'Origin not authorized' } }
+  }
+  
+  const userAgent = sanitizeString(request.headers.get('user-agent'), VALIDATION_LIMITS.STRING_MAX_LENGTH) || ''
+  const botCheck = detectBot(userAgent, request)
+  if (botCheck.isBot) {
+    return { error: { status: 'ignored' } }
+  }
+  
+  const ip = extractIpFromRequest(request)
+  
+  return { 
+    success: true, 
+    clientId, 
+    userAgent, 
+    ip 
+  }
+}
+
 function detectBot(userAgent: string, request: Request): { isBot: boolean } {
   const ua = userAgent?.toLowerCase() || '';
   
@@ -53,24 +87,26 @@ async function insertError(errorData: any, clientId: string): Promise<void> {
   const payload = errorData.payload
   const now = new Date().getTime()
 
+  const errorEvent: ErrorEvent = {
+    id: randomUUID(),
+    client_id: clientId,
+    event_id: eventId,
+    anonymous_id: sanitizeString(payload.anonymousId, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    session_id: validateSessionId(payload.sessionId),
+    timestamp: typeof payload.timestamp === 'number' ? payload.timestamp : now,
+    path: sanitizeString(payload.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+    message: sanitizeString(payload.message, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+    filename: sanitizeString(payload.filename, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+    lineno: payload.lineno,
+    colno: payload.colno,
+    stack: sanitizeString(payload.stack, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+    error_type: sanitizeString(payload.errorType, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    created_at: now
+  }
+
   await clickHouse.insert({
     table: 'analytics.errors',
-    values: [{
-      id: randomUUID(),
-      client_id: clientId,
-      event_id: eventId,
-      anonymous_id: sanitizeString(payload.anonymousId, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
-      session_id: validateSessionId(payload.sessionId),
-      timestamp: typeof payload.timestamp === 'number' ? payload.timestamp : now,
-      path: sanitizeString(payload.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
-      message: sanitizeString(payload.message, VALIDATION_LIMITS.STRING_MAX_LENGTH),
-      filename: sanitizeString(payload.filename, VALIDATION_LIMITS.STRING_MAX_LENGTH),
-      lineno: payload.lineno,
-      colno: payload.colno,
-      stack: sanitizeString(payload.stack, VALIDATION_LIMITS.STRING_MAX_LENGTH),
-      error_type: sanitizeString(payload.errorType, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
-      created_at: now
-    }],
+    values: [errorEvent],
     format: 'JSONEachRow'
   })
 }
@@ -82,23 +118,25 @@ async function insertWebVitals(vitalsData: any, clientId: string): Promise<void>
   const payload = vitalsData.payload
   const now = new Date().getTime()
 
+  const webVitalsEvent: WebVitalsEvent = {
+    id: randomUUID(),
+    client_id: clientId,
+    event_id: eventId,
+    anonymous_id: sanitizeString(payload.anonymousId, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
+    session_id: validateSessionId(payload.sessionId),
+    timestamp: typeof payload.timestamp === 'number' ? payload.timestamp : now,
+    path: sanitizeString(payload.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+    fcp: validatePerformanceMetric(payload.fcp),
+    lcp: validatePerformanceMetric(payload.lcp),
+    cls: validatePerformanceMetric(payload.cls),
+    fid: validatePerformanceMetric(payload.fid),
+    inp: validatePerformanceMetric(payload.inp),
+    created_at: now
+  }
+
   await clickHouse.insert({
     table: 'analytics.web_vitals',
-    values: [{
-      id: randomUUID(),
-      client_id: clientId,
-      event_id: eventId,
-      anonymous_id: sanitizeString(payload.anonymousId, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH),
-      session_id: validateSessionId(payload.sessionId),
-      timestamp: typeof payload.timestamp === 'number' ? payload.timestamp : now,
-      path: sanitizeString(payload.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
-      fcp: validatePerformanceMetric(payload.fcp),
-      lcp: validatePerformanceMetric(payload.lcp),
-      cls: validatePerformanceMetric(payload.cls),
-      fid: validatePerformanceMetric(payload.fid),
-      inp: validatePerformanceMetric(payload.inp),
-      created_at: now
-    }],
+    values: [webVitalsEvent],
     format: 'JSONEachRow'
   })
 }
@@ -215,31 +253,10 @@ async function checkDuplicate(eventId: string, eventType: string): Promise<boole
 
 const app = new Elysia()
   .post('/', async ({ body, query, request }: { body: any, query: any, request: Request }) => {
-    if (!validatePayloadSize(body, VALIDATION_LIMITS.PAYLOAD_MAX_SIZE)) {
-      return { status: 'error', message: 'Payload too large' }
-    }
+    const validation = await validateRequest(body, query, request)
+    if (!validation.success) return validation.error
     
-    const clientId = sanitizeString(query.client_id, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH)
-    if (!clientId) return { status: 'error', message: 'Missing client ID' }
-    
-    const website = await getWebsiteById(clientId)
-    if (!website || website.status !== 'ACTIVE') {
-      return { status: 'error', message: 'Invalid or inactive client ID' }
-    }
-    
-    const origin = request.headers.get('origin')
-    if (origin && !isValidOrigin(origin, website.domain)) {
-      return { status: 'error', message: 'Origin not authorized' }
-    }
-    
-    const userAgent = sanitizeString(request.headers.get('user-agent'), VALIDATION_LIMITS.STRING_MAX_LENGTH) || ''
-    const ip = extractIpFromRequest(request)
-    
-    // Bot detection
-    const botCheck = detectBot(userAgent, request)
-    if (botCheck.isBot) {
-      return { status: 'ignored' }
-    }
+    const { clientId, userAgent, ip } = validation
     
     const salt = await getDailySalt()
     if (body.anonymous_id) {
@@ -266,12 +283,6 @@ const app = new Elysia()
     return { status: 'error', message: 'Unknown event type' }
   })
   .post('/batch', async ({ body, query, request }: { body: any, query: any, request: Request }) => {
-    // Validate payload size first
-    if (!validatePayloadSize(body, VALIDATION_LIMITS.PAYLOAD_MAX_SIZE)) {
-      return { status: 'error', message: 'Payload too large' }
-    }
-    
-    // Handle batch events
     if (!Array.isArray(body)) {
       return { status: 'error', message: 'Batch endpoint expects array of events' }
     }
@@ -280,29 +291,10 @@ const app = new Elysia()
       return { status: 'error', message: 'Batch too large' }
     }
     
-    const clientId = sanitizeString(query.client_id, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH)
+    const validation = await validateRequest(body, query, request)
+    if (!validation.success) return { ...validation.error, batch: true }
     
-    if (!clientId) {
-      return { status: 'error', message: 'Missing client ID' }
-    }
-    
-    const website = await getWebsiteById(clientId)
-    if (!website || website.status !== 'ACTIVE') {
-      return { status: 'error', message: 'Invalid or inactive client ID' }
-    }
-    
-    const origin = request.headers.get('origin')
-    if (origin && !isValidOrigin(origin, website.domain)) {
-      return { status: 'error', message: 'Origin not authorized' }
-    }
-    
-    const userAgent = sanitizeString(request.headers.get('user-agent'), VALIDATION_LIMITS.STRING_MAX_LENGTH) || ''
-    const ip = extractIpFromRequest(request)
-    
-    const botCheck = detectBot(userAgent, request)
-    if (botCheck.isBot) {
-      return { status: 'ignored', batch: true }
-    }
+    const { clientId, userAgent, ip } = validation
     
     const salt = await getDailySalt()
     for (const event of body) {
