@@ -15,7 +15,9 @@
     "dry-run": "wrangler deploy --minify --dry-run",
     "migrate:events": "bun run src/commands/run-events-migration.ts",
     "init:tables": "bun run src/commands/init-tables.ts",
-    "test": "bun run src/scripts/test.ts"
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@clickhouse/client": "^1.11.1",
@@ -36,7 +38,10 @@
   },
   "devDependencies": {
     "bun-types": "latest",
-    "wrangler": "^4.13.2"
+    "wrangler": "^4.13.2",
+    "vitest": "^3.2.4",
+    "@vitest/ui": "^1.0.0",
+    "c8": "^8.0.0"
   },
   "module": "src/index.js"
 }
