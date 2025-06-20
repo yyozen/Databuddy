@@ -91,10 +91,10 @@ export default function Hero() {
 							<div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 w-full md:w-auto">
 								<span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">Trusted by developers at</span>
 								<div className="flex flex-wrap items-center gap-2 sm:gap-4 text-muted-foreground">
-									<span className="text-xs sm:text-sm hover:text-foreground transition-colors cursor-default">Rivo.gg</span>
-									<span className="text-xs sm:text-sm hover:text-foreground transition-colors cursor-default">Better-auth</span>
-									<span className="text-xs sm:text-sm hover:text-foreground transition-colors cursor-default">Confinity</span>
-									<span className="text-xs sm:text-sm hover:text-foreground transition-colors cursor-default">Wouldyoubot</span>
+									<a href="https://rivo.gg" className="text-xs sm:text-sm hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">Rivo.gg</a>
+									<a href="https://better-auth.com" className="text-xs sm:text-sm hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">Better-auth</a>
+									<a href="https://www.confinity.com" className="text-xs sm:text-sm hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">Confinity</a>
+									<a href="https://useautumn.com" className="cursor-pointer text-xs sm:text-sm hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">Autumn</a>
 									<span className="text-xs sm:text-sm text-muted-foreground">+496 more</span>
 								</div>
 							</div>
