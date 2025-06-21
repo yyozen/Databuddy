@@ -14,27 +14,8 @@ import {
 import { getRedisCache } from '@databuddy/redis'
 import { bots } from '@/packages/shared'
 import crypto from 'node:crypto'
-import { gunzip } from 'node:zlib'
-import { promisify } from 'node:util'
 
 const redis = getRedisCache()
-const gunzipAsync = promisify(gunzip)
-
-async function parseRequestBody(request: Request): Promise<any> {
-  const contentEncoding = request.headers.get('content-encoding')
-  
-  if (contentEncoding === 'gzip') {
-    try {
-      const buffer = await request.arrayBuffer()
-      const decompressed = await gunzipAsync(Buffer.from(buffer))
-      return JSON.parse(decompressed.toString('utf-8'))
-    } catch (error) {
-      throw new Error('Failed to decompress gzip content')
-    }
-  }
-  
-  return await request.json()
-}
 
 async function getDailySalt(): Promise<string> {
   const saltKey = `salt:${Math.floor(Date.now() / (24 * 60 * 60 * 1000))}`
@@ -271,8 +252,7 @@ async function checkDuplicate(eventId: string, eventType: string): Promise<boole
 }
 
 const app = new Elysia()
-  .post('/', async ({ query, request }: { query: any, request: Request }) => {
-    const body = await parseRequestBody(request)
+  .post('/', async ({ body, query, request }: { body: any, query: any, request: Request }) => {
     const validation = await validateRequest(body, query, request)
     if (!validation.success) return validation.error
     
@@ -302,8 +282,7 @@ const app = new Elysia()
 
     return { status: 'error', message: 'Unknown event type' }
   })
-  .post('/batch', async ({ query, request }: { query: any, request: Request }) => {
-    const body = await parseRequestBody(request)
+  .post('/batch', async ({ body, query, request }: { body: any, query: any, request: Request }) => {
     if (!Array.isArray(body)) {
       return { status: 'error', message: 'Batch endpoint expects array of events' }
     }
