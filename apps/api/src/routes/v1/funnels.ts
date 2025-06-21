@@ -6,6 +6,7 @@ import { authMiddleware } from '../../middleware/auth'
 import { websiteAuthHook } from '../../middleware/website'
 import { logger } from '../../lib/logger'
 import { db, funnelDefinitions, funnelGoals, chQuery } from '@databuddy/db'
+import { parseReferrer } from '../../utils/referrer'
 
 interface Website {
   id: string;
@@ -807,5 +808,301 @@ funnelRouter.get('/:id/analytics', async (c) => {
     }, 500)
   }
 })
+
+// Get funnel analytics grouped by referrer
+funnelRouter.get('/:funnel_id/analytics/referrer', async (c) => {
+  const { funnel_id: funnelId } = c.req.param();
+  const website = c.get('website');
+
+  if (!website?.id) {
+    return c.json({ success: false, error: 'Website not found' }, 404);
+  }
+
+  try {
+    const params = c.req.query();
+    const endDate = params.end_date || new Date().toISOString().split('T')[0];
+    const startDate = params.start_date || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Get the funnel definition
+    const funnel = await db
+      .select()
+      .from(funnelDefinitions)
+      .where(and(
+        eq(funnelDefinitions.id, funnelId),
+        eq(funnelDefinitions.websiteId, website.id),
+        isNull(funnelDefinitions.deletedAt)
+      ))
+      .limit(1)
+
+    if (funnel.length === 0) {
+      return c.json({
+        success: false,
+        error: 'Funnel not found'
+      }, 404)
+    }
+
+    const funnelData = funnel[0]
+    const steps = funnelData.steps as Array<{ type: string; target: string; name: string; conditions?: any }>
+    const filters = funnelData.filters as Array<{ field: string; operator: string; value: string | string[] }> || []
+
+    if (!steps || steps.length === 0) {
+      return c.json({ success: false, error: 'Funnel has no steps' }, 400);
+    }
+
+    // Build filter conditions
+    const buildFilterConditions = () => {
+      if (!filters || filters.length === 0) return '';
+      
+      const filterConditions = filters.map(filter => {
+        const field = filter.field.replace(/'/g, "''");
+        const value = Array.isArray(filter.value) ? filter.value : [filter.value];
+        
+        switch (filter.operator) {
+          case 'equals':
+            return `${field} = '${value[0].replace(/'/g, "''")}'`;
+          case 'contains':
+            return `${field} LIKE '%${value[0].replace(/'/g, "''")}%'`;
+          case 'not_equals':
+            return `${field} != '${value[0].replace(/'/g, "''")}'`;
+          case 'in':
+            return `${field} IN (${value.map(v => `'${v.replace(/'/g, "''")}'`).join(', ')})`;
+          case 'not_in':
+            return `${field} NOT IN (${value.map(v => `'${v.replace(/'/g, "''")}'`).join(', ')})`;
+          default:
+            return '';
+        }
+      }).filter(Boolean);
+      
+      return filterConditions.length > 0 ? ` AND ${filterConditions.join(' AND ')}` : '';
+    };
+
+    const filterConditions = buildFilterConditions();
+
+    const stepQueries = steps.map((step, index) => {
+      let whereCondition = '';
+      
+      if (step.type === 'PAGE_VIEW') {
+        const targetPath = step.target.replace(/'/g, "''");
+        whereCondition = `event_name = 'screen_view' AND (path = '${targetPath}' OR path LIKE '%${targetPath}%')`;
+      } else if (step.type === 'EVENT') {
+        const eventName = step.target.replace(/'/g, "''");
+        whereCondition = `event_name = '${eventName}'`;
+      }
+      
+      return `
+        SELECT 
+          ${index + 1} as step_number,
+          '${step.name.replace(/'/g, "''")}' as step_name,
+          session_id,
+          MIN(time) as first_occurrence,
+          any(referrer) as session_referrer
+        FROM analytics.events
+        WHERE client_id = '${website.id}'
+          AND time >= parseDateTimeBestEffort('${startDate}')
+          AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+          AND ${whereCondition}${filterConditions}
+        GROUP BY session_id`;
+    });
+
+    // Get the first chronological referrer for each session, then get step events
+    const sessionReferrerQuery = `
+      WITH session_referrers AS (
+        SELECT DISTINCT
+          session_id,
+          argMin(referrer, time) as first_referrer
+        FROM analytics.events
+        WHERE client_id = '${website.id}'
+          AND time >= parseDateTimeBestEffort('${startDate}')
+          AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')${filterConditions}
+        GROUP BY session_id
+      ),
+      all_step_events AS (
+        ${stepQueries.join('\n        UNION ALL\n')}
+      )
+      SELECT 
+        ase.step_number,
+        ase.step_name,
+        ase.session_id,
+        ase.first_occurrence,
+        COALESCE(sr.first_referrer, '') as session_referrer
+      FROM all_step_events ase
+      LEFT JOIN session_referrers sr ON ase.session_id = sr.session_id
+      ORDER BY ase.session_id, ase.first_occurrence
+    `;
+
+    // Log the generated query for debugging
+    logger.info('Generated funnel referrer analysis query', {
+      funnel_id: funnelId,
+      website_id: website.id
+    });
+
+    let rawResults;
+    try {
+      rawResults = await chQuery<{
+        step_number: number;
+        step_name: string;
+        session_id: string;
+        first_occurrence: number;
+        session_referrer: string;
+      }>(sessionReferrerQuery);
+    } catch (sqlError: any) {
+      logger.error('SQL query failed for funnel referrer analytics', {
+        funnel_id: funnelId,
+        website_id: website.id,
+        sql_error: sqlError.message,
+        query: sessionReferrerQuery
+      });
+      throw new Error(`SQL query failed: ${sqlError.message}`);
+    }
+
+    const sessionReferrerMap = new Map<string, {normalizedKey: string, parsedReferrer: any}>();
+    const referrerData = new Map<string, {
+      parsedReferrer: any,
+      sessions: Map<string, Array<{step_number: number, step_name: string, first_occurrence: number}>>
+    }>();
+    
+    for (const event of rawResults) {
+      const rawReferrer = event.session_referrer || '';
+      
+      if (!sessionReferrerMap.has(event.session_id)) {
+        let shouldSkip = false;
+        if (website.domain && rawReferrer && rawReferrer !== 'direct') {
+          try {
+            const url = new URL(rawReferrer.startsWith('http') ? rawReferrer : `http://${rawReferrer}`);
+            const hostname = url.hostname;
+            
+            if (hostname === website.domain || hostname.endsWith(`.${website.domain}`) || 
+                (website.domain.startsWith('www.') && hostname === website.domain.substring(4)) ||
+                (hostname.startsWith('www.') && website.domain === hostname.substring(4))) {
+              shouldSkip = true;
+            }
+          } catch (e) {}
+        }
+        
+        if (shouldSkip) {
+          sessionReferrerMap.set(event.session_id, {
+            normalizedKey: 'Direct',
+            parsedReferrer: { type: 'direct', name: 'Direct', domain: '', url: '' }
+          });
+        } else {
+          const parsedReferrer = parseReferrer(rawReferrer || null, website.domain);
+          sessionReferrerMap.set(event.session_id, {
+            normalizedKey: parsedReferrer.name,
+            parsedReferrer
+          });
+        }
+      }
+      
+      const sessionData = sessionReferrerMap.get(event.session_id)!;
+      const normalizedReferrer = sessionData.normalizedKey;
+      
+      if (!referrerData.has(normalizedReferrer)) {
+        referrerData.set(normalizedReferrer, {
+          parsedReferrer: sessionData.parsedReferrer,
+          sessions: new Map()
+        });
+      }
+      
+      const referrerGroup = referrerData.get(normalizedReferrer)!;
+      if (!referrerGroup.sessions.has(event.session_id)) {
+        referrerGroup.sessions.set(event.session_id, []);
+      }
+      
+      referrerGroup.sessions.get(event.session_id)!.push({
+        step_number: event.step_number,
+        step_name: event.step_name,
+        first_occurrence: event.first_occurrence
+      });
+    }
+
+    const referrerAnalytics = [];
+    
+    for (const [normalizedKey, referrerGroup] of referrerData) {
+      const stepCounts = new Map<number, Set<string>>();
+      
+      // Calculate progression for each session
+      for (const [sessionId, events] of referrerGroup.sessions) {
+        events.sort((a, b) => a.first_occurrence - b.first_occurrence);
+        
+        let currentStep = 1;
+        for (const event of events) {
+          if (event.step_number === currentStep) {
+            if (!stepCounts.has(event.step_number)) {
+              stepCounts.set(event.step_number, new Set());
+            }
+            stepCounts.get(event.step_number)!.add(sessionId);
+            currentStep++;
+          }
+        }
+      }
+
+      const parsedReferrer = referrerGroup.parsedReferrer;
+      const stepsAnalytics = steps.map((step: any, index: number) => {
+        const stepNumber = index + 1;
+        const users = stepCounts.get(stepNumber)?.size || 0;
+        const prevStepUsers = index > 0 ? (stepCounts.get(index)?.size || 0) : users;
+        const totalUsers = stepCounts.get(1)?.size || 0;
+        
+        const conversion_rate = index === 0 ? 100.0 : 
+          prevStepUsers > 0 ? Math.round((users / prevStepUsers) * 100 * 100) / 100 : 0;
+        
+        const dropoffs = index > 0 ? prevStepUsers - users : 0;
+        const dropoff_rate = index > 0 && prevStepUsers > 0 ? 
+          Math.round((dropoffs / prevStepUsers) * 100 * 100) / 100 : 0;
+
+        return {
+          step_number: stepNumber,
+          step_name: step.name,
+          users,
+          total_users: totalUsers,
+          conversion_rate,
+          dropoffs,
+          dropoff_rate
+        };
+      });
+
+      const firstStep = stepsAnalytics[0];
+      const lastStep = stepsAnalytics[stepsAnalytics.length - 1];
+      const overallConversion = lastStep && firstStep && firstStep.users > 0 ? 
+        Math.round((lastStep.users / firstStep.users) * 100 * 100) / 100 : 0;
+
+      referrerAnalytics.push({
+        referrer: parsedReferrer.name,
+        referrer_parsed: {
+          type: parsedReferrer.type,
+          name: parsedReferrer.name,
+          domain: parsedReferrer.domain,
+          url: parsedReferrer.url
+        },
+        total_users: firstStep ? firstStep.users : 0,
+        completed_users: lastStep ? lastStep.users : 0,
+        overall_conversion_rate: overallConversion,
+        steps_analytics: stepsAnalytics
+      });
+    }
+
+    referrerAnalytics.sort((a, b) => b.total_users - a.total_users);
+
+    return c.json({
+      success: true,
+      data: {
+        referrer_analytics: referrerAnalytics,
+        total_referrers: referrerAnalytics.length
+      },
+      date_range: {
+        start_date: startDate,
+        end_date: endDate
+      }
+    });
+
+  } catch (error: any) {
+    logger.error('Failed to fetch funnel analytics by referrer', {
+      error: error.message,
+      funnel_id: funnelId,
+      website_id: website.id
+    });
+    return c.json({ success: false, error: 'Failed to fetch funnel analytics by referrer' }, 500);
+  }
+});
 
 export default funnelRouter 

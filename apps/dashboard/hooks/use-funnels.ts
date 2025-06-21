@@ -81,6 +81,34 @@ interface FunnelAnalyticsResponse extends ApiResponse {
   date_range: DateRange;
 }
 
+interface FunnelAnalyticsByReferrerResponse extends ApiResponse {
+  data: {
+    referrer_analytics: Array<{
+      referrer: string;
+      referrer_parsed: {
+        type: string;
+        name: string;
+        domain: string;
+        url: string;
+      };
+      total_users: number;
+      completed_users: number;
+      overall_conversion_rate: number;
+      steps_analytics: Array<{
+        step_number: number;
+        step_name: string;
+        users: number;
+        total_users: number;
+        conversion_rate: number;
+        dropoffs: number;
+        dropoff_rate: number;
+      }>;
+    }>;
+    total_referrers: number;
+  };
+  date_range: DateRange;
+}
+
 // Simple autocomplete data types
 export interface AutocompleteData {
   customEvents: string[];
@@ -315,6 +343,32 @@ export function useFunnelAnalytics(
 
   return useQuery({
     queryKey: ['funnel-analytics', websiteId, funnelId, dateRange],
+    queryFn: fetchData,
+    ...defaultQueryOptions,
+    ...options,
+    enabled: options?.enabled !== false && !!websiteId && !!funnelId,
+  });
+}
+
+// Hook for funnel analytics grouped by referrer
+export function useFunnelAnalyticsByReferrer(
+  websiteId: string, 
+  funnelId: string, 
+  dateRange?: DateRange, 
+  options?: Partial<UseQueryOptions<FunnelAnalyticsByReferrerResponse>>
+) {
+  const fetchData = useCallback(async ({ signal }: { signal?: AbortSignal }) => {
+    return fetchFunnelData<FunnelAnalyticsByReferrerResponse>(
+      `/funnels/${funnelId}/analytics/referrer`, 
+      websiteId, 
+      dateRange, 
+      undefined, 
+      signal
+    );
+  }, [websiteId, funnelId, dateRange]);
+
+  return useQuery({
+    queryKey: ['funnel-analytics-referrer', websiteId, funnelId, dateRange],
     queryFn: fetchData,
     ...defaultQueryOptions,
     ...options,

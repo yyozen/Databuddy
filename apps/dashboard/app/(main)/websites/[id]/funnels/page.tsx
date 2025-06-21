@@ -10,10 +10,12 @@ import {
     formattedDateRangeAtom,
 } from "@/stores/jotai/filterAtoms";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendDownIcon } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
+import { TrendDownIcon, ChartBarIcon } from "@phosphor-icons/react";
 import {
     useFunnels,
     useFunnelAnalytics,
+    useFunnelAnalyticsByReferrer,
     useAutocompleteData,
     type Funnel,
     type CreateFunnelData,
@@ -22,6 +24,7 @@ import {
 const PageHeader = lazy(() => import("./_components/page-header").then(m => ({ default: m.PageHeader })));
 const FunnelsList = lazy(() => import("./_components/funnels-list").then(m => ({ default: m.FunnelsList })));
 const FunnelAnalytics = lazy(() => import("./_components/funnel-analytics").then(m => ({ default: m.FunnelAnalytics })));
+const FunnelAnalyticsByReferrer = lazy(() => import("./_components/funnel-analytics-by-referrer"));
 const EditFunnelDialog = lazy(() => import("./_components/edit-funnel-dialog").then(m => ({ default: m.EditFunnelDialog })));
 const DeleteFunnelDialog = lazy(() => import("./_components/delete-funnel-dialog").then(m => ({ default: m.DeleteFunnelDialog })));
 
@@ -93,9 +96,11 @@ export default function FunnelsPage() {
     const websiteId = id as string;
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [expandedFunnelId, setExpandedFunnelId] = useState<string | null>(null);
+    const [selectedReferrer, setSelectedReferrer] = useState("all");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingFunnel, setEditingFunnel] = useState<Funnel | null>(null);
     const [deletingFunnelId, setDeletingFunnelId] = useState<string | null>(null);
+
 
     // Intersection observer for lazy loading
     const [isVisible, setIsVisible] = useState(false);
@@ -155,6 +160,21 @@ export default function FunnelsPage() {
         { enabled: !!expandedFunnelId }
     );
 
+    const {
+        data: referrerAnalyticsData,
+        isLoading: referrerAnalyticsLoading,
+        error: referrerAnalyticsError,
+        refetch: refetchReferrerAnalytics
+    } = useFunnelAnalyticsByReferrer(
+        websiteId,
+        expandedFunnelId || '',
+        {
+            start_date: formattedDateRangeState.startDate,
+            end_date: formattedDateRangeState.endDate
+        },
+        { enabled: !!expandedFunnelId }
+    );
+
     // Preload autocomplete data for instant suggestions in dialogs
     const autocompleteQuery = useAutocompleteData(websiteId);
 
@@ -163,7 +183,7 @@ export default function FunnelsPage() {
         try {
             const promises: Promise<any>[] = [refetchFunnels(), autocompleteQuery.refetch()];
             if (expandedFunnelId) {
-                promises.push(refetchAnalytics());
+                promises.push(refetchAnalytics(), refetchReferrerAnalytics());
             }
             await Promise.all(promises);
         } catch (error) {
@@ -171,7 +191,7 @@ export default function FunnelsPage() {
         } finally {
             setIsRefreshing(false);
         }
-    }, [refetchFunnels, refetchAnalytics, autocompleteQuery.refetch, expandedFunnelId]);
+    }, [refetchFunnels, refetchAnalytics, refetchReferrerAnalytics, autocompleteQuery.refetch, expandedFunnelId]);
 
     const handleCreateFunnel = async (data: CreateFunnelData) => {
         try {
@@ -215,6 +235,11 @@ export default function FunnelsPage() {
 
     const handleToggleFunnel = (funnelId: string) => {
         setExpandedFunnelId(expandedFunnelId === funnelId ? null : funnelId);
+        setSelectedReferrer("all");
+    };
+
+    const handleReferrerChange = (referrer: string) => {
+        setSelectedReferrer(referrer);
     };
 
     const formatCompletionTime = (seconds: number) => {
@@ -275,31 +300,41 @@ export default function FunnelsPage() {
                     {(funnel) => {
                         if (expandedFunnelId !== funnel.id) return null;
 
-                        const summaryStats = useMemo(() => {
-                            if (!analyticsData?.data?.steps_analytics) {
-                                return {
-                                    totalUsers: 0,
-                                    overallConversion: 0,
-                                    avgCompletionTime: 0,
-                                    biggestDropoffRate: 0
-                                };
-                            }
+                        const currentAnalyticsData = useMemo(() => {
+                            if (selectedReferrer === "all") return analyticsData;
 
-                            const steps = analyticsData.data.steps_analytics;
+                            const referrerData = referrerAnalyticsData?.data?.referrer_analytics
+                                ?.find(r => r.referrer === selectedReferrer);
+
+                            if (!referrerData) return null;
+
+                            return {
+                                success: true,
+                                data: {
+                                    overall_conversion_rate: referrerData.overall_conversion_rate,
+                                    total_users_entered: referrerData.total_users,
+                                    total_users_completed: referrerData.completed_users,
+                                    avg_completion_time: 0,
+                                    avg_completion_time_formatted: '0s',
+                                    biggest_dropoff_step: 1,
+                                    biggest_dropoff_rate: 0,
+                                    steps_analytics: referrerData.steps_analytics
+                                }
+                            };
+                        }, [selectedReferrer, analyticsData, referrerAnalyticsData]);
+
+                        const summaryStats = useMemo(() => {
+                            const steps = currentAnalyticsData?.data?.steps_analytics;
+                            if (!steps) return { totalUsers: 0, overallConversion: 0, avgCompletionTime: 0, biggestDropoffRate: 0 };
+
                             const totalUsers = steps[0]?.users || 0;
                             const finalUsers = steps[steps.length - 1]?.users || 0;
                             const overallConversion = totalUsers > 0 ? (finalUsers / totalUsers) * 100 : 0;
-
-                            const avgCompletionTime = steps.reduce((sum, step) => sum + (step.avg_time_to_complete || 0), 0) / steps.length;
+                            const avgCompletionTime = steps.reduce((sum, step) => sum + ((step as any).avg_time_to_complete || 0), 0) / steps.length;
                             const biggestDropoffRate = Math.max(...steps.map(step => step.dropoff_rate || 0));
 
-                            return {
-                                totalUsers,
-                                overallConversion,
-                                avgCompletionTime,
-                                biggestDropoffRate
-                            };
-                        }, [analyticsData]);
+                            return { totalUsers, overallConversion, avgCompletionTime, biggestDropoffRate };
+                        }, [currentAnalyticsData]);
 
                         return (
                             <Suspense fallback={
@@ -313,22 +348,35 @@ export default function FunnelsPage() {
                                     </div>
                                 </div>
                             }>
-                                <FunnelAnalytics
-                                    isLoading={analyticsLoading}
-                                    error={analyticsError}
-                                    data={analyticsData}
-                                    summaryStats={summaryStats}
-                                    funnelId={funnel.id}
-                                    onRetry={refetchAnalytics}
-                                    formatCompletionTime={formatCompletionTime}
-                                />
+                                <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                                    <FunnelAnalytics
+                                        isLoading={selectedReferrer === "all" ? analyticsLoading : referrerAnalyticsLoading}
+                                        error={selectedReferrer === "all" ? analyticsError : referrerAnalyticsError}
+                                        data={currentAnalyticsData}
+                                        summaryStats={summaryStats}
+                                        funnelId={funnel.id}
+                                        onRetry={selectedReferrer === "all" ? refetchAnalytics : refetchReferrerAnalytics}
+                                        formatCompletionTime={formatCompletionTime}
+                                    />
+
+                                    <div className="border-t border-border/50 pt-4">
+                                        <FunnelAnalyticsByReferrer
+                                            websiteId={websiteId}
+                                            funnelId={funnel.id}
+                                            dateRange={{
+                                                start_date: formattedDateRangeState.startDate,
+                                                end_date: formattedDateRangeState.endDate
+                                            }}
+                                            onReferrerChange={handleReferrerChange}
+                                        />
+                                    </div>
+                                </div>
                             </Suspense>
                         );
                     }}
                 </FunnelsList>
             </Suspense>
 
-            {/* Unified dialog for both create and edit */}
             {isDialogOpen && (
                 <Suspense fallback={null}>
                     <EditFunnelDialog
