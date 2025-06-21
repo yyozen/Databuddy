@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useCallback } from "react";
+import { useEffect, useMemo, useCallback, useState } from "react";
 import { Monitor, Smartphone, Zap, MapPin, TrendingUp, TrendingDown, AlertTriangle, CheckCircle } from "lucide-react";
 import { Question } from "@phosphor-icons/react";
 import { DataTable } from "@/components/analytics/data-table";
@@ -49,7 +49,15 @@ function PerformanceMetricCell({ value, type = 'time' }: { value?: number; type?
   );
 }
 
-function PerformanceSummaryCard({ summary }: { summary: PerformanceSummary }) {
+function PerformanceSummaryCard({
+  summary,
+  activeFilter,
+  onFilterChange
+}: {
+  summary: PerformanceSummary;
+  activeFilter: 'fast' | 'slow' | null;
+  onFilterChange: (filter: 'fast' | 'slow' | null) => void;
+}) {
   const performanceColor = useMemo(() => {
     if (summary.performanceScore >= 80) return 'text-green-600';
     if (summary.performanceScore >= 60) return 'text-yellow-600';
@@ -63,6 +71,14 @@ function PerformanceSummaryCard({ summary }: { summary: PerformanceSummary }) {
   }, [summary.avgLoadTime]);
 
   const ratingInfo = getPerformanceRating(summary.performanceScore);
+
+  const handleFastPagesClick = () => {
+    onFilterChange(activeFilter === 'fast' ? null : 'fast');
+  };
+
+  const handleSlowPagesClick = () => {
+    onFilterChange(activeFilter === 'slow' ? null : 'slow');
+  };
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -100,10 +116,19 @@ function PerformanceSummaryCard({ summary }: { summary: PerformanceSummary }) {
         </div>
       </div>
 
-      <div className="p-4 rounded-lg border bg-background">
+      <div
+        className={`p-4 rounded-lg border bg-background cursor-pointer transition-all hover:shadow-md ${activeFilter === 'fast' ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-950/20' : 'hover:bg-muted/50'
+          }`}
+        onClick={handleFastPagesClick}
+      >
         <div className="flex items-center gap-2 mb-2">
           <CheckCircle className="h-4 w-4 text-green-500" />
           <span className="text-sm font-medium text-muted-foreground">Fast Pages</span>
+          {activeFilter === 'fast' && (
+            <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-1.5 py-0.5 rounded">
+              Active
+            </span>
+          )}
         </div>
         <div className="text-2xl font-bold text-green-600">
           {summary.fastPages}
@@ -113,10 +138,19 @@ function PerformanceSummaryCard({ summary }: { summary: PerformanceSummary }) {
         </div>
       </div>
 
-      <div className="p-4 rounded-lg border bg-background">
+      <div
+        className={`p-4 rounded-lg border bg-background cursor-pointer transition-all hover:shadow-md ${activeFilter === 'slow' ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-950/20' : 'hover:bg-muted/50'
+          }`}
+        onClick={handleSlowPagesClick}
+      >
         <div className="flex items-center gap-2 mb-2">
           <AlertTriangle className="h-4 w-4 text-red-500" />
           <span className="text-sm font-medium text-muted-foreground">Slow Pages</span>
+          {activeFilter === 'slow' && (
+            <span className="text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-1.5 py-0.5 rounded">
+              Active
+            </span>
+          )}
         </div>
         <div className="text-2xl font-bold text-red-600">
           {summary.slowPages}
@@ -204,6 +238,7 @@ export function WebsitePerformanceTab({
   isRefreshing,
   setIsRefreshing
 }: FullTabProps) {
+  const [activeFilter, setActiveFilter] = useState<'fast' | 'slow' | null>(null);
 
   const {
     results: performanceResults,
@@ -225,6 +260,20 @@ export function WebsitePerformanceTab({
   useEffect(() => {
     handleRefresh();
   }, [handleRefresh]);
+
+  // Filter function for fast/slow pages
+  const filterPagesByPerformance = useCallback((pages: PerformanceEntry[], filter: 'fast' | 'slow' | null) => {
+    if (!filter) return pages;
+
+    return pages.filter(page => {
+      const loadTime = page.avg_load_time || 0;
+      if (filter === 'fast') {
+        return loadTime < 1500; // Fast pages are under 1.5 seconds
+      } else {
+        return loadTime >= 3000; // Slow pages are 3+ seconds
+      }
+    });
+  }, []);
 
   // Optimized data processing with reduced operations
   const processedData = useMemo(() => {
@@ -252,20 +301,24 @@ export function WebsitePerformanceTab({
       }
     });
 
+    const allPages = dataMap.get('slow_pages') || [];
+    const filteredPages = filterPagesByPerformance(allPages, activeFilter);
+
     return {
-      pages: dataMap.get('slow_pages') || [],
+      pages: filteredPages,
+      allPages: allPages, // Keep unfiltered for summary calculation
       countries: dataMap.get('performance_by_country') || [],
       devices: dataMap.get('performance_by_device') || [],
       browsers: dataMap.get('performance_by_browser') || [],
       operating_systems: dataMap.get('performance_by_os') || [],
       regions: dataMap.get('performance_by_region') || [],
     };
-  }, [performanceResults]);
+  }, [performanceResults, activeFilter, filterPagesByPerformance]);
 
   // Optimized performance summary calculation
   const performanceSummary = useMemo((): PerformanceSummary => {
-    return calculatePerformanceSummary(processedData.pages);
-  }, [processedData.pages]);
+    return calculatePerformanceSummary(processedData.allPages || []);
+  }, [processedData.allPages]);
 
   // Optimized tabs generation with stable references
   const tabs = useMemo(() => {
@@ -371,15 +424,23 @@ export function WebsitePerformanceTab({
           </div>
         </div>
 
-        {!isLoading && processedData.pages.length > 0 && (
-          <PerformanceSummaryCard summary={performanceSummary} />
+        {!isLoading && (processedData.allPages?.length > 0 || processedData.pages.length > 0) && (
+          <PerformanceSummaryCard
+            summary={performanceSummary}
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+          />
         )}
       </div>
 
       <DataTable
         tabs={tabs}
         title="Performance Analysis"
-        description="Detailed performance metrics across pages, locations, devices, and browsers"
+        description={
+          activeFilter
+            ? `Showing ${activeFilter} pages only. Detailed performance metrics across pages, locations, devices, and browsers`
+            : "Detailed performance metrics across pages, locations, devices, and browsers"
+        }
         isLoading={isLoading || isRefreshing}
         minHeight={500}
       />
