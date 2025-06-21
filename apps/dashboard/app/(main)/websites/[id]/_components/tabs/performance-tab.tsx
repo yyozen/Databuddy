@@ -23,13 +23,10 @@ function getPerformanceRating(score: number): { rating: string; className: strin
 function formatPerformanceTime(value: number): string {
   if (!value || value === 0) return "N/A";
 
-  // Use consistent formatting: show ms for values < 1000, seconds for >= 1000
-  // Always round to remove decimal places for cleaner display
   if (value < 1000) {
     return `${Math.round(value)}ms`;
   } else {
-    // Round to 1 decimal place for seconds, but remove .0 if it's a whole number
-    const seconds = Math.round(value / 100) / 10; // This gives us 1 decimal place with rounding
+    const seconds = Math.round(value / 100) / 10;
     return seconds % 1 === 0 ? `${seconds.toFixed(0)}s` : `${seconds.toFixed(1)}s`;
   }
 }
