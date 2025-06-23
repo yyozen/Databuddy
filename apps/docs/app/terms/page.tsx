@@ -6,7 +6,7 @@ export const metadata = {
 };
 
 export default function TermsPage() {
-    const lastUpdated = "June 3rd, 2025";
+    const lastUpdated = "June 23rd, 2025";
 
     return (
         <div className="container mx-auto px-4 py-12 max-w-4xl">
