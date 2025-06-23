@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   UserCircle,
   Activity,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +21,7 @@ const navLinks = [
   { href: "/users", label: "Users", icon: Users },
   { href: "/websites", label: "Websites", icon: Globe },
   { href: "/domains", label: "Domains", icon: Network },
+  { href: "/query-performance", label: "Query Performance", icon: Zap },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -40,9 +42,8 @@ export function Sidebar() {
           <Link
             key={href}
             href={href}
-            className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium transition-colors hover:bg-muted/60 hover:text-primary ${
-              pathname === href ? "bg-muted text-primary" : "text-muted-foreground"
-            }`}
+            className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium transition-colors hover:bg-muted/60 hover:text-primary ${pathname === href ? "bg-muted text-primary" : "text-muted-foreground"
+              }`}
             aria-current={pathname === href ? "page" : undefined}
           >
             <Icon className="h-5 w-5" />
