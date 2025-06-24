@@ -20,21 +20,10 @@ import { useOrganizations } from "@/hooks/use-organizations";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-// Dynamic imports for tab components
-const OverviewTab = dynamic(() => import("./components/overview-tab").then(mod => ({ default: mod.OverviewTab })), {
-    loading: () => <TabSkeleton />,
-    ssr: false
-});
-
-const TeamsTab = dynamic(() => import("./components/teams-tab").then(mod => ({ default: mod.TeamsTab })), {
-    loading: () => <TabSkeleton />,
-    ssr: false
-});
-
-const SettingsTab = dynamic(() => import("./components/settings-tab").then(mod => ({ default: mod.SettingsTab })), {
-    loading: () => <TabSkeleton />,
-    ssr: false
-});
+// Tab components
+import { OverviewTab } from "./components/overview-tab";
+import { TeamsTab } from "./components/teams-tab";
+import { SettingsTab } from "./components/settings-tab";
 
 function TabSkeleton() {
     return (
