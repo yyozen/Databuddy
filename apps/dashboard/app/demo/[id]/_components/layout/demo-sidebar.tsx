@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { GlobeIcon, XIcon, HouseIcon, ClockIcon, UsersIcon, MapPinIcon, ListIcon, InfoIcon, GitBranchIcon, BugIcon, FunnelIcon } from "@phosphor-icons/react";
+import { GlobeIcon, XIcon, HouseIcon, ClockIcon, UsersIcon, MapPinIcon, ListIcon, InfoIcon, GitBranchIcon, BugIcon, FunnelIcon, TargetIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
@@ -19,6 +19,7 @@ const demoNavigation = [
             { name: "Overview", icon: HouseIcon, href: "/demo/OXmNQsViBT-FOS_wZCTHc", highlight: true },
             { name: "Sessions", icon: ClockIcon, href: "/demo/OXmNQsViBT-FOS_wZCTHc/sessions", highlight: true },
             { name: "Funnels", icon: FunnelIcon, href: "/demo/OXmNQsViBT-FOS_wZCTHc/funnels", highlight: true },
+            { name: "Goals", icon: TargetIcon, href: "/demo/OXmNQsViBT-FOS_wZCTHc/goals", highlight: true },
             { name: "Journeys", icon: GitBranchIcon, href: "/demo/OXmNQsViBT-FOS_wZCTHc/journeys", highlight: true },
             { name: "Errors", icon: BugIcon, href: "/demo/OXmNQsViBT-FOS_wZCTHc/errors", highlight: true },
             { name: "Profiles", icon: UsersIcon, href: "/demo/OXmNQsViBT-FOS_wZCTHc/profiles", highlight: true },

@@ -5,7 +5,11 @@ import { Navbar } from '@/components/navbar';
 
 export default function Layout({ children }: { children: ReactNode }) {
   return <HomeLayout {...baseOptions}>
-    <Navbar />
-    {children}
+    <div className="flex flex-col overflow-hidden h-screen">
+      <Navbar />
+      <div className="flex-1 overflow-y-auto">
+        {children}
+      </div>
+    </div>
   </HomeLayout>;
 }
