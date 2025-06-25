@@ -27,6 +27,7 @@
     "@logtail/edge": "^0.5.4",
     "@types/ua-parser-js": "^0.7.39",
     "better-auth": "^1.2.7",
+    "botid": "^1.2.0",
     "dayjs": "^1.11.13",
     "hono": "^4.7.11",
     "openai": "^5.1.0",
