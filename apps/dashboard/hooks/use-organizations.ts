@@ -39,15 +39,20 @@ const createMutation = <TData, TVariables>(
   mutationFn: (variables: TVariables) => Promise<TData>,
   successMessage: string,
   errorMessage: string,
-  onSuccessCallback?: () => void
+  onSuccessCallback?: () => void,
+  options: { showToast?: boolean } = { showToast: true }
 ) => ({
   mutationFn,
   onSuccess: () => {
     onSuccessCallback?.();
-    toast.success(successMessage);
+    if (options.showToast) {
+      toast.success(successMessage);
+    }
   },
   onError: (error: Error) => {
-    toast.error(error.message || errorMessage);
+    if (options.showToast) {
+      toast.error(error.message || errorMessage);
+    }
   },
 });
 

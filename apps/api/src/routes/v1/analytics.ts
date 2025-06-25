@@ -1,9 +1,3 @@
-/**
- * Analytics Dashboard Data API
- * 
- * Provides endpoints for retrieving aggregated analytics data for website dashboards.
- */
-
 import { Hono } from 'hono';
 
 import { authMiddleware } from '../../middleware/auth';
@@ -21,10 +15,9 @@ type AnalyticsContext = {
 export const analyticsRouter = new Hono<AnalyticsContext>();
 
 analyticsRouter.use('*', authMiddleware);
-analyticsRouter.use('*', websiteAuthHook({ website: ["read"] }));
 analyticsRouter.use('*', timezoneMiddleware);
 
-analyticsRouter.get('/summary', async (c: any) => {
+analyticsRouter.get('/summary', websiteAuthHook(), async (c: any) => {
   const website = c.get('website');
 
   if (!website?.id) {

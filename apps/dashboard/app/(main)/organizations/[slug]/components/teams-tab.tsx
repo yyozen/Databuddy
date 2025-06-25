@@ -98,43 +98,25 @@ export function TeamsTab({ organization }: TeamsTabProps) {
 
     const handleInviteMember = async () => {
         if (!inviteEmail.trim()) return;
-
-        try {
-            await inviteMember({
-                email: inviteEmail.trim(),
-                role: inviteRole as "owner" | "admin" | "member",
-                organizationId: organization.id
-            });
-            setInviteEmail("");
-            setShowInviteDialog(false);
-            toast.success("Invitation sent successfully");
-        } catch (error) {
-            toast.error("Failed to send invitation");
-        }
+        await inviteMember({
+            email: inviteEmail.trim(),
+            role: inviteRole as "owner" | "admin" | "member",
+            organizationId: organization.id
+        });
+        setInviteEmail("");
+        setShowInviteDialog(false);
     };
 
     const handleRemoveMember = async () => {
         if (!memberToRemove) return;
-
-        try {
-            await removeMember(memberToRemove.id);
-            toast.success("Member removed successfully");
-            setMemberToRemove(null);
-        } catch (error) {
-            toast.error("Failed to remove member");
-        }
+        await removeMember(memberToRemove.id);
+        setMemberToRemove(null);
     };
 
     const handleCancelInvitation = async () => {
         if (!invitationToCancel) return;
-
-        try {
-            await cancelInvitation(invitationToCancel.id);
-            toast.success("Invitation cancelled");
-            setInvitationToCancel(null);
-        } catch (error) {
-            toast.error("Failed to cancel invitation");
-        }
+        await cancelInvitation(invitationToCancel.id);
+        setInvitationToCancel(null);
     };
 
     if (isLoadingMembers || isLoadingInvitations) {

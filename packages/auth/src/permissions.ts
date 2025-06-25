@@ -62,7 +62,6 @@ const admin = ac.newRole({
     apikey: ["create", "read", "update", "delete", "regenerate"],
     audit: ["read"],
     preferences: ["read", "update"],
-    invitation: ["create", "cancel"],
     ...adminAc.statements,
 });
 
@@ -76,7 +75,6 @@ const owner = ac.newRole({
     apikey: ["create", "read", "update", "delete", "regenerate"],
     audit: ["read"],
     preferences: ["read", "update"],
-    invitation: ["create", "cancel"],
     ...ownerAc.statements,
 });
 
