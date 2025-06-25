@@ -73,7 +73,7 @@ const StatCard = ({ icon: Icon, label, value }: { icon: any; label: string; valu
 
 export function TeamsTab({ organization }: TeamsTabProps) {
     const [inviteEmail, setInviteEmail] = useState("");
-    const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
+    const [inviteRole, setInviteRole] = useState<"owner" | "admin" | "member">("member");
     const [memberToRemove, setMemberToRemove] = useState<MemberToRemove | null>(null);
     const [invitationToCancel, setInvitationToCancel] = useState<InvitationToCancel | null>(null);
     const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -102,7 +102,7 @@ export function TeamsTab({ organization }: TeamsTabProps) {
         try {
             await inviteMember({
                 email: inviteEmail.trim(),
-                role: inviteRole,
+                role: inviteRole as "owner" | "admin" | "member",
                 organizationId: organization.id
             });
             setInviteEmail("");
@@ -311,13 +311,16 @@ export function TeamsTab({ organization }: TeamsTabProps) {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="dialog-invite-role">Role</Label>
-                            <Select value={inviteRole} onValueChange={(value: "admin" | "member") => setInviteRole(value)}>
-                                <SelectTrigger className="rounded">
-                                    <SelectValue />
+                            <Select
+                                value={inviteRole}
+                                onValueChange={(value: "owner" | "admin" | "member") => setInviteRole(value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a role" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="member">Member</SelectItem>
                                     <SelectItem value="admin">Admin</SelectItem>
+                                    <SelectItem value="member">Member</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

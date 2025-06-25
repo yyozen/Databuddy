@@ -1,18 +1,21 @@
 import { createSqlBuilder } from "../../builders/analytics";
 
-import { Hono } from "hono";  
+import { Hono } from "hono";
 import type { AppVariables } from "../../types";
 import { logger } from "../../lib/logger";
 import { chQuery } from "@databuddy/db";
 import { parseUserAgentDetails } from "../../utils/ua";
+import { websiteAuthHook } from "../../middleware/website";
 
 export const errorsRouter = new Hono<{ Variables: AppVariables }>();
+
+errorsRouter.use('*', websiteAuthHook());
 
 // Helper function to create error details builder (modified for pagination)
 function createErrorDetailsBuilder(websiteId: string, startDate: string, endDate: string, limit: number, page: number) {
   const builder = createSqlBuilder('events');
   const offset = (Number(page) - 1) * Number(limit);
-  
+
   builder.sb.select = {
     time: 'time',
     error_type: 'COALESCE(error_type, \'Unknown\') as error_type',
@@ -25,20 +28,20 @@ function createErrorDetailsBuilder(websiteId: string, startDate: string, endDate
     country: 'COALESCE(country, \'Unknown\') as country',
     region: 'COALESCE(region, \'Unknown\') as region'
   };
-  
+
   builder.sb.where = {
     client_filter: `client_id = '${websiteId}'`,
     date_filter: `time >= parseDateTimeBestEffort('${startDate}') AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')`,
     event_filter: "event_name = 'error'"
   };
-  
+
   builder.sb.orderBy = {
     time: 'time DESC'
   };
-  
+
   builder.sb.limit = Number(limit);
   builder.sb.offset = offset;
-  
+
   return builder;
 }
 
@@ -80,9 +83,9 @@ errorsRouter.get('/', async (c) => {
     }
     // Handle "Other Errors" - use NOT (error_type IN (...)) syntax instead of NOT IN
     if (topTypeNames.length > 0) {
-             pivotedTimelineSelects.OtherErrors = `countIf(NOT (error_type IN (${topTypeNames.map(t => `'${t.replace(/'/g, "''").replace(/\\/g, "\\\\")}'`).join(',')}))) as OtherErrors`;
-     } else {
-       pivotedTimelineSelects.OtherErrors = 'COUNT(*) as OtherErrors';
+      pivotedTimelineSelects.OtherErrors = `countIf(NOT (error_type IN (${topTypeNames.map(t => `'${t.replace(/'/g, "''").replace(/\\/g, "\\\\")}'`).join(',')}))) as OtherErrors`;
+    } else {
+      pivotedTimelineSelects.OtherErrors = 'COUNT(*) as OtherErrors';
     }
 
     const timelinePivotedBuilder = createSqlBuilder('events');
@@ -122,13 +125,13 @@ errorsRouter.get('/', async (c) => {
         device_model: userAgentInfo.device_model
       };
     });
-    
+
     const totalErrorDetailsBuilder = createSqlBuilder('events');
     totalErrorDetailsBuilder.sb.select = { count: 'COUNT(*) as count' };
     totalErrorDetailsBuilder.sb.where = {
-        client_filter: `client_id = '${params.website_id}'`,
-        date_filter: `time >= parseDateTimeBestEffort('${startDate}') AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')`,
-        event_filter: "event_name = 'error'"
+      client_filter: `client_id = '${params.website_id}'`,
+      date_filter: `time >= parseDateTimeBestEffort('${startDate}') AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')`,
+      event_filter: "event_name = 'error'"
     };
     const totalErrorDetailsResult = await chQuery(totalErrorDetailsBuilder.getSql());
     const totalErrorDetails = totalErrorDetailsResult[0]?.count || 0;
@@ -153,16 +156,16 @@ errorsRouter.get('/', async (c) => {
       }
     });
   } catch (error) {
-    logger.error('Error retrieving error analytics data', { 
+    logger.error('Error retrieving error analytics data', {
       error,
       website_id: params.website_id
     });
-    
+
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred'
     }, 500);
   }
-}); 
+});
 
 export default errorsRouter;

@@ -2,12 +2,23 @@ import { createErrorResponse } from "../../utils/analytics-helpers";
 
 import { createMiniChartBuilder } from "../../builders/analytics";
 import { createSuccessResponse } from "../../utils/analytics-helpers";
-import { chQuery } from "@databuddy/db";
+import { chQuery, db, websites, eq, inArray, and, or, isNull, member } from "@databuddy/db";
 import { logger } from "../../lib/logger";
 import type { AppVariables } from "../../types";
 import { timezoneMiddleware, useTimezone } from "../../middleware/timezone";
 import { Hono } from "hono";
+import { websiteAuthHook } from "../../middleware/website";
 
+async function getUserOrganizationIds(userId: string): Promise<string[]> {
+  if (!userId) return [];
+  const memberships = await db.query.member.findMany({
+    where: eq(member.userId, userId),
+    columns: {
+      organizationId: true
+    }
+  });
+  return memberships.map(m => m.organizationId);
+}
 
 const miniChartRouter = new Hono<{ Variables: AppVariables }>();
 
@@ -16,15 +27,20 @@ miniChartRouter.use('*', timezoneMiddleware);
 
 /**
  * Get mini chart data for website card
- * GET /analytics/mini-chart/:website_id
+ * GET /analytics/mini-chart/:id
  */
-miniChartRouter.get('/:website_id', async (c) => {
-  const websiteId = c.req.param('website_id');
+miniChartRouter.get('/:id', websiteAuthHook(), async (c) => {
+  const website = c.get('website');
   const timezoneInfo = useTimezone(c);
 
+  if (!website) {
+    return c.json(createErrorResponse({
+      message: 'Website not found or you do not have permission to access it.'
+    }), 404);
+  }
 
   try {
-    const miniChartBuilder = createMiniChartBuilder(websiteId);
+    const miniChartBuilder = createMiniChartBuilder(website.id);
 
     const chartData = await chQuery(miniChartBuilder.getSql());
 
@@ -67,11 +83,35 @@ miniChartRouter.get('/batch-mini-charts', async (c) => {
   }
 
   try {
-    // Parse the comma-separated ids
-    const websiteIds = ids.split(',');
+    const requestedIds = ids.split(',');
+    const userOrgIds = await getUserOrganizationIds(user.id);
+
+    // Verify user has access to all requested websites
+    const accessibleWebsites = await db.query.websites.findMany({
+      where: and(
+        inArray(websites.id, requestedIds),
+        or(
+          eq(websites.userId, user.id),
+          userOrgIds.length > 0 ? inArray(websites.organizationId, userOrgIds) : isNull(websites.organizationId)
+        )
+      ),
+      columns: {
+        id: true
+      }
+    });
+
+    const accessibleIds = new Set(accessibleWebsites.map(w => w.id));
+    const inaccessibleIds = requestedIds.filter(id => !accessibleIds.has(id));
+
+    if (inaccessibleIds.length > 0) {
+      return c.json(createErrorResponse({
+        message: 'You do not have permission to access some of the requested websites.',
+        error: `Access denied for website IDs: ${inaccessibleIds.join(', ')}`
+      }), 403);
+    }
 
     // Fetch mini chart data for all websites in parallel
-    const promises = websiteIds.map(async (id) => {
+    const promises = requestedIds.map(async (id) => {
       const miniChartBuilder = createMiniChartBuilder(id);
       const data = await chQuery(miniChartBuilder.getSql());
       return {

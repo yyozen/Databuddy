@@ -73,16 +73,18 @@ export const authMiddleware = createMiddleware(async (c, next) => {
     //     code: 'RATE_LIMIT_EXCEEDED'
     //   }, 429);
     // }
+    const session = await auth.api.getSession({
+      headers: c.req.raw.headers
+    });
 
     const websiteId = c.req.query('website_id');
     if (path.includes('OXmNQsViBT-FOS_wZCTHc') || websiteId === 'OXmNQsViBT-FOS_wZCTHc') {
+      c.set('user', session?.user);
+      c.set('session', session);
       return next();
     }
 
     // Get session
-    const session = await auth.api.getSession({
-      headers: c.req.raw.headers
-    });
 
     if (!session) {
       return c.json({

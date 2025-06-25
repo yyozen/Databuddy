@@ -31,7 +31,7 @@ app.use('*', cors({
   origin: (origin) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return '*';
-    
+
     const allowedOrigins = [
       'https://dashboard.databuddy.cc',
       'https://app.databuddy.cc',
@@ -41,7 +41,7 @@ app.use('*', cors({
       'https://databuddy.cc',
       'https://www.databuddy.cc'
     ];
-    
+
     return allowedOrigins.includes(origin) ? origin : null;
   },
   allowHeaders: [
@@ -64,7 +64,7 @@ app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/*', async (c) => {
     return response;
   } catch (error: any) {
     logger.error('[Auth Handler Error]:', error);
-    
+
     // Discord notification for critical auth errors
     await discordLogger.error(
       'Authentication Service Error',
@@ -75,11 +75,11 @@ app.on(['POST', 'GET', 'OPTIONS'], '/api/auth/*', async (c) => {
         endpoint: 'auth'
       }
     );
-    
-    return new Response(JSON.stringify({ 
-      error: 'Authentication error', 
-      message: error?.message || 'An error occurred in the authentication service' 
-    }), { 
+
+    return new Response(JSON.stringify({
+      error: 'Authentication error',
+      message: error?.message || 'An error occurred in the authentication service'
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -101,35 +101,35 @@ app.get('/health', (c) => c.json({ status: 'ok', version: '1.0.0' }));
 app.get('/', (c) => c.json({ status: 'ok', version: '1.0.0' }));
 
 // Error handling
-app.onError(async (err) => {
-  logger.error({
-    message: `[API Error]: ${err.message}`,
-    stack: err.stack,
-    name: err.name
-  });
+// app.onError(async (err) => {
+//   logger.error({
+//     message: `[API Error]: ${err.message}`,
+//     stack: err.stack,
+//     name: err.name
+//   });
 
-  // Discord notification for critical API errors
-  await discordLogger.error(
-    'API Error',
-    `Unhandled error in API: ${err.message}`,
-    {
-      errorName: err.name,
-      errorMessage: err.message,
-      stackTrace: err.stack?.slice(0, 500) || 'No stack trace'
-    }
-  );
-  
-  return new Response(JSON.stringify({ 
-    error: err.message || 'Internal Server Error',
-    status: 500
-  }), { 
-    status: 500,
-    headers: { 'Content-Type': 'application/json' }
-  });
-});
+//   // Discord notification for critical API errors
+//   await discordLogger.error(
+//     'API Error',
+//     `Unhandled error in API: ${err.message}`,
+//     {
+//       errorName: err.name,
+//       errorMessage: err.message,
+//       stackTrace: err.stack?.slice(0, 500) || 'No stack trace'
+//     }
+//   );
+
+//   return new Response(JSON.stringify({ 
+//     error: err.message || 'Internal Server Error',
+//     status: 500
+//   }), { 
+//     status: 500,
+//     headers: { 'Content-Type': 'application/json' }
+//   });
+// });
 
 app.notFound((c) => {
-  return new Response(JSON.stringify({ error: 'Route not found' }), { 
+  return new Response(JSON.stringify({ error: 'Route not found' }), {
     status: 404,
     headers: { 'Content-Type': 'application/json' }
   });

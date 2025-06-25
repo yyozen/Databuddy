@@ -9,6 +9,7 @@ import { timezoneMiddleware, useTimezone } from "../../middleware/timezone";
 import { formatDuration } from "../../utils/dates";
 import { parseUserAgentDetails } from "../../utils/ua";
 import { parseReferrer } from "../../utils/referrer";
+import { websiteAuthHook } from "../../middleware/website";
 
 const sessionsRouter = new Hono<{ Variables: AppVariables }>();
 
@@ -18,6 +19,7 @@ const mapCountryCode = (country: string): string => {
 
 // Apply timezone middleware
 sessionsRouter.use('*', timezoneMiddleware);
+sessionsRouter.use('*', websiteAuthHook());
 
 const formatSessionObject = (session: any, visitorSessionCount: number) => {
   const durationFormatted = formatDuration(session.duration || 0);

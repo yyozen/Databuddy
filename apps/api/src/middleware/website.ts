@@ -1,84 +1,87 @@
-import { eq } from "@databuddy/db";
-import { websites } from "@databuddy/db";
-import { db } from "@databuddy/db";
+import { createMiddleware } from 'hono/factory'
+import { db, eq, websites } from "@databuddy/db";
 import { cacheable } from "@databuddy/redis";
-import { createMiddleware } from "hono/factory";
 import { auth } from './betterauth';
-import { ac } from '@databuddy/auth';
+import { logger } from '../lib/logger';
 
+type Permission = { [key: string]: string[] };
+
+/**
+ * Caches and retrieves website data by ID.
+ */
 export const getWebsiteById = cacheable(
-  async (id: string): Promise<any> => {
-    return db.query.websites.findFirst({
-      where: eq(websites.id, id)
-    });
+  async (id: string) => {
+    try {
+      if (!id) return null;
+      return await db.query.websites.findFirst({
+        where: eq(websites.id, id),
+      });
+    } catch (error) {
+      logger.error('Error fetching website by ID:', { error, id });
+      return null;
+    }
   },
   {
-    expireInSec: 300,
+    expireInSec: 600,
     prefix: 'website_by_id',
     staleWhileRevalidate: true,
     staleTime: 60
   }
 );
 
-type Permission = { [key: string]: string[] };
-
+/**
+ * Creates an authorization middleware for website access.
+ * This should be used AFTER the main authMiddleware.
+ */
 export const websiteAuthHook = (permission: Permission = { website: ["read"] }) => {
   return createMiddleware(async (c, next) => {
-    const websiteId = c.req.header('X-Website-Id') || c.req.query('website_id') || c.req.query('websiteId') || c.req.param('id');
     const user = c.get('user');
+    const session = c.get('session');
 
-    if (!websiteId) {
-      return c.json({
-        success: false,
-        error: 'Website ID is required',
-        code: 'WEBSITE_ID_REQUIRED'
-      }, 401);
+    if (!user || !session) {
+      return c.json({ success: false, error: 'Unauthorized: User context missing' }, 401);
     }
 
+    const websiteId = c.req.header('X-Website-Id') || c.req.query('website_id') || c.req.param('id');
+
+    if (!websiteId) {
+      return c.json({ success: false, error: 'Website ID is required' }, 400);
+    }
+
+    // Bypass for the public demo website
     if (websiteId === 'OXmNQsViBT-FOS_wZCTHc') {
-      const website = await db.query.websites.findFirst({ where: eq(websites.id, websiteId) });
-      c.set('website', website);
+      const demoWebsite = await getWebsiteById(websiteId);
+      c.set('website', demoWebsite);
       return next();
     }
 
-    if (!user) {
-      return c.json({
-        success: false,
-        error: 'User authentication required',
-        code: 'AUTH_REQUIRED'
-      }, 401);
-    }
-
-    const { success: hasPermission, error } = await auth.api.hasPermission({
-      headers: c.req.raw.headers,
-      body: {
-        permissions: permission
-      }
-    });
-
-    if (error || !hasPermission) {
-      return c.json({
-        success: false,
-        error: 'Unauthorized access to website',
-        code: 'UNAUTHORIZED_WEBSITE_ACCESS'
-      }, 403);
-    }
-
-    // Get the website data after access is verified
-    const website = await db.query.websites.findFirst({ where: eq(websites.id, websiteId) });
-
+    const website = await getWebsiteById(websiteId);
     if (!website) {
-      // This case should ideally not be hit if hasAccess is true, but as a safeguard:
-      return c.json({
-        success: false,
-        error: 'Website not found or you do not have permission to access it.',
-        code: 'WEBSITE_NOT_FOUND_OR_UNAUTHORIZED'
-      }, 404);
+      return c.json({ success: false, error: 'Website not found' }, 404);
+    }
+
+    const hasOwnership = website.userId === user.id;
+
+    if (website.organizationId) {
+
+      const { success: hasPermission } = await auth.api.hasPermission({
+        headers: c.req.raw.headers,
+        body: { permissions: permission }
+      });
+
+      if (!hasPermission) {
+        return c.json({ success: false, error: 'Permission denied within organization.' }, 403);
+      }
+    }
+    else {
+      if (!hasOwnership) {
+        return c.json({ success: false, error: 'You do not own this website.' }, 403);
+      }
     }
 
     c.set('website', website);
     await next();
   });
-}
+};
 
 
