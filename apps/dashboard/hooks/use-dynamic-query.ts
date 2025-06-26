@@ -226,8 +226,6 @@ export interface TodayMetricsData {
 
 export interface ActiveStatsData {
   active_users: number;
-  active_sessions: number;
-  total_events: number;
 }
 
 export interface LatestEventData {

@@ -3,19 +3,14 @@ import { escapeSqlString } from '../utils'
 
 const activeStatsBuilder: ParameterBuilder = (
     websiteId,
-    startDate,
-    endDate,
 ) => {
     return `
     SELECT
-      uniq(anonymous_id) as active_users,
-      uniq(session_id) as active_sessions,
-      count() as total_events
+      uniq(anonymous_id) as active_users
     FROM analytics.events
     WHERE
       client_id = ${escapeSqlString(websiteId)}
-      AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
-      AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
+      AND time >= now() - INTERVAL 5 MINUTE
   `
 }
 
@@ -32,8 +27,7 @@ const latestEventsBuilder: ParameterBuilder = (
     FROM analytics.events
     WHERE
       client_id = ${escapeSqlString(websiteId)}
-      AND time >= parseDateTimeBestEffort(${escapeSqlString(startDate)})
-      AND time <= parseDateTimeBestEffort(${escapeSqlString(endDate)})
+      AND time >= now() - INTERVAL 5 MINUTE
     ORDER BY time DESC
     LIMIT ${limit} OFFSET ${offset}
   `

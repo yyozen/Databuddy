@@ -98,9 +98,45 @@ const MIN_PREVIOUS_SESSIONS_FOR_TREND = 5;
 const MIN_PREVIOUS_VISITORS_FOR_TREND = 5;
 const MIN_PREVIOUS_PAGEVIEWS_FOR_TREND = 10;
 
+function LiveUserIndicator({ count }: { count: number }) {
+  const [prevCount, setPrevCount] = useState(count);
+  const [change, setChange] = useState<"up" | "down" | null>(null);
 
+  useEffect(() => {
+    if (count > prevCount) {
+      setChange("up");
+    } else if (count < prevCount) {
+      setChange("down");
+    }
+    const timer = setTimeout(() => setChange(null), 1000);
+    setPrevCount(count);
+    return () => clearTimeout(timer);
+  }, [count, prevCount]);
 
+  if (count <= 0) {
+    return null;
+  }
 
+  const getChangeColor = () => {
+    if (change === 'up') return 'text-green-500';
+    if (change === 'down') return 'text-red-500';
+    return 'text-foreground';
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5 rounded bg-card border shadow-sm px-3.5 py-2 text-sm font-medium">
+        <span className="relative flex h-2.5 w-2.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+        </span>
+        <span className={`transition-colors duration-300 ${getChangeColor()}`}>
+          {count} {count === 1 ? "user" : "users"} live
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function UnauthorizedAccessError() {
   const router = useRouter();
@@ -786,21 +822,11 @@ export function WebsiteOverviewTab({
 
   return (
     <div className="space-y-6">
+
       {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <StatCard
           title="UNIQUE VISITORS"
-          titleExtra={
-            activeUsers > 0 && (
-              <div className="flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                {activeUsers} live
-              </div>
-            )
-          }
           value={analytics.summary?.unique_visitors || 0}
           icon={UsersIcon}
           description={`${analytics.today?.visitors || 0} today`}
@@ -912,11 +938,14 @@ export function WebsiteOverviewTab({
             )}
           </div>
 
-          <MetricToggles
-            metrics={visibleMetrics}
-            onToggle={toggleMetric}
-            colors={metricColors}
-          />
+          <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
+            <LiveUserIndicator count={activeUsers} />
+            <MetricToggles
+              metrics={visibleMetrics}
+              onToggle={toggleMetric}
+              colors={metricColors}
+            />
+          </div>
         </div>
         <div>
           <MetricsChart
