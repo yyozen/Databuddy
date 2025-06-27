@@ -8,6 +8,7 @@ import { cacheable } from '@databuddy/redis';
 import type { AppVariables } from '../../types';
 import { z } from 'zod';
 import { websiteAuthHook } from '../../middleware/website';
+import { Autumn as autumn } from "autumn-js";
 
 type WebsitesContext = {
   Variables: AppVariables & {
@@ -115,6 +116,25 @@ const verifyDomainAccess = cacheable(_verifyDomainAccess, {
   staleWhileRevalidate: true,
   staleTime: 30
 });
+
+async function getOrganizationOwnerId(organizationId: string): Promise<string | null> {
+  try {
+    const orgMember = await db.query.member.findFirst({
+      where: and(
+        eq(member.organizationId, organizationId),
+        eq(member.role, 'owner'),
+      ),
+      columns: {
+        userId: true,
+      },
+    });
+
+    return orgMember?.userId || null;
+  } catch (error) {
+    logger.error('[Website API] Error fetching organization owner:', { error, organizationId });
+    return null;
+  }
+}
 websitesRouter.post('/', async (c) => {
   const user = c.get('user');
   const rawData = await c.req.json();
@@ -144,6 +164,35 @@ websitesRouter.post('/', async (c) => {
       }, 400);
     }
 
+    // Check website creation limit with autumn
+    let checkData = null;
+    try {
+      // Get the customer ID (organization owner or user)
+      let customerId = user.id;
+      if (organizationId) {
+        const orgOwnerId = await getOrganizationOwnerId(organizationId);
+        if (orgOwnerId) {
+          customerId = orgOwnerId;
+        }
+      }
+
+      const { data } = await autumn.check({
+        customer_id: customerId,
+        feature_id: 'websites',
+      });
+      checkData = data;
+
+      if (checkData && !checkData.allowed) {
+        return c.json({
+          success: false,
+          error: "Website creation limit exceeded"
+        }, 400);
+      }
+    } catch (error) {
+      logger.error('[Website API] Error checking autumn limits:', { error });
+      // Continue without autumn check if service is unavailable
+    }
+
     const fullDomain = data.subdomain
       ? `${data.subdomain}.${data.domain}`
       : data.domain;
@@ -170,6 +219,29 @@ websitesRouter.post('/', async (c) => {
         organizationId: organizationId || null,
       })
       .returning();
+
+    // Track website creation with autumn
+    try {
+      if (checkData && checkData.allowed) {
+        // Get the customer ID (organization owner or user)
+        let customerId = user.id;
+        if (organizationId) {
+          const orgOwnerId = await getOrganizationOwnerId(organizationId);
+          if (orgOwnerId) {
+            customerId = orgOwnerId;
+          }
+        }
+
+        await autumn.track({
+          customer_id: customerId,
+          feature_id: 'websites',
+          value: 1,
+        });
+      }
+    } catch (error) {
+      logger.error('[Website API] Error tracking website creation with autumn:', { error });
+      // Continue without tracking if service is unavailable
+    }
 
     logger.info('[Website API] Successfully created website:', website);
     await discordLogger.success(
@@ -444,6 +516,27 @@ websitesRouter.delete(
 
       await db.delete(websites)
         .where(eq(websites.id, id));
+
+      // Track website deletion with autumn (decrement count)
+      try {
+        // Get the customer ID (organization owner or user)
+        let customerId = user.id;
+        if (website.organizationId) {
+          const orgOwnerId = await getOrganizationOwnerId(website.organizationId);
+          if (orgOwnerId) {
+            customerId = orgOwnerId;
+          }
+        }
+
+        await autumn.track({
+          customer_id: customerId,
+          feature_id: 'websites',
+          value: -1,
+        });
+      } catch (error) {
+        logger.error('[Website API] Error tracking website deletion with autumn:', { error });
+        // Continue without tracking if service is unavailable
+      }
 
       // Discord notification for website deletion
       await discordLogger.warning(

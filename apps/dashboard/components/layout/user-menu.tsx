@@ -1,5 +1,5 @@
 import { authClient, useSession } from "@databuddy/auth/client";
-import { HouseIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
+import { CreditCardIcon, HouseIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { redirect, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -91,6 +91,12 @@ export function UserMenu() {
             <Link className="flex w-full items-center" href="/websites">
               <HouseIcon className="mr-2.5 h-4 w-4" size={32} weight="duotone" />
               Websites
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="h-9 rounded-md">
+            <Link className="flex w-full items-center" href="/billing">
+              <CreditCardIcon className="mr-2.5 h-4 w-4" size={32} weight="duotone" />
+              Billing
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="h-9 rounded-md">
