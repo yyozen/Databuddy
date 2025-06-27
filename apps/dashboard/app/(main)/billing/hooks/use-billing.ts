@@ -2,53 +2,27 @@ import { useState } from 'react';
 import { useAutumn } from 'autumn-js/react';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
-
-// Define types for customer data
-export interface CustomerProduct {
-    id: string;
-    name: string;
-    group: string | null;
-    status: 'active' | 'canceled' | 'scheduled';
-    canceled_at: number | null;
-    started_at: number;
-    is_default: boolean;
-    is_add_on: boolean;
-    current_period_start?: number;
-    current_period_end?: number;
-}
-
-export interface CustomerFeature {
-    id: string;
-    name: string;
-    type: string;
-    unlimited?: boolean;
-    balance: number | null;
-    usage: number;
-    included_usage: number;
-    next_reset_at: number | null;
-    interval?: string;
-}
-
-export interface Customer {
-    id: string;
-    created_at: number;
-    name: string;
-    email: string;
-    fingerprint: string | null;
-    stripe_id: string;
-    env: string;
-    products: CustomerProduct[];
-    features: Record<string, CustomerFeature>;
-    metadata: Record<string, any>;
-}
+import { CustomerProduct, Customer } from '../data/billing-data';
+import { useBillingData } from "../data/billing-data";
 
 export function useBilling(refetch?: () => void) {
     const { attach, cancel, check, track, openBillingPortal } = useAutumn();
     const [isLoading, setIsLoading] = useState(false);
     const [showNoPaymentDialog, setShowNoPaymentDialog] = useState(false);
+    const [showCancelDialog, setShowCancelDialog] = useState(false);
+    const [cancellingPlan, setCancellingPlan] = useState<{ id: string, name: string, currentPeriodEnd?: number } | null>(null);
+    const [isActionLoading, setIsActionLoading] = useState(false);
+    const { subscriptionData } = useBillingData();
 
     const handleUpgrade = async (planId: string) => {
-        setIsLoading(true);
+        setIsActionLoading(true);
+
+        if (!subscriptionData?.paymentMethods?.length) {
+            setShowNoPaymentDialog(true);
+            setIsActionLoading(false);
+            return;
+        }
+
         try {
             const result = await attach({ productId: planId });
             if (result.error) {
@@ -59,26 +33,27 @@ export function useBilling(refetch?: () => void) {
                 }
             } else {
                 toast.success('Successfully upgraded!');
-                // Refetch customer data to update UI
                 if (refetch) {
-                    setTimeout(() => refetch(), 500); // Small delay to ensure backend is updated
+                    setTimeout(() => refetch(), 500);
                 }
             }
         } catch (error: any) {
             toast.error(error.message || 'An unexpected error occurred.');
         } finally {
-            setIsLoading(false);
+            setIsActionLoading(false);
         }
     };
 
-    const handleCancel = async (planId: string) => {
+    const handleCancel = async (planId: string, immediate = false) => {
         setIsLoading(true);
         try {
-            await cancel({ productId: planId });
-            toast.success('Subscription cancelled.');
-            // Refetch customer data to update UI
+            await cancel({
+                productId: planId,
+                ...(immediate && { cancelImmediately: true })
+            });
+            toast.success(immediate ? 'Subscription cancelled immediately.' : 'Subscription cancelled.');
             if (refetch) {
-                setTimeout(() => refetch(), 500); // Small delay to ensure backend is updated
+                setTimeout(() => refetch(), 500);
             }
         } catch (error: any) {
             toast.error(error.message || 'Failed to cancel subscription.');
@@ -87,13 +62,23 @@ export function useBilling(refetch?: () => void) {
         }
     };
 
+    const handleCancelClick = (planId: string, planName: string, currentPeriodEnd?: number) => {
+        setCancellingPlan({ id: planId, name: planName, currentPeriodEnd });
+        setShowCancelDialog(true);
+    };
+
+    const handleCancelConfirm = async (immediate: boolean) => {
+        if (!cancellingPlan) return;
+        await handleCancel(cancellingPlan.id, immediate);
+        setCancellingPlan(null);
+    };
+
     const handleManageBilling = async () => {
         await openBillingPortal({
             returnUrl: `${window.location.origin}/billing`,
         });
     };
 
-    // Helper functions to extract subscription information
     const getSubscriptionStatus = (product: CustomerProduct) => {
         if (product.status === 'canceled') return 'Cancelled';
         if (product.status === 'scheduled') return 'Scheduled';
@@ -135,11 +120,16 @@ export function useBilling(refetch?: () => void) {
         isLoading,
         onUpgrade: handleUpgrade,
         onCancel: handleCancel,
+        onCancelClick: handleCancelClick,
+        onCancelConfirm: handleCancelConfirm,
         onManageBilling: handleManageBilling,
         check,
         track,
         showNoPaymentDialog,
         setShowNoPaymentDialog,
+        showCancelDialog,
+        setShowCancelDialog,
+        cancellingPlan,
         getSubscriptionStatus,
         getSubscriptionStatusDetails,
         getFeatureUsage

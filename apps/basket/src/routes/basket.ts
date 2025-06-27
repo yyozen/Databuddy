@@ -56,7 +56,6 @@ async function validateRequest(body: any, query: any, request: Request) {
       feature_id: 'events',
     })
 
-
     if (data && data.allowed) {
       await autumn.track({
         customer_id: website.ownerId,

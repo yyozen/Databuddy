@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
+import { useQueryState } from "nuqs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBillingData } from "./data/billing-data";
 import { TabLayout } from "@/app/(main)/websites/[id]/_components/utils/tab-layout";
-import { Activity, CreditCard, History, Settings } from "lucide-react";
+import { ChartLineUp, CreditCard, Clock } from "@phosphor-icons/react";
+import { Customer, useBillingData, type Invoice } from "./data/billing-data";
 
 const OverviewTab = lazy(() => import("./components/overview-tab").then(m => ({ default: m.OverviewTab })));
 const PlansTab = lazy(() => import("./components/plans-tab").then(m => ({ default: m.PlansTab })));
 const HistoryTab = lazy(() => import("./components/history-tab").then(m => ({ default: m.HistoryTab })));
-const PaymentTab = lazy(() => import("./components/payment-tab").then(m => ({ default: m.PaymentTab })));
 
 function TabSkeleton() {
   return (
@@ -22,14 +22,32 @@ function TabSkeleton() {
 }
 
 const TABS = [
-  { id: 'overview', label: 'Overview', icon: Activity },
+  { id: 'overview', label: 'Overview', icon: ChartLineUp },
   { id: 'plans', label: 'Plans', icon: CreditCard },
-  { id: 'history', label: 'History', icon: History },
-  { id: 'payment', label: 'Payment', icon: Settings },
+  { id: 'history', label: 'History', icon: Clock },
 ]
 
 export default function BillingPage() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useQueryState('tab', {
+    defaultValue: 'overview',
+    clearOnDefault: true
+  });
+
+  const { customerData, isLoading } = useBillingData();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [hasLoadedInvoices, setHasLoadedInvoices] = useState(false);
+
+  // Capture invoice data once when it first loads
+  useEffect(() => {
+    if (!isLoading && customerData?.invoices && !hasLoadedInvoices) {
+      setInvoices(customerData.invoices as Invoice[]);
+      setHasLoadedInvoices(true);
+    }
+  }, [customerData?.invoices, isLoading, hasLoadedInvoices]);
+
+  const navigateToPlans = () => {
+    setActiveTab('plans');
+  };
 
   return (
     <TabLayout
@@ -57,7 +75,7 @@ export default function BillingPage() {
 
         <TabsContent value="overview">
           <Suspense fallback={<TabSkeleton />}>
-            <OverviewTab />
+            <OverviewTab onNavigateToPlans={navigateToPlans} />
           </Suspense>
         </TabsContent>
         <TabsContent value="plans">
@@ -67,12 +85,7 @@ export default function BillingPage() {
         </TabsContent>
         <TabsContent value="history">
           <Suspense fallback={<TabSkeleton />}>
-            <HistoryTab />
-          </Suspense>
-        </TabsContent>
-        <TabsContent value="payment">
-          <Suspense fallback={<TabSkeleton />}>
-            <PaymentTab />
+            <HistoryTab invoices={invoices} customerData={customerData as Customer} isLoading={isLoading && !hasLoadedInvoices} />
           </Suspense>
         </TabsContent>
       </Tabs>

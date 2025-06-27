@@ -29,12 +29,13 @@ export function NoPaymentMethodDialog({ open, onOpenChange, onConfirm }: NoPayme
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
                     <AlertDialogAction asChild>
                         <Button
                             onClick={() => {
                                 onConfirm();
                             }}
+                            className="cursor-pointer"
                         >
                             Add Payment Method
                         </Button>
