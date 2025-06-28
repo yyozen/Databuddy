@@ -49,7 +49,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { WebsiteDialog } from "@/components/website-dialog";
-import { useWebsites } from "@/hooks/use-websites";
+import { websiteApi } from "@/hooks/use-websites";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   generateNpmCode,
   generateNpmComponentCode,
@@ -72,9 +73,25 @@ export function WebsiteSettingsTab({
   onWebsiteUpdated,
 }: WebsiteDataTabProps) {
   const router = useRouter();
-  const { deleteWebsite: deleteWebsiteMutation, isDeleting: isMutationDeleting } = useWebsites();
+  const queryClient = useQueryClient();
+  const { mutate: deleteWebsiteMutation, isPending: isMutationDeleting } =
+    useMutation({
+      mutationFn: (id: string) => websiteApi.delete(id),
+      onSuccess: () => {
+        toast.success("Website deleted successfully");
+        queryClient.invalidateQueries({ queryKey: ["websites"] });
+        router.push("/websites");
+        setShowDeleteDialog(false);
+      },
+      onError: (error: Error) => {
+        toast.error(error.message || "Failed to delete website");
+        setShowDeleteDialog(false);
+      },
+    });
   const [copied, setCopied] = useState(false);
-  const [installMethod, setInstallMethod] = useState<"script" | "npm">("script");
+  const [installMethod, setInstallMethod] = useState<"script" | "npm">(
+    "script"
+  );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<"tracking" | "basic" | "advanced" | "optimization">(
@@ -94,16 +111,7 @@ export function WebsiteSettingsTab({
   };
 
   const handleDeleteWebsite = async () => {
-    deleteWebsiteMutation(websiteId, {
-      onSuccess: () => {
-        router.push("/websites");
-        setShowDeleteDialog(false);
-      },
-      onError: (error: Error) => {
-        console.error("Error deleting website:", error);
-        setShowDeleteDialog(false);
-      },
-    });
+    deleteWebsiteMutation(websiteId);
   };
 
   const handleWebsiteUpdated = () => {
@@ -208,7 +216,6 @@ export function WebsiteSettingsTab({
         onOpenChange={setShowEditDialog}
         onUpdateSuccess={handleWebsiteUpdated}
         open={showEditDialog}
-        verifiedDomains={[]}
         website={websiteData}
       />
 

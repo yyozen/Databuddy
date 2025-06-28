@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WebsiteDialog } from "@/components/website-dialog";
-import { useDomains } from "@/hooks/use-domains";
 import { useWebsites } from "@/hooks/use-websites";
 import { cn } from "@/lib/utils";
 import { WebsiteCard } from "./_components/website-card";
@@ -130,10 +129,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 
 export default function WebsitesPage() {
   const { websites, isLoading, isError, refetch } = useWebsites();
-  const { domains } = useDomains();
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  const verifiedDomains = domains.filter((domain) => domain.verificationStatus === "VERIFIED");
 
   const handleRetry = () => {
     refetch();
@@ -226,7 +222,6 @@ export default function WebsitesPage() {
         onCreationSuccess={handleWebsiteCreated}
         onOpenChange={setDialogOpen}
         open={dialogOpen}
-        verifiedDomains={verifiedDomains}
       />
     </div>
   );
