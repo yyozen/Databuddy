@@ -9,7 +9,7 @@ export default function SessionsPage() {
   const websiteId = params.id as string;
 
   return (
-    <div className="py-8">
+    <div className="p-3 sm:p-4 lg:p-6">
       <SessionsList websiteId={websiteId} />
     </div>
   );

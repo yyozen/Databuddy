@@ -45,7 +45,7 @@ function WebsiteMapPage() {
     locationData?.countries?.find((c) => !c.country || c.country.trim() === "")?.visitors || 0;
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] flex-col space-y-4 p-4">
+    <div className="flex h-[calc(100vh-7rem)] flex-col space-y-4 p-3 sm:p-4 lg:p-6">
       {/* Header with proper spacing */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">

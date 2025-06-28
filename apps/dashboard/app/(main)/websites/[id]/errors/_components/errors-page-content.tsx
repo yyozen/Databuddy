@@ -326,7 +326,7 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-3 sm:p-4 lg:p-6">
-      <div className="-mx-3 sm:-mx-4 lg:-mx-6 rounded border-b bg-muted/20 px-3 py-2 pb-6 sm:px-4 lg:px-6">
+      <div className="rounded border-b bg-muted/20 py-2 pb-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="space-y-2">
             <div className="flex items-center gap-3">

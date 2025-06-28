@@ -9,7 +9,7 @@ export default function ProfilesPage() {
   const websiteId = params.id as string;
 
   return (
-    <div className="py-8">
+    <div className="p-3 sm:p-4 lg:p-6">
       <ProfilesList websiteId={websiteId} />
     </div>
   );

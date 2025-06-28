@@ -186,7 +186,7 @@ export default function WebsitesPage() {
       </div>
 
       {/* Content area */}
-      <div className="flex-1 overflow-y-auto p-3 sm:px-4 sm:pt-4 sm:pb-6">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
         {/* Website count indicator */}
         {!isLoading && websites && websites.length > 0 && (
           <div className="mb-6">

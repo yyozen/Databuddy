@@ -222,18 +222,18 @@ function WebsiteDetailsPage() {
 
   const tabs: TabDefinition[] = isTrackingSetup
     ? [
-        { id: "overview", label: "Overview", className: "pt-2 space-y-2" },
-        { id: "audience", label: "Audience" },
-        { id: "performance", label: "Performance" },
-        { id: "settings", label: "Settings" },
-      ]
+      { id: "overview", label: "Overview", className: "pt-2 space-y-2" },
+      { id: "audience", label: "Audience" },
+      { id: "performance", label: "Performance" },
+      { id: "settings", label: "Settings" },
+    ]
     : [
-        { id: "tracking-setup", label: "Setup Tracking" },
-        { id: "settings", label: "Settings" },
-      ];
+      { id: "tracking-setup", label: "Setup Tracking" },
+      { id: "settings", label: "Settings" },
+    ];
 
   return (
-    <div className="mx-auto max-w-[1600px] p-3 sm:p-4">
+    <div className="mx-auto max-w-[1600px] p-3 sm:p-4 lg:p-6">
       <header className="border-b pb-3">
         {/* Only show date range controls if tracking is set up */}
         {isTrackingSetup && (
@@ -289,7 +289,7 @@ function WebsiteDetailsPage() {
                   dayPickerCurrentRange?.from &&
                   dayPickerCurrentRange?.to &&
                   format(dayPickerCurrentRange.from, "yyyy-MM-dd") ===
-                    format(start, "yyyy-MM-dd") &&
+                  format(start, "yyyy-MM-dd") &&
                   format(dayPickerCurrentRange.to, "yyyy-MM-dd") === format(now, "yyyy-MM-dd");
 
                 return (

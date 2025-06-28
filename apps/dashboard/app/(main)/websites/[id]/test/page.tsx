@@ -8,7 +8,7 @@ export default function TestPage() {
   const websiteId = params.id as string;
 
   return (
-    <div className="container mx-auto max-w-6xl p-6">
+    <div className="p-3 sm:p-4 lg:p-6">
       <div className="mb-6">
         <h1 className="mb-2 font-bold text-2xl text-foreground">Sessions Test Page</h1>
         <p className="text-muted-foreground">
