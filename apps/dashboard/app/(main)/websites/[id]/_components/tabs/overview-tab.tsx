@@ -1043,7 +1043,7 @@ export function WebsiteOverviewTab({
         getSubRows={(row: any) => row.propertyCategories}
         initialPageSize={8}
         isLoading={isLoading}
-        minHeight={200}
+        minHeight={350}
         renderSubRow={(subRow: any, parentRow: any, index: number) => {
           const propertyKey = subRow.key;
           const propertyTotal = subRow.total;
@@ -1053,7 +1053,6 @@ export function WebsiteOverviewTab({
 
           return (
             <div className="ml-4">
-              {/* Property Category Row - Clickable */}
               <button
                 className="flex w-full items-center justify-between rounded border border-border/30 bg-muted/20 px-3 py-2 hover:bg-muted/40"
                 onClick={() => togglePropertyExpansion(propertyId)}
@@ -1085,7 +1084,6 @@ export function WebsiteOverviewTab({
                 </div>
               </button>
 
-              {/* Property Values - Collapsible */}
               {isPropertyExpanded && (
                 <div className="mt-1 max-h-48 overflow-y-auto rounded border border-border/20">
                   {propertyValues.map((valueItem: any, valueIndex: number) => (
