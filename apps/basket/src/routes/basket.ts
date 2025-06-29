@@ -86,23 +86,10 @@ async function validateRequest(body: any, query: any, request: Request) {
 		const { data } = await autumn.check({
 			customer_id: website.ownerId,
 			feature_id: "events",
+			send_event: true,
 		});
 
-		if (data?.allowed) {
-			autumn
-				.track({
-					customer_id: website.ownerId,
-					feature_id: "events",
-					value: 1,
-				})
-				.then(() => {})
-				.catch((err) => {
-					logger.error("Failed to track autumn event", {
-						error: err as Error,
-						ownerId: website.ownerId,
-					});
-				});
-		} else {
+		if (!data?.allowed) {
 			await logBlockedTraffic(
 				request,
 				body,
