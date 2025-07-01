@@ -7,7 +7,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Suspense } from "react";
 
 const EmailForm = dynamic(
   () => import("./_components/email-form").then((mod) => ({ default: mod.EmailForm })),
@@ -70,7 +69,7 @@ const TimezonePreferences = dynamic(
 
 type SettingsTab = "profile" | "account" | "security" | "notifications";
 
-function SettingsPage() {
+export default function SettingsPage() {
   const [activeTab, setActiveTab] = useQueryState("tab", {
     defaultValue: "profile" as SettingsTab,
   });
@@ -266,12 +265,4 @@ function SettingsPage() {
       </div>
     </div>
   );
-}
-
-export default function Page() {
-  return (
-    <Suspense>
-      <SettingsPage />
-    </Suspense>
-  )
 }

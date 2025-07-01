@@ -32,7 +32,7 @@ const TABS = [
   { id: 'history', label: 'History', icon: Clock },
 ]
 
-function BillingPage() {
+export default function BillingPage() {
   const [activeTab, setActiveTab] = useQueryState('tab', {
     defaultValue: 'overview',
     clearOnDefault: true
@@ -114,12 +114,4 @@ function BillingPage() {
       </TabLayout>
     </div>
   );
-}
-
-export default function Page() {
-  return (
-    <Suspense>
-      <BillingPage />
-    </Suspense>
-  )
-}
+} 
