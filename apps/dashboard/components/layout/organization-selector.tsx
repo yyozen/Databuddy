@@ -17,6 +17,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganizations } from "@/hooks/use-organizations";
 import { cn } from "@/lib/utils";
 
+const getOrganizationInitials = (name: string) => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
 export function OrganizationSelector() {
   const {
     organizations,
@@ -43,31 +52,25 @@ export function OrganizationSelector() {
     );
   }
 
-  const handleSelectOrganization = async (organizationId: string | null) => {
-    if (organizationId === activeOrganization?.id) return;
-    if (organizationId === null && !activeOrganization) return;
-    setActiveOrganization(organizationId);
-    setIsOpen(false);
-  };
+  const handleSelectOrganization = React.useCallback(
+    (organizationId: string | null) => {
+      if (organizationId === activeOrganization?.id) return;
+      if (organizationId === null && !activeOrganization) return;
+      setActiveOrganization(organizationId);
+      setIsOpen(false);
+    },
+    [activeOrganization, setActiveOrganization]
+  );
 
-  const handleCreateOrganization = () => {
+  const handleCreateOrganization = React.useCallback(() => {
     setShowCreateDialog(true);
     setIsOpen(false);
-  };
+  }, []);
 
-  const handleManageOrganizations = () => {
+  const handleManageOrganizations = React.useCallback(() => {
     router.push("/organizations");
     setIsOpen(false);
-  };
-
-  const getOrganizationInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  }, [router]);
 
   return (
     <>

@@ -12,9 +12,10 @@ interface PricingTier {
 interface PricingTiersTooltipProps {
     tiers: PricingTier[];
     className?: string;
+    showText?: boolean;
 }
 
-export function PricingTiersTooltip({ tiers, className }: PricingTiersTooltipProps) {
+export function PricingTiersTooltip({ tiers, className, showText = true }: PricingTiersTooltipProps) {
     const formatTierRange = (tier: PricingTier, index: number) => {
         const prevTier = index > 0 ? tiers[index - 1] : null;
         const from = prevTier ? (typeof prevTier.to === 'number' ? prevTier.to + 1 : 0) : 0;
@@ -23,7 +24,8 @@ export function PricingTiersTooltip({ tiers, className }: PricingTiersTooltipPro
         const formatNumber = (num: number) => {
             if (num >= 1000000) {
                 return `${(num / 1000000).toFixed(num % 1000000 === 0 ? 0 : 1)}M`;
-            } else if (num >= 1000) {
+            }
+            if (num >= 1000) {
                 return `${(num / 1000).toFixed(num % 1000 === 0 ? 0 : 1)}K`;
             }
             return num.toLocaleString();
@@ -43,9 +45,16 @@ export function PricingTiersTooltip({ tiers, className }: PricingTiersTooltipPro
     return (
         <HoverCard>
             <HoverCardTrigger asChild>
-                <button className={cn("inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors", className)}>
+                <button
+                    type="button"
+                    className={cn(
+                        "inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground cursor-help",
+                        !showText && "rounded-full p-1 hover:bg-muted/50",
+                        className
+                    )}
+                >
                     <Info size={12} />
-                    <span>View pricing tiers</span>
+                    {showText && <span>View pricing tiers</span>}
                 </button>
             </HoverCardTrigger>
             <HoverCardContent className="w-80" side="top" align="start">
@@ -57,10 +66,10 @@ export function PricingTiersTooltip({ tiers, className }: PricingTiersTooltipPro
                         </p>
                     </div>
                     <div className="space-y-2">
-                        {tiers.map((tier, index) => (
-                            <div key={index} className="flex justify-between items-center text-xs">
+                        {tiers.map((tier) => (
+                            <div key={tier.to} className="flex justify-between items-center text-xs">
                                 <span className="text-muted-foreground">
-                                    {formatTierRange(tier, index)} events
+                                    {formatTierRange(tier, tiers.indexOf(tier))} events
                                 </span>
                                 <span className="font-mono font-medium">
                                     ${tier.amount.toFixed(6)} each

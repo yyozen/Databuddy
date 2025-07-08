@@ -8,6 +8,7 @@ import { Check, Loader2 } from "lucide-react";
 import AttachDialog from "@/components/autumn/attach-dialog";
 import { getPricingTableContent } from "@/lib/autumn/pricing-table-content";
 import type { Product, ProductItem } from "autumn-js";
+import { PricingTiersTooltip } from "@/app/(main)/billing/components/pricing-tiers-tooltip";
 
 export default function PricingTable({
   productDetails,
@@ -298,24 +299,45 @@ export const PricingFeatureList = ({
         </p>
       )}
       <div className="space-y-3">
-        {items.map((item) => (
-          <div
-            key={item.display?.primary_text}
-            className="flex items-start gap-2 text-sm"
-          >
-            {showIcon && (
-              <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-            )}
-            <div className="flex flex-col">
-              <span>{item.display?.primary_text}</span>
-              {item.display?.secondary_text && (
-                <span className="text-sm text-muted-foreground">
-                  {item.display?.secondary_text}
-                </span>
+        {items.map((item) => {
+          const featureItem = item as any;
+          let secondaryText = featureItem.display?.secondary_text;
+
+          const hasTiers =
+            featureItem.type === "priced_feature" &&
+            featureItem.tiers?.length > 0;
+
+          if (hasTiers) {
+            secondaryText = "Usage-based pricing";
+          }
+
+          return (
+            <div
+              key={featureItem.display?.primary_text}
+              className="flex items-start gap-2 text-sm"
+            >
+              {showIcon && (
+                <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
               )}
+              <div className="flex flex-col">
+                <span>{featureItem.display?.primary_text}</span>
+                <div className="flex items-center gap-1">
+                  {secondaryText && (
+                    <span className="text-sm text-muted-foreground">
+                      {secondaryText}
+                    </span>
+                  )}
+                  {hasTiers && (
+                    <PricingTiersTooltip
+                      tiers={featureItem.tiers}
+                      showText={false}
+                    />
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
