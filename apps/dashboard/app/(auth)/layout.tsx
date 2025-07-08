@@ -1,6 +1,4 @@
-"use client";
 
-import { authClient } from "@databuddy/auth/client";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -8,11 +6,13 @@ import { Suspense } from "react";
 import Iridescence from "@/components/bits/Iridiscence";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
+import { auth } from "@databuddy/auth";
+import { headers } from "next/headers";
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  const { data: session, isPending } = authClient.useSession();
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth.api.getSession({ headers: await headers() });
 
-  if (session && !isPending) {
+  if (session) {
     redirect("/websites");
   }
 

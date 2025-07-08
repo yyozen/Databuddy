@@ -92,10 +92,12 @@ export const clickHouse = new Proxy(clickHouseOG, {
 
 export async function chQueryWithMeta<T extends Record<string, any>>(
   query: string,
+  params?: Record<string, unknown>
 ): Promise<ResponseJSON<T>> {
   const start = Date.now();
   const res = await clickHouse.query({
     query,
+    query_params: params,
   });
   const beforeParse = Date.now();
   const json = await res.json<T>();
@@ -130,8 +132,9 @@ export async function chQueryWithMeta<T extends Record<string, any>>(
 
 export async function chQuery<T extends Record<string, any>>(
   query: string,
+  params?: Record<string, unknown>
 ): Promise<T[]> {
-  return (await chQueryWithMeta<T>(query)).data;
+  return (await chQueryWithMeta<T>(query, params)).data;
 }
 
 export async function chCommand(query: string, params?: Record<string, unknown>): Promise<void> {

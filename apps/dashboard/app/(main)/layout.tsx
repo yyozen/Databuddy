@@ -1,20 +1,14 @@
-"use client";
+import { auth } from "@databuddy/auth";
 
-import { MantineProvider } from "@mantine/core";
-import { useAuthSession } from "@/app/providers";
-import { AuthLoading } from "@/components/auth/auth-loading";
-import { RedirectToSignIn } from "@/components/auth/redirect-to-sign-in";
 import { Sidebar } from "@/components/layout/sidebar";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { session, isLoading } = useAuthSession();
-
-  if (isLoading) {
-    return <AuthLoading />;
-  }
+export default async function MainLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) {
-    return <RedirectToSignIn />;
+    redirect("/login");
   }
 
   return (
