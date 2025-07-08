@@ -22,7 +22,7 @@ export default function PrivacyPage() {
           Last Updated: <span className="text-foreground font-medium">{lastUpdated}</span>
         </p>
         <p className="max-w-2xl mx-auto text-muted-foreground">
-          This policy explains how we collect, use, and protect information for both our customers and end users. 
+          This policy explains how we collect, use, and protect information for both our customers and end users.
           We're committed to privacy-first analytics that respects everyone's privacy.
         </p>
       </div>
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           Privacy-First Analytics
         </h2>
         <p className="text-muted-foreground mb-4">
-          Databuddy provides website analytics without compromising user privacy. We don't use cookies, 
+          Databuddy provides website analytics without compromising user privacy. We don't use cookies,
           don't track individual users, and never collect personal information from website visitors.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -56,8 +56,8 @@ export default function PrivacyPage() {
       {/* Main content */}
       <div className="prose prose-lg max-w-none dark:prose-invert">
         <p className="lead text-lg text-muted-foreground mb-8">
-          Databuddy ("we", "our", or "us") is a privacy-first analytics service that provides website insights 
-          without compromising user privacy. This Privacy Policy describes how we collect, use, and protect 
+          Databuddy ("we", "our", or "us") is a privacy-first analytics service that provides website insights
+          without compromising user privacy. This Privacy Policy describes how we collect, use, and protect
           information when you use our service or visit websites that use our analytics.
         </p>
 
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
 
         <section className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Information We Collect</h2>
-          
+
           <h3 className="text-xl font-semibold mb-3">From Our Customers (Website Owners)</h3>
           <p className="mb-3">When you sign up for Databuddy, we collect:</p>
           <ul className="space-y-2 mb-6">
@@ -136,7 +136,7 @@ export default function PrivacyPage() {
 
         <section className="mb-8">
           <h2 className="text-2xl font-bold mb-4">How We Use Information</h2>
-          
+
           <h3 className="text-xl font-semibold mb-3">Customer Data Usage</h3>
           <p className="mb-3">We use customer information to:</p>
           <ul className="space-y-2 mb-6">
@@ -167,7 +167,7 @@ export default function PrivacyPage() {
 
         <section className="mb-8">
           <h2 className="text-2xl font-bold mb-4">GDPR and Privacy Rights</h2>
-          
+
           <h3 className="text-xl font-semibold mb-3">Legal Basis for Processing</h3>
           <p className="mb-3">Under GDPR, our legal basis for processing data is:</p>
           <ul className="space-y-2 mb-6">
@@ -221,7 +221,7 @@ export default function PrivacyPage() {
         <section className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
           <p className="mb-4">
-            If you have any questions about this Privacy Policy, want to exercise your privacy rights, 
+            If you have any questions about this Privacy Policy, want to exercise your privacy rights,
             or have concerns about how your data is handled, please contact us:
           </p>
           <div className="bg-muted/50 p-5 rounded-lg border mt-4 mb-6">
@@ -230,7 +230,7 @@ export default function PrivacyPage() {
               <a href="mailto:privacy@databuddy.cc" className="hover:underline">privacy@databuddy.cc</a>
             </p>
             <p className="text-muted-foreground text-sm">
-              We typically respond to privacy inquiries within 24 hours, and will fulfill data subject 
+              We typically respond to privacy inquiries within 24 hours, and will fulfill data subject
               requests within 30 days as required by GDPR.
             </p>
           </div>
