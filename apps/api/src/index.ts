@@ -17,6 +17,7 @@ import funnelRouter from "./routes/v1/funnels";
 import revenueRouter from "./routes/v1/revenue";
 import redditRouter from "./routes/v1/reddit";
 import { uploadRouter } from "./routes/v1/upload";
+import { healthRouter } from "./routes/v1/health";
 
 // Polyfills
 import "./polyfills/compression";
@@ -153,7 +154,7 @@ app.route("/v1/reddit", redditRouter);
 app.route("/v1/upload", uploadRouter);
 
 // Health check endpoints
-app.get("/health", (c) => c.json({ status: "ok", version: "1.0.0" }));
+app.route("/health", healthRouter);
 app.get("/", (c) => c.json({ status: "ok", version: "1.0.0" }));
 
 // Error handlers
