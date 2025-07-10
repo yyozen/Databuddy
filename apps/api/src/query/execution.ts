@@ -44,7 +44,9 @@ export type FilterRequest = z.infer<typeof filterSchema>
 
 // Apply filters to SQL query
 function applyFilters(sql: string, filters: FilterRequest[]): string {
-  if (filters.length === 0) return sql
+  if (filters.length === 0) {
+    return sql
+  }
 
   const filterClauses = filters.map((filter) => {
     switch (filter.operator) {
@@ -64,15 +66,10 @@ function applyFilters(sql: string, filters: FilterRequest[]): string {
 
   if (filterClauses.length > 0) {
     if (sql.includes('GROUP BY')) {
-      const result = sql.replace('GROUP BY', `AND ${filterClauses.join(' AND ')}\n    GROUP BY`);
-      return result;
-    } else {
-      if (sql.includes('WHERE')) {
-        const result = sql.replace(/WHERE/, `WHERE ${filterClauses.join(' AND ')} AND`);
-        return result;
-      } else {
-        return sql;
-      }
+      return sql.replace('GROUP BY', `AND ${filterClauses.join(' AND ')}\n    GROUP BY`)
+    }
+    if (sql.includes('WHERE')) {
+      return sql.replace(/WHERE/, `WHERE ${filterClauses.join(' AND ')} AND`)
     }
   }
 
@@ -235,18 +232,24 @@ function groupQueriesByColumnStructure(
       const offset = (page - 1) * limit
 
       const finalEndDate = endDate.includes('T') ? endDate : `${endDate} 23:59:59`
-      let sql = builder(websiteId, startDate, finalEndDate, limit, offset, granularity, timeZone, filters)
+      const builderResult = builder(websiteId, startDate, finalEndDate, limit, offset, granularity, timeZone, filters)
+
+      if (typeof builderResult !== 'string') {
+        throw new Error('Cannot unify parameterized queries')
+      }
+      const sql = builderResult
 
       // Don't apply generic filters to revenue queries - they handle filtering internally
       const isRevenueQuery = parameter.startsWith('revenue_') || parameter.startsWith('recent_') || parameter === 'all_revenue_by_client'
+      let filteredSql = sql
       if (!isRevenueQuery) {
-        sql = applyFilters(sql, filters)
+        filteredSql = applyFilters(sql, filters)
       }
 
-      const columnStructure = extractColumnStructure(sql)
+      const columnStructure = extractColumnStructure(filteredSql)
 
       // Find a compatible group
-      let compatibleGroup = groups.find(group =>
+      const compatibleGroup = groups.find(group =>
         areColumnStructuresCompatible(group.columnStructure, columnStructure)
       )
 
@@ -301,12 +304,22 @@ function buildUnifiedQueries(
       if (!builder) continue
 
       const finalEndDate = endDate.includes('T') ? endDate : `${endDate} 23:59:59`
-      let sql = builder(websiteId, startDate, finalEndDate, limit, offset, granularity, timeZone, filters)
+
+      const builderResult = builder(websiteId, startDate, finalEndDate, limit, offset, granularity, timeZone, filters)
+
+      if (typeof builderResult !== 'string') {
+        // This should have been caught by groupQueriesByColumnStructure, but for type safety:
+        throw new Error('Cannot unify parameterized queries in buildUnifiedQueries')
+      }
+
+      let sql = builderResult
 
       const isRevenueQuery = parameter.startsWith('revenue_') || parameter.startsWith('recent_') || parameter === 'all_revenue_by_client'
       if (!isRevenueQuery) {
         sql = applyFilters(sql, filters)
       }
+
+      const subQuery = sql.replace(/;\s*$/, '') // Remove trailing semicolon for UNION ALL
 
       const wrappedQuery = `
         SELECT 
@@ -315,7 +328,7 @@ function buildUnifiedQueries(
           '${getMetricType(parameter)}' as metric_type,
           *
         FROM (
-          ${sql}
+          ${subQuery}
         ) subquery
       `
 
@@ -402,7 +415,7 @@ async function executeIndividualQuery(query: QueryRequest, websiteId: string, we
   const offset = (page - 1) * limit
 
   const unsupportedParams = parameters.filter((param: string) =>
-    !PARAMETER_BUILDERS[param as keyof typeof PARAMETER_BUILDERS]
+    !PARAMETER_BUILDERS[param as keyof typeof PARAMETER_BUILDERS],
   )
 
   if (unsupportedParams.length > 0) {
@@ -410,25 +423,36 @@ async function executeIndividualQuery(query: QueryRequest, websiteId: string, we
       success: false,
       error: `Parameters not supported: ${unsupportedParams.join(', ')}`,
       available_parameters: Object.keys(PARAMETER_BUILDERS),
-      queryId: query.id
+      queryId: query.id,
     }
   }
 
   const results = await Promise.all(
     parameters.map(async (parameter: string) => {
       const builder = PARAMETER_BUILDERS[parameter as keyof typeof PARAMETER_BUILDERS]
-      let sql = builder(websiteId, startDate, `${endDate} 23:59:59`, limit, offset, granularity, timeZone, filters)
+      const builderResult = builder(websiteId, startDate, `${endDate} 23:59:59`, limit, offset, granularity, timeZone, filters)
 
-      const isRevenueQuery = parameter.startsWith('revenue_') || parameter.startsWith('recent_') || parameter === 'all_revenue_by_client'
-      if (!isRevenueQuery) {
-        sql = applyFilters(sql, filters)
+      let sql: string
+      let params: Record<string, unknown> | undefined
+
+      if (typeof builderResult === 'string') {
+        sql = builderResult
+        const isRevenueQuery = parameter.startsWith('revenue_') || parameter.startsWith('recent_') || parameter === 'all_revenue_by_client'
+        if (!isRevenueQuery) {
+          sql = applyFilters(sql, filters)
+        }
+      }
+      else {
+        sql = builderResult.query
+        params = builderResult.params
+        // Note: filters should be applied within the builder for parameterized queries
       }
 
-      const result = await chQuery<Record<string, any>>(sql)
+      const result = await chQuery<Record<string, any>>(sql, params)
       const processedData = processParameterData(parameter, result, websiteDomain)
 
       return { parameter, data: processedData, success: true }
-    })
+    }),
   )
 
   return {

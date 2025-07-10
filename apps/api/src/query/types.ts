@@ -1,3 +1,8 @@
+export type QueryWithParams = {
+  query: string
+  params: Record<string, unknown>
+}
+
 export type ParameterBuilder = (
   websiteId: string,
   startDate: string,
@@ -6,8 +11,8 @@ export type ParameterBuilder = (
   offset: number,
   granularity?: 'hourly' | 'daily',
   timezone?: string,
-  filters?: any[]
-) => string;
+  filters?: any[],
+) => string | QueryWithParams
 
 export interface BuilderConfig {
   metricSet: string;
