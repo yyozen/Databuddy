@@ -21,17 +21,7 @@ export interface ErrorSummary {
   errorRate: number;
 }
 
-export interface ProcessedError {
-  error_type: string;
-  category: string;
-  severity: "high" | "medium" | "low";
-  error_message: string;
-  count: number;
-  unique_sessions: number;
-  sessions: Set<string>;
-  last_occurrence: string;
-  sample_error: ErrorDetail;
-}
+
 
 export interface ErrorTab {
   id: string;

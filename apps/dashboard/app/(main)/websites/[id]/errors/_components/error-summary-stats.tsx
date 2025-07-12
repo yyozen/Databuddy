@@ -15,7 +15,7 @@ export const ErrorSummaryStats = ({ errorSummary, isLoading }: ErrorSummaryStats
         icon={WarningCircleIcon}
         isLoading={isLoading}
         title="Total Errors"
-        value={errorSummary.totalErrors.toLocaleString()}
+        value={(errorSummary.totalErrors || 0).toLocaleString()}
         variant="danger"
       />
       <StatCard
@@ -23,7 +23,7 @@ export const ErrorSummaryStats = ({ errorSummary, isLoading }: ErrorSummaryStats
         icon={TrendUpIcon}
         isLoading={isLoading}
         title="Error Rate"
-        value={`${errorSummary.errorRate.toFixed(2)}%`}
+        value={`${(errorSummary.errorRate || 0).toFixed(2)}%`}
         variant="danger"
       />
       <StatCard
@@ -31,7 +31,7 @@ export const ErrorSummaryStats = ({ errorSummary, isLoading }: ErrorSummaryStats
         icon={UsersIcon}
         isLoading={isLoading}
         title="Affected Users"
-        value={errorSummary.affectedUsers.toLocaleString()}
+        value={(errorSummary.affectedUsers || 0).toLocaleString()}
         variant="warning"
       />
       <StatCard
@@ -39,7 +39,7 @@ export const ErrorSummaryStats = ({ errorSummary, isLoading }: ErrorSummaryStats
         icon={ActivityIcon}
         isLoading={isLoading}
         title="Affected Sessions"
-        value={errorSummary.affectedSessions.toLocaleString()}
+        value={(errorSummary.affectedSessions || 0).toLocaleString()}
         variant="warning"
       />
     </div>

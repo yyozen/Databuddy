@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 interface TopErrorCardProps {
   topError: {
     name: string;
-    total_occurrences: number;
-    affected_users: number;
+    count: number;
+    users: number;
   } | null;
 }
 
@@ -27,11 +27,11 @@ export const TopErrorCard = ({ topError }: TopErrorCardProps) => {
         <div className="mt-3 flex items-center justify-between text-muted-foreground text-xs">
           <span className="flex items-center gap-1 font-semibold">
             <WarningCircleIcon className="h-3 w-3" size={16} weight="duotone" />
-            {topError.total_occurrences.toLocaleString()} times
+            {(topError.count || 0).toLocaleString()} times
           </span>
           <span className="flex items-center gap-1">
             <UsersIcon className="h-3 w-3" size={16} weight="duotone" />
-            {topError.affected_users.toLocaleString()} users
+            {(topError.users || 0).toLocaleString()} users
           </span>
         </div>
       </CardContent>

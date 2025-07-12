@@ -3,11 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
 import {
-  createBrowserColumn,
-  createCountryColumn,
-  createDeviceColumn,
   createErrorTypeColumns,
-  createOSColumn,
   createPageColumn,
   errorColumns,
 } from "./error-table-columns";
@@ -26,10 +22,6 @@ interface ErrorDataTableProps {
   processedData: {
     error_types: any[];
     errors_by_page: any[];
-    errors_by_browser: any[];
-    errors_by_os: any[];
-    errors_by_country: any[];
-    errors_by_device: any[];
   };
   isLoading: boolean;
   isRefreshing: boolean;
@@ -61,42 +53,6 @@ export const ErrorDataTable = ({
           _uniqueKey: `page-${i}`,
         })),
         columns: [createPageColumn(), ...errorColumns],
-      },
-      {
-        id: "errors_by_browser",
-        label: "By Browser",
-        data: processedData.errors_by_browser.map((item: any, i: number) => ({
-          ...item,
-          _uniqueKey: `browser-${i}`,
-        })),
-        columns: [createBrowserColumn(), ...errorColumns],
-      },
-      {
-        id: "errors_by_os",
-        label: "By OS",
-        data: processedData.errors_by_os.map((item: any, i: number) => ({
-          ...item,
-          _uniqueKey: `os-${i}`,
-        })),
-        columns: [createOSColumn(), ...errorColumns],
-      },
-      {
-        id: "errors_by_country",
-        label: "By Country",
-        data: processedData.errors_by_country.map((item: any, i: number) => ({
-          ...item,
-          _uniqueKey: `country-${i}`,
-        })),
-        columns: [createCountryColumn(), ...errorColumns],
-      },
-      {
-        id: "errors_by_device",
-        label: "By Device",
-        data: processedData.errors_by_device.map((item: any, i: number) => ({
-          ...item,
-          _uniqueKey: `device-${i}`,
-        })),
-        columns: [createDeviceColumn(), ...errorColumns],
       },
     ],
     [processedData]

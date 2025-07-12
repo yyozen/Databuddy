@@ -15,10 +15,9 @@ import { ErrorDataTable } from "./error-data-table";
 // Import our separated components
 import { ErrorSummaryStats } from "./error-summary-stats";
 import { ErrorTrendsChart } from "./error-trends-chart";
-import { RecentErrorsList } from "./recent-errors-list";
 import { TopErrorCard } from "./top-error-card";
-import type { ErrorDetail, ErrorSummary, ProcessedError } from "./types";
-import { categorizeError, normalizeData, safeFormatDate } from "./utils";
+import type { ErrorDetail, ErrorSummary } from "./types";
+import { normalizeData, safeFormatDate } from "./utils";
 
 interface ErrorsPageContentProps {
   params: Promise<{ id: string }>;
@@ -95,12 +94,8 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
         recent_errors: [],
         error_types: [],
         errors_by_page: [],
-        errors_by_browser: [],
-        errors_by_os: [],
-        errors_by_country: [],
-        errors_by_device: [],
         error_trends: [],
-        sessions_summary: [],
+        error_frequency: [],
       };
     }
 
@@ -129,12 +124,8 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
       recent_errors: extractData("recent_errors"),
       error_types: extractData("error_types"),
       errors_by_page: extractData("errors_by_page"),
-      errors_by_browser: extractData("errors_by_browser"),
-      errors_by_os: extractData("errors_by_os"),
-      errors_by_country: extractData("errors_by_country"),
-      errors_by_device: extractData("errors_by_device"),
       error_trends: extractData("error_trends"),
-      sessions_summary: extractData("sessions_summary"),
+      error_frequency: extractData("error_frequency"),
     };
 
     return data;
@@ -144,11 +135,6 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
   const errorSummary = useMemo((): ErrorSummary => {
     const recentErrors = processedData.recent_errors;
     const errorTypes = processedData.error_types;
-
-    const summaryData = processedData.sessions_summary?.[0] || {
-      total_sessions: 0,
-      total_users: 0,
-    };
 
     if (!(recentErrors.length || errorTypes.length)) {
       return {
@@ -161,21 +147,18 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
     }
 
     const totalErrors = errorTypes.reduce(
-      (sum: number, type: any) => sum + (type.total_occurrences || 0),
+      (sum: number, type: any) => sum + (type.count || 0),
       0
     );
     const uniqueErrorTypes = errorTypes.length;
     const affectedUsers = errorTypes.reduce(
-      (sum: number, type: any) => sum + (type.affected_users || 0),
+      (sum: number, type: any) => sum + (type.users || 0),
       0
     );
-    const affectedSessions = errorTypes.reduce(
-      (sum: number, type: any) => sum + (type.affected_sessions || 0),
-      0
-    );
+    const affectedSessions = recentErrors.length; // Use recent errors count as session count
 
-    const errorRate =
-      summaryData.total_sessions > 0 ? (affectedSessions / summaryData.total_sessions) * 100 : 0;
+    // Calculate error rate based on recent errors vs total errors
+    const errorRate = totalErrors > 0 ? (affectedSessions / totalErrors) * 100 : 0;
 
     return {
       totalErrors,
@@ -191,7 +174,7 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
     if (!processedData.error_types?.length) return null;
 
     return processedData.error_types.reduce(
-      (max, error) => (error.total_occurrences > max.total_occurrences ? error : max),
+      (max, error) => (error.count > max.count ? error : max),
       processedData.error_types[0]
     );
   }, [processedData.error_types]);
@@ -202,53 +185,12 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 
     return processedData.error_trends.map((point: any) => ({
       date: safeFormatDate(point.date, "MMM d"),
-      "Total Errors": point.total_errors || 0,
-      "Affected Users": point.affected_users || 0,
+      "Total Errors": point.errors || 0,
+      "Affected Users": point.users || 0,
     }));
   }, [processedData.error_trends]);
 
-  // Process recent errors for display
-  const processedRecentErrors = useMemo((): ProcessedError[] => {
-    if (!processedData.recent_errors?.length) return [];
 
-    const errorMap = new Map();
-
-    for (const error of processedData.recent_errors) {
-      // Add null check for error_message
-      if (!error?.error_message) continue;
-
-      const { type, category, severity } = categorizeError(error.error_message);
-      const key = `${type}-${error.error_message}`;
-
-      if (errorMap.has(key)) {
-        const existing = errorMap.get(key);
-        existing.count += 1;
-        existing.sessions.add(error.session_id);
-        if (new Date(error.time) > new Date(existing.last_occurrence)) {
-          existing.last_occurrence = error.time;
-        }
-      } else {
-        errorMap.set(key, {
-          error_type: type,
-          category,
-          severity,
-          error_message: error.error_message,
-          count: 1,
-          unique_sessions: 1,
-          sessions: new Set([error.session_id]),
-          last_occurrence: error.time,
-          sample_error: error,
-        });
-      }
-    }
-
-    return Array.from(errorMap.values())
-      .map((error) => ({
-        ...error,
-        unique_sessions: error.sessions.size,
-      }))
-      .sort((a, b) => b.count - a.count);
-  }, [processedData.recent_errors]);
 
   // Handle loading progress animation
   useEffect(() => {
@@ -365,15 +307,15 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
             </div>
           </div>
 
-          {/* Recent Errors List */}
-          <RecentErrorsList processedRecentErrors={processedRecentErrors} />
-
           {/* Error Analysis Tables */}
           <ErrorDataTable
             isLoading={isLoading}
             isRefreshing={isRefreshing}
             onRowClick={addFilter}
-            processedData={processedData}
+            processedData={{
+              error_types: processedData.error_types,
+              errors_by_page: processedData.errors_by_page,
+            }}
           />
         </>
       )}

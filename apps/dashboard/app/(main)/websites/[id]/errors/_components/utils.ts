@@ -28,6 +28,7 @@ export const safeFormatDate = (dateString: string, formatString: string): string
   }
 };
 
+
 // Helper function to categorize errors
 export const categorizeError = (
   errorMessage: string
