@@ -21,7 +21,10 @@ async function loadDatabase() {
   }
 }
 
-await loadDatabase();
+// Initialize database loading
+loadDatabase().catch(error => {
+  console.error("Failed to initialize GeoIP database:", error);
+});
 
 const ignore = ['127.0.0.1', '::1'];
 
