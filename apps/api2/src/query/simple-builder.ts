@@ -52,19 +52,29 @@ export class SimpleQueryBuilder {
     }
 
     private formatDateTime(dateStr: string): string {
-        // Remove milliseconds and timezone info for ClickHouse compatibility
         const parts = dateStr.split('.');
         return parts[0]?.replace('T', ' ') || dateStr;
     }
 
     compile(): CompiledQuery {
+        if (this.config.customSql) {
+            const sql = this.config.customSql(
+                this.request.projectId,
+                this.formatDateTime(this.request.from),
+                this.formatDateTime(this.request.to),
+                this.request.filters,
+                this.request.timeUnit
+            );
+            return { sql, params: {} };
+        }
+
         const params: Record<string, unknown> = {
             websiteId: this.request.projectId,
             from: this.formatDateTime(this.request.from),
             to: this.formatDateTime(this.request.to)
         };
 
-        let sql = `SELECT ${this.config.fields.join(', ')} FROM ${this.config.table}`;
+        let sql = `SELECT ${this.config.fields?.join(', ') || '*'} FROM ${this.config.table}`;
 
         const whereClause = [
             ...(this.config.where || []),

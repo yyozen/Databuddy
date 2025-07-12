@@ -156,7 +156,7 @@ export default async function DataExplorerPage({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       <Card className="bg-gradient-to-br from-primary/5 to-muted/0 border-0 shadow-none">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 pb-2">
           <div className="flex items-center gap-4">

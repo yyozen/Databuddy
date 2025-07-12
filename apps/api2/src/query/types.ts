@@ -19,7 +19,7 @@ export const TimeGranularity = {
 } as const;
 
 export type FilterOperator = keyof typeof FilterOperators;
-export type TimeUnit = keyof typeof TimeGranularity;
+export type TimeUnit = keyof typeof TimeGranularity | 'hourly' | 'daily';
 
 export interface Filter {
     field: string;
@@ -28,8 +28,8 @@ export interface Filter {
 }
 
 export interface SimpleQueryConfig {
-    table: string;
-    fields: string[];
+    table?: string;
+    fields?: string[];
     where?: string[];
     groupBy?: string[];
     orderBy?: string;
@@ -42,6 +42,7 @@ export interface SimpleQueryConfig {
         normalizeUrls?: boolean;
         [key: string]: any;
     };
+    customSql?: (websiteId: string, startDate: string, endDate: string, filters?: Filter[], granularity?: TimeUnit) => string;
 }
 
 export interface QueryRequest {

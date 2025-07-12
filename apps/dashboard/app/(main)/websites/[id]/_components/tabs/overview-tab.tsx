@@ -268,14 +268,13 @@ export function WebsiteOverviewTab({
     if (!analytics.events_by_date?.length) return [];
 
     const now = dayjs().utc();
+    const endOfToday = dayjs().utc().endOf('day');
 
     return analytics.events_by_date
       .filter((event: any) => {
         const eventDate = dayjs(event.date);
-        return (
-          eventDate.isBefore(now) ||
-          eventDate.isSame(now, dateRange.granularity === "hourly" ? "hour" : "day")
-        );
+        // Only include dates that are in the past or today, never future dates
+        return eventDate.isBefore(endOfToday) || eventDate.isSame(endOfToday, 'day');
       })
       .map((event: any): ChartDataPoint => {
         const filtered: ChartDataPoint = {
@@ -296,20 +295,20 @@ export function WebsiteOverviewTab({
 
         return filtered;
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analytics.events_by_date, visibleMetrics, dateRange.granularity]);
 
   const miniChartData = useMemo(() => {
     if (!analytics.events_by_date?.length) return {};
 
     const now = dayjs().utc();
+    const endOfToday = dayjs().utc().endOf('day');
 
     // Filter out future data points, same as main chart
     const filteredEvents = analytics.events_by_date.filter((event: any) => {
       const eventDate = dayjs(event.date);
-      return (
-        eventDate.isBefore(now) ||
-        eventDate.isSame(now, dateRange.granularity === "hourly" ? "hour" : "day")
-      );
+      // Only include dates that are in the past or today, never future dates
+      return eventDate.isBefore(endOfToday) || eventDate.isSame(endOfToday, 'day');
     });
 
     const visitors = filteredEvents.map((event: any) => ({
@@ -350,7 +349,7 @@ export function WebsiteOverviewTab({
       bounceRate,
       sessionDuration,
     };
-  }, [analytics.events_by_date, dateRange.granularity]);
+  }, [analytics.events_by_date]);
 
   const processedTopPages = useMemo(() => {
     if (!analytics.top_pages?.length) return [];
@@ -836,7 +835,7 @@ export function WebsiteOverviewTab({
       {/* Metrics */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
         <StatCard
-          chartData={miniChartData.visitors}
+          chartData={isLoading ? undefined : miniChartData.visitors}
           className="h-full"
           description={`${analytics.today?.visitors || 0} today`}
           icon={UsersIcon}
@@ -850,7 +849,7 @@ export function WebsiteOverviewTab({
           variant="default"
         />
         <StatCard
-          chartData={miniChartData.sessions}
+          chartData={isLoading ? undefined : miniChartData.sessions}
           className="h-full"
           description={`${analytics.today?.sessions || 0} today`}
           icon={ChartLineIcon}
@@ -864,7 +863,7 @@ export function WebsiteOverviewTab({
           variant="default"
         />
         <StatCard
-          chartData={miniChartData.pageviews}
+          chartData={isLoading ? undefined : miniChartData.pageviews}
           className="h-full"
           description={`${analytics.today?.pageviews || 0} today`}
           icon={GlobeIcon}
@@ -878,7 +877,7 @@ export function WebsiteOverviewTab({
           variant="default"
         />
         <StatCard
-          chartData={miniChartData.pagesPerSession}
+          chartData={isLoading ? undefined : miniChartData.pagesPerSession}
           className="h-full"
           formatValue={(value) => value.toFixed(1)}
           icon={LayoutIcon}
@@ -900,7 +899,7 @@ export function WebsiteOverviewTab({
           variant="default"
         />
         <StatCard
-          chartData={miniChartData.bounceRate}
+          chartData={isLoading ? undefined : miniChartData.bounceRate}
           className="h-full"
           formatValue={(value) => `${value.toFixed(1)}%`}
           icon={CursorIcon}
@@ -911,11 +910,11 @@ export function WebsiteOverviewTab({
           title="BOUNCE RATE"
           trend={calculateTrends.bounce_rate}
           trendLabel={calculateTrends.bounce_rate !== undefined ? "vs previous period" : undefined}
-          value={analytics.summary?.bounce_rate_pct || "0%"}
+          value={analytics.summary?.bounce_rate ? `${analytics.summary.bounce_rate.toFixed(1)}%` : "0%"}
           variant={getColorVariant(analytics.summary?.bounce_rate || 0, 70, 50)}
         />
         <StatCard
-          chartData={miniChartData.sessionDuration}
+          chartData={isLoading ? undefined : miniChartData.sessionDuration}
           className="h-full"
           formatValue={(value) => {
             if (value < 60) return `${value.toFixed(1)}s`;
@@ -932,7 +931,14 @@ export function WebsiteOverviewTab({
           trendLabel={
             calculateTrends.session_duration !== undefined ? "vs previous period" : undefined
           }
-          value={analytics.summary?.avg_session_duration_formatted || "0s"}
+          value={(() => {
+            const duration = analytics.summary?.avg_session_duration;
+            if (!duration) return "0s";
+            if (duration < 60) return `${duration.toFixed(1)}s`;
+            const minutes = Math.floor(duration / 60);
+            const seconds = Math.round(duration % 60);
+            return `${minutes}m ${seconds}s`;
+          })()}
           variant="default"
         />
       </div>

@@ -1,5 +1,5 @@
 import { cacheable } from "@databuddy/redis";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { logger } from "../lib/logger";
 
 const GeoLocationSchema = z.object({

@@ -109,7 +109,7 @@ export default async function AdminAnalyticsOverviewPage() {
   if (error || !data) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="space-y-4 max-w-7xl mx-auto p-4 sm:p-6">
+        <div className="space-y-4 p-4 sm:p-6">
           <div className="text-center py-8">
             <h1 className="text-2xl font-bold">Analytics Overview</h1>
             <p className="text-sm text-muted-foreground mt-1">Platform metrics and insights</p>
@@ -141,7 +141,7 @@ export default async function AdminAnalyticsOverviewPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="w-full">
         <header className="mb-8">
           <div className="flex items-center gap-4">
             <BarChart3 className="h-10 w-10 text-primary" />

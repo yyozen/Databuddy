@@ -47,14 +47,13 @@ export default async function AdminWebsitesPage({
     if (!search) return true;
     return (
       website.name?.toLowerCase().includes(search) ||
-      website.domain?.toLowerCase().includes(search) ||
       website.ownerName?.toLowerCase().includes(search) ||
       website.ownerEmail?.toLowerCase().includes(search)
     );
   });
 
   // Sort by total events descending to show most active websites first
-  const sortedWebsites = filteredWebsites?.sort((a, b) => 
+  const sortedWebsites = filteredWebsites?.sort((a, b) =>
     b.eventCounts.totalEvents - a.eventCounts.totalEvents
   );
 
@@ -77,7 +76,7 @@ export default async function AdminWebsitesPage({
   const eventsLast24h = sortedWebsites?.reduce((sum, website) => sum + website.eventCounts.eventsLast24h, 0) || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Websites</h1>
@@ -90,7 +89,7 @@ export default async function AdminWebsitesPage({
       </div>
 
       {/* Summary Cards */}
-      <WebsiteEventMetrics 
+      <WebsiteEventMetrics
         eventCounts={{
           totalEvents,
           totalSessions,
@@ -104,7 +103,7 @@ export default async function AdminWebsitesPage({
         <CardContent className="p-0">
           {(!sortedWebsites || sortedWebsites.length === 0) ? (
             <div className="p-8 text-center text-muted-foreground">
-              {search 
+              {search
                 ? `No websites found matching "${search}"`
                 : "No websites found"}
             </div>
@@ -134,8 +133,8 @@ export default async function AdminWebsitesPage({
                               {website.name || "Untitled Website"}
                             </span>
                             {website.status && (
-                              <Badge 
-                                variant={website.status === 'ACTIVE' ? 'default' : 'secondary'} 
+                              <Badge
+                                variant={website.status === 'ACTIVE' ? 'default' : 'secondary'}
                                 className="text-xs h-4"
                               >
                                 {website.status}
@@ -148,9 +147,9 @@ export default async function AdminWebsitesPage({
                               <span className="ml-2">{website.domain}</span>
                             )}
                             <div className="mt-1">
-                              <WebsiteEventMetrics 
-                                eventCounts={website.eventCounts} 
-                                compact={true} 
+                              <WebsiteEventMetrics
+                                eventCounts={website.eventCounts}
+                                compact={true}
                               />
                             </div>
                           </div>
@@ -174,9 +173,9 @@ export default async function AdminWebsitesPage({
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       {website.domain ? (
-                        <a 
-                          href={`http://${website.domain}`} 
-                          target="_blank" 
+                        <a
+                          href={`http://${website.domain}`}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm hover:underline flex items-center gap-1 max-w-[200px]"
                         >
@@ -213,12 +212,14 @@ export default async function AdminWebsitesPage({
                           {formatNumber(website.eventCounts.eventsLast24h)}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          events
+                          last 24h
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                      {format(new Date(website.createdAt), 'MMM d, yyyy')}
+                    <TableCell className="hidden lg:table-cell">
+                      <span className="text-sm text-muted-foreground">
+                        {website.createdAt ? format(new Date(website.createdAt), 'MMM d, yyyy') : 'Unknown'}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <WebsiteActions website={website} />

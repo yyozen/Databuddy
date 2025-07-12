@@ -26,7 +26,12 @@ const DynamicQueryRequestSchema = t.Object({
     limit: t.Optional(t.Number()),
     page: t.Optional(t.Number()),
     filters: t.Optional(t.Array(FilterSchema)),
-    granularity: t.Optional(t.Enum({ hourly: 'hourly', daily: 'daily' })),
+    granularity: t.Optional(t.Union([
+        t.Literal('hourly'),
+        t.Literal('daily'),
+        t.Literal('hour'),
+        t.Literal('day')
+    ])),
     groupBy: t.Optional(t.String())
 });
 
@@ -81,9 +86,7 @@ export const query = new Elysia({ prefix: '/v1/query' })
 
     .post('/', async ({ body, query }) => {
         try {
-            // Handle dynamic query format (frontend format)
             if (Array.isArray(body)) {
-                // Batch query
                 const results = [];
                 for (const queryRequest of body) {
                     try {
@@ -103,7 +106,6 @@ export const query = new Elysia({ prefix: '/v1/query' })
                 };
             }
 
-            // Single query
             const result = await executeDynamicQuery(body, query);
             return { success: true, ...result };
         } catch (error) {
@@ -116,7 +118,6 @@ export const query = new Elysia({ prefix: '/v1/query' })
         body: t.Union([DynamicQueryRequestSchema, t.Array(DynamicQueryRequestSchema)])
     });
 
-// Helper function to get website domain with caching
 const getWebsiteDomain = cacheable(
     async (websiteId: string): Promise<string | null> => {
         try {
@@ -130,43 +131,50 @@ const getWebsiteDomain = cacheable(
         }
     },
     {
-        expireInSec: 300, // Cache for 5 minutes
+        expireInSec: 300,
         prefix: 'website-domain',
         staleWhileRevalidate: true,
-        staleTime: 60 // Start revalidating when 1 minute is left
+        staleTime: 60
     }
 );
 
-// Helper function to execute dynamic queries
 async function executeDynamicQuery(request: any, queryParams: any) {
     const { website_id, start_date, end_date, timezone } = queryParams;
 
-    // Get website domain for referrer filtering
     const websiteDomain = website_id ? await getWebsiteDomain(website_id) : null;
 
     const results = [];
 
-    for (const parameter of request.parameters) {
+    const parameterPromises = request.parameters.map(async (parameter: string) => {
         try {
-            // Convert frontend parameter to backend query type
             const queryType = parameter;
 
             if (!QueryBuilders[queryType]) {
-                results.push({
+                return {
                     parameter,
                     success: false,
                     error: `Unknown query type: ${queryType}`,
                     data: []
-                });
-                continue;
+                };
             }
 
-            // Execute the query
+            let timeUnit: 'hour' | 'day' = 'day';
+            if (request.granularity === 'hourly') {
+                timeUnit = 'hour';
+            } else if (request.granularity === 'daily') {
+                timeUnit = 'day';
+            } else if (request.granularity === 'hour') {
+                timeUnit = 'hour';
+            } else if (request.granularity === 'day') {
+                timeUnit = 'day';
+            }
+
             const queryRequest = {
                 projectId: website_id,
                 type: queryType,
                 from: start_date,
                 to: end_date,
+                timeUnit,
                 filters: request.filters || [],
                 limit: request.limit || 100,
                 offset: (request.page || 1) - 1
@@ -174,21 +182,24 @@ async function executeDynamicQuery(request: any, queryParams: any) {
 
             const data = await executeQuery(queryRequest, websiteDomain);
 
-            results.push({
+            return {
                 parameter,
                 success: true,
                 data: data || []
-            });
+            };
 
         } catch (error) {
-            results.push({
+            return {
                 parameter,
                 success: false,
                 error: error instanceof Error ? error.message : 'Query failed',
                 data: []
-            });
+            };
         }
-    }
+    });
+
+    const parameterResults = await Promise.all(parameterPromises);
+    results.push(...parameterResults);
 
     return {
         queryId: request.id,

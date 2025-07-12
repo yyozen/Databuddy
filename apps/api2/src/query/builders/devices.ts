@@ -1,7 +1,6 @@
 import type { SimpleQueryConfig } from "../types";
 
 export const DevicesBuilders: Record<string, SimpleQueryConfig> = {
-    // Individual query types for frontend compatibility
     device_type: {
         table: 'analytics.events',
         fields: [
@@ -106,7 +105,6 @@ export const DevicesBuilders: Record<string, SimpleQueryConfig> = {
         customizable: true
     },
 
-    // Original builders for backward compatibility
     device_types: {
         table: 'analytics.events',
         fields: [

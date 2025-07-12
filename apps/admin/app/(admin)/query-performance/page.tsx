@@ -14,17 +14,34 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Clock, Database, TrendingUp, AlertTriangle, HardDrive } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+    Zap,
+    Clock,
+    Database,
+    TrendingUp,
+    AlertTriangle,
+    HardDrive,
+    Download,
+    Trash2,
+    Info,
+    Table as TableIcon
+} from "lucide-react";
 import {
     getQueryPerformanceSummary,
     getSlowQueries,
     getQueryPerformanceByDatabase,
-    getMostFrequentSlowQueries
+    getMostFrequentSlowQueries,
+    getSystemTables,
+    getClickhouseDisks,
+    getMemoryIntensiveQueries
 } from "./actions";
 import { format } from 'date-fns';
 import { DataTableToolbar } from "@/components/admin/data-table-toolbar";
 import { formatNumber } from "@/components/website-event-metrics";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SystemTables } from "./system-tables";
+import React from "react"; // Added for React.useState
 
 // Helper function to format duration
 const formatDuration = (ms: number) => {
@@ -39,13 +56,13 @@ const formatBytes = (bytes: number) => {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    return `${Number.parseFloat((bytes / (k ** i)).toFixed(2))} ${sizes[i]}`;
 };
 
 // Helper function to truncate SQL queries
-const truncateQuery = (query: string, maxLength: number = 100) => {
+const truncateQuery = (query: string, maxLength = 100) => {
     if (query.length <= maxLength) return query;
-    return query.substring(0, maxLength) + '...';
+    return `${query.substring(0, maxLength)}...`;
 };
 
 // Helper function to get performance badge color
@@ -67,15 +84,18 @@ export default async function QueryPerformancePage({
 }) {
     const { search, threshold = "1000", timeRange = "24" } = await searchParams;
 
-    const durationThreshold = parseInt(threshold);
-    const timeRangeHours = parseInt(timeRange);
+    const durationThreshold = Number.parseInt(threshold, 10);
+    const timeRangeHours = Number.parseInt(timeRange, 10);
 
     // Fetch all performance data in parallel
     const [
         { summary, error: summaryError },
         { queries: slowQueries, error: slowQueriesError },
         { databases, error: databasesError },
-        { frequentQueries, error: frequentQueriesError }
+        { frequentQueries, error: frequentQueriesError },
+        { tables: systemTables, error: systemTablesError },
+        { disks: clickhouseDisks, error: disksError },
+        { queries: memoryIntensive, error: memoryIntensiveError }
     ] = await Promise.all([
         getQueryPerformanceSummary(timeRangeHours, durationThreshold),
         getSlowQueries({
@@ -83,7 +103,10 @@ export default async function QueryPerformancePage({
             time_range_hours: timeRangeHours
         }),
         getQueryPerformanceByDatabase(timeRangeHours),
-        getMostFrequentSlowQueries(timeRangeHours, durationThreshold)
+        getMostFrequentSlowQueries(timeRangeHours, durationThreshold),
+        getSystemTables(),
+        getClickhouseDisks(),
+        getMemoryIntensiveQueries(timeRangeHours)
     ]);
 
     // Filter slow queries based on search
@@ -119,7 +142,7 @@ export default async function QueryPerformancePage({
     }
 
     return (
-        <div className="space-y-6">
+        <div className="w-full space-y-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -134,6 +157,49 @@ export default async function QueryPerformancePage({
                     placeholder="Search queries, users, databases..."
                 />
             </div>
+
+            {/* Disk Storage Info */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <HardDrive className="h-5 w-5 text-muted-foreground" />
+                        ClickHouse Storage
+                    </CardTitle>
+                    <CardDescription>Physical disk space available to ClickHouse</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {disksError ? (
+                        <div className="text-destructive text-sm">{disksError}</div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                                <thead>
+                                    <tr>
+                                        <th className="text-left font-semibold">Disk</th>
+                                        <th className="text-left font-semibold">Path</th>
+                                        <th className="text-right font-semibold">Total</th>
+                                        <th className="text-right font-semibold">Used</th>
+                                        <th className="text-right font-semibold">Free</th>
+                                        <th className="text-right font-semibold">Keep Free</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {clickhouseDisks.map((disk) => (
+                                        <tr key={disk.name}>
+                                            <td>{disk.name}</td>
+                                            <td className="font-mono text-xs">{disk.path}</td>
+                                            <td className="text-right">{disk.total_space}</td>
+                                            <td className="text-right">{disk.used_space}</td>
+                                            <td className="text-right">{disk.free_space}</td>
+                                            <td className="text-right">{disk.keep_free_space}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Performance Summary Cards */}
             {summary && (
@@ -197,115 +263,44 @@ export default async function QueryPerformancePage({
                     <TabsTrigger value="slow-queries">Slow Queries</TabsTrigger>
                     <TabsTrigger value="frequent-queries">Frequent Slow Queries</TabsTrigger>
                     <TabsTrigger value="database-performance">Database Performance</TabsTrigger>
+                    <TabsTrigger value="memory-intensive">Memory Intensive</TabsTrigger>
+                    <TabsTrigger value="system-tables">System Tables</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="slow-queries" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Slow Queries</CardTitle>
-                            <CardDescription>
-                                Queries taking longer than {durationThreshold}ms in the last {timeRangeHours} hours
-                                {search && ` matching "${search}"`}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            {(!filteredSlowQueries || filteredSlowQueries.length === 0) ? (
-                                <div className="p-8 text-center text-muted-foreground">
-                                    {search
-                                        ? `No slow queries found matching "${search}"`
-                                        : "No slow queries found"}
-                                </div>
-                            ) : (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Query</TableHead>
-                                            <TableHead className="text-center">Duration</TableHead>
-                                            <TableHead className="hidden md:table-cell text-center">Rows Read</TableHead>
-                                            <TableHead className="hidden lg:table-cell text-center">Memory</TableHead>
-                                            <TableHead className="hidden lg:table-cell">Database</TableHead>
-                                            <TableHead className="hidden lg:table-cell">User</TableHead>
-                                            <TableHead className="hidden xl:table-cell">Time</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {filteredSlowQueries.map((query) => {
-                                            const perfBadge = getPerformanceBadge(query.query_duration_ms);
-                                            return (
-                                                <TableRow key={query.query_id}>
-                                                    <TableCell className="max-w-[300px]">
-                                                        <div className="space-y-1">
-                                                            <code className="text-xs bg-muted px-2 py-1 rounded text-wrap break-all">
-                                                                {truncateQuery(query.query, 150)}
-                                                            </code>
-                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                                <Badge variant={perfBadge.variant} className="text-xs h-4">
-                                                                    {perfBadge.label}
-                                                                </Badge>
-                                                                <span className="font-mono">{query.query_id.slice(-8)}</span>
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-center">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-semibold text-sm">
-                                                                {formatDuration(query.query_duration_ms)}
-                                                            </span>
-                                                            {query.exception && (
-                                                                <Badge variant="destructive" className="text-xs mt-1">
-                                                                    Error
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="hidden md:table-cell text-center">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-semibold text-sm">
-                                                                {formatNumber(query.read_rows)}
-                                                            </span>
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {formatBytes(query.read_bytes)}
-                                                            </span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="hidden lg:table-cell text-center">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-semibold text-sm">
-                                                                {(query.peak_memory_usage / 1024 / 1024).toFixed(1)} MB
-                                                            </span>
-                                                            <span className="text-xs text-muted-foreground">
-                                                                peak
-                                                            </span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="hidden lg:table-cell">
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {query.databases?.slice(0, 2).map((db, idx) => (
-                                                                <Badge key={idx} variant="outline" className="text-xs">
-                                                                    {db}
-                                                                </Badge>
-                                                            ))}
-                                                            {query.databases?.length > 2 && (
-                                                                <Badge variant="outline" className="text-xs">
-                                                                    +{query.databases.length - 2}
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="hidden lg:table-cell text-sm">
-                                                        {query.user || 'Unknown'}
-                                                    </TableCell>
-                                                    <TableCell className="hidden xl:table-cell text-sm text-muted-foreground">
-                                                        {format(new Date(query.event_time), 'MMM d, HH:mm:ss')}
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
-                            )}
+                <TabsContent value="slow-queries" className="space-y-2">
+                    {/* TL;DR summary */}
+                    <Card className="bg-muted/50 border-0 shadow-none">
+                        <CardContent className="p-3 text-xs text-muted-foreground">
+                            <span className="font-semibold">TL;DR:</span> The slowest queries in the last 24 hours, sorted by duration. Truncated for quick review.
                         </CardContent>
                     </Card>
+                    {(!filteredSlowQueries || filteredSlowQueries.length === 0) ? (
+                        <Card><CardContent className="p-6 text-center text-muted-foreground text-xs">No slow queries found</CardContent></Card>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {filteredSlowQueries.map((query, idx) => (
+                                <Card key={query.query_id} className={`border p-2 ${idx === 0 ? "border-destructive/60" : ""}`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-mono text-[10px] text-muted-foreground">{query.query_id.slice(-6)}</span>
+                                        {query.exception && <Badge variant="destructive" className="text-[10px] px-1 py-0">Error</Badge>}
+                                        {idx === 0 && <Badge variant="destructive" className="text-[10px] px-1 py-0">Slowest</Badge>}
+                                        <span className="ml-auto text-[10px] text-muted-foreground">{format(new Date(query.event_time), 'MMM d, HH:mm')}</span>
+                                    </div>
+                                    <div className="font-mono text-xs bg-muted rounded px-2 py-1 mb-1 max-w-full overflow-x-auto whitespace-pre-wrap" style={{ fontSize: '11px', lineHeight: '1.4' }}>
+                                        {truncateQuery(query.query, 200)}
+                                    </div>
+                                    <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+                                        <span><b>Dur:</b> <span className="text-foreground font-semibold">{formatDuration(query.query_duration_ms)}</span></span>
+                                        <span><b>Rows:</b> <span className="text-foreground font-semibold">{formatNumber(query.read_rows)}</span></span>
+                                        <span><b>Mem:</b> <span className="text-foreground font-semibold">{(query.peak_memory_usage / 1024 / 1024).toFixed(1)}MB</span></span>
+                                        <span><b>User:</b> {query.user || 'Unknown'}</span>
+                                        <span><b>DB:</b> {query.databases?.join(', ') || 'N/A'}</span>
+                                        {query.exception && <span className="text-destructive"><b>Err:</b> {truncateQuery(query.exception, 40)}</span>}
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="frequent-queries" className="space-y-4">
@@ -333,10 +328,10 @@ export default async function QueryPerformancePage({
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {frequentQueries.map((query, idx) => {
+                                        {frequentQueries.map((query) => {
                                             const perfBadge = getPerformanceBadge(query.avg_duration_ms);
                                             return (
-                                                <TableRow key={idx}>
+                                                <TableRow key={query.normalized_query_hash}>
                                                     <TableCell className="max-w-[400px]">
                                                         <div className="space-y-2">
                                                             <code className="text-xs bg-muted px-2 py-1 rounded text-wrap break-all">
@@ -374,8 +369,8 @@ export default async function QueryPerformancePage({
                                                     </TableCell>
                                                     <TableCell className="hidden lg:table-cell">
                                                         <div className="flex flex-wrap gap-1">
-                                                            {query.databases?.slice(0, 2).map((db, idx) => (
-                                                                <Badge key={idx} variant="outline" className="text-xs">
+                                                            {query.databases?.slice(0, 2).map((db) => (
+                                                                <Badge key={db} variant="outline" className="text-xs">
                                                                     {db}
                                                                 </Badge>
                                                             ))}
@@ -415,17 +410,18 @@ export default async function QueryPerformancePage({
                                         <TableRow>
                                             <TableHead>Database</TableHead>
                                             <TableHead className="text-center">Queries</TableHead>
+                                            <TableHead className="text-center">Slow Queries</TableHead>
+                                            <TableHead className="text-center">Errors</TableHead>
                                             <TableHead className="text-center">Avg Duration</TableHead>
                                             <TableHead className="text-center">Max Duration</TableHead>
-                                            <TableHead className="hidden lg:table-cell text-center">Rows Read</TableHead>
-                                            <TableHead className="hidden lg:table-cell text-center">Avg Memory</TableHead>
+                                            <TableHead className="hidden lg:table-cell">Most Active User</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {databases.map((db, idx) => {
+                                        {databases.map((db) => {
                                             const perfBadge = getPerformanceBadge(db.avg_duration_ms);
                                             return (
-                                                <TableRow key={idx}>
+                                                <TableRow key={db.database}>
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
                                                             <Database className="h-4 w-4 text-muted-foreground" />
@@ -441,6 +437,27 @@ export default async function QueryPerformancePage({
                                                         </span>
                                                     </TableCell>
                                                     <TableCell className="text-center">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-semibold text-sm">
+                                                                {db.slow_queries_count} slow
+                                                            </span>
+                                                            {db.very_slow_queries_count > 0 && (
+                                                                <span className="text-xs text-destructive">
+                                                                    {db.very_slow_queries_count} very slow
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {db.error_count > 0 ? (
+                                                            <Badge variant="destructive" className="text-xs">
+                                                                {db.error_count}
+                                                            </Badge>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">0</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
                                                         <span className="font-semibold">
                                                             {formatDuration(db.avg_duration_ms)}
                                                         </span>
@@ -450,20 +467,8 @@ export default async function QueryPerformancePage({
                                                             {formatDuration(db.max_duration_ms)}
                                                         </span>
                                                     </TableCell>
-                                                    <TableCell className="hidden lg:table-cell text-center">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-semibold text-sm">
-                                                                {formatNumber(db.total_rows_read)}
-                                                            </span>
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {formatBytes(db.total_bytes_read)}
-                                                            </span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="hidden lg:table-cell text-center">
-                                                        <span className="font-semibold">
-                                                            {db.avg_memory_mb.toFixed(1)} MB
-                                                        </span>
+                                                    <TableCell className="hidden lg:table-cell">
+                                                        <span className="text-sm">{db.most_active_user || 'Unknown'}</span>
                                                     </TableCell>
                                                 </TableRow>
                                             );
@@ -473,6 +478,45 @@ export default async function QueryPerformancePage({
                             )}
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="memory-intensive" className="space-y-2">
+                    <Card className="bg-muted/50 border-0 shadow-none">
+                        <CardContent className="p-3 text-xs text-muted-foreground">
+                            <span className="font-semibold">TL;DR:</span> The queries that used the most memory in the last 24 hours. Useful for finding memory hogs and optimization opportunities.
+                        </CardContent>
+                    </Card>
+                    {(!memoryIntensive || memoryIntensive.length === 0) ? (
+                        <Card><CardContent className="p-6 text-center text-muted-foreground text-xs">No memory intensive queries found</CardContent></Card>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {memoryIntensive.map((query, idx) => (
+                                <Card key={query.query_id} className={`border p-2 ${idx === 0 ? "border-destructive/60" : ""}`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-mono text-[10px] text-muted-foreground">{query.query_id.slice(-6)}</span>
+                                        {query.exception && <Badge variant="destructive" className="text-[10px] px-1 py-0">Error</Badge>}
+                                        {idx === 0 && <Badge variant="destructive" className="text-[10px] px-1 py-0">Most Memory</Badge>}
+                                        <span className="ml-auto text-[10px] text-muted-foreground">{format(new Date(query.event_time), 'MMM d, HH:mm')}</span>
+                                    </div>
+                                    <div className="font-mono text-xs bg-muted rounded px-2 py-1 mb-1 max-w-full overflow-x-auto whitespace-pre-wrap" style={{ fontSize: '11px', lineHeight: '1.4' }}>
+                                        {truncateQuery(query.query, 200)}
+                                    </div>
+                                    <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+                                        <span><b>Peak Mem:</b> <span className="text-foreground font-semibold">{(query.memory_usage / 1024 / 1024).toFixed(1)}MB</span></span>
+                                        <span><b>Dur:</b> <span className="text-foreground font-semibold">{formatDuration(query.query_duration_ms)}</span></span>
+                                        <span><b>Rows:</b> <span className="text-foreground font-semibold">{formatNumber(query.read_rows)}</span></span>
+                                        <span><b>User:</b> {query.user || 'Unknown'}</span>
+                                        <span><b>DB:</b> {query.databases?.join(', ') || 'N/A'}</span>
+                                        {query.exception && <span className="text-destructive"><b>Err:</b> {truncateQuery(query.exception, 40)}</span>}
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="system-tables" className="space-y-4">
+                    <SystemTables tables={systemTables || []} />
                 </TabsContent>
             </Tabs>
         </div>

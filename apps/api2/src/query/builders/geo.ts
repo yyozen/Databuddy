@@ -1,7 +1,6 @@
 import type { SimpleQueryConfig } from "../types";
 
 export const GeoBuilders: Record<string, SimpleQueryConfig> = {
-    // Individual query types for frontend compatibility
     country: {
         table: 'analytics.events',
         fields: [
@@ -66,7 +65,6 @@ export const GeoBuilders: Record<string, SimpleQueryConfig> = {
         customizable: true
     },
 
-    // Original builders for backward compatibility
     countries: {
         table: 'analytics.events',
         fields: [

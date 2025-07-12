@@ -58,7 +58,6 @@ export async function getQueryPerformanceSummary(timeRangeHours: number = 24, du
  */
 export async function getSlowQueries(filters: QueryPerformanceFilters = {}) {
   const {
-    duration_threshold_ms = 1000,
     time_range_hours = 24,
     query_type = '',
     database = '',
@@ -68,8 +67,6 @@ export async function getSlowQueries(filters: QueryPerformanceFilters = {}) {
     let whereClause = `
       WHERE event_time >= now() - INTERVAL ${time_range_hours} HOUR
         AND type = 'QueryFinish'
-        AND query_duration_ms >= ${duration_threshold_ms}
-        AND query NOT LIKE '%system.query_log%'
     `;
 
     if (query_type) {
@@ -136,11 +133,16 @@ export async function getQueryPerformanceByDatabase(timeRangeHours: number = 24)
         max(query_duration_ms) as max_duration_ms,
         sum(read_rows) as total_rows_read,
         sum(read_bytes) as total_bytes_read,
-        avg(memory_usage / 1024 / 1024) as avg_memory_mb
+        avg(memory_usage / 1024 / 1024) as avg_memory_mb,
+        countIf(query_duration_ms > 1000) as slow_queries_count,
+        countIf(query_duration_ms > 5000) as very_slow_queries_count,
+        countIf(query_duration_ms > 10000) as critical_queries_count,
+        countIf(exception_code != 0) as error_count,
+        any(user) as most_active_user,
+        any(query) as slowest_query_sample
       FROM system.query_log 
       WHERE event_time >= now() - INTERVAL ${timeRangeHours} HOUR
         AND type = 'QueryFinish'
-        AND query NOT LIKE '%system.query_log%'
         AND length(databases) > 0
       GROUP BY database
       ORDER BY avg_duration_ms DESC
@@ -155,6 +157,12 @@ export async function getQueryPerformanceByDatabase(timeRangeHours: number = 24)
       total_rows_read: number;
       total_bytes_read: number;
       avg_memory_mb: number;
+      slow_queries_count: number;
+      very_slow_queries_count: number;
+      critical_queries_count: number;
+      error_count: number;
+      most_active_user: string;
+      slowest_query_sample: string;
     }>(query);
 
     return { databases: results, error: null };
@@ -186,8 +194,6 @@ export async function getMostFrequentSlowQueries(timeRangeHours: number = 24, du
       FROM system.query_log 
       WHERE event_time >= now() - INTERVAL ${timeRangeHours} HOUR
         AND type = 'QueryFinish'
-        AND query_duration_ms >= ${durationThresholdMs}
-        AND query NOT LIKE '%system.query_log%'
       GROUP BY toString(sipHash64(query))
       ORDER BY frequency DESC, avg_duration_ms DESC
       LIMIT 20
@@ -211,6 +217,258 @@ export async function getMostFrequentSlowQueries(timeRangeHours: number = 24, du
     return {
       frequentQueries: [],
       error: `Failed to fetch frequent slow queries. ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+/**
+ * Get system tables information with size and row counts
+ */
+export async function getSystemTables() {
+  try {
+    const query = `
+      SELECT 
+        database,
+        table,
+        engine,
+        total_rows,
+        total_bytes,
+        formatReadableSize(total_bytes) as readable_size,
+        partition_key,
+        sorting_key,
+        primary_key,
+        comment
+      FROM system.tables 
+      WHERE database = 'system'
+      ORDER BY total_bytes DESC
+    `;
+
+    const results = await chQuery<{
+      database: string;
+      table: string;
+      engine: string;
+      total_rows: number;
+      total_bytes: number;
+      readable_size: string;
+      partition_key: string;
+      sorting_key: string;
+      primary_key: string;
+      comment: string;
+    }>(query);
+
+    return { tables: results, error: null };
+  } catch (error) {
+    console.error('Error fetching system tables:', error);
+    return {
+      tables: [],
+      error: `Failed to fetch system tables. ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+/**
+ * Export table data to CSV
+ */
+export async function exportTableData(tableName: string, limit = 10000) {
+  try {
+    const query = `
+      SELECT *
+      FROM system.${tableName}
+      LIMIT ${limit}
+    `;
+
+    const results = await chQuery(query);
+
+    // Convert to CSV format
+    if (results.length === 0) {
+      return { csvData: '', error: 'No data to export' };
+    }
+
+    const headers = Object.keys(results[0]);
+    const csvRows = [
+      headers.join(','),
+      ...results.map(row =>
+        headers.map(header => {
+          const value = row[header];
+          // Escape quotes and wrap in quotes if contains comma
+          const escaped = String(value).replace(/"/g, '""');
+          return escaped.includes(',') ? `"${escaped}"` : escaped;
+        }).join(',')
+      )
+    ];
+
+    const csvData = csvRows.join('\n');
+
+    return { csvData, error: null };
+  } catch (error) {
+    console.error('Error exporting table data:', error);
+    return {
+      csvData: '',
+      error: `Failed to export table data. ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+/**
+ * Truncate a system table
+ */
+export async function truncateTable(tableName: string) {
+  try {
+    // Only allow truncating specific system tables for safety
+    const allowedTables = [
+      'query_log',
+      'query_thread_log',
+      'trace_log',
+      'metric_log',
+      'asynchronous_metric_log',
+      'part_log',
+      'text_log',
+      'crash_log'
+    ];
+
+    if (!allowedTables.includes(tableName)) {
+      return { success: false, error: `Table ${tableName} is not allowed to be truncated` };
+    }
+
+    const query = `TRUNCATE TABLE system.${tableName}`;
+    await chQuery(query);
+
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Error truncating table:', error);
+    return {
+      success: false,
+      error: `Failed to truncate table. ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+/**
+ * Get table storage details
+ */
+export async function getTableStorageDetails(tableName: string) {
+  try {
+    const query = `
+      SELECT 
+        database,
+        table,
+        engine,
+        partition_key,
+        sorting_key,
+        primary_key,
+        total_rows,
+        total_bytes,
+        formatReadableSize(total_bytes) as readable_size,
+        comment
+      FROM system.tables 
+      WHERE database = 'system' AND table = '${tableName}'
+    `;
+
+    const results = await chQuery(query);
+    return { details: results[0] || null, error: null };
+  } catch (error) {
+    console.error('Error fetching table storage details:', error);
+    return {
+      details: null,
+      error: `Failed to fetch table storage details. ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+/**
+ * Get ClickHouse disk storage info
+ */
+export async function getClickhouseDisks() {
+  try {
+    const query = `
+      SELECT
+        name,
+        path,
+        free_space,
+        total_space,
+        keep_free_space,
+        (total_space - free_space) AS used_space,
+        formatReadableSize(free_space) AS free_space_formatted,
+        formatReadableSize(total_space) AS total_space_formatted,
+        formatReadableSize(keep_free_space) AS keep_free_space_formatted,
+        formatReadableSize(total_space - free_space) AS used_space_formatted
+      FROM system.disks
+    `;
+    const results = await chQuery<{
+      name: string;
+      path: string;
+      free_space: number;
+      total_space: number;
+      keep_free_space: number;
+      used_space: number;
+      free_space_formatted: string;
+      total_space_formatted: string;
+      keep_free_space_formatted: string;
+      used_space_formatted: string;
+    }>(query);
+    // Map to only return formatted values for UI
+    return {
+      disks: results.map(disk => ({
+        name: disk.name,
+        path: disk.path,
+        free_space: disk.free_space_formatted,
+        total_space: disk.total_space_formatted,
+        keep_free_space: disk.keep_free_space_formatted,
+        used_space: disk.used_space_formatted,
+      })),
+      error: null
+    };
+  } catch (error) {
+    console.error('Error fetching ClickHouse disk info:', error);
+    return { disks: [], error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/**
+ * Get memory-intensive queries
+ */
+export async function getMemoryIntensiveQueries(timeRangeHours: number = 24) {
+  try {
+    const query = `
+      SELECT 
+        query_id,
+        query,
+        query_duration_ms,
+        read_rows,
+        read_bytes,
+        result_rows,
+        memory_usage,
+        event_time,
+        toUnixTimestamp(event_time) * 1000000 as query_start_time_microseconds,
+        type,
+        tables,
+        databases,
+        exception,
+        user,
+        toString(sipHash64(query)) as normalized_query_hash,
+        'Unknown' as query_kind,
+        0 as written_rows,
+        0 as written_bytes,
+        0 as http_method,
+        '' as http_user_agent,
+        0 as filesystem_cache_read_bytes,
+        0 as filesystem_cache_write_bytes
+      FROM system.query_log 
+      WHERE event_time >= now() - INTERVAL ${timeRangeHours} HOUR
+        AND type = 'QueryFinish'
+        AND memory_usage > 0
+      ORDER BY memory_usage DESC
+      LIMIT 100
+    `;
+
+    const results = await chQuery(query);
+
+    return { queries: results, error: null };
+  } catch (error) {
+    console.error('Error fetching memory-intensive queries:', error);
+    return {
+      queries: [],
+      error: `Failed to fetch memory-intensive queries. ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 } 

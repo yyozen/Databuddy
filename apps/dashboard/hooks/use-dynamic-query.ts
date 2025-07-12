@@ -419,7 +419,7 @@ const defaultQueryOptions = {
   staleTime: 5 * 60 * 1000, // 5 minutes
   gcTime: 30 * 60 * 1000, // 30 minutes
   refetchOnWindowFocus: false,
-  refetchOnMount: false,
+  refetchOnMount: true, // Changed to true to show loading state on refresh
   refetchInterval: 10 * 60 * 1000, // Background refetch every 10 minutes
   retry: (failureCount: number, error: Error) => {
     if (error instanceof DOMException && error.name === "AbortError") {
@@ -692,7 +692,7 @@ export function useBatchDynamicQuery(
   return {
     results: processedResults,
     meta: query.data?.meta,
-    isLoading: query.isLoading,
+    isLoading: query.isLoading || query.isFetching,
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,

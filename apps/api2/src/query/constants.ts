@@ -1,15 +1,7 @@
 import { QueryBuilders } from "./builders";
 
-/**
- * Analytics Query Constants
- * 
- * Provides structured access to all available query options
- */
-
-// All available query types
 export const ALL_QUERY_TYPES = Object.keys(QueryBuilders) as Array<keyof typeof QueryBuilders>;
 
-// Query categories for better organization
 export const QUERY_CATEGORIES = {
     summary: {
         name: "Summary",
@@ -58,7 +50,6 @@ export const QUERY_CATEGORIES = {
     }
 } as const;
 
-// Common filter options available across queries
 export const COMMON_FILTERS = {
     path: {
         name: "Page Path",
@@ -137,7 +128,6 @@ export const COMMON_FILTERS = {
     }
 } as const;
 
-// Time range options
 export const TIME_RANGES = {
     today: {
         name: "Today",
@@ -171,7 +161,6 @@ export const TIME_RANGES = {
     }
 } as const;
 
-// Helper functions
 export const getQueriesByCategory = (category: keyof typeof QUERY_CATEGORIES) => {
     return QUERY_CATEGORIES[category].queries;
 };
@@ -195,7 +184,6 @@ export const isQueryCustomizable = (queryType: keyof typeof QueryBuilders) => {
     return config?.customizable || false;
 };
 
-// Type exports
 export type QueryCategory = keyof typeof QUERY_CATEGORIES;
 export type CommonFilter = keyof typeof COMMON_FILTERS;
 export type TimeRange = keyof typeof TIME_RANGES; 
