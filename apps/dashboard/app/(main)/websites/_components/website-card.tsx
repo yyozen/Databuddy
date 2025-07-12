@@ -150,26 +150,23 @@ export const WebsiteCard = memo(({ website, chartData, isLoadingChart }: Website
                   {formatNumber(totalViews)} views
                 </span>
                 {trend && (
-                  <div
-                    className={`flex items-center gap-1 font-medium text-xs ${trend.type === "up"
-                      ? "text-success"
-                      : trend.type === "down"
-                        ? "text-destructive"
-                        : "text-muted-foreground"
-                      }`}
-                  >
+                  <div className="flex items-center gap-1 font-medium text-xs">
                     {trend.type === "up" ? (
-                      <TrendUpIcon aria-hidden="true" className="h-4 w-4" weight="fill" />
+                      <>
+                        <TrendUpIcon aria-hidden="true" className="h-4 w-4 !text-success" weight="fill" style={{ color: 'var(--tw-success, #22c55e)' }} />
+                        <span className="!text-success" style={{ color: 'var(--tw-success, #22c55e)' }}>+{trend.value.toFixed(0)}%</span>
+                      </>
                     ) : trend.type === "down" ? (
-                      <TrendDownIcon aria-hidden="true" className="h-4 w-4" weight="fill" />
+                      <>
+                        <TrendDownIcon aria-hidden="true" className="h-4 w-4 !text-destructive" weight="fill" style={{ color: 'var(--tw-destructive, #ef4444)' }} />
+                        <span className="!text-destructive" style={{ color: 'var(--tw-destructive, #ef4444)' }}>-{trend.value.toFixed(0)}%</span>
+                      </>
                     ) : (
-                      <MinusIcon aria-hidden="true" className="h-4 w-4" weight="fill" />
+                      <>
+                        <MinusIcon aria-hidden="true" className="h-4 w-4 text-muted-foreground" weight="fill" />
+                        <span className="text-muted-foreground">—</span>
+                      </>
                     )}
-                    <span>
-                      {trend.type === "neutral"
-                        ? "—"
-                        : `${trend.type === "up" ? "+" : "-"}${trend.value.toFixed(0)}%`}
-                    </span>
                   </div>
                 )}
               </div>
