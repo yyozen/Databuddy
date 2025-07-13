@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { FunnelAnalyticsByReferrerResult } from "@/hooks/use-funnels";
 import type { TRPCClientErrorLike } from "@trpc/client";
 import type { UseTRPCQueryResult } from "@trpc/react-query/shared";
-import type { AppRouter } from "@databuddy/rpc/src/root";
+import type { AppRouter } from "@databuddy/rpc";
 
 interface Props {
   websiteId: string;
@@ -44,16 +44,23 @@ export default function FunnelAnalyticsByReferrer({
     onReferrerChange?.(referrer);
   };
 
+  // Group referrers strictly by domain (lowercased, fallback to 'direct')
   const referrers = useMemo(() => {
     if (!data?.referrer_analytics) return [];
-    return data.referrer_analytics
-      .map((r: FunnelAnalyticsByReferrerResult) => ({
-        value: r.referrer,
-        label: r.referrer_parsed?.name || r.referrer || "Direct",
-        parsed: r.referrer_parsed,
-        users: r.total_users,
-      }))
-      .sort((a: { users: number }, b: { users: number }) => b.users - a.users);
+    const grouped = new Map<string, { label: string; parsed: any; users: number }>();
+    for (const r of data.referrer_analytics) {
+      const domain = r.referrer_parsed?.domain?.toLowerCase() || 'direct';
+      const label = r.referrer_parsed?.name || domain || 'Direct';
+      if (!grouped.has(domain)) {
+        grouped.set(domain, { label, parsed: r.referrer_parsed, users: 0 });
+      }
+      const group = grouped.get(domain);
+      if (group) {
+        group.users += r.total_users;
+      }
+    }
+    return Array.from(grouped, ([value, { label, parsed, users }]) => ({ value, label, parsed, users }))
+      .sort((a, b) => b.users - a.users);
   }, [data]);
 
   if (isLoading) {

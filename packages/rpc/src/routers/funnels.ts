@@ -737,28 +737,30 @@ export const funnelsRouter = createTRPCRouter({
                     sessionEvents.get(event.session_id)?.push(event);
                 }
 
-                // Group sessions by referrer
-                const referrerGroups = new Map<string, Set<string>>();
+                // Group sessions strictly by lowercased domain (fallback to 'direct')
+                const referrerGroups = new Map<string, { parsed: ReturnType<typeof parseReferrer>, sessionIds: Set<string> }>();
                 for (const [sessionId, events] of sessionEvents) {
                     if (events.length > 0) {
                         const referrer = events[0].referrer || 'Direct';
-                        if (!referrerGroups.has(referrer)) {
-                            referrerGroups.set(referrer, new Set());
+                        const parsed = parseReferrer(referrer);
+                        const groupKey = parsed.domain ? parsed.domain.toLowerCase() : 'direct';
+                        if (!referrerGroups.has(groupKey)) {
+                            referrerGroups.set(groupKey, { parsed, sessionIds: new Set() });
                         }
-                        referrerGroups.get(referrer)?.add(sessionId);
+                        const group = referrerGroups.get(groupKey);
+                        if (group) {
+                            group.sessionIds.add(sessionId);
+                        }
                     }
                 }
 
                 // Calculate analytics for each referrer group
                 const referrerAnalytics = [];
-
-                for (const [referrer, sessionIds] of referrerGroups) {
+                for (const [groupKey, group] of referrerGroups) {
                     const stepCounts = new Map<number, Set<string>>();
-
-                    for (const sessionId of sessionIds) {
+                    for (const sessionId of group.sessionIds) {
                         const events = sessionEvents.get(sessionId)?.sort((a, b) => a.first_occurrence - b.first_occurrence);
                         if (!events) continue;
-
                         let currentStep = 1;
                         for (const event of events) {
                             if (event.step_number === currentStep) {
@@ -770,25 +772,56 @@ export const funnelsRouter = createTRPCRouter({
                             }
                         }
                     }
-
                     const total_users = stepCounts.get(1)?.size || 0;
                     if (total_users === 0) continue;
-
                     const completed_users = stepCounts.get(steps.length)?.size || 0;
                     const conversion_rate = total_users > 0 ? Math.round((completed_users / total_users) * 100 * 100) / 100 : 0;
-
                     referrerAnalytics.push({
-                        referrer,
-                        referrer_parsed: parseReferrer(referrer),
+                        referrer: groupKey,
+                        referrer_parsed: group.parsed,
                         total_users,
                         completed_users,
                         conversion_rate,
                     });
                 }
 
+                // AGGREGATE BY DOMAIN
+                const aggregated = new Map<string, {
+                    parsed: ReturnType<typeof parseReferrer>,
+                    total_users: number,
+                    completed_users: number,
+                    conversion_rate_sum: number,
+                    conversion_rate_count: number
+                }>();
+                for (const { referrer, referrer_parsed, total_users, completed_users, conversion_rate } of referrerAnalytics) {
+                    const key = referrer; // This is the domain, e.g., "github.com"
+                    if (!aggregated.has(key)) {
+                        aggregated.set(key, {
+                            parsed: referrer_parsed,
+                            total_users: 0,
+                            completed_users: 0,
+                            conversion_rate_sum: 0,
+                            conversion_rate_count: 0
+                        });
+                    }
+                    const agg = aggregated.get(key);
+                    if (agg) {
+                        agg.total_users += total_users;
+                        agg.completed_users += completed_users;
+                        agg.conversion_rate_sum += conversion_rate;
+                        agg.conversion_rate_count += 1;
+                    }
+                }
+                const referrer_analytics = Array.from(aggregated.entries()).map(([key, agg]) => ({
+                    referrer: key,
+                    referrer_parsed: agg.parsed,
+                    total_users: agg.total_users,
+                    completed_users: agg.completed_users,
+                    conversion_rate: agg.conversion_rate_count > 0 ? Math.round((agg.conversion_rate_sum / agg.conversion_rate_count) * 100) / 100 : 0
+                })).sort((a, b) => b.total_users - a.total_users);
 
                 return {
-                    referrer_analytics: referrerAnalytics.sort((a, b) => b.total_users - a.total_users),
+                    referrer_analytics,
                 };
 
             } catch (error: any) {
