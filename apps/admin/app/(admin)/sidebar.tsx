@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -72,6 +73,13 @@ export function Sidebar({ onClose }: SidebarProps) {
           </Link>
         ))}
       </nav>
+
+      {/* Theme Toggle */}
+      <div className="p-4 border-t">
+        <div className="flex items-center justify-center">
+          <ThemeToggle />
+        </div>
+      </div>
     </aside>
   );
 } 

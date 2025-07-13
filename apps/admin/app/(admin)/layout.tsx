@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sidebar } from "./sidebar";
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function AdminLayout({
   children,
@@ -67,7 +68,7 @@ export default function AdminLayout({
             <LayoutDashboard className="h-6 w-6" />
             <span>Databuddy</span>
           </Link>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <ThemeToggle />
         </header>
 
         {/* Content Area */}
