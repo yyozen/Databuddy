@@ -6,7 +6,8 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'path(path) as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['event_name = \'screen_view\'', 'path != \'\''],
         groupBy: ['path(path)'],
@@ -22,7 +23,8 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'path(path) as name',
             'COUNT(DISTINCT session_id) as entries',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(DISTINCT session_id) / SUM(COUNT(DISTINCT session_id)) OVER()) * 100, 2) as percentage'
         ],
         where: [
             'event_name = \'screen_view\'',
@@ -41,7 +43,8 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'path(path) as name',
             'COUNT(DISTINCT session_id) as exits',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(DISTINCT session_id) / SUM(COUNT(DISTINCT session_id)) OVER()) * 100, 2) as percentage'
         ],
         where: [
             'event_name = \'screen_view\'',

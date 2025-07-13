@@ -10,7 +10,8 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
             'COUNT(DISTINCT session_id) as unique_sessions',
             'MAX(time) as last_occurrence',
             'MIN(time) as first_occurrence',
-            'COUNT(DISTINCT path) as unique_pages'
+            'COUNT(DISTINCT path) as unique_pages',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: [
             'event_name NOT IN (\'screen_view\', \'page_exit\', \'error\', \'web_vitals\', \'link_out\')',

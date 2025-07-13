@@ -60,6 +60,7 @@ interface RawBrowserData {
   visitors?: number;
   pageviews?: number;
   sessions?: number;
+  percentage?: number;
   versions?: BrowserVersion[];
 }
 
@@ -110,17 +111,8 @@ const normalizeData = (data: any[]): GeographicEntry[] =>
     name: item.name || "Unknown",
     visitors: item.visitors || 0,
     pageviews: item.pageviews || 0,
-    percentage: 0, // Will be calculated later
+    percentage: item.percentage || 0,
   })) || [];
-
-const addPercentages = (data: GeographicEntry[]): GeographicEntry[] => {
-  if (!data?.length) return [];
-  const total = data.reduce((sum: number, item: GeographicEntry) => sum + item.visitors, 0);
-  return data.map((item: GeographicEntry) => ({
-    ...item,
-    percentage: total > 0 ? Math.round((item.visitors / total) * 100) : 0,
-  }));
-};
 
 const createNameColumn = (header: string, renderIcon?: (name: string) => React.ReactNode) => ({
   id: "name",
@@ -249,10 +241,10 @@ export function WebsiteAudienceTab({
 
     return {
       geographic: {
-        countries: addPercentages(normalizeData(geographicResult?.data?.country || [])),
-        regions: addPercentages(normalizeData(geographicResult?.data?.region || [])),
-        timezones: addPercentages(normalizeData(geographicResult?.data?.timezone || [])),
-        languages: addPercentages(normalizeData(geographicResult?.data?.language || [])),
+        countries: normalizeData(geographicResult?.data?.country || []),
+        regions: normalizeData(geographicResult?.data?.region || []),
+        timezones: normalizeData(geographicResult?.data?.timezone || []),
+        languages: normalizeData(geographicResult?.data?.language || []),
       },
       device: {
         device_type: deviceResult?.data?.device_type || [],
@@ -272,11 +264,6 @@ export function WebsiteAudienceTab({
 
     // If already grouped with versions, use directly
     if (rawData.length > 0 && rawData[0].versions) {
-      const totalVisitors = rawData.reduce(
-        (sum: number, browser: RawBrowserData) => sum + (browser.visitors || 0),
-        0
-      );
-
       return rawData
         .map(
           (browser: RawBrowserData) =>
@@ -287,8 +274,7 @@ export function WebsiteAudienceTab({
               visitors: browser.visitors || 0,
               pageviews: browser.pageviews || 0,
               sessions: browser.sessions || 0,
-              percentage:
-                totalVisitors > 0 ? Math.round(((browser.visitors || 0) / totalVisitors) * 100) : 0,
+              percentage: browser.percentage || 0,
               versions:
                 browser.versions?.sort(
                   (a: BrowserVersion, b: BrowserVersion) => (b.visitors || 0) - (a.visitors || 0)

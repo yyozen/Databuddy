@@ -326,30 +326,16 @@ export function WebsiteOverviewTab({
       visitors: createChartSeries('visitors'),
       sessions: createChartSeries('sessions'),
       pageviews: createChartSeries('pageviews'),
-      pagesPerSession: filteredEvents.map((event: any) => ({
-        date: event.date,
-        value: event.sessions > 0 ? Number((event.pageviews / event.sessions).toFixed(2)) : 0,
-      })),
+      pagesPerSession: createChartSeries('pages_per_session'),
       bounceRate: createChartSeries('bounce_rate'),
       sessionDuration: createChartSeries('avg_session_duration'),
     };
   }, [analytics.events_by_date, filterFutureEvents]);
 
   // Page processing utilities
-  const processPagesWithPercentage = useCallback((pages: any[], field = 'pageviews') => {
-    if (!pages?.length) return [];
-
-    const total = pages.reduce((sum, page: any) => sum + (page[field] || 0), 0);
-
-    return pages.map((page: any) => ({
-      ...page,
-      percentage: total > 0 ? Math.round((page[field] / total) * 100) : 0,
-    }));
-  }, []);
-
   const processedTopPages = useMemo(() =>
-    processPagesWithPercentage(analytics.top_pages),
-    [analytics.top_pages, processPagesWithPercentage]
+    analytics.top_pages || [],
+    [analytics.top_pages]
   );
 
   const processedEntryPages = useMemo(() => {
@@ -603,15 +589,10 @@ export function WebsiteOverviewTab({
 
     const customEvents = customEventsData.custom_events;
 
-    const totalEvents = customEvents.reduce(
-      (sum: number, event: any) => sum + (event.total_events || 0),
-      0
-    );
-
     return customEvents.map((event: any) => {
       return {
         ...event,
-        percentage: totalEvents > 0 ? Math.round((event.total_events / totalEvents) * 100) : 0,
+        percentage: event.percentage || 0,
         last_occurrence_formatted: event.last_occurrence
           ? new Date(event.last_occurrence).toLocaleDateString()
           : "N/A",

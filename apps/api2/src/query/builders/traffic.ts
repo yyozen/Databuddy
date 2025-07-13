@@ -12,7 +12,8 @@ export const TrafficBuilders: Record<string, SimpleQueryConfig> = {
             'ELSE concat(\'https://\', domain(referrer)) ' +
             'END as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: [
             'referrer != \'\'',
@@ -36,7 +37,8 @@ export const TrafficBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'utm_source as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['utm_source != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['utm_source'],
@@ -52,7 +54,8 @@ export const TrafficBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'utm_medium as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['utm_medium != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['utm_medium'],
@@ -68,7 +71,8 @@ export const TrafficBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'utm_campaign as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['utm_campaign != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['utm_campaign'],

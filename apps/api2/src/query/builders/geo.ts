@@ -6,7 +6,8 @@ export const GeoBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'country as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['country != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['country'],
@@ -22,7 +23,8 @@ export const GeoBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'region as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['region != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['region'],
@@ -38,7 +40,8 @@ export const GeoBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'timezone as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['timezone != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['timezone'],
@@ -54,7 +57,8 @@ export const GeoBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'language as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['language != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['language'],
@@ -70,7 +74,8 @@ export const GeoBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'country as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['country != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['country'],
@@ -86,7 +91,8 @@ export const GeoBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'city as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['city != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['city'],
@@ -102,7 +108,8 @@ export const GeoBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'region as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['region != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['region'],

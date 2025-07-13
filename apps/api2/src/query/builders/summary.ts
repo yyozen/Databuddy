@@ -138,7 +138,12 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                     THEN (COALESCE(tm.bounced_sessions, 0) / COALESCE(tm.sessions, 0)) * 100 
                     ELSE 0 
                   END, 2) as bounce_rate,
-                  ROUND(COALESCE(tm.avg_session_duration, 0), 2) as avg_session_duration
+                  ROUND(COALESCE(tm.avg_session_duration, 0), 2) as avg_session_duration,
+                  ROUND(CASE 
+                    WHEN COALESCE(tm.sessions, 0) > 0 
+                    THEN COALESCE(tm.pageviews, 0) / COALESCE(tm.sessions, 0) 
+                    ELSE 0 
+                  END, 2) as pages_per_session
                 FROM date_range dr
                 LEFT JOIN time_metrics tm ON dr.date = tm.date
                 LEFT JOIN time_visitors tv ON dr.date = tv.date

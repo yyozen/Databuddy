@@ -6,7 +6,8 @@ export const DevicesBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'device_type as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['device_type != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['device_type'],
@@ -22,7 +23,8 @@ export const DevicesBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'browser_name as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['browser_name != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['browser_name'],
@@ -38,7 +40,8 @@ export const DevicesBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'os_name as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['os_name != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['os_name'],
