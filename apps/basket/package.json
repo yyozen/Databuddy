@@ -4,20 +4,7 @@
   "packageManager": "bun@1.2.12",
   "scripts": {
     "dev": "bun --watch run src/index.ts",
-    "clean": "rm -rf dist",
-    "env": "dotenv -e .dev.vars",
-    "build": "bun clean",
-    "start": "bun run src/index.ts",
-    "pm2": "pm2 start src/index.ts --interpreter bun --name databuddy-api",
-    "pm2:stop": "pm2 stop databuddy-api",
-    "pm2:restart": "pm2 restart databuddy-api",
-    "deploy": "wrangler deploy --minify",
-    "dry-run": "wrangler deploy --minify --dry-run",
-    "migrate:events": "bun run src/commands/run-events-migration.ts",
-    "init:tables": "bun run src/commands/init-tables.ts",
-    "test": "vitest run",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "start": "bun run src/index.ts"
   },
   "dependencies": {
     "@clickhouse/client": "^1.11.1",

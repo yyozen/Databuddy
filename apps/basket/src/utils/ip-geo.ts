@@ -1,5 +1,5 @@
 import type { City } from "@maxmind/geoip2-node";
-import { Reader, AddressNotFoundError } from "@maxmind/geoip2-node";
+import { Reader, AddressNotFoundError, BadMethodCallError } from "@maxmind/geoip2-node";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { createHash } from 'node:crypto';
@@ -8,11 +8,38 @@ interface GeoIPReader extends Reader {
   city(ip: string): City;
 }
 
-const dbPath = path.join(process.cwd(), "maxmind", "ipinfo_lite.mmdb");
+// Database configuration
+const CDN_URL = "https://cdn.databuddy.cc/GeoLite2-City.mmdb";
+
 let reader: GeoIPReader | null = null;
 let isLoading = false;
 let loadPromise: Promise<void> | null = null;
 let loadError: Error | null = null;
+
+async function loadDatabaseFromCdn(): Promise<Buffer> {
+  console.log("Loading GeoIP database from CDN...");
+
+  try {
+    const response = await fetch(CDN_URL);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch database from CDN: ${response.status} ${response.statusText}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const dbBuffer = Buffer.from(arrayBuffer);
+    console.log(`Database CDN size: ${dbBuffer.length} bytes`);
+
+    // Validate that we got a reasonable file size (should be ~50-100MB)
+    if (dbBuffer.length < 1000000) { // Less than 1MB
+      throw new Error(`Database file seems too small: ${dbBuffer.length} bytes`);
+    }
+
+    return dbBuffer;
+  } catch (error) {
+    console.error("Failed to load database from CDN:", error);
+    throw error;
+  }
+}
 
 async function loadDatabase() {
   if (loadError) {
@@ -32,15 +59,7 @@ async function loadDatabase() {
     try {
       console.log("Loading GeoIP database...");
 
-      // Check if file exists first
-      try {
-        await readFile(dbPath);
-      } catch (error) {
-        throw new Error(`GeoIP database file not found at ${dbPath}`);
-      }
-
-      const dbBuffer = await readFile(dbPath);
-      console.log(`Database file size: ${dbBuffer.length} bytes`);
+      const dbBuffer = await loadDatabaseFromCdn();
 
       // Add a small delay to prevent overwhelming the system
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -96,29 +115,42 @@ export async function getGeoLocation(ip: string) {
       await loadDatabase();
     } catch (error) {
       console.error("Failed to load database for IP lookup:", error);
+      console.error("Current working directory:", process.cwd());
+      console.error("CDN URL:", CDN_URL);
       return { country: undefined, region: undefined };
     }
   }
 
   if (!reader) {
+    console.error("Database reader is null - database failed to load");
     return { country: undefined, region: undefined };
   }
 
   try {
     console.log(`Looking up IP: ${ip}`);
     const response = reader.city(ip);
+
+    // Extract region data
+    const region = response.subdivisions?.[0]?.names?.en;
+
     console.log(`IP ${ip} found in database:`, {
       country: response.country?.names?.en,
-      region: response.subdivisions?.[0]?.names?.en,
+      region: region,
     });
     return {
       country: response.country?.names?.en,
-      region: response.subdivisions?.[0]?.names?.en,
+      region: region,
     };
   } catch (error) {
     // Handle AddressNotFoundError specifically (IP not in database)
     if (error instanceof AddressNotFoundError) {
       console.log(`IP ${ip} not found in GeoIP database`);
+      return { country: undefined, region: undefined };
+    }
+
+    // Handle BadMethodCallError (wrong database type)
+    if (error instanceof BadMethodCallError) {
+      console.error("Database type mismatch - using city() method with ipinfo database");
       return { country: undefined, region: undefined };
     }
 
