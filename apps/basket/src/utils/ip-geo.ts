@@ -1,35 +1,82 @@
 import type { City } from "@maxmind/geoip2-node";
 import { Reader } from "@maxmind/geoip2-node";
-
-interface GeoIPReader extends Reader {
-  city(ip: string): City;
-}
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { createHash } from 'node:crypto';
 
-const dbPath = path.join(process.cwd(), "maxmind", "GeoLite2-City.mmdb");
-let reader: GeoIPReader | null = null;
-
-async function loadDatabase() {
-  try {
-    const dbBuffer = await readFile(dbPath);
-    reader = Reader.openBuffer(dbBuffer) as GeoIPReader;
-    console.log("GeoIP database loaded");
-  } catch (error) {
-    console.error("Failed to load GeoIP database:", error);
-  }
+interface GeoIPReader extends Reader {
+  city(ip: string): City;
 }
 
-// Initialize database loading
-loadDatabase().catch(error => {
-  console.error("Failed to initialize GeoIP database:", error);
-});
+const dbPath = path.join(process.cwd(), "maxmind", "GeoLite2-City.mmdb");
+let reader: GeoIPReader | null = null;
+let isLoading = false;
+let loadPromise: Promise<void> | null = null;
+let loadError: Error | null = null;
 
+async function loadDatabase() {
+  if (loadError) {
+    throw loadError;
+  }
+
+  if (isLoading && loadPromise) {
+    return loadPromise;
+  }
+
+  if (reader) {
+    return;
+  }
+
+  isLoading = true;
+  loadPromise = (async () => {
+    try {
+      console.log("Loading GeoIP database...");
+
+      // Check if file exists first
+      try {
+        await readFile(dbPath);
+      } catch (error) {
+        throw new Error(`GeoIP database file not found at ${dbPath}`);
+      }
+
+      const dbBuffer = await readFile(dbPath);
+
+      // Add a small delay to prevent overwhelming the system
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      reader = Reader.openBuffer(dbBuffer) as GeoIPReader;
+      console.log("GeoIP database loaded successfully");
+    } catch (error) {
+      console.error("Failed to load GeoIP database:", error);
+      loadError = error as Error;
+      reader = null;
+    } finally {
+      isLoading = false;
+    }
+  })();
+
+  return loadPromise;
+}
+
+// Don't initialize on module load - wait for first use
 const ignore = ['127.0.0.1', '::1'];
 
 export async function getGeoLocation(ip: string) {
-  if (!ip || ignore.includes(ip) || !reader) {
+  if (!ip || ignore.includes(ip)) {
+    return { country: undefined, region: undefined };
+  }
+
+  // Lazy load database on first use
+  if (!reader && !isLoading && !loadError) {
+    try {
+      await loadDatabase();
+    } catch (error) {
+      console.error("Failed to load database for IP lookup:", error);
+      return { country: undefined, region: undefined };
+    }
+  }
+
+  if (!reader) {
     return { country: undefined, region: undefined };
   }
 
@@ -40,6 +87,7 @@ export async function getGeoLocation(ip: string) {
       region: response.subdivisions?.[0]?.names?.en,
     };
   } catch (error) {
+    console.error("Error looking up IP:", ip, error);
     return { country: undefined, region: undefined };
   }
 }
