@@ -300,6 +300,7 @@ export function WebsitePerformanceTab({
     if (!performanceResults?.length) {
       return {
         pages: [],
+        allPages: [],
         countries: [],
         devices: [],
         browsers: [],
@@ -308,30 +309,21 @@ export function WebsitePerformanceTab({
       };
     }
 
-    // Extract data directly from results
-    const dataMap = new Map();
+    const data = performanceResults
+      .filter(result => result.success && result.data)
+      .reduce((acc, result) => Object.assign(acc, result.data), {} as Record<string, any>);
 
-    for (const result of performanceResults) {
-      if (result.success && result.data) {
-        for (const [key, value] of Object.entries(result.data)) {
-          if (Array.isArray(value)) {
-            dataMap.set(key, value);
-          }
-        }
-      }
-    }
-
-    const allPages = dataMap.get("slow_pages") || [];
+    const allPages = data.slow_pages || [];
     const filteredPages = filterPagesByPerformance(allPages, activeFilter);
 
     return {
       pages: filteredPages,
-      allPages, // Keep unfiltered for summary calculation
-      countries: dataMap.get("performance_by_country") || [],
-      devices: dataMap.get("performance_by_device") || [],
-      browsers: dataMap.get("performance_by_browser") || [],
-      operating_systems: dataMap.get("performance_by_os") || [],
-      regions: dataMap.get("performance_by_region") || [],
+      allPages,
+      countries: data.performance_by_country || [],
+      devices: data.performance_by_device || [],
+      browsers: data.performance_by_browser || [],
+      operating_systems: data.performance_by_os || [],
+      regions: data.performance_by_region || [],
     };
   }, [performanceResults, activeFilter, filterPagesByPerformance]);
 
@@ -340,70 +332,40 @@ export function WebsitePerformanceTab({
   }, [processedData.allPages]);
 
   const tabs = useMemo(() => {
-    const tabConfigs = [
-      {
-        id: "pages",
-        label: "Pages",
-        data: processedData.pages,
-        iconRenderer: undefined,
-        nameFormatter: (name: string) => {
-          try {
-            return name.startsWith("http") ? new URL(name).pathname : name;
-          } catch {
-            return name.startsWith("/") ? name : `/${name}`;
-          }
-        },
-      },
-      {
-        id: "countries",
-        label: "Countries",
-        data: processedData.countries,
-        iconRenderer: (name: string) => {
-          const item = processedData.countries.find((item: any) => item.country_name === name);
-          return <CountryFlag country={item?.country_code || name} size={16} />;
-        },
-        nameFormatter: undefined,
-      },
-      {
-        id: "regions",
-        label: "Regions",
-        data: processedData.regions,
-        iconRenderer: () => <MapPin className="h-4 w-4 text-primary" />,
-        nameFormatter: undefined,
-      },
-      {
-        id: "devices",
-        label: "Device Types",
-        data: processedData.devices,
-        iconRenderer: (name: string) => {
-          const device = name.toLowerCase();
-          return device.includes("mobile") || device.includes("phone") ? (
-            <Smartphone className="h-4 w-4 text-blue-500" />
-          ) : device.includes("tablet") ? (
-            <Monitor className="h-4 w-4 text-purple-500" />
-          ) : (
-            <Monitor className="h-4 w-4 text-gray-500" />
-          );
-        },
-        nameFormatter: undefined,
-      },
-      {
-        id: "browsers",
-        label: "Browsers",
-        data: processedData.browsers,
-        iconRenderer: (name: string) => <BrowserIcon name={name} size="sm" />,
-        nameFormatter: undefined,
-      },
-      {
-        id: "operating_systems",
-        label: "Operating Systems",
-        data: processedData.operating_systems,
-        iconRenderer: (name: string) => <OSIcon name={name} size="sm" />,
-        nameFormatter: undefined,
-      },
+    const formatPageName = (name: string) => {
+      try {
+        return name.startsWith("http") ? new URL(name).pathname : name;
+      } catch {
+        return name.startsWith("/") ? name : `/${name}`;
+      }
+    };
+
+    const getDeviceIcon = (name: string) => {
+      const device = name.toLowerCase();
+      return device.includes("mobile") || device.includes("phone") ? (
+        <Smartphone className="h-4 w-4 text-blue-500" />
+      ) : device.includes("tablet") ? (
+        <Monitor className="h-4 w-4 text-purple-500" />
+      ) : (
+        <Monitor className="h-4 w-4 text-gray-500" />
+      );
+    };
+
+    const getCountryIcon = (name: string) => {
+      const item = processedData.countries.find((item: any) => item.country_name === name);
+      return <CountryFlag country={item?.country_code || name} size={16} />;
+    };
+
+    const configs = [
+      { id: "pages", label: "Pages", data: processedData.pages, iconRenderer: undefined, nameFormatter: formatPageName },
+      { id: "countries", label: "Countries", data: processedData.countries, iconRenderer: getCountryIcon },
+      { id: "regions", label: "Regions", data: processedData.regions, iconRenderer: () => <MapPin className="h-4 w-4 text-primary" /> },
+      { id: "devices", label: "Device Types", data: processedData.devices, iconRenderer: getDeviceIcon },
+      { id: "browsers", label: "Browsers", data: processedData.browsers, iconRenderer: (name: string) => <BrowserIcon name={name} size="sm" /> },
+      { id: "operating_systems", label: "Operating Systems", data: processedData.operating_systems, iconRenderer: (name: string) => <OSIcon name={name} size="sm" /> },
     ];
 
-    return tabConfigs.map((config) => ({
+    return configs.map((config) => ({
       id: config.id,
       label: config.label,
       data: config.data.map((item: any, i: number) => ({
@@ -420,11 +382,7 @@ export function WebsitePerformanceTab({
         _uniqueKey: `${config.id}-${i}`,
       })),
       columns: [
-        createNameColumn(
-          config.label.slice(0, -1), // Remove 's' from plural
-          config.iconRenderer,
-          config.nameFormatter
-        ),
+        createNameColumn(config.label.slice(0, -1), config.iconRenderer, config.nameFormatter),
         ...performanceColumns,
       ],
     }));
