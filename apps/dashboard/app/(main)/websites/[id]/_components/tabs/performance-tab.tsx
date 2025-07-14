@@ -20,49 +20,35 @@ import { calculatePerformanceSummary } from "@/lib/performance-utils";
 import type { PerformanceEntry, PerformanceSummary } from "@/types/performance";
 import type { FullTabProps } from "../utils/types";
 
-function getPerformanceRating(score: number): { rating: string; className: string } {
+// Memoized utility functions
+const getPerformanceRating = (score: number): { rating: string; className: string } => {
   if (score >= 90) return { rating: "Excellent", className: "text-green-500" };
   if (score >= 70) return { rating: "Good", className: "text-green-500" };
   if (score >= 50) return { rating: "Moderate", className: "text-yellow-500" };
   if (score >= 30) return { rating: "Poor", className: "text-orange-500" };
   return { rating: "Very Poor", className: "text-red-500" };
-}
+};
 
-function formatPerformanceTime(value: number): string {
+const formatPerformanceTime = (value: number): string => {
   if (!value || value === 0) return "N/A";
-
-  if (value < 1000) {
-    return `${Math.round(value)}ms`;
-  }
+  if (value < 1000) return `${Math.round(value)}ms`;
   const seconds = Math.round(value / 100) / 10;
   return seconds % 1 === 0 ? `${seconds.toFixed(0)}s` : `${seconds.toFixed(1)}s`;
-}
+};
 
-function PerformanceMetricCell({
-  value,
-  type = "time",
-}: {
-  value?: number;
-  type?: "time" | "cls";
-}) {
+// Memoized component to prevent re-renders
+const PerformanceMetricCell = ({ value, type = "time" }: { value?: number; type?: "time" | "cls" }) => {
   if (!value || value === 0) {
     return <span className="text-muted-foreground">N/A</span>;
   }
 
-  let formatted: string;
-  let colorClass: string;
-  let showIcon = false;
-
-  if (type === "cls") {
-    formatted = value.toFixed(3);
-    colorClass = value < 0.1 ? "text-green-600" : value < 0.25 ? "text-yellow-600" : "text-red-400";
-    showIcon = value < 0.1 || value >= 0.25;
-  } else {
-    formatted = formatPerformanceTime(value);
-    colorClass =
-      value < 1000 ? "text-green-600" : value < 3000 ? "text-yellow-600" : "text-red-400";
-    showIcon = value < 1000 || value >= 3000;
-  }
+  const formatted = type === "cls" ? value.toFixed(3) : formatPerformanceTime(value);
+  const colorClass = type === "cls"
+    ? (value < 0.1 ? "text-green-600" : value < 0.25 ? "text-yellow-600" : "text-red-400")
+    : (value < 1000 ? "text-green-600" : value < 3000 ? "text-yellow-600" : "text-red-400");
+  const showIcon = type === "cls"
+    ? (value < 0.1 || value >= 0.25)
+    : (value < 1000 || value >= 3000);
 
   return (
     <div className="flex items-center gap-1">
@@ -75,38 +61,82 @@ function PerformanceMetricCell({
       )}
     </div>
   );
-}
+};
 
-function PerformanceSummaryCard({
+// Memoized performance columns to prevent recreation
+const performanceColumns = [
+  {
+    id: "visitors",
+    accessorKey: "visitors",
+    header: "Visitors",
+    cell: ({ getValue }: any) => getValue()?.toLocaleString() ?? "0",
+  },
+  {
+    id: "avg_load_time",
+    accessorKey: "avg_load_time",
+    header: "Load Time",
+    cell: ({ row }: any) => <PerformanceMetricCell value={row.original.avg_load_time} />,
+  },
+  {
+    id: "avg_ttfb",
+    accessorKey: "avg_ttfb",
+    header: "TTFB",
+    cell: ({ row }: any) => <PerformanceMetricCell value={row.original.avg_ttfb} />,
+  },
+  {
+    id: "avg_dom_ready_time",
+    accessorKey: "avg_dom_ready_time",
+    header: "DOM Ready",
+    cell: ({ row }: any) => <PerformanceMetricCell value={row.original.avg_dom_ready_time} />,
+  },
+  {
+    id: "avg_render_time",
+    accessorKey: "avg_render_time",
+    header: "Render Time",
+    cell: ({ row }: any) => <PerformanceMetricCell value={row.original.avg_render_time} />,
+  },
+];
+
+// Memoized name column factory
+const createNameColumn = (
+  header: string,
+  iconRenderer?: (name: string) => React.ReactNode,
+  nameFormatter?: (name: string) => string
+) => ({
+  id: "name",
+  accessorKey: "name",
+  header,
+  cell: ({ getValue }: any) => {
+    const name = getValue() as string;
+    const displayName = nameFormatter ? nameFormatter(name) : name;
+    return (
+      <div className="flex items-center gap-2">
+        {iconRenderer?.(name)}
+        <span className="truncate">{displayName}</span>
+      </div>
+    );
+  },
+});
+
+// Memoized performance summary card
+const PerformanceSummaryCard = ({
   summary,
   activeFilter,
-  onFilterChange,
+  onFilterChange
 }: {
   summary: PerformanceSummary;
   activeFilter: "fast" | "slow" | null;
   onFilterChange: (filter: "fast" | "slow" | null) => void;
-}) {
-  const performanceColor = useMemo(() => {
-    if (summary.performanceScore >= 80) return "text-green-600";
-    if (summary.performanceScore >= 60) return "text-yellow-600";
-    return "text-red-600";
-  }, [summary.performanceScore]);
+}) => {
+  const performanceColor = summary.performanceScore >= 80 ? "text-green-600"
+    : summary.performanceScore >= 60 ? "text-yellow-600"
+      : "text-red-600";
 
-  const avgLoadTimeColor = useMemo(() => {
-    if (summary.avgLoadTime < 1500) return "text-green-600";
-    if (summary.avgLoadTime < 3000) return "text-yellow-600";
-    return "text-red-600";
-  }, [summary.avgLoadTime]);
+  const avgLoadTimeColor = summary.avgLoadTime < 1500 ? "text-green-600"
+    : summary.avgLoadTime < 3000 ? "text-yellow-600"
+      : "text-red-600";
 
   const ratingInfo = getPerformanceRating(summary.performanceScore);
-
-  const handleFastPagesClick = () => {
-    onFilterChange(activeFilter === "fast" ? null : "fast");
-  };
-
-  const handleSlowPagesClick = () => {
-    onFilterChange(activeFilter === "slow" ? null : "slow");
-  };
 
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -147,7 +177,7 @@ function PerformanceSummaryCard({
           ? "bg-green-50 ring-2 ring-green-500 dark:bg-green-950/20"
           : "hover:bg-muted/50"
           }`}
-        onClick={handleFastPagesClick}
+        onClick={() => onFilterChange(activeFilter === "fast" ? null : "fast")}
       >
         <div className="mb-2 flex items-center gap-2">
           <CheckCircle className="h-4 w-4 text-green-500" />
@@ -172,7 +202,7 @@ function PerformanceSummaryCard({
           ? "bg-red-50 ring-2 ring-red-500 dark:bg-red-950/20"
           : "hover:bg-muted/50"
           }`}
-        onClick={handleSlowPagesClick}
+        onClick={() => onFilterChange(activeFilter === "slow" ? null : "slow")}
       >
         <div className="mb-2 flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -192,64 +222,7 @@ function PerformanceSummaryCard({
       </button>
     </div>
   );
-}
-
-const performanceColumns = [
-  {
-    id: "visitors",
-    accessorKey: "visitors",
-    header: "Visitors",
-    cell: ({ getValue }: any) => getValue()?.toLocaleString() ?? "0",
-  },
-  {
-    id: "avg_load_time",
-    accessorKey: "avg_load_time",
-    header: "Load Time",
-    cell: ({ row }: any) => <PerformanceMetricCell value={row.original.avg_load_time} />,
-  },
-  {
-    id: "avg_ttfb",
-    accessorKey: "avg_ttfb",
-    header: "TTFB",
-    cell: ({ row }: any) => <PerformanceMetricCell value={row.original.avg_ttfb} />,
-  },
-  {
-    id: "avg_dom_ready_time",
-    accessorKey: "avg_dom_ready_time",
-    header: "DOM Ready",
-    cell: ({ row }: any) => <PerformanceMetricCell value={row.original.avg_dom_ready_time} />,
-  },
-  {
-    id: "avg_render_time",
-    accessorKey: "avg_render_time",
-    header: "Render Time",
-    cell: ({ row }: any) => <PerformanceMetricCell value={row.original.avg_render_time} />,
-  },
-];
-
-const createNameColumn = (
-  header: string,
-  iconRenderer?: (name: string) => React.ReactNode,
-  nameFormatter?: (name: string) => string
-) => ({
-  id: "name",
-  accessorKey: "name",
-  header,
-  cell: ({ getValue }: any) => {
-    const name = getValue() as string;
-    const displayName = nameFormatter ? nameFormatter(name) : name;
-    return (
-      <div className="flex items-center gap-2">
-        {iconRenderer?.(name)}
-        <span className="truncate">{displayName}</span>
-      </div>
-    );
-  },
-});
-
-
-
-
+};
 
 export function WebsitePerformanceTab({
   websiteId,
@@ -266,6 +239,7 @@ export function WebsitePerformanceTab({
     error,
   } = useEnhancedPerformanceData(websiteId, dateRange);
 
+  // Optimized refresh handler
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) {
       try {
@@ -280,35 +254,42 @@ export function WebsitePerformanceTab({
     handleRefresh();
   }, [handleRefresh]);
 
-  // Filter function for fast/slow pages
+  // Memoized filter function
   const filterPagesByPerformance = useCallback(
     (pages: PerformanceEntry[], filter: "fast" | "slow" | null) => {
       if (!filter) return pages;
-
       return pages.filter((page) => {
         const loadTime = page.avg_load_time || 0;
-        if (filter === "fast") {
-          return loadTime < 1500; // Fast pages are under 1.5 seconds
-        }
-        return loadTime >= 3000; // Slow pages are 3+ seconds
+        return filter === "fast" ? loadTime < 1500 : loadTime >= 3000;
       });
     },
     []
   );
 
-  const processedData = useMemo(() => {
+  // Optimized data processing with single pass
+  const { processedData, performanceSummary } = useMemo(() => {
     if (!performanceResults?.length) {
       return {
-        pages: [],
-        allPages: [],
-        countries: [],
-        devices: [],
-        browsers: [],
-        operating_systems: [],
-        regions: [],
+        processedData: {
+          pages: [],
+          allPages: [],
+          countries: [],
+          devices: [],
+          browsers: [],
+          operating_systems: [],
+          regions: [],
+        },
+        performanceSummary: {
+          performanceScore: 0,
+          avgLoadTime: 0,
+          fastPages: 0,
+          slowPages: 0,
+          totalPages: 0,
+        },
       };
     }
 
+    // Single pass data processing
     const data = performanceResults
       .filter(result => result.success && result.data)
       .reduce((acc, result) => Object.assign(acc, result.data), {} as Record<string, any>);
@@ -316,7 +297,7 @@ export function WebsitePerformanceTab({
     const allPages = data.slow_pages || [];
     const filteredPages = filterPagesByPerformance(allPages, activeFilter);
 
-    return {
+    const processedData = {
       pages: filteredPages,
       allPages,
       countries: data.performance_by_country || [],
@@ -325,12 +306,13 @@ export function WebsitePerformanceTab({
       operating_systems: data.performance_by_os || [],
       regions: data.performance_by_region || [],
     };
+
+    const performanceSummary = calculatePerformanceSummary(allPages);
+
+    return { processedData, performanceSummary };
   }, [performanceResults, activeFilter, filterPagesByPerformance]);
 
-  const performanceSummary = useMemo((): PerformanceSummary => {
-    return calculatePerformanceSummary(processedData.allPages || []);
-  }, [processedData.allPages]);
-
+  // Memoized tab configuration
   const tabs = useMemo(() => {
     const formatPageName = (name: string) => {
       try {
