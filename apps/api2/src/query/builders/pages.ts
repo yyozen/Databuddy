@@ -137,7 +137,7 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
             GROUP BY path
             ORDER BY exits DESC
             LIMIT {limit:Int32} OFFSET {offset:Int32}
-          `,
+            `,
             params: {
                 websiteId,
                 startDate,

@@ -2,16 +2,17 @@ import type { SimpleQueryConfig, Filter, TimeUnit } from "../types";
 
 export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
   summary_metrics: {
-    customSql: (websiteId: string, startDate: string, endDate: string) => `
+    customSql: (websiteId: string, startDate: string, endDate: string) => ({
+      sql: `
             WITH session_metrics AS (
               SELECT
                 session_id,
                 countIf(event_name = 'screen_view') as page_count
               FROM analytics.events
               WHERE 
-                client_id = '${websiteId}'
-                AND time >= parseDateTimeBestEffort('${startDate}')
-                AND time <= parseDateTimeBestEffort('${endDate}')
+                client_id = {websiteId:String}
+                AND time >= parseDateTimeBestEffort({startDate:String})
+                AND time <= parseDateTimeBestEffort({endDate:String})
               GROUP BY session_id
             ),
             session_durations AS (
@@ -20,9 +21,9 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                 dateDiff('second', MIN(time), MAX(time)) as duration
               FROM analytics.events
               WHERE 
-                client_id = '${websiteId}'
-                AND time >= parseDateTimeBestEffort('${startDate}')
-                AND time <= parseDateTimeBestEffort('${endDate}')
+                client_id = {websiteId:String}
+                AND time >= parseDateTimeBestEffort({startDate:String})
+                AND time <= parseDateTimeBestEffort({endDate:String})
               GROUP BY session_id
               HAVING duration > 0
             ),
@@ -31,9 +32,9 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                 countDistinct(anonymous_id) as unique_visitors
               FROM analytics.events
               WHERE 
-                client_id = '${websiteId}'
-                AND time >= parseDateTimeBestEffort('${startDate}')
-                AND time <= parseDateTimeBestEffort('${endDate}')
+                client_id = {websiteId:String}
+                AND time >= parseDateTimeBestEffort({startDate:String})
+                AND time <= parseDateTimeBestEffort({endDate:String})
                 AND event_name = 'screen_view'
             ),
             all_events AS (
@@ -41,9 +42,9 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                 count() as total_events
               FROM analytics.events
               WHERE 
-                client_id = '${websiteId}'
-                AND time >= parseDateTimeBestEffort('${startDate}')
-                AND time <= parseDateTimeBestEffort('${endDate}')
+                client_id = {websiteId:String}
+                AND time >= parseDateTimeBestEffort({startDate:String})
+                AND time <= parseDateTimeBestEffort({endDate:String})
             )
             SELECT
               sum(page_count) as pageviews,
@@ -55,6 +56,12 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
             FROM session_metrics
             LEFT JOIN session_durations as sd ON session_metrics.session_id = sd.session_id
         `,
+      params: {
+        websiteId,
+        startDate,
+        endDate,
+      }
+    }),
     timeField: 'time',
     allowedFilters: ['path', 'referrer', 'device_type', 'browser_name', 'country'],
     customizable: true
@@ -82,11 +89,12 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
       const isHourly = granularity === 'hour' || granularity === 'hourly';
 
       if (isHourly) {
-        return `
+        return {
+          sql: `
                 WITH hour_range AS (
                   SELECT arrayJoin(arrayMap(
-                    h -> toDateTime('${startDate} 00:00:00') + (h * 3600),
-                    range(toUInt32(dateDiff('hour', toDateTime('${startDate} 00:00:00'), toDateTime('${endDate} 23:59:59')) + 1))
+                    h -> toDateTime({startDate:String} + ' 00:00:00') + (h * 3600),
+                    range(toUInt32(dateDiff('hour', toDateTime({startDate:String} + ' 00:00:00'), toDateTime({endDate:String} + ' 23:59:59')) + 1))
                   )) AS datetime
                 ),
                 session_details AS (
@@ -97,9 +105,9 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                     dateDiff('second', MIN(time), MAX(time)) as duration
                   FROM analytics.events
                   WHERE 
-                    client_id = '${websiteId}'
-                    AND time >= parseDateTimeBestEffort('${startDate}')
-                    AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+                    client_id = {websiteId:String}
+                    AND time >= parseDateTimeBestEffort({startDate:String})
+                    AND time <= parseDateTimeBestEffort({endDate:String} + ' 23:59:59')
                   GROUP BY session_id
                 ),
                 hourly_session_metrics AS (
@@ -118,9 +126,9 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                     count(distinct anonymous_id) as unique_visitors
                   FROM analytics.events
                   WHERE 
-                    client_id = '${websiteId}'
-                    AND time >= parseDateTimeBestEffort('${startDate}')
-                    AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+                    client_id = {websiteId:String}
+                    AND time >= parseDateTimeBestEffort({startDate:String})
+                    AND time <= parseDateTimeBestEffort({endDate:String} + ' 23:59:59')
                   GROUP BY event_hour
                 )
                 SELECT
@@ -143,14 +151,21 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                 LEFT JOIN hourly_session_metrics hsm ON hr.datetime = hsm.event_hour
                 LEFT JOIN hourly_event_metrics hem ON hr.datetime = hem.event_hour
                 ORDER BY hr.datetime ASC
-            `;
+            `,
+          params: {
+            websiteId,
+            startDate,
+            endDate,
+          }
+        };
       }
 
-      return `
+      return {
+        sql: `
                 WITH date_range AS (
                   SELECT arrayJoin(arrayMap(
-                    d -> toDate('${startDate}') + d,
-                    range(toUInt32(dateDiff('day', toDate('${startDate}'), toDate('${endDate}')) + 1))
+                    d -> toDate({startDate:String}) + d,
+                    range(toUInt32(dateDiff('day', toDate({startDate:String}), toDate({endDate:String})) + 1))
                   )) AS date
                 ),
                 session_details AS (
@@ -161,9 +176,9 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                     dateDiff('second', MIN(time), MAX(time)) as duration
                   FROM analytics.events
                   WHERE
-                    client_id = '${websiteId}'
-                    AND time >= parseDateTimeBestEffort('${startDate}')
-                    AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+                    client_id = {websiteId:String}
+                    AND time >= parseDateTimeBestEffort({startDate:String})
+                    AND time <= parseDateTimeBestEffort({endDate:String} + ' 23:59:59')
                   GROUP BY session_id
                 ),
                 daily_session_metrics AS (
@@ -182,9 +197,9 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                     count(distinct anonymous_id) as unique_visitors
                   FROM analytics.events
                   WHERE
-                    client_id = '${websiteId}'
-                    AND time >= parseDateTimeBestEffort('${startDate}')
-                    AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+                    client_id = {websiteId:String}
+                    AND time >= parseDateTimeBestEffort({startDate:String})
+                    AND time <= parseDateTimeBestEffort({endDate:String} + ' 23:59:59')
                   GROUP BY event_date
                 )
                 SELECT
@@ -207,7 +222,13 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                 LEFT JOIN daily_session_metrics dsm ON dr.date = dsm.session_start_date
                 LEFT JOIN daily_event_metrics dem ON dr.date = dem.event_date
                 ORDER BY dr.date ASC
-            `;
+            `,
+        params: {
+          websiteId,
+          startDate,
+          endDate,
+        }
+      };
     },
     timeField: 'time',
     allowedFilters: ['path', 'referrer', 'device_type'],
