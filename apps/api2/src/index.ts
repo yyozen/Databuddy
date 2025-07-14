@@ -33,6 +33,7 @@ app.get('/', () => {
       set.headers.Vary = 'Origin, Access-Control-Request-Headers';
     }
   })
+  .options('*', () => new Response(null, { status: 204 }))
   .use(query)
   .all('/trpc/*', async ({ request }) => {
     return fetchRequestHandler({
