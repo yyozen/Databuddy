@@ -256,6 +256,9 @@ export const COUNTRY_NAME_TO_CODE: Record<string, string> = {
     "Yemen": "YE",
     "Zambia": "ZM",
     "Zimbabwe": "ZW",
+    "The Netherlands": "NL",
+    "South Korea": "KR",
+    "North Korea": "KP",
 };
 
 /**
@@ -266,14 +269,11 @@ export const COUNTRY_NAME_TO_CODE: Record<string, string> = {
 export function getCountryCode(countryName: string): string {
     if (!countryName) return "";
 
-    // Handle special case for Israel -> Palestine mapping
     if (countryName === "IL") return "PS";
 
-    // Try exact match first
     const exactMatch = COUNTRY_NAME_TO_CODE[countryName];
     if (exactMatch) return exactMatch;
 
-    // Try case-insensitive match
     const normalizedName = countryName.toLowerCase();
     for (const [name, code] of Object.entries(COUNTRY_NAME_TO_CODE)) {
         if (name.toLowerCase() === normalizedName) {
@@ -281,7 +281,6 @@ export function getCountryCode(countryName: string): string {
         }
     }
 
-    // If no match found, return the original name
     return countryName;
 }
 
@@ -293,16 +292,13 @@ export function getCountryCode(countryName: string): string {
 export function getCountryName(countryCode: string): string {
     if (!countryCode) return "";
 
-    // Handle special case for Palestine
     if (countryCode === "PS") return "Palestine";
 
-    // Find the country name for this code
     for (const [name, code] of Object.entries(COUNTRY_NAME_TO_CODE)) {
         if (code === countryCode) {
             return name;
         }
     }
 
-    // If no match found, return the original code
     return countryCode;
 } 

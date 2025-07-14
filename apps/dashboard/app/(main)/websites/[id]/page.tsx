@@ -30,10 +30,8 @@ import { trpc } from "@/lib/trpc";
 type TabId =
   | "overview"
   | "audience"
-  | "content"
   | "performance"
   | "settings"
-  | "errors"
   | "tracking-setup";
 
 const WebsiteOverviewTab = dynamic(
@@ -133,11 +131,11 @@ function WebsiteDetailsPage() {
 
   const { data, isLoading, isError, refetch: refetchWebsiteData } = useWebsite(id as string);
 
-  const { data: trackingSetupData, isLoading: isTrackingSetupLoading } = trpc.websites.isTrackingSetup.useQuery({ websiteId: id as string }, { enabled: !!id });
+  const { data: trackingSetupData, isLoading: isTrackingSetupLoading, error: trackingSetupError } = trpc.websites.isTrackingSetup.useQuery({ websiteId: id as string }, { enabled: !!id });
 
   const isTrackingSetup = useMemo(() => {
     if (!data || isTrackingSetupLoading) return null;
-    return trackingSetupData?.tracking_setup !== false;
+    return trackingSetupData?.tracking_setup ?? false;
   }, [data, isTrackingSetupLoading, trackingSetupData?.tracking_setup]);
 
   useEffect(() => {
@@ -152,8 +150,7 @@ function WebsiteDetailsPage() {
     setIsRefreshing(true);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["websites", id] }),
-      queryClient.invalidateQueries({ queryKey: ["websiteAnalytics", id] }),
-      queryClient.invalidateQueries({ queryKey: ["websiteTrends", id] }),
+      queryClient.invalidateQueries({ queryKey: ["websites", "isTrackingSetup", id] }),
     ]);
     setIsRefreshing(false);
     toast.success("Data refreshed");
@@ -207,7 +204,7 @@ function WebsiteDetailsPage() {
     return <TabLoadingSkeleton />;
   }
 
-  if (isError || !data) {
+  if (isError || !data || trackingSetupError) {
     return (
       <div className="select-none pt-8">
         <EmptyState

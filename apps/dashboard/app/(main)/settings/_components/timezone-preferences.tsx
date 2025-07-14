@@ -17,17 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-
-// Mock functions - replace with actual API calls
-async function getUserPreferences(): Promise<{
-  data: { timezone?: string; dateFormat?: string; timeFormat?: string } | null;
-}> {
-  return { data: null };
-}
-
-async function updateUserPreferences(formData: FormData) {
-  return { success: true };
-}
+import { usePreferences } from "@/hooks/use-preferences";
 
 function getBrowserTimezone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -91,59 +81,50 @@ const TIME_FORMATS = [
 ];
 
 export function TimezonePreferences() {
-  const [preferences, setPreferences] = useState({
-    timezone: "auto",
-    dateFormat: "MMM D, YYYY",
-    timeFormat: "h:mm a",
+  const {
+    preferences,
+    loading,
+    updatePreferences,
+    error,
+    refetch,
+  } = usePreferences();
+  const [localPreferences, setLocalPreferences] = useState({
+    timezone: preferences?.timezone || "auto",
+    dateFormat: preferences?.dateFormat || "MMM D, YYYY",
+    timeFormat: preferences?.timeFormat || "h:mm a",
   });
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("timezone");
   const [hasChanges, setHasChanges] = useState(false);
-  const [originalPreferences, setOriginalPreferences] = useState(preferences);
+  const [originalPreferences, setOriginalPreferences] = useState(localPreferences);
 
-  // Fetch user preferences on mount
+  // Sync local state with fetched preferences
   useEffect(() => {
-    getUserPreferences()
-      .then((result) => {
-        const prefs = {
-          timezone: result.data?.timezone || "auto",
-          dateFormat: result.data?.dateFormat || "MMM D, YYYY",
-          timeFormat: result.data?.timeFormat || "h:mm a",
-        };
-        setPreferences(prefs);
-        setOriginalPreferences(prefs);
-        setLoading(false);
-      })
-      .catch(() => {
-        toast.error("Failed to load preferences");
-        setLoading(false);
-      });
-  }, []);
+    if (preferences) {
+      const prefs = {
+        timezone: preferences.timezone || "auto",
+        dateFormat: preferences.dateFormat || "MMM D, YYYY",
+        timeFormat: preferences.timeFormat || "h:mm a",
+      };
+      setLocalPreferences(prefs);
+      setOriginalPreferences(prefs);
+    }
+  }, [preferences]);
 
   // Check for changes
   useEffect(() => {
-    setHasChanges(JSON.stringify(preferences) !== JSON.stringify(originalPreferences));
-  }, [preferences, originalPreferences]);
+    setHasChanges(JSON.stringify(localPreferences) !== JSON.stringify(originalPreferences));
+  }, [localPreferences, originalPreferences]);
 
   // Save preferences
   const handleSave = async () => {
     try {
       setSaving(true);
-      const formData = new FormData();
-      formData.append("timezone", preferences.timezone);
-      formData.append("dateFormat", preferences.dateFormat);
-      formData.append("timeFormat", preferences.timeFormat);
-
-      const result = await updateUserPreferences(formData);
-
-      if (result.success) {
-        toast.success("Preferences saved successfully");
-        setOriginalPreferences(preferences);
-        setHasChanges(false);
-      } else {
-        toast.error("Failed to save preferences");
-      }
+      await updatePreferences(localPreferences);
+      toast.success("Preferences saved successfully");
+      setOriginalPreferences(localPreferences);
+      setHasChanges(false);
+      refetch();
     } catch (error) {
       toast.error("Failed to save preferences");
     } finally {
@@ -152,31 +133,31 @@ export function TimezonePreferences() {
   };
 
   const handleReset = () => {
-    setPreferences(originalPreferences);
+    setLocalPreferences(originalPreferences);
     setHasChanges(false);
   };
 
   // Current date/time for examples
   const now = new Date();
   const currentTimezone =
-    preferences.timezone === "auto" ? getBrowserTimezone() : preferences.timezone;
+    localPreferences.timezone === "auto" ? getBrowserTimezone() : localPreferences.timezone;
   const dateExample = formatDate(now, {
     timezone: currentTimezone,
-    dateFormat: preferences.dateFormat,
+    dateFormat: localPreferences.dateFormat,
     timeFormat: undefined,
   });
 
   const timeExample = formatDate(now, {
     timezone: currentTimezone,
     dateFormat: undefined,
-    timeFormat: preferences.timeFormat,
+    timeFormat: localPreferences.timeFormat,
   });
 
-  // Group timezones by offset for better organization
   const timezonesByOffset = Object.entries(
     TIMEZONES.reduce(
       (acc, tz) => {
-        (acc[tz.offset] = acc[tz.offset] || []).push(tz);
+        acc[tz.offset] = acc[tz.offset] || [];
+        acc[tz.offset].push(tz);
         return acc;
       },
       {} as Record<string, typeof TIMEZONES>
@@ -251,13 +232,14 @@ export function TimezonePreferences() {
             <div className="rounded-lg border border-muted/50 bg-muted/20 p-3">
               <Button
                 className="w-full justify-start gap-2"
-                onClick={() => setPreferences({ ...preferences, timezone: "auto" })}
+                onClick={() => setLocalPreferences({ ...localPreferences, timezone: "auto" })}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setLocalPreferences({ ...localPreferences, timezone: "auto" }); }}
                 size="sm"
-                variant={preferences.timezone === "auto" ? "default" : "outline"}
+                variant={localPreferences.timezone === "auto" ? "default" : "outline"}
               >
                 <GlobeIcon className="h-4 w-4" size={16} weight="duotone" />
                 Auto-detect ({getBrowserTimezone()})
-                {preferences.timezone === "auto" && (
+                {localPreferences.timezone === "auto" && (
                   <CheckCircleIcon className="ml-auto h-4 w-4" size={16} weight="duotone" />
                 )}
               </Button>
@@ -275,15 +257,16 @@ export function TimezonePreferences() {
                           className={cn(
                             "mx-1 my-0.5 cursor-pointer rounded-md px-3 py-2 text-sm transition-all duration-200",
                             "hover:bg-accent hover:text-accent-foreground",
-                            preferences.timezone === tz.region &&
-                              "bg-primary text-primary-foreground"
+                            localPreferences.timezone === tz.region &&
+                            "bg-primary text-primary-foreground"
                           )}
                           key={tz.region}
-                          onClick={() => setPreferences({ ...preferences, timezone: tz.region })}
+                          onClick={() => setLocalPreferences({ ...localPreferences, timezone: tz.region })}
+                          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setLocalPreferences({ ...localPreferences, timezone: tz.region }); }}
                         >
                           <div className="flex items-center justify-between">
                             <span>{tz.label}</span>
-                            {preferences.timezone === tz.region && (
+                            {localPreferences.timezone === tz.region && (
                               <CheckCircleIcon className="h-4 w-4" size={16} weight="duotone" />
                             )}
                           </div>
@@ -306,19 +289,20 @@ export function TimezonePreferences() {
                   className={cn(
                     "cursor-pointer rounded-lg border border-muted/50 p-3 transition-all duration-200",
                     "hover:border-accent-foreground/20 hover:bg-accent",
-                    preferences.dateFormat === option.value
+                    localPreferences.dateFormat === option.value
                       ? "border-primary bg-primary/5 ring-1 ring-primary/20"
                       : ""
                   )}
                   key={option.value}
-                  onClick={() => setPreferences({ ...preferences, dateFormat: option.value })}
+                  onClick={() => setLocalPreferences({ ...localPreferences, dateFormat: option.value })}
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setLocalPreferences({ ...localPreferences, dateFormat: option.value }); }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium text-sm">{option.label}</div>
                       <div className="mt-1 text-muted-foreground text-xs">{option.value}</div>
                     </div>
-                    {preferences.dateFormat === option.value && (
+                    {localPreferences.dateFormat === option.value && (
                       <CheckCircleIcon
                         className="h-4 w-4 text-primary"
                         size={16}
@@ -341,19 +325,20 @@ export function TimezonePreferences() {
                   className={cn(
                     "cursor-pointer rounded-lg border border-muted/50 p-3 transition-all duration-200",
                     "hover:border-accent-foreground/20 hover:bg-accent",
-                    preferences.timeFormat === option.value
+                    localPreferences.timeFormat === option.value
                       ? "border-primary bg-primary/5 ring-1 ring-primary/20"
                       : ""
                   )}
                   key={option.value}
-                  onClick={() => setPreferences({ ...preferences, timeFormat: option.value })}
+                  onClick={() => setLocalPreferences({ ...localPreferences, timeFormat: option.value })}
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setLocalPreferences({ ...localPreferences, timeFormat: option.value }); }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium text-sm">{option.label}</div>
                       <div className="mt-1 text-muted-foreground text-xs">{option.value}</div>
                     </div>
-                    {preferences.timeFormat === option.value && (
+                    {localPreferences.timeFormat === option.value && (
                       <CheckCircleIcon
                         className="h-4 w-4 text-primary"
                         size={16}
