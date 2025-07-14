@@ -241,73 +241,104 @@ export const goalsRouter = createTRPCRouter({
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'Goal not found' });
             }
             const goalData = goal[0];
+            const steps = [{
+                type: goalData.type,
+                target: goalData.target,
+                name: goalData.name,
+            }];
             const filters = goalData.filters as Array<{ field: string; operator: string; value: string | string[] }> || [];
-            const params: Record<string, unknown> = {
-                websiteId: input.websiteId,
-                startDate,
-                endDate,
-            };
-            let goalWhereCondition = '';
-            if (goalData.type === 'PAGE_VIEW') {
-                // Direct interpolation for path
-                const targetPath = (goalData.target || '').replace(/'/g, "''");
-                goalWhereCondition = `event_name = 'screen_view' AND (path = '${targetPath}' OR path LIKE '%${targetPath}%')`;
-            } else if (goalData.type === 'EVENT') {
-                // Direct interpolation for event name
-                const eventName = (goalData.target || '').replace(/'/g, "''");
-                goalWhereCondition = `event_name = '${eventName}'`;
+            const filterConditions = buildFilterConditions(filters, 'f', {});
+
+            // Build the step query (copied from funnels.ts, but only one step)
+            let whereCondition = '';
+            if (steps[0].type === 'PAGE_VIEW') {
+                const targetPath = steps[0].target.replace(/'/g, "''");
+                whereCondition = `event_name = 'screen_view' AND (path = '${targetPath}' OR path LIKE '%${targetPath}%')`;
+            } else if (steps[0].type === 'EVENT') {
+                const eventName = steps[0].target.replace(/'/g, "''");
+                whereCondition = `event_name = '${eventName}'`;
             }
-            const filterConditions = buildFilterConditions(filters, 'f', params);
-            const analyticsQuery = `
-                WITH 
-                total_sessions AS (
-                    SELECT COUNT(DISTINCT session_id) as total_users
-                    FROM analytics.events
-                    WHERE client_id = {websiteId:String}
-                        AND time >= parseDateTimeBestEffort({startDate:String})
-                        AND time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))${filterConditions}
-                ),
-                goal_sessions AS (
-                    SELECT COUNT(DISTINCT session_id) as goal_users
-                    FROM analytics.events
-                    WHERE client_id = {websiteId:String}
-                        AND time >= parseDateTimeBestEffort({startDate:String})
-                        AND time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
-                        AND ${goalWhereCondition}${filterConditions}
+            const stepQuery = `
+                SELECT 
+                    1 as step_number,
+                    '${steps[0].name.replace(/'/g, "''")}' as step_name,
+                    session_id,
+                    MIN(time) as first_occurrence
+                FROM analytics.events
+                WHERE client_id = '${input.websiteId}'
+                    AND time >= parseDateTimeBestEffort('${startDate}')
+                    AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+                    AND ${whereCondition}${filterConditions}
+                GROUP BY session_id`;
+            const analysisQuery = `
+                WITH all_step_events AS (
+                    ${stepQuery}
                 )
                 SELECT 
-                    total_sessions.total_users,
-                    goal_sessions.goal_users,
-                    CASE 
-                        WHEN total_sessions.total_users > 0 
-                        THEN ROUND((goal_sessions.goal_users * 100.0) / total_sessions.total_users, 2)
-                        ELSE 0.0 
-                    END as conversion_rate
-                FROM total_sessions, goal_sessions
+                    step_number,
+                    step_name,
+                    session_id,
+                    first_occurrence
+                FROM all_step_events
+                ORDER BY session_id, first_occurrence
             `;
-            const results = await chQuery<{
-                total_users: number;
-                goal_users: number;
-                conversion_rate: number;
-            }>(analyticsQuery, params);
-            const result = results[0] || { total_users: 0, goal_users: 0, conversion_rate: 0 };
+            const rawResults = await chQuery<{
+                step_number: number;
+                step_name: string;
+                session_id: string;
+                first_occurrence: number;
+            }>(analysisQuery);
+
+            // Process the results to calculate analytics
+            const sessionEvents = new Map<string, Array<{ step_number: number, step_name: string, first_occurrence: number }>>();
+            for (const event of rawResults) {
+                if (!sessionEvents.has(event.session_id)) {
+                    sessionEvents.set(event.session_id, []);
+                }
+                sessionEvents.get(event.session_id)?.push({
+                    step_number: event.step_number,
+                    step_name: event.step_name,
+                    first_occurrence: event.first_occurrence
+                });
+            }
+            // Calculate analytics
+            const stepCounts = new Map<number, Set<string>>();
+            for (const [sessionId, events] of sessionEvents) {
+                events.sort((a, b) => a.first_occurrence - b.first_occurrence);
+                let currentStep = 1;
+                for (const event of events) {
+                    if (event.step_number === currentStep) {
+                        if (!stepCounts.has(event.step_number)) {
+                            stepCounts.set(event.step_number, new Set());
+                        }
+                        stepCounts.get(event.step_number)?.add(sessionId);
+                        currentStep++;
+                    }
+                }
+            }
+            // Build analytics results
+            const users = stepCounts.get(1)?.size || 0;
+            const total_users = users;
+            const conversion_rate = 100.0;
+            const dropoffs = 0;
+            const dropoff_rate = 0;
+            const analyticsResults = [{
+                step_number: 1,
+                step_name: steps[0].name,
+                users,
+                total_users,
+                conversion_rate,
+                dropoffs,
+                dropoff_rate,
+                avg_time_to_complete: 0
+            }];
             return {
-                overall_conversion_rate: result.conversion_rate,
-                total_users_entered: result.total_users,
-                total_users_completed: result.goal_users,
+                overall_conversion_rate: users > 0 ? 100.0 : 0,
+                total_users_entered: total_users,
+                total_users_completed: users,
                 avg_completion_time: 0,
                 avg_completion_time_formatted: '0s',
-                steps_analytics: [{
-                    step_number: 1,
-                    step_name: goalData.name,
-                    users: result.goal_users,
-                    total_users: result.total_users,
-                    conversion_rate: result.conversion_rate,
-                    dropoffs: result.total_users - result.goal_users,
-                    dropoff_rate: result.total_users > 0 ?
-                        Math.round(((result.total_users - result.goal_users) / result.total_users) * 100 * 100) / 100 : 0,
-                    avg_time_to_complete: 0
-                }]
+                steps_analytics: analyticsResults
             };
         }),
     // Bulk analytics for multiple goals
@@ -333,98 +364,99 @@ export const goalsRouter = createTRPCRouter({
                 ))
                 .orderBy(desc(goals.createdAt));
             const analyticsResults: Record<string, any> = {};
-
-            for (const [idx, goalData] of goalsList.entries()) {
+            for (const goalData of goalsList) {
+                const steps = [{
+                    type: goalData.type,
+                    target: goalData.target,
+                    name: goalData.name,
+                }];
                 const filters = goalData.filters as Array<{ field: string; operator: string; value: string | string[] }> || [];
-                const params: Record<string, unknown> = {
-                    websiteId: input.websiteId,
-                    startDate,
-                    endDate,
-                };
-                let goalWhereCondition = '';
-                if (goalData.type === 'PAGE_VIEW') {
-                    // Direct interpolation for path
-                    const targetPath = (goalData.target || '').replace(/'/g, "''");
-                    goalWhereCondition = `event_name = 'screen_view' AND (path = '${targetPath}' OR path LIKE '%${targetPath}%')`;
-                } else if (goalData.type === 'EVENT') {
-                    // Direct interpolation for event name
-                    const eventName = (goalData.target || '').replace(/'/g, "''");
-                    goalWhereCondition = `event_name = '${eventName}'`;
+                const filterConditions = buildFilterConditions(filters, 'f', {});
+                let whereCondition = '';
+                if (steps[0].type === 'PAGE_VIEW') {
+                    const targetPath = steps[0].target.replace(/'/g, "''");
+                    whereCondition = `event_name = 'screen_view' AND (path = '${targetPath}' OR path LIKE '%${targetPath}%')`;
+                } else if (steps[0].type === 'EVENT') {
+                    const eventName = steps[0].target.replace(/'/g, "''");
+                    whereCondition = `event_name = '${eventName}'`;
                 }
-
-                // If no goal condition, skip this goal
-                if (!goalWhereCondition) {
-                    analyticsResults[goalData.id] = {
-                        overall_conversion_rate: 0,
-                        total_users_entered: 0,
-                        total_users_completed: 0,
-                        avg_completion_time: 0,
-                        avg_completion_time_formatted: '0s',
-                        steps_analytics: [{
-                            step_number: 1,
-                            step_name: goalData.name,
-                            users: 0,
-                            total_users: 0,
-                            conversion_rate: 0,
-                            dropoffs: 0,
-                            dropoff_rate: 0,
-                            avg_time_to_complete: 0
-                        }]
-                    };
-                    continue;
-                }
-
-                const filterConditions = buildFilterConditions(filters, `f${idx}`, params);
-                const analyticsQuery = `
-                    WITH 
-                    total_sessions AS (
-                        SELECT COUNT(DISTINCT session_id) as total_users
-                        FROM analytics.events
-                        WHERE client_id = {websiteId:String}
-                            AND time >= parseDateTimeBestEffort({startDate:String})
-                            AND time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))${filterConditions}
-                    ),
-                    goal_sessions AS (
-                        SELECT COUNT(DISTINCT session_id) as goal_users
-                        FROM analytics.events
-                        WHERE client_id = {websiteId:String}
-                            AND time >= parseDateTimeBestEffort({startDate:String})
-                            AND time <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
-                            AND ${goalWhereCondition}${filterConditions}
+                const stepQuery = `
+                    SELECT 
+                        1 as step_number,
+                        '${steps[0].name.replace(/'/g, "''")}' as step_name,
+                        session_id,
+                        MIN(time) as first_occurrence
+                    FROM analytics.events
+                    WHERE client_id = '${input.websiteId}'
+                        AND time >= parseDateTimeBestEffort('${startDate}')
+                        AND time <= parseDateTimeBestEffort('${endDate} 23:59:59')
+                        AND ${whereCondition}${filterConditions}
+                    GROUP BY session_id`;
+                const analysisQuery = `
+                    WITH all_step_events AS (
+                        ${stepQuery}
                     )
                     SELECT 
-                        total_sessions.total_users,
-                        goal_sessions.goal_users,
-                        CASE 
-                            WHEN total_sessions.total_users > 0 
-                            THEN ROUND((goal_sessions.goal_users * 100.0) / total_sessions.total_users, 2)
-                            ELSE 0.0 
-                        END as conversion_rate
-                    FROM total_sessions, goal_sessions
+                        step_number,
+                        step_name,
+                        session_id,
+                        first_occurrence
+                    FROM all_step_events
+                    ORDER BY session_id, first_occurrence
                 `;
-                const results = await chQuery<{
-                    total_users: number;
-                    goal_users: number;
-                    conversion_rate: number;
-                }>(analyticsQuery, params);
-                const result = results[0] || { total_users: 0, goal_users: 0, conversion_rate: 0 };
+                const rawResults = await chQuery<{
+                    step_number: number;
+                    step_name: string;
+                    session_id: string;
+                    first_occurrence: number;
+                }>(analysisQuery);
+                const sessionEvents = new Map<string, Array<{ step_number: number, step_name: string, first_occurrence: number }>>();
+                for (const event of rawResults) {
+                    if (!sessionEvents.has(event.session_id)) {
+                        sessionEvents.set(event.session_id, []);
+                    }
+                    sessionEvents.get(event.session_id)?.push({
+                        step_number: event.step_number,
+                        step_name: event.step_name,
+                        first_occurrence: event.first_occurrence
+                    });
+                }
+                const stepCounts = new Map<number, Set<string>>();
+                for (const [sessionId, events] of sessionEvents) {
+                    events.sort((a, b) => a.first_occurrence - b.first_occurrence);
+                    let currentStep = 1;
+                    for (const event of events) {
+                        if (event.step_number === currentStep) {
+                            if (!stepCounts.has(event.step_number)) {
+                                stepCounts.set(event.step_number, new Set());
+                            }
+                            stepCounts.get(event.step_number)?.add(sessionId);
+                            currentStep++;
+                        }
+                    }
+                }
+                const users = stepCounts.get(1)?.size || 0;
+                const total_users = users;
+                const conversion_rate = 100.0;
+                const dropoffs = 0;
+                const dropoff_rate = 0;
+                const analyticsStep = {
+                    step_number: 1,
+                    step_name: steps[0].name,
+                    users,
+                    total_users,
+                    conversion_rate,
+                    dropoffs,
+                    dropoff_rate,
+                    avg_time_to_complete: 0
+                };
                 analyticsResults[goalData.id] = {
-                    overall_conversion_rate: result.conversion_rate,
-                    total_users_entered: result.total_users,
-                    total_users_completed: result.goal_users,
+                    overall_conversion_rate: users > 0 ? 100.0 : 0,
+                    total_users_entered: total_users,
+                    total_users_completed: users,
                     avg_completion_time: 0,
                     avg_completion_time_formatted: '0s',
-                    steps_analytics: [{
-                        step_number: 1,
-                        step_name: goalData.name,
-                        users: result.goal_users,
-                        total_users: result.total_users,
-                        conversion_rate: result.conversion_rate,
-                        dropoffs: result.total_users - result.goal_users,
-                        dropoff_rate: result.total_users > 0 ?
-                            Math.round(((result.total_users - result.goal_users) / result.total_users) * 100 * 100) / 100 : 0,
-                        avg_time_to_complete: 0
-                    }]
+                    steps_analytics: [analyticsStep]
                 };
             }
             return analyticsResults;
