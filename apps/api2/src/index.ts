@@ -30,3 +30,13 @@ export default {
   fetch: app.fetch,
   port: 3001
 }
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received, shutting down...');
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received, shutting down...');
+  process.exit(0);
+});

@@ -55,7 +55,7 @@ export class SimpleQueryBuilder {
 
     compile(): CompiledQuery {
         if (this.config.customSql) {
-            const sql = this.config.customSql(
+            const result = this.config.customSql(
                 this.request.projectId,
                 this.formatDateTime(this.request.from),
                 this.formatDateTime(this.request.to),
@@ -64,7 +64,11 @@ export class SimpleQueryBuilder {
                 this.request.limit,
                 this.request.offset
             );
-            return { sql, params: {} };
+
+            if (typeof result === 'string') {
+                return { sql: result, params: {} };
+            }
+            return { sql: result.sql, params: result.params };
         }
 
         return this.buildStandardQuery();

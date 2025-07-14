@@ -84,6 +84,23 @@ const sizeMap = {
 export function PublicIcon({ type, name, size = "md", className, fallback }: PublicIconProps) {
   const iconSize = typeof size === "number" ? size : sizeMap[size];
 
+  // Handle null/undefined name
+  if (!name) {
+    return fallback ? (
+      <>{fallback}</>
+    ) : (
+      <div
+        className={cn(
+          "flex items-center justify-center rounded bg-muted font-medium text-muted-foreground text-xs",
+          className
+        )}
+        style={{ width: iconSize, height: iconSize }}
+      >
+        ?
+      </div>
+    );
+  }
+
   const normalizedName = name.replace(/\s+/g, "").replace(/[^a-zA-Z0-9]/g, "");
 
   const folder = type === "browser" ? "browsers" : "operating-systems";
