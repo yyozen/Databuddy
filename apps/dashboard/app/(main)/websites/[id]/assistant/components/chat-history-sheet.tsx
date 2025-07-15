@@ -1,14 +1,14 @@
 "use client";
 
 import {
-    Clock,
-    Download,
-    History,
-    MessageSquare,
-    MoreVertical,
-    Search,
-    Trash2,
-} from "lucide-react";
+    ClockIcon,
+    DownloadIcon,
+    ChatIcon,
+    ImageSquareIcon,
+    DotsThreeOutlineVerticalIcon,
+    MagnifyingGlassIcon,
+    TrashIcon,
+} from "@phosphor-icons/react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import {
@@ -178,7 +178,7 @@ export function ChatHistorySheet({
                     <SheetHeader className="space-y-3 border-border/50 border-b pb-6">
                         <div className="flex items-center gap-3">
                             <div className="rounded-xl border border-primary/20 bg-primary/10 p-3">
-                                <History className="h-6 w-6 text-primary" />
+                                <ChatIcon className="h-6 w-6 text-primary" />
                             </div>
                             <div>
                                 <SheetTitle className="font-semibold text-foreground text-xl">Chat History</SheetTitle>
@@ -192,7 +192,7 @@ export function ChatHistorySheet({
                     <div className="space-y-6 pt-6">
                         <div className="space-y-2">
                             <div className="relative">
-                                <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+                                <MagnifyingGlassIcon className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
                                 <Input
                                     className="pl-9 rounded border-border/50 focus:border-primary/50 focus:ring-primary/20"
                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -220,91 +220,88 @@ export function ChatHistorySheet({
                                 </div>
                             ) : filteredChats.length === 0 ? (
                                 <div className="py-8 text-center">
-                                    <MessageSquare className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                                    <ChatIcon className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
                                     <p className="text-muted-foreground text-sm">
                                         {searchQuery ? "No chats match your search" : "No chat history yet"}
                                     </p>
                                 </div>
                             ) : (
-                                <div className="space-y-2">
+                                <div className="space-y-4">
                                     {filteredChats.map((chat) => (
                                         <button
                                             className={cn(
-                                                "group cursor-pointer rounded border p-3 transition-all duration-200",
-                                                "hover:border-primary/20 hover:bg-muted/50",
-                                                chat.websiteId === websiteId && "border-primary/30 bg-primary/5"
+                                                "group w-full text-left transition-all duration-200",
+                                                "rounded-xl bg-background border border-border/50 shadow-sm p-4 flex items-start gap-4",
+                                                "hover:border-primary/30 hover:bg-primary/5",
+                                                chat.websiteId === websiteId && "border-primary/40 bg-primary/10"
                                             )}
                                             key={chat.websiteId}
                                             onClick={(e: React.MouseEvent) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-                                                console.log('Chat clicked:', chat.websiteId, chat.websiteName);
                                                 handleSelectChat(chat.websiteId, chat.websiteName);
                                             }}
                                             onKeyDown={(e: React.KeyboardEvent) => {
                                                 if (e.key === "Enter" || e.key === " ") {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    console.log('Chat selected via keyboard:', chat.websiteId, chat.websiteName);
                                                     handleSelectChat(chat.websiteId, chat.websiteName);
                                                 }
                                             }}
                                             type="button"
                                         >
-                                            <div className="flex items-start gap-3">
-                                                <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-primary/10">
-                                                    <MessageSquare className="h-4 w-4 text-primary" />
+                                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                                                <ChatIcon className="h-5 w-5 text-primary" />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <h3 className="truncate font-semibold text-base text-foreground">
+                                                        {chat.websiteName || `Website ${chat.websiteId.slice(0, 8)}`}
+                                                    </h3>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                className="h-7 w-7 opacity-0 group-hover:opacity-100"
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                                                            >
+                                                                <DotsThreeOutlineVerticalIcon className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem
+                                                                onClick={(e: React.MouseEvent) => {
+                                                                    e.stopPropagation();
+                                                                    handleExportChat(chat.websiteId, chat.websiteName);
+                                                                }}
+                                                            >
+                                                                <DownloadIcon className="mr-2 h-4 w-4" />
+                                                                Export Chat
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                                                onClick={(e: React.MouseEvent) => {
+                                                                    e.stopPropagation();
+                                                                    setDeleteConfirm(chat.websiteId);
+                                                                }}
+                                                            >
+                                                                <TrashIcon className="mr-2 h-4 w-4" />
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="mb-1 flex items-center justify-between">
-                                                        <h3 className="truncate font-medium text-sm">
-                                                            {chat.websiteName || `Website ${chat.websiteId.slice(0, 8)}`}
-                                                        </h3>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button
-                                                                    className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                                                                    size="icon"
-                                                                    variant="ghost"
-                                                                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                                                                >
-                                                                    <MoreVertical className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end" className="w-48">
-                                                                <DropdownMenuItem
-                                                                    onClick={(e: React.MouseEvent) => {
-                                                                        e.stopPropagation();
-                                                                        handleExportChat(chat.websiteId, chat.websiteName);
-                                                                    }}
-                                                                >
-                                                                    <Download className="mr-2 h-4 w-4" />
-                                                                    Export Chat
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                                                    onClick={(e: React.MouseEvent) => {
-                                                                        e.stopPropagation();
-                                                                        setDeleteConfirm(chat.websiteId);
-                                                                    }}
-                                                                >
-                                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                                    Delete
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </div>
-                                                    <p className="truncate text-muted-foreground text-sm">
-                                                        {chat.lastMessage}
-                                                    </p>
-                                                    <div className="mt-2 flex items-center gap-2 text-muted-foreground/80 text-xs">
-                                                        <Clock className="h-3 w-3" />
-                                                        <span>{formatRelativeTime(chat.lastUpdated)}</span>
-                                                        <Badge variant="outline" className="px-1.5 py-0">
-                                                            {chat.messageCount} msg
-                                                        </Badge>
-                                                    </div>
+                                                <p className="truncate text-muted-foreground text-sm mb-1">
+                                                    {chat.lastMessage}
+                                                </p>
+                                                <div className="flex items-center gap-3 text-muted-foreground/80 text-xs mt-1">
+                                                    <ClockIcon className="h-3 w-3" />
+                                                    <span>{formatRelativeTime(chat.lastUpdated)}</span>
+                                                    <Badge variant="outline" className="px-1.5 py-0">
+                                                        {chat.messageCount} msg
+                                                    </Badge>
                                                 </div>
                                             </div>
                                         </button>

@@ -11,7 +11,6 @@ import {
   inputValueAtom,
   isLoadingAtom,
   isRateLimitedAtom,
-  isInitializedAtom,
   scrollAreaRefAtom,
 } from '@/stores/jotai/assistantAtoms';
 
@@ -52,7 +51,6 @@ export function useChat() {
   const [inputValue, setInputValue] = useAtom(inputValueAtom);
   const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
   const [isRateLimited, setIsRateLimited] = useAtom(isRateLimitedAtom);
-  const [isInitialized, setIsInitialized] = useAtom(isInitializedAtom);
   const [scrollAreaRef] = useAtom(scrollAreaRefAtom);
   const rateLimitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const chatDB = getChatDB();
@@ -86,7 +84,6 @@ export function useChat() {
 
           // Update chat metadata
           await chatDB.createOrUpdateChat(websiteId || '', websiteData?.name || '');
-          setIsInitialized(true);
         }
       } catch (error) {
         console.error("Failed to initialize chat from IndexedDB:", error);
@@ -100,7 +97,6 @@ export function useChat() {
             timestamp: new Date(),
           };
           setMessages([welcomeMessage]);
-          setIsInitialized(true);
         }
       }
     };
@@ -110,7 +106,7 @@ export function useChat() {
     return () => {
       isMounted = false;
     };
-  }, [websiteId, websiteData?.name, chatDB, setMessages, setIsInitialized]);
+  }, [websiteId, websiteData?.name, chatDB, setMessages]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -144,7 +140,7 @@ export function useChat() {
   const sendMessage = useCallback(
     async (content?: string) => {
       const messageContent = content || inputValue.trim();
-      if (!messageContent || isLoading || isRateLimited || !isInitialized) return;
+      if (!messageContent || isLoading || isRateLimited) return;
 
       const userMessage: Message = {
         id: Date.now().toString(),
@@ -346,7 +342,6 @@ export function useChat() {
       inputValue,
       isLoading,
       isRateLimited,
-      isInitialized,
       websiteId,
       messages,
       scrollToBottom,
@@ -412,10 +407,10 @@ export function useChat() {
     setInputValue,
     isLoading,
     isRateLimited,
-    isInitialized,
     scrollAreaRef,
     sendMessage,
     handleKeyPress,
     resetChat,
+    scrollToBottom,
   };
 }

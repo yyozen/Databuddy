@@ -4,12 +4,7 @@ import React, { Suspense } from "react";
 import { cn } from "@/lib/utils";
 import { useAtom } from 'jotai';
 import {
-  websiteIdAtom,
-  websiteDataAtom,
-  dateRangeAtom,
   messagesAtom,
-  isLoadingAtom,
-  isInitializedAtom,
   currentMessageAtom,
 } from '@/stores/jotai/assistantAtoms';
 import ChatSection, { ChatSkeleton } from "./chat-section";
@@ -17,15 +12,9 @@ import VisualizationSection, { VisualizationSkeleton } from "./visualization-sec
 import type { Message } from "../types/message";
 
 export default function AIAssistantMain() {
-  const [websiteId, setWebsiteId] = useAtom(websiteIdAtom);
-  const [websiteData, setWebsiteData] = useAtom(websiteDataAtom);
-  const [dateRange, setDateRange] = useAtom(dateRangeAtom);
   const [messages] = useAtom(messagesAtom);
-  const [isLoading] = useAtom(isLoadingAtom);
-  const [isInitialized] = useAtom(isInitializedAtom);
   const [, setCurrentMessage] = useAtom(currentMessageAtom);
 
-  // Find latest visualization message and query message
   const latestVisualizationMessage = messages
     .slice()
     .reverse()
@@ -67,13 +56,9 @@ export default function AIAssistantMain() {
               shouldShowVisualization ? "lg:flex-[0.6]" : "flex-1"
             )}
           >
-            {!websiteData ? (
-              <ChatSkeleton />
-            ) : (
-              <Suspense fallback={<ChatSkeleton />}>
-                <ChatSection />
-              </Suspense>
-            )}
+            <Suspense fallback={<ChatSkeleton />}>
+              <ChatSection />
+            </Suspense>
           </div>
           {shouldShowVisualization && (
             <div className="flex flex-[0.4] flex-col overflow-hidden">

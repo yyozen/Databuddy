@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { ChevronDown, FlaskConical, Star, Check } from "lucide-react";
+import { Star, Flask, Check, CaretDown } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -14,23 +14,21 @@ import type { AssistantModel } from "../types/model";
 import { MODEL_CONFIGS } from "../types/model";
 
 const modelIcons: Record<string, React.ReactNode> = {
-    chat: <Star className="h-4 w-4 text-yellow-400" />, // Use Star for default
-    agent: <FlaskConical className="h-4 w-4 text-blue-400" />, // Flask for experimental/agent
-    "agent-max": <FlaskConical className="h-4 w-4 text-purple-400" />, // Flask for max
+    chat: <Star className="h-4 w-4 text-yellow-400" weight="duotone" />, // Use Star for default
+    agent: <Flask className="h-4 w-4 text-blue-400" weight="duotone" />, // Flask for experimental/agent
+    "agent-max": <Flask className="h-4 w-4 text-purple-400" weight="duotone" />, // Flask for max
 };
 
 interface ModelSelectorProps {
     selectedModel: AssistantModel;
     onModelChange: (model: AssistantModel) => void;
     disabled?: boolean;
-    className?: string;
 }
 
 export function ModelSelector({
     selectedModel,
     onModelChange,
     disabled = false,
-    className,
 }: ModelSelectorProps) {
     const currentConfig = MODEL_CONFIGS[selectedModel];
 
@@ -44,13 +42,12 @@ export function ModelSelector({
                     className={cn(
                         "h-8 px-3 text-xs font-semibold border border-border/50 bg-background/70",
                         "hover:bg-accent hover:text-accent-foreground",
-                        "transition-colors duration-200",
-                        className
+                        "transition-colors duration-200"
                     )}
                 >
                     {modelIcons[selectedModel]}
                     <span className="ml-2 mr-1">{currentConfig.name}</span>
-                    <ChevronDown className="h-3 w-3 opacity-50" />
+                    <CaretDown className="h-3 w-3 opacity-50" weight="duotone" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-background/95 border border-border/60 shadow-xl p-1">
@@ -75,7 +72,7 @@ export function ModelSelector({
                             </div>
                         </div>
                         {selectedModel === config.id && (
-                            <Check className="h-4 w-4 text-primary ml-2" />
+                            <Check className="h-4 w-4 text-primary ml-2" weight="duotone" />
                         )}
                     </DropdownMenuItem>
                 ))}

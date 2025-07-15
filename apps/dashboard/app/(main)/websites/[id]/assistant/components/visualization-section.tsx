@@ -2,16 +2,15 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import {
-  AreaChart as AreaChartIcon,
-  BarChart as BarChartIcon,
+  ChartBar,
+  ChartLine,
+  ChartPie,
   Database,
-  Filter,
-  LineChart as LineChartIcon,
-  PieChart as PieChartIcon,
-  Radar,
-  ScatterChart as ScatterChartIcon,
-  TrendingUp,
-} from "lucide-react";
+  Funnel,
+  TrendUp,
+  DotsThreeOutlineVertical, // for scatter
+  Compass, // for radar
+} from "@phosphor-icons/react";
 import React, { useMemo } from "react";
 import { DataTable } from "@/components/analytics/data-table";
 import {
@@ -19,7 +18,7 @@ import {
   Bar,
   CartesianGrid,
   Cell,
-  Funnel,
+  Funnel as RechartsFunnel,
   FunnelChart,
   Legend,
   Line,
@@ -72,25 +71,26 @@ const CHART_COLORS = [
 const getChartIcon = (chartType: string) => {
   switch (chartType?.toLowerCase()) {
     case "bar":
-      return <BarChartIcon className="h-3 w-3" />;
+      return <ChartBar className="h-3 w-3" />;
     case "line":
-      return <LineChartIcon className="h-3 w-3" />;
+    case "area": // No ChartArea, use ChartLine
+      return <ChartLine className="h-3 w-3" />;
     case "pie":
-      return <PieChartIcon className="h-3 w-3" />;
-    case "area":
-      return <AreaChartIcon className="h-3 w-3" />;
+      return <ChartPie className="h-3 w-3" />;
     case "stacked_bar":
-      return <BarChartIcon className="h-3 w-3" />;
+      return <ChartBar className="h-3 w-3" />;
     case "multi_line":
-      return <LineChartIcon className="h-3 w-3" />;
+      return <ChartLine className="h-3 w-3" />;
     case "scatter":
-      return <ScatterChartIcon className="h-3 w-3" />;
+      // TODO: Replace with a better scatter icon if available
+      return <DotsThreeOutlineVertical className="h-3 w-3" />;
     case "radar":
-      return <Radar className="h-3 w-3" />;
+      // TODO: Replace with a better radar icon if available
+      return <Compass className="h-3 w-3" />;
     case "funnel":
-      return <Filter className="h-3 w-3" />;
+      return <Funnel className="h-3 w-3" />;
     default:
-      return <BarChartIcon className="h-3 w-3" />;
+      return <ChartBar className="h-3 w-3" />;
   }
 };
 
@@ -442,7 +442,7 @@ export default function VisualizationSection() {
           return (
             <FunnelChart>
               <Tooltip />
-              <Funnel
+              <RechartsFunnel
                 dataKey="users"
                 data={chartDisplayConfig.chartDataForDisplay}
                 isAnimationActive
@@ -450,7 +450,7 @@ export default function VisualizationSection() {
                 {chartDisplayConfig.chartDataForDisplay.map((entry, index) => (
                   <Cell key={`cell-${entry.step}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                 ))}
-              </Funnel>
+              </RechartsFunnel>
             </FunnelChart>
           )
         default:
@@ -523,7 +523,7 @@ export default function VisualizationSection() {
         <div
           className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded transition-all duration-300 ${websiteData ? "bg-primary/10" : "bg-muted/20"}`}
         >
-          <TrendingUp
+          <TrendUp
             className={`h-4 w-4 transition-all duration-300 ${websiteData ? "text-primary" : "text-muted-foreground/60"}`}
           />
         </div>

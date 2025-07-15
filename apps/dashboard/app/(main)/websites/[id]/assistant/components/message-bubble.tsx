@@ -1,16 +1,16 @@
 "use client";
 
 import {
-  BarChart3,
-  Bot,
+  ChartBar,
+  Robot,
   Clock,
   Hash,
-  LineChart,
-  PieChart,
+  ChartLine,
+  ChartPie,
   User,
-  ChevronDown,
+  CaretDown,
   Brain,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { Message } from "../types/message";
@@ -28,13 +28,13 @@ interface MessageBubbleProps {
 const getChartIcon = (chartType: string) => {
   switch (chartType) {
     case "bar":
-      return <BarChart3 className="h-4 w-4" />;
+      return <ChartBar className="h-4 w-4" />;
     case "line":
-      return <LineChart className="h-4 w-4" />;
+      return <ChartLine className="h-4 w-4" />;
     case "pie":
-      return <PieChart className="h-4 w-4" />;
+      return <ChartPie className="h-4 w-4" />;
     default:
-      return <BarChart3 className="h-4 w-4" />;
+      return <ChartBar className="h-4 w-4" />;
   }
 };
 
@@ -64,8 +64,6 @@ function ThinkingStepsPreview({ steps }: { steps: string[] }) {
   return (
     <div className="mt-2 space-y-1 max-h-20 overflow-hidden">
       {visibleSteps.map((step, index) => {
-        // Remove the 🧠 emoji if it exists
-        const cleanStep = step.replace(/^🧠\s*/, '');
         const isAnimated = animatedSteps.has(index);
 
         return (
@@ -77,13 +75,13 @@ function ThinkingStepsPreview({ steps }: { steps: string[] }) {
             )}
           >
             <Clock className="mt-0.5 h-3 w-3 flex-shrink-0" />
-            <span className="leading-relaxed break-words">{cleanStep}</span>
+            <span className="leading-relaxed break-words">{step}</span>
           </div>
         );
       })}
       {steps.length > maxPreviewSteps && (
         <div className="flex items-center gap-2 py-1 pl-1 text-muted-foreground text-xs opacity-60">
-          <ChevronDown className="h-3 w-3" />
+          <CaretDown className="h-3 w-3" />
           <span>+{steps.length - maxPreviewSteps} more steps...</span>
         </div>
       )}
@@ -106,8 +104,6 @@ function ThinkingStepsAccordion({ steps }: { steps: string[] }) {
         <AccordionContent className="pt-2">
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {steps.map((step, index) => {
-              // Remove the 🧠 emoji if it exists
-              const cleanStep = step.replace(/^🧠\s*/, '');
 
               return (
                 <div
@@ -117,7 +113,7 @@ function ThinkingStepsAccordion({ steps }: { steps: string[] }) {
                   <div className="mt-0.5 h-3 w-3 flex-shrink-0 rounded-full bg-muted-foreground/20 flex items-center justify-center">
                     <span className="text-[10px] font-mono">{index + 1}</span>
                   </div>
-                  <span className="leading-relaxed">{cleanStep}</span>
+                  <span className="leading-relaxed">{step}</span>
                 </div>
               );
             })}
@@ -137,7 +133,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     return (
       <div className="flex w-full max-w-[85%] gap-3">
         <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border bg-muted shadow-sm">
-          <Bot className="h-4 w-4" />
+          <Robot className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1 rounded-lg border bg-muted px-4 py-3 shadow-sm">
           <div className="flex items-center gap-2 text-sm">
@@ -175,7 +171,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             : "order-1 border bg-muted"
         )}
       >
-        {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+        {isUser ? <User className="h-4 w-4" /> : <Robot className="h-4 w-4" />}
       </div>
 
       {/* Message Content */}

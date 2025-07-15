@@ -16,7 +16,6 @@ const AIAssistantMain = dynamic(() => import("./components/ai-assistant-main"), 
 function AIAssistantLoadingSkeleton() {
   return (
     <div className="flex flex-1 gap-3 overflow-hidden p-3">
-      {/* Chat Section Skeleton */}
       <div className="flex flex-[2_2_0%] flex-col overflow-hidden rounded-lg border bg-background shadow-sm">
         <div className="flex-shrink-0 border-b p-3">
           <Skeleton className="mb-1 h-5 w-32" />
@@ -36,8 +35,6 @@ function AIAssistantLoadingSkeleton() {
           <Skeleton className="h-9 w-full rounded-md" />
         </div>
       </div>
-
-      {/* Visualization Section Skeleton */}
       <div className="flex flex-[3_3_0%] flex-col overflow-hidden rounded-lg border bg-background shadow-sm">
         <div className="flex-shrink-0 border-b p-3">
           <Skeleton className="mb-1 h-5 w-32" />
@@ -53,43 +50,28 @@ function AIAssistantLoadingSkeleton() {
 export default function AssistantPage() {
   const { id } = useParams();
   const { data: websiteData, isLoading } = useWebsite(id as string);
-
   const [, setWebsiteId] = useAtom(websiteIdAtom);
   const [, setWebsiteData] = useAtom(websiteDataAtom);
   const [, setDateRange] = useAtom(dateRangeAtom);
 
-  // Initialize atoms with data
-  useEffect(() => {
-    if (id) {
-      setWebsiteId(id as string);
-    }
-  }, [id, setWebsiteId]);
-
-  useEffect(() => {
-    if (websiteData) {
-      setWebsiteData(websiteData);
-    }
-  }, [websiteData, setWebsiteData]);
-
-  useEffect(() => {
+  // Combine atom initialization
+  React.useEffect(() => {
+    if (id) setWebsiteId(id as string);
+    if (websiteData) setWebsiteData(websiteData);
     setDateRange({
       start_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
       end_date: new Date().toISOString(),
       granularity: "daily",
     });
-  }, [setDateRange]);
+  }, [id, setWebsiteId, websiteData, setWebsiteData, setDateRange]);
 
-  // This div structure is crucial for correct layout and scrolling
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-background to-muted/20 pt-16 md:pl-72">
-      {/* This inner div will handle the actual content area and padding */}
       <div className="flex flex-1 overflow-hidden p-3 sm:p-4 lg:p-6">
         {isLoading || !websiteData ? (
           <AIAssistantLoadingSkeleton />
         ) : (
-          <Suspense fallback={<AIAssistantLoadingSkeleton />}>
-            <AIAssistantMain />
-          </Suspense>
+          <AIAssistantMain />
         )}
       </div>
     </div>

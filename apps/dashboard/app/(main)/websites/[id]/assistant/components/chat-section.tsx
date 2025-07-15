@@ -1,19 +1,17 @@
 "use client";
 
 import {
-  BarChart3,
+  ChartBar,
   Brain,
   Hash,
-  History,
-  MessageSquare,
-  RotateCcw,
-  Send,
-  Sparkles,
-  TrendingUp,
-  Zap,
-} from "lucide-react";
+  ClockCounterClockwise,
+  PaperPlaneRight,
+  Sparkle,
+  TrendUp,
+  Lightning,
+  ChatIcon,
+} from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,15 +23,14 @@ import {
   inputValueAtom,
   isLoadingAtom,
   isRateLimitedAtom,
-  isInitializedAtom,
   scrollAreaRefAtom,
   modelAtom,
   websiteDataAtom,
   websiteIdAtom,
 } from '@/stores/jotai/assistantAtoms';
 import { ChatHistorySheet } from "./chat-history-sheet";
-import { LoadingMessage } from "./loading-message";
 import { MessageBubble } from "./message-bubble";
+import { useChat } from '../hooks/use-chat';
 import { ModelSelector } from "./model-selector";
 
 export function ChatSkeleton() {
@@ -82,13 +79,14 @@ export default function ChatSection() {
   const [inputValue, setInputValue] = useAtom(inputValueAtom);
   const [isLoading] = useAtom(isLoadingAtom);
   const [isRateLimited] = useAtom(isRateLimitedAtom);
-  const [isInitialized] = useAtom(isInitializedAtom);
   const [scrollAreaRef] = useAtom(scrollAreaRefAtom);
-  const [selectedModel, setSelectedModel] = useAtom(modelAtom);
+  const [selectedModel] = useAtom(modelAtom);
   const [websiteData] = useAtom(websiteDataAtom);
   const [websiteId] = useAtom(websiteIdAtom);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const { sendMessage, handleKeyPress, scrollToBottom, resetChat } = useChat();
   const [showChatHistory, setShowChatHistory] = useState(false);
 
   // Calculate message statistics
@@ -100,20 +98,43 @@ export default function ChatSection() {
   };
 
   const quickQuestions = [
-    { text: "Show me page views over the last 7 days", icon: TrendingUp, type: "chart" },
+    { text: "Show me page views over the last 7 days", icon: TrendUp, type: "chart" },
     { text: "How many visitors yesterday?", icon: Hash, type: "metric" },
-    { text: "Top traffic sources breakdown", icon: BarChart3, type: "chart" },
+    { text: "Top traffic sources breakdown", icon: ChartBar, type: "chart" },
     { text: "What's my bounce rate?", icon: Hash, type: "metric" },
   ];
 
-  // Focus input when component mounts
+  // Focus input when component mounts and after sending
   useEffect(() => {
     if (inputRef.current && !isLoading) {
       inputRef.current.focus();
     }
-  }, [isLoading]);
+  }, [isLoading, messages]);
+
+  useEffect(() => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'auto' });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   const hasMessages = messages.length > 1;
+
+  // Prevent sending empty/whitespace messages in send button and Enter key
+  const handleSend = () => {
+    if (!isLoading && !isRateLimited && inputValue.trim()) {
+      sendMessage(inputValue.trim());
+      scrollToBottom();
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded border bg-gradient-to-br from-background to-muted/10 shadow-lg backdrop-blur-sm">
@@ -134,9 +155,9 @@ export default function ChatSection() {
             <div className="flex items-center gap-2">
               <h2 className="truncate font-semibold text-lg">Nova</h2>
               {hasMessages && (
-                <Badge className="px-2 py-0.5 text-xs" variant="secondary">
+                <span className="px-2 py-0.5 text-xs text-muted-foreground">
                   {messageStats.total} {messageStats.total === 1 ? "query" : "queries"}
-                </Badge>
+                </span>
               )}
             </div>
             <p className="truncate text-muted-foreground text-sm">
@@ -149,30 +170,26 @@ export default function ChatSection() {
         <div className="flex items-center gap-2">
           <ModelSelector
             selectedModel={selectedModel}
-            onModelChange={setSelectedModel}
+            onModelChange={() => { }}
             disabled={isLoading}
           />
           <Button
-            className="h-9 w-9 flex-shrink-0 transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-            disabled={isLoading}
-            onClick={() => setShowChatHistory(true)}
-            size="icon"
-            title="Chat history"
+            className="h-9 w-9 flex-shrink-0"
             variant="ghost"
+            title="Open chat history"
+            onClick={() => setShowChatHistory(true)}
           >
-            <History className="h-4 w-4" />
+            <ChatIcon className="h-5 w-5" />
           </Button>
           <Button
             className="h-9 w-9 flex-shrink-0 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive"
             disabled={isLoading}
-            onClick={() => {
-              // onResetChat(); // This function is no longer passed as a prop
-            }}
+            onClick={resetChat}
             size="icon"
             title="Reset chat"
             variant="ghost"
           >
-            <RotateCcw
+            <ClockCounterClockwise
               className={cn(
                 "h-4 w-4 transition-transform duration-200",
                 isLoading && "animate-spin"
@@ -187,11 +204,11 @@ export default function ChatSection() {
         <ScrollArea className="h-full" ref={scrollAreaRef}>
           <div className="px-4 py-3">
             {/* Welcome State */}
-            {!(hasMessages || isLoading) && isInitialized && (
+            {!(hasMessages || isLoading) && (
               <div className="fade-in-0 slide-in-from-bottom-4 animate-in space-y-6 duration-500">
                 <div className="py-8 text-center">
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-accent/10">
-                    <Sparkles className="h-8 w-8 text-primary" />
+                    <Sparkle className="h-8 w-8 text-primary" />
                   </div>
                   <h3 className="mb-2 font-semibold text-lg">Welcome to Nova</h3>
                   <p className="mx-auto max-w-md text-muted-foreground text-sm">
@@ -202,7 +219,7 @@ export default function ChatSection() {
 
                 <div className="space-y-3">
                   <div className="mb-3 flex items-center gap-2 text-muted-foreground text-sm">
-                    <Zap className="h-4 w-4" />
+                    <Lightning className="h-4 w-4" />
                     <span>Try these examples:</span>
                   </div>
                   {quickQuestions.map((question, index) => (
@@ -213,10 +230,13 @@ export default function ChatSection() {
                         "border-dashed transition-all duration-300 hover:border-solid",
                         "fade-in-0 slide-in-from-left-2 animate-in"
                       )}
-                      disabled={isLoading || isRateLimited || !isInitialized}
+                      disabled={isLoading || isRateLimited}
                       key={question.text}
                       onClick={() => {
-                        // sendMessage(question.text); // This function is no longer passed as a prop
+                        if (!isLoading && !isRateLimited) {
+                          sendMessage(question.text);
+                          scrollToBottom();
+                        }
                       }}
                       size="sm"
                       style={{ animationDelay: `${index * 100}ms` }}
@@ -237,12 +257,13 @@ export default function ChatSection() {
 
             {/* Messages */}
             {hasMessages && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {messages.map((message) => (
-                  <div key={message.id}>
+                  <div key={message.id} className="mb-2">
                     <MessageBubble message={message} />
                   </div>
                 ))}
+                <div ref={bottomRef} />
               </div>
             )}
           </div>
@@ -252,8 +273,7 @@ export default function ChatSection() {
       {/* Enhanced Input Area */}
       <div className="flex-shrink-0 border-t bg-gradient-to-r from-muted/10 to-muted/5 p-4">
         <div className="relative">
-          <div
-            className={cn("flex gap-3")}
+          <div className={cn("flex gap-3")}
           >
             <Input
               className={cn(
@@ -273,6 +293,14 @@ export default function ChatSection() {
               }
               ref={inputRef}
               value={inputValue}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                } else {
+                  handleKeyPress(e);
+                }
+              }}
             />
             <Button
               className={cn(
@@ -281,15 +309,16 @@ export default function ChatSection() {
                 "hover:from-primary/90 hover:to-primary/70",
                 "disabled:from-muted disabled:to-muted",
                 "shadow-lg transition-all duration-200",
-                (!inputValue.trim() || isRateLimited || !isInitialized) &&
+                (!inputValue.trim() || isRateLimited) &&
                 !isLoading &&
                 "opacity-50"
               )}
-              disabled={!inputValue.trim() || isLoading || isRateLimited || !isInitialized}
+              disabled={!inputValue.trim() || isLoading || isRateLimited}
               size="icon"
               title="Send message"
+              onClick={handleSend}
             >
-              <Send
+              <PaperPlaneRight
                 className={cn(
                   "h-4 w-4",
                   inputValue.trim() && !isLoading && !isRateLimited && "scale-110"
@@ -301,14 +330,14 @@ export default function ChatSection() {
           {/* Helper text */}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Sparkles className="h-3 w-3 flex-shrink-0" />
+              <Sparkle className="h-3 w-3 flex-shrink-0" />
               <span>Ask about trends, comparisons, or specific metrics</span>
             </div>
             {hasMessages && (
               <div className="flex items-center gap-3 text-muted-foreground">
                 {messageStats.charts > 0 && (
                   <span className="flex items-center gap-1">
-                    <BarChart3 className="h-3 w-3" />
+                    <ChartBar className="h-3 w-3" />
                     {messageStats.charts}
                   </span>
                 )}
@@ -324,7 +353,6 @@ export default function ChatSection() {
         </div>
       </div>
 
-      {/* Chat History Sidebar */}
       <ChatHistorySheet
         isOpen={showChatHistory}
         onClose={() => setShowChatHistory(false)}
