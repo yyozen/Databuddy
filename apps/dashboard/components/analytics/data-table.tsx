@@ -13,12 +13,8 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronRight as ChevronRightIcon,
+  ArrowUpIcon,
   DatabaseIcon,
-  ListFilterIcon,
   Search,
   X,
 } from "lucide-react";
@@ -37,7 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { ArrowsOutSimpleIcon, XIcon, CaretDownIcon, CaretRightIcon } from "@phosphor-icons/react";
+import { ArrowsOutSimpleIcon, XIcon } from "@phosphor-icons/react";
 
 interface TabConfig<TData> {
   id: string;
@@ -297,9 +293,9 @@ function FullScreenTable<TData extends { name: string | number }, TValue>({
                               }}
                             >
                               {isExpanded ? (
-                                <CaretDownIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
                               ) : (
-                                <CaretRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
                               )}
                             </button>
                           )}
@@ -558,7 +554,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
           </div>
           <div className="flex items-center gap-2">
             {showSearch && (
-              <div className="relative w-full flex-shrink-0 sm:w-auto">
+              <div className="relative w-full flex-shrink-0 sm:w-auto border">
                 <Search className="-translate-y-1/2 absolute top-1/2 left-2 h-3 w-3 transform text-muted-foreground/50" />
                 <Input
                   aria-label={`Search ${title}`}
@@ -574,10 +570,10 @@ export function DataTable<TData extends { name: string | number }, TValue>({
                 type="button"
                 aria-label="Full screen"
                 title="Full screen"
-                className="ml-2 flex items-center justify-center rounded bg-muted/30 p-2 text-muted-foreground hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition"
+                className="ml-2 flex items-center justify-center rounded bg-muted/30 p-2 text-muted-foreground hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition border"
                 onClick={() => setFullScreen(true)}
               >
-                <ArrowsOutSimpleIcon size={18} weight="duotone" />
+                <ArrowsOutSimpleIcon size={18} />
               </button>
             )}
           </div>
@@ -807,9 +803,9 @@ export function DataTable<TData extends { name: string | number }, TValue>({
                                     type="button"
                                   >
                                     {isExpanded ? (
-                                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
                                     ) : (
-                                      <ChevronRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
                                     )}
                                   </button>
                                 )}

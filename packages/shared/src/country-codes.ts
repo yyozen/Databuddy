@@ -189,6 +189,7 @@ export const COUNTRY_NAME_TO_CODE: Record<string, string> = {
     "Réunion": "RE",
     "Romania": "RO",
     "Russian Federation": "RU",
+    "Russia": "RU",
     "Rwanda": "RW",
     "Saint Barthélemy": "BL",
     "Saint Helena": "SH",
