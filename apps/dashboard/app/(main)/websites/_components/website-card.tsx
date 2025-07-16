@@ -27,15 +27,13 @@ const formatNumber = (num: number) => {
 };
 
 const getTrend = (data: MiniChartDataPoint[]) => {
-  if (data.length < 4) return null;
+  if (!data || data.length === 0) return null;
 
   const mid = Math.floor(data.length / 2);
-  const [first, second] =
-    data.length >= 8
-      ? [data.slice(-14, -7), data.slice(-7)]
-      : [data.slice(0, mid), data.slice(mid)];
+  const [first, second] = [data.slice(0, mid), data.slice(mid)];
 
-  const avg = (arr: MiniChartDataPoint[]) => arr.reduce((sum, p) => sum + p.value, 0) / arr.length;
+  const avg = (arr: MiniChartDataPoint[]) =>
+    arr.length > 0 ? arr.reduce((sum, p) => sum + p.value, 0) / arr.length : 0;
   const [prevAvg, currAvg] = [avg(first), avg(second)];
 
   if (prevAvg === 0) return currAvg > 0 ? { type: "up", value: 100 } : { type: "neutral", value: 0 };
