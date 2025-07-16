@@ -4,9 +4,7 @@ import { appRouter, createTRPCContext } from '@databuddy/rpc';
 import { query } from "./routes/query";
 import { assistant } from "./routes/assistant";
 import { health } from "./routes/health";
-import { autumnHandler } from "autumn-js/elysia";
 import cors from "@elysiajs/cors";
-import { auth } from "@databuddy/auth";
 
 const app = new Elysia()
   .use(cors({
@@ -16,33 +14,7 @@ const app = new Elysia()
       ...(process.env.NODE_ENV === 'development' ? ['http://localhost:3000'] : [])
     ]
   }))
-  .use(autumnHandler({
-    identify: async ({ request }) => {
-      try {
-        const session = await auth.api.getSession({
-          headers: request.headers,
-        });
 
-        if (!session?.user?.id) {
-          return {
-            customerId: undefined,
-            customerData: {},
-          };
-        }
-
-        return {
-          customerId: session.user.id,
-          customerData: {
-            name: session.user.name,
-            email: session.user.email,
-          },
-        };
-      } catch (error) {
-        console.error("[Autumn] Error in identify function:", error);
-        throw error;
-      }
-    },
-  }))
   .use(query)
   .use(assistant)
   .use(health)

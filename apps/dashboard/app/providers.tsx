@@ -106,7 +106,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
           <SessionProvider>
-            <AutumnProvider backendUrl={process.env.NEXT_PUBLIC_API_URL}>
+            <AutumnProvider>
               <NuqsAdapter>{children}</NuqsAdapter>
             </AutumnProvider>
           </SessionProvider>
