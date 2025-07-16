@@ -1,15 +1,25 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "globalEnv": ["DATABASE_URL"],
+  "globalEnv": [
+    "DATABASE_URL"
+  ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "db:generate"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-
+      "dependsOn": [
+        "^build",
+        "db:generate"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ],
       "passThroughEnv": [
-        "SENTRY_AUTH_TOKEN",
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
         "GOOGLE_CLIENT_ID",
@@ -19,16 +29,19 @@
         "RECAPTCHA_SECRET_KEY",
         "RESEND_API_KEY",
         "RESEND_AUDIENCE_ID",
-        "SUPABASE_KEY",
-        "SUPABASE_URL",
-        "STRIPE_SECRET_KEY",
+        "AUTUMN_SECRET_KEY",
         "REDIS_URL"
       ]
     },
     "start": {
-      "dependsOn": ["^start", "db:generate"],
+      "dependsOn": [
+        "^start",
+        "db:generate"
+      ],
       "cache": false,
-      "outputs": ["dist/**"]
+      "outputs": [
+        "dist/**"
+      ]
     },
     "db:generate": {
       "cache": false,
@@ -36,16 +49,25 @@
     },
     "db:push": {
       "cache": false,
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "dependsOn": ["^db:generate"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "dependsOn": [
+        "^db:generate"
+      ],
       "persistent": false
     },
     "lint": {
-      "dependsOn": ["^lint"],
+      "dependsOn": [
+        "^lint"
+      ],
       "persistent": false
     },
     "check-types": {
-      "dependsOn": ["^check-types"],
+      "dependsOn": [
+        "^check-types"
+      ],
       "persistent": false
     },
     "dev": {
