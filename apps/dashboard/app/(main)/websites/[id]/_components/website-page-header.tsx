@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowClockwise, ArrowLeft, Plus } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, ArrowLeftIcon, PlusIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -85,7 +85,7 @@ export function WebsitePageHeader({
                 {showBackButton && (
                     <Button asChild size="sm" variant="ghost">
                         <Link href={`/websites/${websiteId}`}>
-                            <ArrowLeft size={16} />
+                            <ArrowLeftIcon size={16} />
                             Back
                         </Link>
                     </Button>
@@ -105,7 +105,7 @@ export function WebsitePageHeader({
                             onClick={onRefresh}
                             variant="outline"
                         >
-                            <ArrowClockwise className={isRefreshing ? "animate-spin" : ""} size={16} />
+                            <ArrowClockwiseIcon className={isRefreshing ? "animate-spin" : ""} size={16} />
                             Refresh
                         </Button>
                     )}
@@ -125,7 +125,7 @@ export function WebsitePageHeader({
                             {showBackButton && (
                                 <Button asChild className="mr-2" size="sm" variant="ghost">
                                     <Link href={`/websites/${websiteId}`}>
-                                        <ArrowLeft size={16} />
+                                        <ArrowLeftIcon size={16} />
                                         Back
                                     </Link>
                                 </Button>
@@ -149,7 +149,7 @@ export function WebsitePageHeader({
                                 onClick={onRefresh}
                                 variant="outline"
                             >
-                                <ArrowClockwise className={isRefreshing ? "animate-spin" : ""} size={16} />
+                                <ArrowClockwiseIcon className={isRefreshing ? "animate-spin" : ""} size={16} />
                                 Refresh Data
                             </Button>
                         )}
@@ -158,7 +158,7 @@ export function WebsitePageHeader({
                                 className="gap-2 bg-gradient-to-r from-primary to-primary/90 shadow-lg transition-all duration-200 hover:from-primary/90 hover:to-primary hover:shadow-xl"
                                 onClick={onCreateAction}
                             >
-                                <Plus size={16} />
+                                <PlusIcon size={16} />
                                 {createActionLabel}
                             </Button>
                         )}
@@ -183,7 +183,7 @@ export function WebsitePageHeader({
                             </div>
                             {onRefresh && (
                                 <Button className="gap-2 rounded-lg" onClick={onRefresh} size="sm" variant="outline">
-                                    <ArrowClockwise className="h-4 w-4" size={16} />
+                                    <ArrowClockwiseIcon className="h-4 w-4" size={16} />
                                     Retry
                                 </Button>
                             )}

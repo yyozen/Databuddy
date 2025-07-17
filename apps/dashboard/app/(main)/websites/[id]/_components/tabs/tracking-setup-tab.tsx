@@ -26,7 +26,6 @@ import {
   generateScriptTag,
 } from "../utils/code-generators";
 
-// Import utilities and types
 import { RECOMMENDED_DEFAULTS } from "../utils/tracking-defaults";
 import { toggleTrackingOption } from "../utils/tracking-helpers";
 import type { TrackingOptions, WebsiteDataTabProps } from "../utils/types";
