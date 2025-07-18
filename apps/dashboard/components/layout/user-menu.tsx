@@ -1,7 +1,7 @@
-import { authClient, useSession } from "@databuddy/auth/client";
+import { authClient } from "@databuddy/auth/client";
 import { CreditCardIcon, HouseIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
 import Link from "next/link";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,9 +15,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSession } from "./session-provider";
 
 export function UserMenu() {
-  const { data: session, isPending: isSessionPending } = useSession();
+  const { session } = useSession();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
@@ -48,7 +49,7 @@ export function UserMenu() {
     setIsLoggingOut(false);
   };
 
-  if (isSessionPending) {
+  if (!session) {
     return (
       <div className="flex items-center gap-2">
         <Skeleton className="h-9 w-9 rounded-full" />

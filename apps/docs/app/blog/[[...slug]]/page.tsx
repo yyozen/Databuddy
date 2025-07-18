@@ -217,12 +217,6 @@ export default async function BlogPage(props: {
               >
                 🚀 Start Free Trial
               </a>
-              <a
-                href="/demo"
-                className="inline-flex items-center justify-center px-6 py-3 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-medium transition-colors"
-              >
-                📊 View Demo →
-              </a>
             </div>
           </div>
         </div>

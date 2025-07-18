@@ -7,12 +7,6 @@ import LiquidChrome from "../bits/liquid"
 
 const ctaItems = [
     {
-        title: "View demo",
-        description: "See Databuddy in action with our interactive demo dashboard.",
-        href: "/demo",
-        primary: true
-    },
-    {
         title: "Get started",
         description: "Drop your site in and see what your users are doing in seconds",
         href: "https://app.databuddy.cc",
@@ -123,17 +117,6 @@ export default function CTA() {
                                     Get started
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </a>
-
-                                <a
-                                    href="/demo"
-                                    className="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-muted-foreground transition-all duration-200 hover:text-foreground"
-                                    data-track="cta-demo-click"
-                                    data-section="cta"
-                                    data-button-type="secondary-cta"
-                                    data-destination="demo"
-                                >
-                                    View demo →
-                                </a>
                             </div>
 
                             <div className="flex items-center gap-8 text-sm text-muted-foreground opacity-60">
@@ -151,15 +134,15 @@ export default function CTA() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4 text-primary" />
                                 No cookies, no consent banners
                             </div>
                             <div className="flex items-center gap-2">
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4 text-primary" />
                                 Real-time dashboard
                             </div>
                             <div className="flex items-center gap-2">
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4 text-primary" />
                                 GDPR compliant by default
                             </div>
                         </div>

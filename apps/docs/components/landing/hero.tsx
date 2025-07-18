@@ -15,6 +15,7 @@ export default function Hero() {
 			}
 		}
 	};
+
 	return (
 		<section className="relative overflow-hidden min-h-screen">
 			{/* Cool Grid Background */}
@@ -59,12 +60,20 @@ export default function Hero() {
 					{/* Demo Section */}
 					<div className="w-full max-w-[90vw] mx-auto">
 						<div className="relative">
-							<div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-xl blur-xl opacity-30"></div>
+							<div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-xl blur-xl opacity-30" />
 							<div
 								className="relative bg-background/80 backdrop-blur-sm border border-border rounded-lg p-2 shadow-2xl group cursor-pointer"
 								onMouseEnter={() => setIsHovered(true)}
 								onMouseLeave={() => setIsHovered(false)}
 								onClick={handleFullscreen}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter' || e.key === ' ') {
+										handleFullscreen();
+									}
+								}}
+								tabIndex={0}
+								role="button"
+								aria-label="View demo dashboard fullscreen"
 							>
 								<iframe
 									ref={iframeRef}
@@ -76,10 +85,10 @@ export default function Hero() {
 								/>
 
 								{/* Fullscreen Button & Overlay */}
-								<div className={`absolute inset-2 bg-black/20 dark:bg-black/40 rounded transition-opacity duration-300 flex items-center justify-center ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-									<div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 text-sm font-medium shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-colors">
-										<Maximize2 className="h-4 w-4" />
-										Click to view fullscreen
+								<div className={`absolute inset-2 bg-background/20 dark:bg-background/40 rounded transition-opacity duration-300 flex items-center justify-center ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+									<div className="bg-card/90 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 text-sm font-medium shadow-lg border border-border hover:bg-card transition-colors">
+										<Maximize2 className="h-4 w-4 text-foreground" />
+										<span className="text-foreground">Click to view fullscreen</span>
 									</div>
 								</div>
 							</div>
@@ -118,7 +127,7 @@ export default function Hero() {
 			</div>
 
 			{/* Trust indicators */}
-			<div className="relative z-10 border-t border-border bg-muted/20 backdrop-blur-sm">
+			<div className="relative z-10 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 				<div className="container mx-auto px-4 py-8">
 					<div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
 						<div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 w-full md:w-auto">

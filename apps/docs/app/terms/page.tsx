@@ -12,8 +12,8 @@ export default function TermsPage() {
         <div className="container mx-auto px-4 py-12 max-w-4xl">
             {/* Header */}
             <div className="text-center mb-12">
-                <div className="inline-flex items-center justify-center p-3 bg-blue-500/10 rounded-full mb-5 border border-blue-500/20">
-                    <Scale className="h-7 w-7 text-blue-400" />
+                <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-5 border border-primary/20">
+                    <Scale className="h-7 w-7 text-primary" />
                 </div>
                 <h1 className="text-4xl md:text-5xl font-bold mb-4">
                     Terms of Service
@@ -28,8 +28,8 @@ export default function TermsPage() {
             </div>
 
             {/* Fair terms highlight */}
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6 mb-8">
-                <h2 className="text-xl font-bold mb-3 flex items-center text-blue-400">
+            <div className="bg-primary/10 border border-primary/20 rounded-xl p-6 mb-8">
+                <h2 className="text-xl font-bold mb-3 flex items-center text-primary">
                     <Shield className="h-5 w-5 mr-2" />
                     Fair & Transparent Terms
                 </h2>
@@ -38,15 +38,15 @@ export default function TermsPage() {
                     We avoid confusing legal jargon and focus on what really matters.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="flex items-center text-blue-400">
+                    <div className="flex items-center text-primary">
                         <FileText className="h-4 w-4 mr-2" />
                         <span className="text-sm">Plain Language</span>
                     </div>
-                    <div className="flex items-center text-blue-400">
+                    <div className="flex items-center text-primary">
                         <Scale className="h-4 w-4 mr-2" />
                         <span className="text-sm">Fair Terms</span>
                     </div>
-                    <div className="flex items-center text-blue-400">
+                    <div className="flex items-center text-primary">
                         <Shield className="h-4 w-4 mr-2" />
                         <span className="text-sm">User Protection</span>
                     </div>
@@ -70,9 +70,9 @@ export default function TermsPage() {
                         By accessing or using our Service, you agree to be bound by these Terms. If you disagree with any
                         part of these terms, then you may not access the Service.
                     </p>
-                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 my-4">
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 my-4">
                         <p className="text-sm">
-                            <strong className="text-blue-400">Quick Summary:</strong> These terms cover how you can use our service,
+                            <strong className="text-primary">Quick Summary:</strong> These terms cover how you can use our service,
                             your responsibilities, our responsibilities, and what happens if things go wrong.
                         </p>
                     </div>
@@ -144,7 +144,7 @@ export default function TermsPage() {
                     <p className="mb-4">
                         Your privacy is important to us. Our Privacy Policy explains how we collect, use, and protect
                         your information. By using our Service, you consent to our data practices as described in our
-                        <a href="/privacy" className="text-blue-400 hover:text-blue-300 ml-2">Privacy Policy</a>.
+                        <a href="/privacy" className="text-primary hover:text-primary/80 ml-2">Privacy Policy</a>.
                     </p>
                     <p className="mb-4">Key points about data:</p>
                     <ul className="space-y-2 mb-4">
@@ -159,7 +159,7 @@ export default function TermsPage() {
                     <h2 className="text-2xl font-bold mb-4">6. Billing and Payments</h2>
 
                     <h3 className="text-xl font-semibold mb-3 flex items-center">
-                        <CreditCard className="h-5 w-5 mr-2 text-blue-400" />
+                        <CreditCard className="h-5 w-5 mr-2 text-primary" />
                         Subscription Plans
                     </h3>
                     <p className="mb-4">
@@ -220,9 +220,9 @@ export default function TermsPage() {
                         Our total liability to you for any claims arising from these Terms or the Service shall not
                         exceed the amount you paid us in the 12 months preceding the claim.
                     </p>
-                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 my-4">
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 my-4">
                         <p className="text-sm">
-                            <strong className="text-blue-400">Note:</strong> Some jurisdictions don't allow limitations on liability.
+                            <strong className="text-primary">Note:</strong> Some jurisdictions don't allow limitations on liability.
                             These limitations may not apply to you.
                         </p>
                     </div>
@@ -283,7 +283,7 @@ export default function TermsPage() {
 
                 <section className="mb-8">
                     <h2 className="text-2xl font-bold mb-4 flex items-center">
-                        <HelpCircle className="h-6 w-6 mr-2 text-blue-400" />
+                        <HelpCircle className="h-6 w-6 mr-2 text-primary" />
                         13. Contact Information
                     </h2>
                     <p className="mb-4">
@@ -316,8 +316,8 @@ export default function TermsPage() {
 
                 {/* Footer */}
                 <div className="border-t border-border pt-8 mt-12">
-                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6">
-                        <h3 className="text-lg font-semibold mb-2 text-blue-400">Thank You</h3>
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold mb-2 text-primary">Thank You</h3>
                         <p className="text-sm text-muted-foreground mb-0">
                             Thank you for using Databuddy. We're committed to providing a fair, transparent, and
                             privacy-first analytics service. If you have any questions about these terms,

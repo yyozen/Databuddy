@@ -1,18 +1,14 @@
 "use client";
 
-import { useSession } from "@databuddy/auth/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { createContext, useContext, useEffect, useState } from "react";
-import type { session } from "@databuddy/db";
-import type { ReactNode } from "react";
+import { useState } from "react";
 import { AutumnProvider } from "autumn-js/react";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { trpc } from "@/lib/trpc";
 import { httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
-
-type Session = typeof session.$inferSelect;
+import { SessionProvider } from "@/components/layout/session-provider";
 
 const defaultQueryClientOptions = {
   defaultOptions: {
@@ -29,44 +25,6 @@ const defaultQueryClientOptions = {
       retry: false,
     },
   },
-};
-
-export const queryClient = new QueryClient(defaultQueryClientOptions);
-
-type SessionContextType = {
-  session: Session | null;
-  isLoading: boolean;
-  error: Error | null;
-};
-
-const SessionContext = createContext<SessionContextType>({
-  session: null,
-  isLoading: true,
-  error: null,
-});
-
-export const useAuthSession = () => useContext(SessionContext);
-
-const SessionProvider = ({ children }: { children: ReactNode }) => {
-  const { data: session, isPending, error } = useSession();
-
-  useEffect(() => {
-    if (!(session || isPending)) {
-      queryClient.clear();
-    }
-  }, [session, isPending]);
-
-  return (
-    <SessionContext.Provider
-      value={{
-        session: session as Session | null,
-        isLoading: isPending,
-        error: error as Error | null,
-      }}
-    >
-      {children}
-    </SessionContext.Provider>
-  );
 };
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -105,7 +63,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          <SessionProvider>
+          <SessionProvider session={null}>
             <AutumnProvider>
               <NuqsAdapter>{children}</NuqsAdapter>
             </AutumnProvider>

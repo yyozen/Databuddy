@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import type { Metadata, Viewport } from "next";
 import { Geist } from 'next/font/google';
 import Script from 'next/script';
+import { Footer } from '@/components/footer';
 
 const geist = Geist({
   subsets: ['latin'],
@@ -84,7 +85,12 @@ export default function Layout({ children }: { children: ReactNode }) {
       <body className="flex flex-col min-h-screen">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <RootProvider >
-            {children}
+            <div className="flex flex-col min-h-screen">
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </div>
           </RootProvider>
         </ThemeProvider>
       </body>

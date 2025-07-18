@@ -1,17 +1,17 @@
 "use client";
 
-import { useSession } from "@databuddy/auth/client";
-import { AuthLoading } from "./auth-loading";
+import { redirect } from "next/navigation";
+import { useSession } from "@/components/layout/session-provider";
 
-export function SignedOut({ children }: { children: React.ReactNode }) {
-  const { data: session, isPending } = useSession();
+interface SignedOutProps {
+  children: React.ReactNode;
+}
 
-  if (isPending) {
-    return <AuthLoading />;
-  }
+export function SignedOut({ children }: SignedOutProps) {
+  const { session } = useSession();
 
-  if (session?.user) {
-    return null;
+  if (session) {
+    redirect("/dashboard");
   }
 
   return <>{children}</>;

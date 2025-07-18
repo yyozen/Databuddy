@@ -12,8 +12,8 @@ export default function PrivacyPage() {
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       {/* Header */}
       <div className="text-center mb-12">
-        <div className="inline-flex items-center justify-center p-3 bg-sky-500/10 rounded-full mb-5 border border-sky-500/20">
-          <Shield className="h-7 w-7 text-sky-400" />
+        <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-5 border border-primary/20">
+          <Shield className="h-7 w-7 text-primary" />
         </div>
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
           Privacy Policy
@@ -28,8 +28,8 @@ export default function PrivacyPage() {
       </div>
 
       {/* Privacy-first highlight */}
-      <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-bold mb-3 flex items-center text-green-400">
+      <div className="bg-primary/10 border border-primary/20 rounded-xl p-6 mb-8">
+        <h2 className="text-xl font-bold mb-3 flex items-center text-primary">
           <ShieldCheck className="h-5 w-5 mr-2" />
           Privacy-First Analytics
         </h2>
@@ -38,15 +38,15 @@ export default function PrivacyPage() {
           don't track individual users, and never collect personal information from website visitors.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center text-green-400">
+          <div className="flex items-center text-primary">
             <UserX className="h-4 w-4 mr-2" />
             <span className="text-sm">No User Tracking</span>
           </div>
-          <div className="flex items-center text-green-400">
+          <div className="flex items-center text-primary">
             <Cookie className="h-4 w-4 mr-2" />
             <span className="text-sm">No Cookies</span>
           </div>
-          <div className="flex items-center text-green-400">
+          <div className="flex items-center text-primary">
             <Shield className="h-4 w-4 mr-2" />
             <span className="text-sm">GDPR Compliant</span>
           </div>
@@ -68,9 +68,9 @@ export default function PrivacyPage() {
             <li><strong>Customers:</strong> Individuals or organizations who sign up for and use Databuddy's analytics services for their websites.</li>
             <li><strong>End Users:</strong> Visitors to websites that use Databuddy analytics. If you're visiting a website that uses our analytics, this policy explains what data we collect about you and how we protect your privacy.</li>
           </ul>
-          <div className="bg-sky-500/10 border border-sky-500/20 rounded-lg p-4 my-4">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 my-4">
             <p className="text-sm">
-              <strong className="text-sky-400">Note:</strong> We are committed to privacy-first analytics that respects the rights of all users, whether they are our customers or visitors to websites using our service.
+              <strong className="text-primary">Note:</strong> We are committed to privacy-first analytics that respects the rights of all users, whether they are our customers or visitors to websites using our service.
             </p>
           </div>
         </section>
@@ -115,9 +115,9 @@ export default function PrivacyPage() {
             <li>User interaction data: Scroll depth, interaction counts, and exit intent detection (anonymized)</li>
             <li>Error information: JavaScript errors and technical issues to help website owners improve their sites</li>
           </ul>
-          <div className="bg-sky-500/10 border border-sky-500/20 rounded-lg p-4 my-4">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 my-4">
             <p className="text-sm">
-              <strong className="text-sky-400">Important:</strong> We immediately anonymize IP addresses using a one-way hash function. We never store IP addresses in their original form, and it's impossible for us to identify individual users from the data we collect.
+              <strong className="text-primary">Important:</strong> We immediately anonymize IP addresses using a one-way hash function. We never store IP addresses in their original form, and it's impossible for us to identify individual users from the data we collect.
             </p>
           </div>
         </section>
@@ -158,9 +158,9 @@ export default function PrivacyPage() {
             <li>Help website owners identify and fix technical problems through error tracking</li>
             <li>Provide performance optimization insights through Core Web Vitals and loading metrics</li>
           </ul>
-          <div className="bg-sky-500/10 border border-sky-500/20 rounded-lg p-4 my-4">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 my-4">
             <p className="text-sm">
-              <strong className="text-sky-400">Note:</strong> End user data is never used for advertising, marketing, or any purpose other than providing analytics insights to website owners.
+              <strong className="text-primary">Note:</strong> End user data is never used for advertising, marketing, or any purpose other than providing analytics insights to website owners.
             </p>
           </div>
         </section>
@@ -193,9 +193,9 @@ export default function PrivacyPage() {
             <li><strong>Objection:</strong> Object to analytics tracking (use browser Do Not Track or ad blockers)</li>
             <li><strong>Erasure:</strong> Since we don't identify individuals, we can't delete specific user data, but all data is automatically deleted according to our retention policies</li>
           </ul>
-          <div className="bg-sky-500/10 border border-sky-500/20 rounded-lg p-4 my-4">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 my-4">
             <p className="text-sm">
-              <strong className="text-sky-400">Note:</strong> Because we don't identify individual end users, many traditional rights don't apply, but this actually provides stronger privacy protection.
+              <strong className="text-primary">Note:</strong> Because we don't identify individual end users, many traditional rights don't apply, but this actually provides stronger privacy protection.
             </p>
           </div>
         </section>
@@ -211,9 +211,9 @@ export default function PrivacyPage() {
             <li><strong>Data Minimization:</strong> We collect and store only what's necessary</li>
             <li><strong>Anonymization:</strong> IP addresses are immediately anonymized using cryptographic hashes</li>
           </ul>
-          <div className="bg-sky-500/10 border border-sky-500/20 rounded-lg p-4 my-4">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 my-4">
             <p className="text-sm">
-              <strong className="text-sky-400">Note:</strong> Our privacy-first approach means that even in the unlikely event of a data breach, individual users cannot be identified from the analytics data we store.
+              <strong className="text-primary">Note:</strong> Our privacy-first approach means that even in the unlikely event of a data breach, individual users cannot be identified from the analytics data we store.
             </p>
           </div>
         </section>
@@ -225,7 +225,7 @@ export default function PrivacyPage() {
             or have concerns about how your data is handled, please contact us:
           </p>
           <div className="bg-muted/50 p-5 rounded-lg border mt-4 mb-6">
-            <p className="flex items-center text-sky-400 mb-3">
+            <p className="flex items-center text-primary mb-3">
               <Mail className="h-5 w-5 mr-2" />
               <a href="mailto:privacy@databuddy.cc" className="hover:underline">privacy@databuddy.cc</a>
             </p>

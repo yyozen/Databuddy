@@ -1,23 +1,16 @@
-"use client";
+import { redirect } from "next/navigation";
+import { useSession } from "@/components/layout/session-provider";
 
-import { useSession } from "@databuddy/auth/client";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { AuthLoading } from "./auth-loading";
-
-export interface RedirectToSignInProps {
-  returnTo?: string;
+interface RedirectToSignInProps {
+  children: React.ReactNode;
 }
 
-export function RedirectToSignIn({ returnTo }: RedirectToSignInProps) {
-  const router = useRouter();
-  const { data: session, isPending } = useSession();
+export function RedirectToSignIn({ children }: RedirectToSignInProps) {
+  const { session } = useSession();
 
-  useEffect(() => {
-    if (!(isPending || session?.user)) {
-      router.push(`/login${returnTo ? `?returnTo=${returnTo}` : ""}`);
-    }
-  }, [isPending, session, router, returnTo]);
+  if (!session) {
+    redirect("/login");
+  }
 
-  return <AuthLoading />;
+  return <>{children}</>;
 }

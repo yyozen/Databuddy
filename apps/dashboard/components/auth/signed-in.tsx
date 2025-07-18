@@ -1,17 +1,15 @@
-"use client";
+import { redirect } from "next/navigation";
+import { useSession } from "@/components/layout/session-provider";
 
-import { useSession } from "@databuddy/auth/client";
-import { AuthLoading } from "./auth-loading";
+interface SignedInProps {
+  children: React.ReactNode;
+}
 
-export function SignedIn({ children }: { children: React.ReactNode }) {
-  const { data: session, isPending } = useSession();
+export function SignedIn({ children }: SignedInProps) {
+  const { session } = useSession();
 
-  if (isPending) {
-    return <AuthLoading />;
-  }
-
-  if (!session?.user) {
-    return null;
+  if (!session) {
+    redirect("/login");
   }
 
   return <>{children}</>;
