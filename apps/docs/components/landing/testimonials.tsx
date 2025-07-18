@@ -94,7 +94,7 @@ const testimonials = [
 function TestimonialCard({ testimonial }: { testimonial: typeof testimonials[0] }) {
 	const CardContent = () => (
 		<div className="group flex flex-col justify-between h-[180px] sm:h-[200px] md:h-[220px] rounded-xl border border-border w-[280px] sm:w-[350px] md:w-[420px] shrink-0 bg-card/70 backdrop-blur-sm shadow-inner transition-all duration-300 hover:border-border/80 hover:shadow-primary/10">
-			<p className="px-4 sm:px-5 md:px-6 py-4 sm:py-5 md:py-6 text-sm sm:text-base md:text-lg tracking-tight font-light text-foreground text-pretty">
+			<p className="px-4 sm:px-5 md:px-6 pt-4 sm:pt-5 md:pt-6 text-sm sm:text-base md:text-lg tracking-tight font-light text-foreground text-pretty">
 				&quot;{testimonial.description}&quot;
 			</p>
 			<div className="flex items-center h-[60px] sm:h-[65px] md:h-[70px] gap-1 w-full border-t border-border bg-card/20">
