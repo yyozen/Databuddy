@@ -29,7 +29,7 @@ const testimonials = [
 	},
 	{
 		name: "Bekacru",
-		profession: "Creator, Better-auth",
+		profession: "Founder, Better-auth",
 		description: "this looks great!",
 		avatar: "bekacru.jpg",
 	},
@@ -42,7 +42,23 @@ const testimonials = [
 		avatar: "https://pbs.twimg.com/profile_images/1935046528114016256/ZDKw5J0F_400x400.jpg",
 	},
 	{
-		name: "Ahmet Kilinic",
+		name: "Axel Wesselgren",
+		profession: "Founder, Stackster",
+		description: "Who just switched to the best data analytics platform?\n\n Me.",
+		link: "https://x.com/axelwesselgren/status/1936670098884079755",
+		social: <XIcon />,
+		avatar: "https://pbs.twimg.com/profile_images/1937981565176344576/H-CnDlga_400x400.jpg",
+	},
+	{
+		name: "Max",
+		profession: "Founder, Pantom Studio",
+		description: "won't lie @trydatabuddy is very easy to setup damn",
+		link: "https://x.com/Metagravity0/status/1945592294612017208",
+		social: <XIcon />,
+		avatar: "https://pbs.twimg.com/profile_images/1929548168317837312/eP97J41s_400x400.jpg",
+	},
+	{
+		name: "Ahmet Kilinc",
 		link: "https://x.com/bruvimtired/status/1938972393357062401",
 		social: <XIcon />,
 		profession: "Software Engineer, @mail0dotcom",
