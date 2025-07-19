@@ -1,4 +1,12 @@
 (() => {
+  function generateUUIDv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
   // HTTP Client
   const c = class {
     constructor(config) {
@@ -182,7 +190,7 @@
     }
 
     generateAnonymousId() {
-      return `anon_${crypto.randomUUID()}`;
+      return `anon_${generateUUIDv4()}`;
     }
 
     getOrCreateSessionId() {
@@ -213,7 +221,7 @@
     }
 
     generateSessionId() {
-      return `sess_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 18)}`;
+      return `sess_${generateUUIDv4()}`;
     }
 
     getSessionStartTime() {
@@ -455,7 +463,7 @@
       const payload = {
         type: "track",
         payload: {
-          eventId: crypto.randomUUID(),
+          eventId: generateUUIDv4(),
           name: eventName,
           anonymousId: this.anonymousId,
           sessionId: this.sessionId,
@@ -914,7 +922,7 @@
       const errorEvent = {
         type: "error",
         payload: {
-          eventId: crypto.randomUUID(),
+          eventId: generateUUIDv4(),
           anonymousId: this.anonymousId,
           sessionId: this.sessionId,
           timestamp: errorData.timestamp || Date.now(),
@@ -948,7 +956,7 @@
       const webVitalsEvent = {
         type: "web_vitals",
         payload: {
-          eventId: crypto.randomUUID(),
+          eventId: generateUUIDv4(),
           anonymousId: this.anonymousId,
           sessionId: this.sessionId,
           timestamp: vitalsData.timestamp || Date.now(),
