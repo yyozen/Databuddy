@@ -29,7 +29,7 @@ const now = Date.now();
 const MAX_FUTURE_MS = 60 * 60 * 1000; // 1 hour
 
 export const analyticsEventSchema = z.object({
-    eventId: z.string().min(1).max(128),
+    eventId: z.uuid(),
     name: z.string().min(1).max(128),
     anonymousId: z.templateLiteral([z.literal("anon_"), z.uuid()]).nullable().optional(),
     sessionId: z.templateLiteral([z.literal("sess_"), z.uuid()]).nullable().optional(),
