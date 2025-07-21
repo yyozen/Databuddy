@@ -146,7 +146,8 @@ export const DevicesBuilders: Record<string, SimpleQueryConfig> = {
         fields: [
             'os_name as name',
             'COUNT(*) as pageviews',
-            'COUNT(DISTINCT anonymous_id) as visitors'
+            'COUNT(DISTINCT anonymous_id) as visitors',
+            'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage'
         ],
         where: ['os_name != \'\'', 'event_name = \'screen_view\''],
         groupBy: ['os_name'],

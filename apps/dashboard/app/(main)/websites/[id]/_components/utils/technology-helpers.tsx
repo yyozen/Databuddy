@@ -162,54 +162,6 @@ export const processBrowserData = (
     }));
 };
 
-// Infer operating systems with percentages
-export const inferOperatingSystems = (
-  deviceTypes: DeviceTypeEntry[],
-  browserVersions: BrowserVersionEntry[]
-): TechnologyTableEntry[] => {
-  const osGroups: Record<string, number> = {};
-
-  for (const device of deviceTypes) {
-    let os = "Unknown";
-    const brand = device.device_brand?.toLowerCase() || "";
-    const deviceType = device.device_type?.toLowerCase() || "";
-
-    if (brand.includes("apple")) {
-      if (deviceType.includes("mobile") || deviceType.includes("tablet")) {
-        os = "iOS";
-      } else {
-        os = "macOS";
-      }
-    } else if (deviceType.includes("mobile") || deviceType.includes("tablet")) {
-      os = "Android";
-    } else {
-      os = "Windows";
-    }
-
-    osGroups[os] = (osGroups[os] || 0) + (device.visitors || 0);
-  }
-
-  for (const browser of browserVersions) {
-    const browserName = browser.browser?.toLowerCase() || "";
-    if (browserName.includes("safari") && !browserName.includes("mobile")) {
-      osGroups.macOS = (osGroups.macOS || 0) + Math.floor((browser.visitors || 0) * 0.1);
-    }
-  }
-
-  const totalVisitors = Object.values(osGroups).reduce((sum, count) => sum + count, 0);
-
-  return Object.entries(osGroups)
-    .sort(([, a], [, b]) => (b as number) - (a as number))
-    .slice(0, 10)
-    .map(([name, visitors]) => ({
-      name,
-      visitors,
-      percentage: totalVisitors > 0 ? Math.round((visitors / totalVisitors) * 100) : 0,
-      icon: getOSIcon(name),
-      category: "os",
-    }));
-};
-
 // Enhanced icon component for tables
 export const TechnologyIcon = ({
   entry,
@@ -237,6 +189,22 @@ export const TechnologyIcon = ({
           (e.target as HTMLImageElement).style.display = "none";
         }}
         src={`${entry.icon}`}
+      />
+    );
+  }
+
+  // For OS entries without icon, use getOSIcon
+  if (entry.category === "os") {
+    const sizeClasses = {
+      sm: "h-3 w-3",
+      md: "h-4 w-4",
+      lg: "h-5 w-5",
+    };
+    return (
+      <img
+        alt={entry.name}
+        className={`${sizeClasses[size]} object-contain`}
+        src={getOSIcon(entry.name)}
       />
     );
   }

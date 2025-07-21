@@ -34,11 +34,11 @@ import {
   getColorVariant,
 } from "../utils/analytics-helpers";
 import {
-  inferOperatingSystems,
   PercentageBadge,
   processBrowserData,
   processDeviceData,
   TechnologyIcon,
+  getOSIcon,
 } from "../utils/technology-helpers";
 import type { FullTabProps, MetricPoint } from "../utils/types";
 import { MetricToggles } from "../utils/ui-components";
@@ -80,7 +80,7 @@ const QUERY_CONFIG = {
     summary: ["summary_metrics", "today_metrics", "events_by_date"] as string[],
     pages: ["top_pages", "entry_pages", "exit_pages"] as string[],
     traffic: ["top_referrers", "utm_sources", "utm_mediums", "utm_campaigns"] as string[],
-    tech: ["device_types", "browsers"] as string[],
+    tech: ["device_types", "browsers", "operating_systems"] as string[], // <-- add 'operating_systems' here
     customEvents: ["custom_events"] as string[],
   },
 } as const;
@@ -268,6 +268,7 @@ export function WebsiteOverviewTab({
       utm_campaigns: getDataForQuery("overview-traffic", "utm_campaigns") || [],
       device_types: getDataForQuery("overview-tech", "device_types") || [],
       browser_versions: getDataForQuery("overview-tech", "browsers") || [],
+      operating_systems: getDataForQuery("overview-tech", "operating_systems") || [], // <-- add this line
     }),
     [getDataForQuery]
   );
@@ -633,20 +634,15 @@ export function WebsiteOverviewTab({
   }, [analytics.browser_versions]);
 
   const processedOSData = useMemo(() => {
-    const deviceData = analytics.device_types || [];
-    const browserData = analytics.browser_versions || [];
-    const transformedDeviceData = deviceData.map((item: any) => ({
-      device_type: item.name,
+    return analytics.operating_systems.map((item: any) => ({
+      name: item.name,
       visitors: item.visitors,
       pageviews: item.pageviews,
+      percentage: item.percentage ?? 0,
+      icon: getOSIcon(item.name),
+      category: "os",
     }));
-    const transformedBrowserData = browserData.map((item: any) => ({
-      browser: item.name,
-      visitors: item.visitors,
-      pageviews: item.pageviews,
-    }));
-    return inferOperatingSystems(transformedDeviceData, transformedBrowserData);
-  }, [analytics.device_types, analytics.browser_versions]);
+  }, [analytics.operating_systems]);
 
   const [expandedProperties, setExpandedProperties] = useState<Set<string>>(new Set());
 
