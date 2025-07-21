@@ -39,6 +39,7 @@ import {
   processDeviceData,
   TechnologyIcon,
   getOSIcon,
+  getBrowserIcon,
 } from "../utils/technology-helpers";
 import type { FullTabProps, MetricPoint } from "../utils/types";
 import { MetricToggles } from "../utils/ui-components";
@@ -625,12 +626,14 @@ export function WebsiteOverviewTab({
 
   const processedBrowserData = useMemo(() => {
     const browserData = analytics.browser_versions || [];
-    const transformedData = browserData.map((item: any) => ({
-      browser: item.name,
+    return browserData.map((item: any) => ({
+      name: item.name,
       visitors: item.visitors,
       pageviews: item.pageviews,
+      percentage: item.percentage ?? 0,
+      icon: getBrowserIcon(item.name),
+      category: "browser",
     }));
-    return processBrowserData(transformedData);
   }, [analytics.browser_versions]);
 
   const processedOSData = useMemo(() => {
