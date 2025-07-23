@@ -431,7 +431,10 @@ export function WebsiteOverviewTab({
     const filteredEvents = filterFutureEvents(analytics.events_by_date);
     const createChartSeries = (field: string, transform?: (value: any) => number) =>
       filteredEvents.map((event: any) => ({
-        date: formatDateByGranularity(event.date, dateRange.granularity),
+        date:
+          dateRange.granularity === "hourly"
+            ? event.date
+            : event.date.slice(0, 10),
         value: transform ? transform(event[field]) : (event[field] || 0),
       }));
     return {
