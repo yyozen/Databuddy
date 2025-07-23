@@ -409,12 +409,10 @@
         "@databuddy/auth": "workspace:*",
         "@databuddy/db": "workspace:*",
         "@databuddy/redis": "workspace:*",
-        "@orpc/client": "^1.6.6",
-        "@orpc/server": "^1.6.6",
         "@trpc/react-query": "^11.4.3",
-        "autumn-js": "^0.0.72",
+        "autumn-js": "^0.0.111",
         "superjson": "^2.2.2",
-        "zod": "^3.23.8",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "typescript": "^5.4.5",
@@ -2439,8 +2437,6 @@
 
     "postcss": ["postcss@8.5.6", "", { "dependencies": { "nanoid": "^3.3.11", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg=="],
 
-    "postcss-nested": ["postcss-nested@7.0.2", "", { "dependencies": { "postcss-selector-parser": "^7.0.0" }, "peerDependencies": { "postcss": "^8.2.14" } }, "sha512-5osppouFc0VR9/VYzYxO03VaDa3e8F23Kfd6/9qcZTUI8P58GIYlArOET2Wq0ywSl2o2PjELhYOFI4W7l5QHKw=="],
-
     "postcss-selector-parser": ["postcss-selector-parser@7.1.0", "", { "dependencies": { "cssesc": "^3.0.0", "util-deprecate": "^1.0.2" } }, "sha512-8sLjZwK0R+JlxlYcTuVnyT2v+htpdrjDOKuMcOVdYjt52Lh8hWRYpxBPoKx/Zg+bcjc3wx6fmQevMmUztS/ccA=="],
 
     "postgres-array": ["postgres-array@2.0.0", "", {}, "sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA=="],
@@ -2769,8 +2765,6 @@
 
     "tailwindcss": ["tailwindcss@4.1.11", "", {}, "sha512-2E9TBm6MDD/xKYe+dvJZAmg3yxIEDNRc0jwlNyDg/4Fil2QcSLjFKGVff0lAf1jjeaArlG/M75Ey/EYr/OJtBA=="],
 
-    "tailwindcss-animate": ["tailwindcss-animate@1.0.7", "", { "peerDependencies": { "tailwindcss": ">=3.0.0 || insiders" } }, "sha512-bl6mpH3T7I3UFxuvDEXLxy/VuFxBk5bbzplh7tXI68mwMokNYd1t9qPBHlnyTwfa4JGC4zP516I1hYYtQ/vspA=="],
-
     "tapable": ["tapable@2.2.2", "", {}, "sha512-Re10+NauLTMCudc7T5WLFLAwDhQ0JWdrMK+9B2M8zR5hRExKmsRDCBA7/aV/pNJFltmBFO5BAMlQFi/vq3nKOg=="],
 
     "tar": ["tar@7.4.3", "", { "dependencies": { "@isaacs/fs-minipass": "^4.0.0", "chownr": "^3.0.0", "minipass": "^7.1.2", "minizlib": "^3.0.1", "mkdirp": "^3.0.1", "yallist": "^5.0.0" } }, "sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw=="],
@@ -3001,9 +2995,9 @@
 
     "@databuddy/redis/zod": ["zod@3.25.67", "", {}, "sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw=="],
 
-    "@databuddy/rpc/autumn-js": ["autumn-js@0.0.72", "", { "dependencies": { "@radix-ui/react-dialog": "^1.1.14", "@radix-ui/react-slot": "^1.2.3", "@radix-ui/react-switch": "^1.2.5", "chalk": "^5.4.1", "postcss-nested": "^7.0.2", "rou3": "^0.6.1", "swr": "^2.3.3", "tailwindcss-animate": "1.0.7" } }, "sha512-WVrYIMng+L9O15N36P3EEX0Y6QYu9wGxulwp4T6LXo0ql2A4eOByGMbdCYATVynsJw+UlMhvwaHesO04+zpDnA=="],
+    "@databuddy/rpc/autumn-js": ["autumn-js@0.0.111", "", { "dependencies": { "@radix-ui/react-accordion": "^1.2.11", "@radix-ui/react-popover": "^1.1.14", "axios": "^1.10.0", "chalk": "^5.4.1", "commander": "^14.0.0", "ink": "^6.0.1", "jiti": "^2.4.2", "open": "^10.1.2", "rou3": "^0.6.1", "swr": "^2.3.3", "zod": "^3.24.1" }, "peerDependencies": { "better-auth": "^1.2.12", "better-call": "^1.0.12" }, "optionalPeers": ["better-auth", "better-call"] }, "sha512-lpk+N08R73/rXKLL6d6vKMnVpxu2t4tXxcSJPuDMwYLQ9lFnxVmCDEAG9WYBPyvaw3hI8td4nV2Ry3apUdjwvQ=="],
 
-    "@databuddy/rpc/zod": ["zod@3.25.67", "", {}, "sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw=="],
+    "@databuddy/rpc/zod": ["zod@4.0.5", "", {}, "sha512-/5UuuRPStvHXu7RS+gmvRf4NXrNxpSllGwDnCBcJZtQsKrviYXm54yDGV2KYNLT5kq0lHGcl7lqWJLgSaG+tgA=="],
 
     "@databuddy/sdk/@types/node": ["@types/node@20.19.1", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-jJD50LtlD2dodAEO653i3YF04NWak6jN3ky+Ri3Em3mGR39/glWiboM/IePaRbgwSfqM1TpGXfAg8ohn/4dTgA=="],
 
@@ -3324,6 +3318,8 @@
     "@databuddy/docs/next/postcss": ["postcss@8.4.31", "", { "dependencies": { "nanoid": "^3.3.6", "picocolors": "^1.0.0", "source-map-js": "^1.0.2" } }, "sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ=="],
 
     "@databuddy/email/@types/node/undici-types": ["undici-types@7.8.0", "", {}, "sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw=="],
+
+    "@databuddy/rpc/autumn-js/zod": ["zod@3.25.67", "", {}, "sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw=="],
 
     "@esbuild-kit/core-utils/esbuild/@esbuild/android-arm": ["@esbuild/android-arm@0.18.20", "", { "os": "android", "cpu": "arm" }, "sha512-fyi7TDI/ijKKNZTUJAQqiG5T7YjJXgnzkURqmGj13C6dCqckZBLdl4h7bkhHt/t0WP+zO9/zwroDvANaOqO5Sw=="],
 

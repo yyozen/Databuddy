@@ -8,12 +8,10 @@
         "@databuddy/auth": "workspace:*",
         "@databuddy/db": "workspace:*",
         "@databuddy/redis": "workspace:*",
-        "@orpc/client": "^1.6.6",
-        "@orpc/server": "^1.6.6",
         "@trpc/react-query": "^11.4.3",
-        "autumn-js": "^0.0.72",
+        "autumn-js": "^0.0.111",
         "superjson": "^2.2.2",
-        "zod": "^3.23.8"
+        "zod": "^4.0.5"
     },
     "devDependencies": {
         "typescript": "^5.4.5"
