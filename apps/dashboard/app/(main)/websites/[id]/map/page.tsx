@@ -61,13 +61,13 @@ function WebsiteMapPage() {
   });
 
   const locationData: LocationData = {
-    countries: (getDataForQuery("map-countries", "countries") || []).map((item: { name: string; visitors: number; pageviews: number; country_code?: string; country_name?: string }) => ({
+    countries: (getDataForQuery("map-countries", "country") || []).map((item: { name: string; visitors: number; pageviews: number; country_code?: string; country_name?: string }) => ({
       country: item.country_name || item.name,
       country_code: item.country_code || item.name,
       visitors: item.visitors,
       pageviews: item.pageviews,
     })),
-    regions: (getDataForQuery("map-regions", "regions") || []).map((item: { name: string; visitors: number; pageviews: number }) => ({
+    regions: (getDataForQuery("map-regions", "region") || []).map((item: { name: string; visitors: number; pageviews: number }) => ({
       country: item.name,
       visitors: item.visitors,
       pageviews: item.pageviews,
