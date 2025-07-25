@@ -2,21 +2,21 @@ import { Color, Mesh, Program, Renderer, Triangle } from 'ogl';
 import React, { useEffect, useRef } from 'react';
 
 export interface CommonProps {
-  onReady?: () => void;
+	onReady?: () => void;
 }
 
 export interface TimeProps {
-  time?: number;
-  speed?: number;
+	time?: number;
+	speed?: number;
 }
 
 export interface ControlProps {
-  paused?: boolean;
+	paused?: boolean;
 }
 
 export interface AuroraProps extends CommonProps, TimeProps, ControlProps {
-  colorStops?: [string, string, string];
-  amplitude?: number;
+	colorStops?: [string, string, string];
+	amplitude?: number;
 }
 
 const VERT = `#version 300 es
@@ -132,81 +132,81 @@ void main() {
 `;
 
 export default function Aurora(props: AuroraProps) {
-  const { colorStops = ['#00d8ff', '#7cff67', '#00d8ff'], amplitude = 1.0 } =
-    props;
+	const { colorStops = ['#00d8ff', '#7cff67', '#00d8ff'], amplitude = 1.0 } =
+		props;
 
-  const propsRef = useRef(props);
-  propsRef.current = props;
+	const propsRef = useRef(props);
+	propsRef.current = props;
 
-  const ctnDom = useRef<HTMLDivElement>(null);
+	const ctnDom = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const ctn = ctnDom.current;
-    if (!ctn) return;
+	useEffect(() => {
+		const ctn = ctnDom.current;
+		if (!ctn) return;
 
-    const renderer = new Renderer();
-    const gl = renderer.gl;
-    gl.clearColor(1, 1, 1, 1);
+		const renderer = new Renderer();
+		const gl = renderer.gl;
+		gl.clearColor(1, 1, 1, 1);
 
-    function resize() {
-      if (!ctn) return;
-      renderer.setSize(ctn.offsetWidth, ctn.offsetHeight);
-    }
-    window.addEventListener('resize', resize);
-    resize();
+		function resize() {
+			if (!ctn) return;
+			renderer.setSize(ctn.offsetWidth, ctn.offsetHeight);
+		}
+		window.addEventListener('resize', resize);
+		resize();
 
-    const geometry = new Triangle(gl);
-    geometry.addAttribute('uv', {
-      size: 2,
-      data: new Float32Array([0, 0, 2, 0, 0, 2]),
-    });
+		const geometry = new Triangle(gl);
+		geometry.addAttribute('uv', {
+			size: 2,
+			data: new Float32Array([0, 0, 2, 0, 0, 2]),
+		});
 
-    const colorStopsArray = colorStops.map((hex) => {
-      const c = new Color(hex);
-      return [c.r, c.g, c.b] as [number, number, number];
-    });
+		const colorStopsArray = colorStops.map((hex) => {
+			const c = new Color(hex);
+			return [c.r, c.g, c.b] as [number, number, number];
+		});
 
-    const program = new Program(gl, {
-      vertex: VERT,
-      fragment: FRAG,
-      uniforms: {
-        uTime: { value: 0 },
-        uAmplitude: { value: amplitude },
-        uColorStops: { value: colorStopsArray },
-      },
-    });
+		const program = new Program(gl, {
+			vertex: VERT,
+			fragment: FRAG,
+			uniforms: {
+				uTime: { value: 0 },
+				uAmplitude: { value: amplitude },
+				uColorStops: { value: colorStopsArray },
+			},
+		});
 
-    const mesh = new Mesh(gl, { geometry, program });
-    ctn.appendChild(gl.canvas);
+		const mesh = new Mesh(gl, { geometry, program });
+		ctn.appendChild(gl.canvas);
 
-    let animateId = 0;
+		let animateId = 0;
 
-    const update = (t: number) => {
-      animateId = requestAnimationFrame(update);
+		const update = (t: number) => {
+			animateId = requestAnimationFrame(update);
 
-      const { time = t * 0.01, speed = 1.0 } = propsRef.current;
-      program.uniforms.uTime.value = time * speed * 0.1;
+			const { time = t * 0.01, speed = 1.0 } = propsRef.current;
+			program.uniforms.uTime.value = time * speed * 0.1;
 
-      program.uniforms.uAmplitude.value = propsRef.current.amplitude ?? 1.0;
-      const stops = propsRef.current.colorStops ?? colorStops;
-      program.uniforms.uColorStops.value = stops.map((hex) => {
-        const c = new Color(hex);
-        return [c.r, c.g, c.b] as [number, number, number];
-      });
+			program.uniforms.uAmplitude.value = propsRef.current.amplitude ?? 1.0;
+			const stops = propsRef.current.colorStops ?? colorStops;
+			program.uniforms.uColorStops.value = stops.map((hex) => {
+				const c = new Color(hex);
+				return [c.r, c.g, c.b] as [number, number, number];
+			});
 
-      renderer.render({ scene: mesh });
-    };
-    animateId = requestAnimationFrame(update);
+			renderer.render({ scene: mesh });
+		};
+		animateId = requestAnimationFrame(update);
 
-    return () => {
-      cancelAnimationFrame(animateId);
-      window.removeEventListener('resize', resize);
+		return () => {
+			cancelAnimationFrame(animateId);
+			window.removeEventListener('resize', resize);
 
-      ctn?.removeChild(gl.canvas);
+			ctn?.removeChild(gl.canvas);
 
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
-    };
-  }, [amplitude, colorStops]);
+			gl.getExtension('WEBGL_lose_context')?.loseContext();
+		};
+	}, [amplitude, colorStops]);
 
-  return <div className="-z-10 absolute inset-0" ref={ctnDom} />;
+	return <div className="-z-10 absolute inset-0" ref={ctnDom} />;
 }

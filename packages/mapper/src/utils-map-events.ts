@@ -7,8 +7,8 @@ import type { AnalyticsEvent, AnalyticsEventAdapter } from './types';
  * @returns Array of AnalyticsEvent
  */
 export function mapEvents<T>(
-  adapter: AnalyticsEventAdapter<T>,
-  rows: T[]
+	adapter: AnalyticsEventAdapter<T>,
+	rows: T[]
 ): AnalyticsEvent[] {
-  return rows.map((row) => adapter.mapRowToEvent(row));
+	return rows.map((row) => adapter.mapRowToEvent(row));
 }

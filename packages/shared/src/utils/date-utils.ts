@@ -14,11 +14,11 @@ const DEFAULT_DATE_FORMAT = 'MMM D, YYYY';
 const DEFAULT_TIME_FORMAT = 'h:mm A';
 
 interface DateFormatOptions {
-  timezone?: string;
-  dateFormat?: string;
-  timeFormat?: string;
-  showTime?: boolean;
-  customFormat?: string;
+	timezone?: string;
+	dateFormat?: string;
+	timeFormat?: string;
+	showTime?: boolean;
+	customFormat?: string;
 }
 
 type DateInput = Date | string | number | null;
@@ -30,23 +30,23 @@ type DateInput = Date | string | number | null;
  * @returns Formatted date string
  */
 export function formatDate(
-  date: DateInput,
-  options?: DateFormatOptions
+	date: DateInput,
+	options?: DateFormatOptions
 ): string {
-  if (!date) return '';
+	if (!date) return '';
 
-  const timezone = options?.timezone || 'UTC';
-  const dayjsDate = dayjs(date).tz(timezone);
+	const timezone = options?.timezone || 'UTC';
+	const dayjsDate = dayjs(date).tz(timezone);
 
-  if (options?.customFormat) {
-    return dayjsDate.format(options.customFormat);
-  }
+	if (options?.customFormat) {
+		return dayjsDate.format(options.customFormat);
+	}
 
-  const dateFormat = options?.dateFormat || DEFAULT_DATE_FORMAT;
-  const timeFormat = options?.timeFormat || DEFAULT_TIME_FORMAT;
-  const format = options?.showTime ? `${dateFormat} ${timeFormat}` : dateFormat;
+	const dateFormat = options?.dateFormat || DEFAULT_DATE_FORMAT;
+	const timeFormat = options?.timeFormat || DEFAULT_TIME_FORMAT;
+	const format = options?.showTime ? `${dateFormat} ${timeFormat}` : dateFormat;
 
-  return dayjsDate.format(format);
+	return dayjsDate.format(format);
 }
 
 /**
@@ -56,10 +56,10 @@ export function formatDate(
  * @returns Date in target timezone
  */
 export function convertToTimezone(
-  date: Exclude<DateInput, null>,
-  timezone = 'UTC'
+	date: Exclude<DateInput, null>,
+	timezone = 'UTC'
 ): Date {
-  return dayjs(date).tz(timezone).toDate();
+	return dayjs(date).tz(timezone).toDate();
 }
 
 /**
@@ -67,7 +67,7 @@ export function convertToTimezone(
  * @returns Browser timezone string
  */
 export function getBrowserTimezone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+	return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
 /**
@@ -76,7 +76,7 @@ export function getBrowserTimezone(): string {
  * @returns Timezone info or undefined
  */
 export function findTimezoneByRegion(region: string) {
-  return TIMEZONES.find((tz) => tz.region === region);
+	return TIMEZONES.find((tz) => tz.region === region);
 }
 
 /**
@@ -85,6 +85,6 @@ export function findTimezoneByRegion(region: string) {
  * @returns Relative time string
  */
 export function formatRelativeTime(date: DateInput): string {
-  if (!date) return '';
-  return dayjs(date).fromNow();
+	if (!date) return '';
+	return dayjs(date).fromNow();
 }

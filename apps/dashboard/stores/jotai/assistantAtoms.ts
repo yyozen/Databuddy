@@ -7,12 +7,12 @@ import type { AssistantModel } from '@/app/(main)/websites/[id]/assistant/types/
 export const modelAtom = atom<AssistantModel>('chat');
 export const websiteIdAtom = atom<string | null>(null);
 export const websiteDataAtom = atom<WebsiteDataTabProps['websiteData'] | null>(
-  null
+	null
 );
 export const dateRangeAtom = atom<{
-  start_date: string;
-  end_date: string;
-  granularity: string;
+	start_date: string;
+	end_date: string;
+	granularity: string;
 } | null>(null);
 export const messagesAtom = atom<Message[]>([]);
 export const inputValueAtom = atom<string>('');

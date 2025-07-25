@@ -301,297 +301,297 @@ SETTINGS index_granularity = 8192
 `;
 
 export interface ErrorEvent {
-  id: string;
-  client_id: string;
-  event_id?: string;
-  anonymous_id: string;
-  session_id: string;
-  timestamp: number;
-  path: string;
-  message: string;
-  filename?: string;
-  lineno?: number;
-  colno?: number;
-  stack?: string;
-  error_type?: string;
-  ip?: string;
-  user_agent?: string;
-  browser_name?: string;
-  browser_version?: string;
-  os_name?: string;
-  os_version?: string;
-  device_type?: string;
-  country?: string;
-  region?: string;
-  created_at: number;
+	id: string;
+	client_id: string;
+	event_id?: string;
+	anonymous_id: string;
+	session_id: string;
+	timestamp: number;
+	path: string;
+	message: string;
+	filename?: string;
+	lineno?: number;
+	colno?: number;
+	stack?: string;
+	error_type?: string;
+	ip?: string;
+	user_agent?: string;
+	browser_name?: string;
+	browser_version?: string;
+	os_name?: string;
+	os_version?: string;
+	device_type?: string;
+	country?: string;
+	region?: string;
+	created_at: number;
 }
 
 export interface WebVitalsEvent {
-  id: string;
-  client_id: string;
-  event_id?: string;
-  anonymous_id: string;
-  session_id: string;
-  timestamp: number;
-  path: string;
-  fcp?: number;
-  lcp?: number;
-  cls?: number;
-  fid?: number;
-  inp?: number;
-  ip?: string;
-  user_agent?: string;
-  browser_name?: string;
-  browser_version?: string;
-  os_name?: string;
-  os_version?: string;
-  device_type?: string;
-  country?: string;
-  region?: string;
-  created_at: number;
+	id: string;
+	client_id: string;
+	event_id?: string;
+	anonymous_id: string;
+	session_id: string;
+	timestamp: number;
+	path: string;
+	fcp?: number;
+	lcp?: number;
+	cls?: number;
+	fid?: number;
+	inp?: number;
+	ip?: string;
+	user_agent?: string;
+	browser_name?: string;
+	browser_version?: string;
+	os_name?: string;
+	os_version?: string;
+	device_type?: string;
+	country?: string;
+	region?: string;
+	created_at: number;
 }
 
 // Stripe table interfaces
 export interface StripePaymentIntent {
-  id: string;
-  client_id: string;
-  webhook_token: string;
-  created: number;
-  status: string;
-  currency: string;
-  amount: number;
-  amount_received: number;
-  amount_capturable: number;
-  livemode: number;
-  metadata: Record<string, any>;
-  payment_method_types: string[];
-  failure_reason?: string;
-  canceled_at?: number;
-  cancellation_reason?: string;
-  description?: string;
-  application_fee_amount?: number;
-  setup_future_usage?: string;
-  session_id?: string;
+	id: string;
+	client_id: string;
+	webhook_token: string;
+	created: number;
+	status: string;
+	currency: string;
+	amount: number;
+	amount_received: number;
+	amount_capturable: number;
+	livemode: number;
+	metadata: Record<string, any>;
+	payment_method_types: string[];
+	failure_reason?: string;
+	canceled_at?: number;
+	cancellation_reason?: string;
+	description?: string;
+	application_fee_amount?: number;
+	setup_future_usage?: string;
+	session_id?: string;
 }
 
 export interface StripeCharge {
-  id: string;
-  client_id: string;
-  webhook_token: string;
-  created: number;
-  status: string;
-  currency: string;
-  amount: number;
-  amount_captured: number;
-  amount_refunded: number;
-  paid: number;
-  refunded: number;
-  livemode: number;
-  failure_code?: string;
-  failure_message?: string;
-  outcome_type?: string;
-  risk_level?: string;
-  card_brand?: string;
-  payment_intent_id?: string;
-  session_id?: string;
+	id: string;
+	client_id: string;
+	webhook_token: string;
+	created: number;
+	status: string;
+	currency: string;
+	amount: number;
+	amount_captured: number;
+	amount_refunded: number;
+	paid: number;
+	refunded: number;
+	livemode: number;
+	failure_code?: string;
+	failure_message?: string;
+	outcome_type?: string;
+	risk_level?: string;
+	card_brand?: string;
+	payment_intent_id?: string;
+	session_id?: string;
 }
 
 export interface StripeRefund {
-  id: string;
-  client_id: string;
-  webhook_token: string;
-  created: number;
-  amount: number;
-  status: string;
-  reason?: string;
-  currency: string;
-  charge_id: string;
-  payment_intent_id?: string;
-  metadata: Record<string, any>;
-  session_id?: string;
+	id: string;
+	client_id: string;
+	webhook_token: string;
+	created: number;
+	amount: number;
+	status: string;
+	reason?: string;
+	currency: string;
+	charge_id: string;
+	payment_intent_id?: string;
+	metadata: Record<string, any>;
+	session_id?: string;
 }
 
 export interface BlockedTraffic {
-  id: string;
-  client_id?: string;
-  timestamp: number;
-  path?: string;
-  url?: string;
-  referrer?: string;
-  method: string;
-  origin?: string;
-  ip: string;
-  user_agent?: string;
-  accept_header?: string;
-  language?: string;
-  block_reason: string;
-  block_category: string;
-  bot_name?: string;
-  country?: string;
-  region?: string;
-  city?: string;
-  browser_name?: string;
-  browser_version?: string;
-  os_name?: string;
-  os_version?: string;
-  device_type?: string;
-  payload_size?: number;
-  created_at: number;
+	id: string;
+	client_id?: string;
+	timestamp: number;
+	path?: string;
+	url?: string;
+	referrer?: string;
+	method: string;
+	origin?: string;
+	ip: string;
+	user_agent?: string;
+	accept_header?: string;
+	language?: string;
+	block_reason: string;
+	block_category: string;
+	bot_name?: string;
+	country?: string;
+	region?: string;
+	city?: string;
+	browser_name?: string;
+	browser_version?: string;
+	os_name?: string;
+	os_version?: string;
+	device_type?: string;
+	payload_size?: number;
+	created_at: number;
 }
 
 // TypeScript interface that matches the ClickHouse schema
 export interface AnalyticsEvent {
-  // Core identification
-  id: string;
-  client_id: string;
-  event_name: string;
-  anonymous_id: string;
-  time: number;
-  session_id: string;
+	// Core identification
+	id: string;
+	client_id: string;
+	event_name: string;
+	anonymous_id: string;
+	time: number;
+	session_id: string;
 
-  // New fields
-  event_type?: 'track' | 'error' | 'web_vitals';
-  event_id?: string;
-  session_start_time?: number;
-  timestamp?: number;
+	// New fields
+	event_type?: 'track' | 'error' | 'web_vitals';
+	event_id?: string;
+	session_start_time?: number;
+	timestamp?: number;
 
-  // Page context
-  referrer?: string;
-  url: string;
-  path: string;
-  title?: string;
+	// Page context
+	referrer?: string;
+	url: string;
+	path: string;
+	title?: string;
 
-  // Server enrichment
-  ip: string;
-  user_agent: string;
-  browser_name?: string;
-  browser_version?: string;
-  os_name?: string;
-  os_version?: string;
-  device_type?: string;
-  device_brand?: string;
-  device_model?: string;
-  country?: string;
-  region?: string;
-  city?: string;
+	// Server enrichment
+	ip: string;
+	user_agent: string;
+	browser_name?: string;
+	browser_version?: string;
+	os_name?: string;
+	os_version?: string;
+	device_type?: string;
+	device_brand?: string;
+	device_model?: string;
+	country?: string;
+	region?: string;
+	city?: string;
 
-  // User context
-  screen_resolution?: string;
-  viewport_size?: string;
-  language?: string;
-  timezone?: string;
+	// User context
+	screen_resolution?: string;
+	viewport_size?: string;
+	language?: string;
+	timezone?: string;
 
-  // Connection info
-  connection_type?: string;
-  rtt?: number;
-  downlink?: number;
+	// Connection info
+	connection_type?: string;
+	rtt?: number;
+	downlink?: number;
 
-  // Engagement metrics
-  time_on_page?: number;
-  scroll_depth?: number;
-  interaction_count?: number;
-  exit_intent: number;
-  page_count: number;
-  is_bounce: number;
-  has_exit_intent?: number;
-  page_size?: number;
+	// Engagement metrics
+	time_on_page?: number;
+	scroll_depth?: number;
+	interaction_count?: number;
+	exit_intent: number;
+	page_count: number;
+	is_bounce: number;
+	has_exit_intent?: number;
+	page_size?: number;
 
-  // UTM parameters
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  utm_term?: string;
-  utm_content?: string;
+	// UTM parameters
+	utm_source?: string;
+	utm_medium?: string;
+	utm_campaign?: string;
+	utm_term?: string;
+	utm_content?: string;
 
-  // Performance metrics
-  load_time?: number;
-  dom_ready_time?: number;
-  dom_interactive?: number;
-  ttfb?: number;
-  connection_time?: number;
-  request_time?: number;
-  render_time?: number;
-  redirect_time?: number;
-  domain_lookup_time?: number;
+	// Performance metrics
+	load_time?: number;
+	dom_ready_time?: number;
+	dom_interactive?: number;
+	ttfb?: number;
+	connection_time?: number;
+	request_time?: number;
+	render_time?: number;
+	redirect_time?: number;
+	domain_lookup_time?: number;
 
-  // Web Vitals
-  fcp?: number;
-  lcp?: number;
-  cls?: number;
-  fid?: number;
-  inp?: number;
+	// Web Vitals
+	fcp?: number;
+	lcp?: number;
+	cls?: number;
+	fid?: number;
+	inp?: number;
 
-  // Link tracking
-  href?: string;
-  text?: string;
+	// Link tracking
+	href?: string;
+	text?: string;
 
-  // Custom event value
-  value?: string;
+	// Custom event value
+	value?: string;
 
-  // Error tracking
-  error_message?: string;
-  error_filename?: string;
-  error_lineno?: number;
-  error_colno?: number;
-  error_stack?: string;
-  error_type?: string;
+	// Error tracking
+	error_message?: string;
+	error_filename?: string;
+	error_lineno?: number;
+	error_colno?: number;
+	error_stack?: string;
+	error_type?: string;
 
-  // Legacy properties
-  properties: string;
+	// Legacy properties
+	properties: string;
 
-  // Metadata
-  created_at: number;
+	// Metadata
+	created_at: number;
 }
 
 /**
  * Initialize the ClickHouse schema by creating necessary database and tables
  */
 export async function initClickHouseSchema() {
-  try {
-    console.info('Initializing ClickHouse schema...');
+	try {
+		console.info('Initializing ClickHouse schema...');
 
-    // Create the analytics database
-    await clickHouse.command({
-      query: CREATE_DATABASE,
-    });
-    console.info(`Created database: ${ANALYTICS_DATABASE}`);
+		// Create the analytics database
+		await clickHouse.command({
+			query: CREATE_DATABASE,
+		});
+		console.info(`Created database: ${ANALYTICS_DATABASE}`);
 
-    // Create tables
-    const tables = [
-      { name: 'events', query: CREATE_EVENTS_TABLE },
-      { name: 'errors', query: CREATE_ERRORS_TABLE },
-      { name: 'web_vitals', query: CREATE_WEB_VITALS_TABLE },
-      {
-        name: 'stripe_payment_intents',
-        query: CREATE_STRIPE_PAYMENT_INTENTS_TABLE,
-      },
-      { name: 'stripe_charges', query: CREATE_STRIPE_CHARGES_TABLE },
-      { name: 'stripe_refunds', query: CREATE_STRIPE_REFUNDS_TABLE },
-      { name: 'blocked_traffic', query: CREATE_BLOCKED_TRAFFIC_TABLE },
-    ];
+		// Create tables
+		const tables = [
+			{ name: 'events', query: CREATE_EVENTS_TABLE },
+			{ name: 'errors', query: CREATE_ERRORS_TABLE },
+			{ name: 'web_vitals', query: CREATE_WEB_VITALS_TABLE },
+			{
+				name: 'stripe_payment_intents',
+				query: CREATE_STRIPE_PAYMENT_INTENTS_TABLE,
+			},
+			{ name: 'stripe_charges', query: CREATE_STRIPE_CHARGES_TABLE },
+			{ name: 'stripe_refunds', query: CREATE_STRIPE_REFUNDS_TABLE },
+			{ name: 'blocked_traffic', query: CREATE_BLOCKED_TRAFFIC_TABLE },
+		];
 
-    for (const table of tables) {
-      await clickHouse.command({
-        query: table.query,
-      });
-      console.info(`Created table: ${ANALYTICS_DATABASE}.${table.name}`);
-    }
+		for (const table of tables) {
+			await clickHouse.command({
+				query: table.query,
+			});
+			console.info(`Created table: ${ANALYTICS_DATABASE}.${table.name}`);
+		}
 
-    console.info('ClickHouse schema initialization completed successfully');
-    return {
-      success: true,
-      message: 'ClickHouse schema initialized successfully',
-      details: {
-        database: ANALYTICS_DATABASE,
-        tables: tables.map((t) => t.name),
-      },
-    };
-  } catch (error) {
-    console.error('Error initializing ClickHouse schema:', error);
-    return {
-      success: false,
-      message: 'Failed to initialize ClickHouse schema',
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
+		console.info('ClickHouse schema initialization completed successfully');
+		return {
+			success: true,
+			message: 'ClickHouse schema initialized successfully',
+			details: {
+				database: ANALYTICS_DATABASE,
+				tables: tables.map((t) => t.name),
+			},
+		};
+	} catch (error) {
+		console.error('Error initializing ClickHouse schema:', error);
+		return {
+			success: false,
+			message: 'Failed to initialize ClickHouse schema',
+			error: error instanceof Error ? error.message : String(error),
+		};
+	}
 }

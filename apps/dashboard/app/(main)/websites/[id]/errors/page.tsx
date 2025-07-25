@@ -1,9 +1,9 @@
 import { ErrorsPageContent } from './_components/errors-page-content';
 
 export default function ErrorsPage({
-  params,
+	params,
 }: {
-  params: Promise<{ id: string }>;
+	params: Promise<{ id: string }>;
 }) {
-  return <ErrorsPageContent params={params} />;
+	return <ErrorsPageContent params={params} />;
 }

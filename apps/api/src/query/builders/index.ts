@@ -10,16 +10,16 @@ import { SummaryBuilders } from './summary';
 import { TrafficBuilders } from './traffic';
 
 export const QueryBuilders = {
-  ...SummaryBuilders,
-  ...PagesBuilders,
-  ...TrafficBuilders,
-  ...DevicesBuilders,
-  ...GeoBuilders,
-  ...ErrorsBuilders,
-  ...PerformanceBuilders,
-  ...SessionsBuilders,
-  ...CustomEventsBuilders,
-  ...ProfilesBuilders,
+	...SummaryBuilders,
+	...PagesBuilders,
+	...TrafficBuilders,
+	...DevicesBuilders,
+	...GeoBuilders,
+	...ErrorsBuilders,
+	...PerformanceBuilders,
+	...SessionsBuilders,
+	...CustomEventsBuilders,
+	...ProfilesBuilders,
 };
 
 export type QueryType = keyof typeof QueryBuilders;

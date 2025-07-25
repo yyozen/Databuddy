@@ -5,9 +5,9 @@ export { handleMetricResponse } from './handlers/metric-handler';
 export type { AssistantContext, AssistantRequest } from './processor';
 export { processAssistantRequest } from './processor';
 export {
-  AIPlanSchema,
-  AIResponseJsonSchema,
-  comprehensiveUnifiedPrompt,
+	AIPlanSchema,
+	AIResponseJsonSchema,
+	comprehensiveUnifiedPrompt,
 } from './prompts/agent';
 export { getAICompletion } from './utils/ai-client';
 export { executeQuery } from './utils/query-executor';
@@ -15,6 +15,6 @@ export { parseAIResponse } from './utils/response-parser';
 export { validateSQL } from './utils/sql-validator';
 export type { StreamingUpdate } from './utils/stream-utils';
 export {
-  createStreamingResponse,
-  generateThinkingSteps,
+	createStreamingResponse,
+	generateThinkingSteps,
 } from './utils/stream-utils';

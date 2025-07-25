@@ -1,10 +1,10 @@
 import {
-  customSessionClient,
-  emailOTPClient,
-  magicLinkClient,
-  multiSessionClient,
-  organizationClient,
-  twoFactorClient,
+	customSessionClient,
+	emailOTPClient,
+	magicLinkClient,
+	multiSessionClient,
+	organizationClient,
+	twoFactorClient,
 } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
 import type { auth } from '../auth';
@@ -12,32 +12,32 @@ import { ac, admin, member, owner } from '../permissions';
 
 // Define a type for the auth client configuration
 export type AuthClientConfig = {
-  baseURL?: string;
-  debug?: boolean;
+	baseURL?: string;
+	debug?: boolean;
 };
 
 const defaultConfig: AuthClientConfig = {
-  baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL as string,
-  debug: process.env.NODE_ENV !== 'production',
+	baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL as string,
+	debug: process.env.NODE_ENV !== 'production',
 };
 
 export const authClient = createAuthClient({
-  baseURL: defaultConfig.baseURL,
-  plugins: [
-    customSessionClient<typeof auth>(),
-    twoFactorClient(),
-    multiSessionClient(),
-    emailOTPClient(),
-    magicLinkClient(),
-    organizationClient({
-      ac,
-      roles: {
-        owner,
-        admin,
-        member,
-      },
-    }),
-  ],
+	baseURL: defaultConfig.baseURL,
+	plugins: [
+		customSessionClient<typeof auth>(),
+		twoFactorClient(),
+		multiSessionClient(),
+		emailOTPClient(),
+		magicLinkClient(),
+		organizationClient({
+			ac,
+			roles: {
+				owner,
+				admin,
+				member,
+			},
+		}),
+	],
 });
 
 const signIn = authClient.signIn;

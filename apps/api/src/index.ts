@@ -7,60 +7,60 @@ import { health } from './routes/health';
 import { query } from './routes/query';
 
 const app = new Elysia()
-  .use(
-    cors({
-      credentials: true,
-      origin: [
-        /(?:^|\.)databuddy\.cc$/,
-        ...(process.env.NODE_ENV === 'development'
-          ? ['http://localhost:3000']
-          : []),
-      ],
-    })
-  )
+	.use(
+		cors({
+			credentials: true,
+			origin: [
+				/(?:^|\.)databuddy\.cc$/,
+				...(process.env.NODE_ENV === 'development'
+					? ['http://localhost:3000']
+					: []),
+			],
+		})
+	)
 
-  .use(query)
-  .use(assistant)
-  .use(health)
-  .all('/trpc/*', ({ request }) => {
-    return fetchRequestHandler({
-      endpoint: '/trpc',
-      router: appRouter,
-      req: request,
-      createContext: () => createTRPCContext({ headers: request.headers }),
-    });
-  })
-  .onError(({ error, code }) => {
-    console.error(error);
+	.use(query)
+	.use(assistant)
+	.use(health)
+	.all('/trpc/*', ({ request }) => {
+		return fetchRequestHandler({
+			endpoint: '/trpc',
+			router: appRouter,
+			req: request,
+			createContext: () => createTRPCContext({ headers: request.headers }),
+		});
+	})
+	.onError(({ error, code }) => {
+		console.error(error);
 
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Authentication required',
-          code: 'AUTH_REQUIRED',
-        }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
+		if (error instanceof Error && error.message === 'Unauthorized') {
+			return new Response(
+				JSON.stringify({
+					success: false,
+					error: 'Authentication required',
+					code: 'AUTH_REQUIRED',
+				}),
+				{
+					status: 401,
+					headers: { 'Content-Type': 'application/json' },
+				}
+			);
+		}
 
-    return { success: false, code };
-  });
+		return { success: false, code };
+	});
 
 export default {
-  fetch: app.fetch,
-  port: 3001,
+	fetch: app.fetch,
+	port: 3001,
 };
 
 process.on('SIGINT', () => {
-  console.log('SIGINT signal received, shutting down...');
-  process.exit(0);
+	console.log('SIGINT signal received, shutting down...');
+	process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received, shutting down...');
-  process.exit(0);
+	console.log('SIGTERM signal received, shutting down...');
+	process.exit(0);
 });

@@ -4,15 +4,15 @@ import { redirect } from 'next/navigation';
 import { useSession } from '@/components/layout/session-provider';
 
 interface SignedOutProps {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }
 
 export function SignedOut({ children }: SignedOutProps) {
-  const { session } = useSession();
+	const { session } = useSession();
 
-  if (session) {
-    redirect('/dashboard');
-  }
+	if (session) {
+		redirect('/dashboard');
+	}
 
-  return <>{children}</>;
+	return <>{children}</>;
 }

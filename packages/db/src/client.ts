@@ -9,7 +9,7 @@ const fullSchema = { ...schema, ...relations };
 const databaseUrl = process.env.DATABASE_URL as string;
 
 if (!databaseUrl) {
-  throw new Error('DATABASE_URL is not set');
+	throw new Error('DATABASE_URL is not set');
 }
 
 const pool = new Pool({ connectionString: databaseUrl });

@@ -2,15 +2,15 @@ import { redirect } from 'next/navigation';
 import { useSession } from '@/components/layout/session-provider';
 
 interface RedirectToSignInProps {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }
 
 export function RedirectToSignIn({ children }: RedirectToSignInProps) {
-  const { session } = useSession();
+	const { session } = useSession();
 
-  if (!session) {
-    redirect('/login');
-  }
+	if (!session) {
+		redirect('/login');
+	}
 
-  return <>{children}</>;
+	return <>{children}</>;
 }

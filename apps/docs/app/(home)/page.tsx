@@ -29,19 +29,19 @@ import Hero from '@/components/landing/hero';
 // }
 
 export default async function HomePage() {
-  // const stars = await getGitHubStars();
+	// const stars = await getGitHubStars();
 
-  return (
-    <div className="min-h-screen">
-      <Hero />
+	return (
+		<div className="min-h-screen">
+			<Hero />
 
-      <Features stars={null} />
+			<Features stars={null} />
 
-      <Comparison />
+			<Comparison />
 
-      <FAQ />
+			<FAQ />
 
-      <CTA />
-    </div>
-  );
+			<CTA />
+		</div>
+	);
 }
