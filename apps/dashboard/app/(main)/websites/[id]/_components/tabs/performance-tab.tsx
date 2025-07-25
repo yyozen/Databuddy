@@ -1,10 +1,9 @@
 "use client";
 
-import { Question } from "@phosphor-icons/react";
+import { QuestionIcon } from "@phosphor-icons/react";
 import {
   AlertTriangle,
   CheckCircle,
-  MapPin,
   Monitor,
   Smartphone,
   TrendingUp,
@@ -19,8 +18,12 @@ import { useEnhancedPerformanceData } from "@/hooks/use-dynamic-query";
 import { calculatePerformanceSummary } from "@/lib/performance-utils";
 import type { PerformanceEntry, PerformanceSummary } from "@/types/performance";
 import type { FullTabProps } from "../utils/types";
+import { getCountryCode, getCountryName } from "@databuddy/shared";
 
 const getPerformanceRating = (score: number): { rating: string; className: string } => {
+  if (typeof score !== "number" || Number.isNaN(score)) {
+    return { rating: "Unknown", className: "text-muted-foreground" };
+  }
   if (score >= 90) return { rating: "Excellent", className: "text-green-500" };
   if (score >= 70) return { rating: "Good", className: "text-green-500" };
   if (score >= 50) return { rating: "Moderate", className: "text-yellow-500" };
@@ -147,7 +150,7 @@ const PerformanceSummaryCard = ({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <Question className="h-3 w-3 text-muted-foreground" />
+                <QuestionIcon className="h-3 w-3 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent>
                 <p>A weighted score based on page load times and visitor counts.</p>
@@ -286,9 +289,12 @@ export function WebsitePerformanceTab({
       };
     }
 
-    const data = performanceResults
+    const data: Record<string, any> = {};
+    performanceResults
       .filter(result => result.success && result.data)
-      .reduce((acc, result) => Object.assign(acc, result.data), {} as Record<string, any>);
+      .forEach(result => {
+        Object.assign(data, result.data);
+      });
 
     const allPages = data.slow_pages || [];
     const filteredPages = filterPagesByPerformance(allPages, activeFilter);
@@ -333,10 +339,35 @@ export function WebsitePerformanceTab({
       return <CountryFlag country={item?.country_code || name} size={16} />;
     };
 
+    const getRegionCountryIcon = (name: string) => {
+      if (typeof name !== "string" || !name.includes(",")) {
+        return <CountryFlag country={""} size={16} />;
+      }
+      const countryPart = name.split(",")[1]?.trim();
+      const code = getCountryCode(countryPart || "");
+      return <CountryFlag country={code} size={16} />;
+    };
+
+    const formatRegionName = (name: string) => {
+      if (typeof name !== "string" || !name.includes(",")) {
+        return name || "Unknown region";
+      }
+      const [region, countryPart] = name.split(",").map(s => s.trim());
+      if (!region || !countryPart) {
+        return name || "Unknown region";
+      }
+      const code = getCountryCode(countryPart);
+      const countryName = getCountryName(code);
+      if (countryName && region && countryName.toLowerCase() === region.toLowerCase()) {
+        return countryName;
+      }
+      return countryName ? `${region}, ${countryName}` : name;
+    };
+
     const configs = [
       { id: "pages", label: "Pages", data: processedData.pages, iconRenderer: undefined, nameFormatter: formatPageName },
       { id: "countries", label: "Country", data: processedData.countries, iconRenderer: getCountryIcon },
-      { id: "regions", label: "Regions", data: processedData.regions, iconRenderer: () => <MapPin className="h-4 w-4 text-primary" /> },
+      { id: "regions", label: "Regions", data: processedData.regions, iconRenderer: getRegionCountryIcon, nameFormatter: formatRegionName },
       { id: "devices", label: "Device Types", data: processedData.devices, iconRenderer: getDeviceIcon },
       { id: "browsers", label: "Browsers", data: processedData.browsers, iconRenderer: (name: string) => <BrowserIcon name={name} size="sm" /> },
       { id: "operating_systems", label: "Operating Systems", data: processedData.operating_systems, iconRenderer: (name: string) => <OSIcon name={name} size="sm" /> },

@@ -1,6 +1,7 @@
 import type { SimpleQueryConfig, Filter, TimeUnit } from "../types";
+import { Analytics } from "../../types/tables";
 
-export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
+export const SummaryBuilders: Record<string, SimpleQueryConfig<typeof Analytics.events>> = {
   summary_metrics: {
     customSql: (websiteId: string, startDate: string, endDate: string) => {
       return {
@@ -70,7 +71,7 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
   },
 
   today_metrics: {
-    table: 'analytics.events',
+    table: Analytics.events,
     fields: [
       'COUNT(*) as pageviews',
       'COUNT(DISTINCT anonymous_id) as visitors',
@@ -87,7 +88,8 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
   },
 
   events_by_date: {
-    customSql: (websiteId: string, startDate: string, endDate: string, filters?: Filter[], granularity?: TimeUnit) => {
+    customSql: (websiteId: string, startDate: string, endDate: string, filters?: Filter[], granularity?: TimeUnit, limit?: number, offset?: number, timezone?: string) => {
+      const tz = timezone || 'UTC';
       const isHourly = granularity === 'hour' || granularity === 'hourly';
 
       if (isHourly) {
@@ -102,7 +104,7 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                 session_details AS (
                   SELECT
                     session_id,
-                    toStartOfHour(MIN(time)) as session_start_hour,
+                    toStartOfHour(toTimeZone(MIN(time), {timezone:String})) as session_start_hour,
                     countIf(event_name = 'screen_view') as page_count,
                     dateDiff('second', MIN(time), MAX(time)) as duration
                   FROM analytics.events
@@ -123,7 +125,7 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                 ),
                 hourly_event_metrics AS (
                   SELECT
-                    toStartOfHour(time) as event_hour,
+                    toStartOfHour(toTimeZone(time, {timezone:String})) as event_hour,
                     countIf(event_name = 'screen_view') as pageviews,
                     count(distinct anonymous_id) as unique_visitors
                   FROM analytics.events
@@ -158,6 +160,7 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
             websiteId,
             startDate,
             endDate,
+            timezone: tz,
           }
         };
       }
@@ -173,7 +176,7 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                 session_details AS (
                   SELECT
                     session_id,
-                    toDate(MIN(time)) as session_start_date,
+                    toDate(toTimeZone(MIN(time), {timezone:String})) as session_start_date,
                     countIf(event_name = 'screen_view') as page_count,
                     dateDiff('second', MIN(time), MAX(time)) as duration
                   FROM analytics.events
@@ -194,7 +197,7 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
                 ),
                 daily_event_metrics AS (
                   SELECT
-                    toDate(time) as event_date,
+                    toDate(toTimeZone(time, {timezone:String})) as event_date,
                     countIf(event_name = 'screen_view') as pageviews,
                     count(distinct anonymous_id) as unique_visitors
                   FROM analytics.events
@@ -229,6 +232,7 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
           websiteId,
           startDate,
           endDate,
+          timezone: tz,
         }
       };
     },
