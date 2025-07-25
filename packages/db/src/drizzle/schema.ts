@@ -13,11 +13,6 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
-export const clientType = pgEnum('ClientType', [
-  'individual',
-  'company',
-  'nonprofit',
-]);
 export const funnelGoalType = pgEnum('FunnelGoalType', [
   'COMPLETION',
   'STEP_CONVERSION',
@@ -40,18 +35,7 @@ export const organizationRole = pgEnum('OrganizationRole', [
   'member',
   'viewer',
 ]);
-export const projectStatus = pgEnum('ProjectStatus', [
-  'active',
-  'completed',
-  'on_hold',
-  'cancelled',
-]);
-export const projectType = pgEnum('ProjectType', [
-  'website',
-  'mobile_app',
-  'desktop_app',
-  'api',
-]);
+
 export const role = pgEnum('Role', [
   'ADMIN',
   'USER',
@@ -60,14 +44,7 @@ export const role = pgEnum('Role', [
   'BETA_TESTER',
   'GUEST',
 ]);
-export const subscriptionStatus = pgEnum('SubscriptionStatus', [
-  'active',
-  'trialing',
-  'past_due',
-  'canceled',
-  'paused',
-  'incomplete',
-]);
+
 export const userStatus = pgEnum('UserStatus', [
   'ACTIVE',
   'SUSPENDED',
@@ -85,97 +62,6 @@ export const websiteStatus = pgEnum('WebsiteStatus', [
   'INACTIVE',
   'PENDING',
 ]);
-
-export const auditLogs = pgTable(
-  'audit_logs',
-  {
-    id: text().primaryKey().notNull(),
-    action: text().notNull(),
-    resourceType: text().notNull(),
-    resourceId: text().notNull(),
-    details: jsonb(),
-    ipAddress: text(),
-    userAgent: text(),
-    userId: text(),
-    createdAt: timestamp({ precision: 3, mode: 'string' })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => [
-    index('audit_logs_resourceType_resourceId_idx').using(
-      'btree',
-      table.resourceType.asc().nullsLast().op('text_ops'),
-      table.resourceId.asc().nullsLast().op('text_ops')
-    ),
-    index('audit_logs_userId_idx').using(
-      'btree',
-      table.userId.asc().nullsLast().op('text_ops')
-    ),
-    foreignKey({
-      columns: [table.userId],
-      foreignColumns: [user.id],
-      name: 'audit_logs_userId_fkey',
-    })
-      .onUpdate('cascade')
-      .onDelete('set null'),
-  ]
-);
-
-export const eventMeta = pgTable(
-  'event_meta',
-  {
-    id: text().primaryKey().notNull(),
-    projectId: text().notNull(),
-    name: text().notNull(),
-    description: text(),
-    data: jsonb(),
-    createdAt: timestamp({ precision: 3, mode: 'string' })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp({ precision: 3, mode: 'string' })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => [
-    index('event_meta_projectId_idx').using(
-      'btree',
-      table.projectId.asc().nullsLast().op('text_ops')
-    ),
-    foreignKey({
-      columns: [table.projectId],
-      foreignColumns: [projects.id],
-      name: 'event_meta_projectId_fkey',
-    })
-      .onUpdate('cascade')
-      .onDelete('restrict'),
-  ]
-);
-
-export const categories = pgTable(
-  'categories',
-  {
-    id: text().primaryKey().notNull(),
-    name: text().notNull(),
-    slug: text().notNull(),
-    createdAt: timestamp({ precision: 3, mode: 'string' })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp({ precision: 3, mode: 'string' })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    deletedAt: timestamp({ precision: 3, mode: 'string' }),
-  },
-  (table) => [
-    uniqueIndex('categories_name_key').using(
-      'btree',
-      table.name.asc().nullsLast().op('text_ops')
-    ),
-    uniqueIndex('categories_slug_key').using(
-      'btree',
-      table.slug.asc().nullsLast().op('text_ops')
-    ),
-  ]
-);
 
 export const account = pgTable(
   'account',
@@ -207,45 +93,6 @@ export const account = pgTable(
   ]
 );
 
-export const subscriptions = pgTable(
-  'subscriptions',
-  {
-    id: text().primaryKey().notNull(),
-    organizationId: text().notNull(),
-    customerId: text(),
-    priceId: text(),
-    productId: text(),
-    status: subscriptionStatus().default('active').notNull(),
-    startsAt: timestamp({ precision: 3, mode: 'string' }),
-    endsAt: timestamp({ precision: 3, mode: 'string' }),
-    canceledAt: timestamp({ precision: 3, mode: 'string' }),
-    periodEventsCount: integer().default(0).notNull(),
-    periodEventsCountExceededAt: timestamp({ precision: 3, mode: 'string' }),
-    periodEventsLimit: integer().default(0).notNull(),
-    interval: text(),
-    createdByUserId: text(),
-    createdAt: timestamp({ precision: 3, mode: 'string' })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp({ precision: 3, mode: 'string' })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (table) => [
-    uniqueIndex('subscriptions_organizationId_key').using(
-      'btree',
-      table.organizationId.asc().nullsLast().op('text_ops')
-    ),
-    foreignKey({
-      columns: [table.createdByUserId],
-      foreignColumns: [user.id],
-      name: 'subscriptions_createdByUserId_fkey',
-    })
-      .onUpdate('cascade')
-      .onDelete('set null'),
-  ]
-);
-
 export const session = pgTable(
   'session',
   {
@@ -274,42 +121,6 @@ export const session = pgTable(
       columns: [table.userId],
       foreignColumns: [user.id],
       name: 'session_userId_fkey',
-    })
-      .onUpdate('cascade')
-      .onDelete('cascade'),
-  ]
-);
-
-export const projects = pgTable(
-  'projects',
-  {
-    id: text().primaryKey().notNull(),
-    name: text().notNull(),
-    slug: text().notNull(),
-    description: text(),
-    type: projectType().default('website').notNull(),
-    organizationId: text('organization_id').notNull(),
-    startDate: timestamp({ precision: 3, mode: 'string' }),
-    endDate: timestamp({ precision: 3, mode: 'string' }),
-    status: projectStatus().default('active').notNull(),
-    createdAt: timestamp({ precision: 3, mode: 'string' })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp({ precision: 3, mode: 'string' })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    deletedAt: timestamp({ precision: 3, mode: 'string' }),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.organizationId],
-      foreignColumns: [organization.id],
-      name: 'projects_organization_id_organization_id_fk',
-    }).onDelete('cascade'),
-    foreignKey({
-      columns: [table.organizationId],
-      foreignColumns: [organization.id],
-      name: 'projects_organizationId_fkey',
     })
       .onUpdate('cascade')
       .onDelete('cascade'),
@@ -428,7 +239,6 @@ export const websites = pgTable(
     name: text(),
     status: websiteStatus().default('ACTIVE').notNull(),
     userId: text(),
-    projectId: text(),
     isPublic: boolean().default(false).notNull(),
     createdAt: timestamp({ precision: 3, mode: 'string' })
       .default(sql`CURRENT_TIMESTAMP`)
@@ -446,10 +256,6 @@ export const websites = pgTable(
     uniqueIndex('websites_org_domain_unique')
       .on(table.organizationId, table.domain)
       .where(isNotNull(table.organizationId)),
-    uniqueIndex('websites_projectId_key').using(
-      'btree',
-      table.projectId.asc().nullsLast().op('text_ops')
-    ),
     index('websites_userId_idx').using(
       'btree',
       table.userId.asc().nullsLast().op('text_ops')
@@ -458,13 +264,6 @@ export const websites = pgTable(
       columns: [table.userId],
       foreignColumns: [user.id],
       name: 'websites_userId_fkey',
-    })
-      .onUpdate('cascade')
-      .onDelete('set null'),
-    foreignKey({
-      columns: [table.projectId],
-      foreignColumns: [projects.id],
-      name: 'websites_projectId_fkey',
     })
       .onUpdate('cascade')
       .onDelete('set null'),
@@ -758,4 +557,131 @@ export const organization = pgTable(
     metadata: text(),
   },
   (table) => [unique('organization_slug_unique').on(table.slug)]
+);
+
+export const abTestStatus = pgEnum('ab_test_status', [
+  'draft',
+  'running',
+  'paused',
+  'completed',
+]);
+
+export const abVariantType = pgEnum('ab_variant_type', [
+  'visual',
+  'redirect',
+  'code',
+]);
+
+export const abExperiments = pgTable(
+  'ab_experiments',
+  {
+    id: text().primaryKey().notNull(),
+    websiteId: text().notNull(),
+    name: text().notNull(),
+    description: text(),
+    status: abTestStatus().default('draft').notNull(),
+    trafficAllocation: integer().default(100).notNull(),
+    startDate: timestamp({ precision: 3, mode: 'string' }),
+    endDate: timestamp({ precision: 3, mode: 'string' }),
+    primaryGoal: text(),
+    createdBy: text().notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'string' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'string' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    deletedAt: timestamp({ precision: 3, mode: 'string' }),
+  },
+  (table) => [
+    index('ab_experiments_websiteId_idx').using(
+      'btree',
+      table.websiteId.asc().nullsLast()
+    ),
+    index('ab_experiments_createdBy_idx').using(
+      'btree',
+      table.createdBy.asc().nullsLast()
+    ),
+    index('ab_experiments_status_idx').using(
+      'btree',
+      table.status.asc().nullsLast()
+    ),
+    foreignKey({
+      columns: [table.websiteId],
+      foreignColumns: [websites.id],
+      name: 'ab_experiments_websiteId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
+    foreignKey({
+      columns: [table.createdBy],
+      foreignColumns: [user.id],
+      name: 'ab_experiments_createdBy_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
+  ]
+);
+
+export const abVariants = pgTable(
+  'ab_variants',
+  {
+    id: text().primaryKey().notNull(),
+    experimentId: text().notNull(),
+    name: text().notNull(),
+    type: abVariantType().default('visual').notNull(),
+    content: jsonb().notNull(),
+    trafficWeight: integer().default(50).notNull(),
+    isControl: boolean().default(false).notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'string' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'string' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    index('ab_variants_experimentId_idx').using(
+      'btree',
+      table.experimentId.asc().nullsLast()
+    ),
+    foreignKey({
+      columns: [table.experimentId],
+      foreignColumns: [abExperiments.id],
+      name: 'ab_variants_experimentId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
+  ]
+);
+
+export const abGoals = pgTable(
+  'ab_goals',
+  {
+    id: text().primaryKey().notNull(),
+    experimentId: text().notNull(),
+    name: text().notNull(),
+    type: text().notNull(),
+    target: text().notNull(),
+    description: text(),
+    createdAt: timestamp({ precision: 3, mode: 'string' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'string' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    index('ab_goals_experimentId_idx').using(
+      'btree',
+      table.experimentId.asc().nullsLast()
+    ),
+    foreignKey({
+      columns: [table.experimentId],
+      foreignColumns: [abExperiments.id],
+      name: 'ab_goals_experimentId_fkey',
+    })
+      .onUpdate('cascade')
+      .onDelete('cascade'),
+  ]
 );

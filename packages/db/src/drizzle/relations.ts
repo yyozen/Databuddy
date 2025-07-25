@@ -2,16 +2,12 @@ import { relations } from 'drizzle-orm/relations';
 import {
   account,
   apikey,
-  auditLogs,
-  eventMeta,
   funnelDefinitions,
   funnelGoals,
   invitation,
   member,
   organization,
-  projects,
   session,
-  subscriptions,
   team,
   twoFactor,
   user,
@@ -19,17 +15,8 @@ import {
   websites,
 } from './schema';
 
-export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
-  user: one(user, {
-    fields: [auditLogs.userId],
-    references: [user.id],
-  }),
-}));
-
 export const userRelations = relations(user, ({ many }) => ({
-  auditLogs: many(auditLogs),
   accounts: many(account),
-  subscriptions: many(subscriptions),
   sessions: many(session),
   invitations: many(invitation),
   members: many(member),
@@ -40,20 +27,7 @@ export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),
 }));
 
-export const projectsRelations = relations(projects, ({ one, many }) => ({
-  eventMetas: many(eventMeta),
-  organization_organizationId: one(organization, {
-    fields: [projects.organizationId],
-    references: [organization.id],
-    relationName: 'projects_organizationId_organization_id',
-  }),
-  websites: many(websites),
-}));
-
 export const organizationRelations = relations(organization, ({ many }) => ({
-  projects_organizationId: many(projects, {
-    relationName: 'projects_organizationId_organization_id',
-  }),
   invitations: many(invitation),
   members: many(member),
   websites_organizationId: many(websites, {
@@ -62,23 +36,9 @@ export const organizationRelations = relations(organization, ({ many }) => ({
   teams: many(team),
 }));
 
-export const eventMetaRelations = relations(eventMeta, ({ one }) => ({
-  project: one(projects, {
-    fields: [eventMeta.projectId],
-    references: [projects.id],
-  }),
-}));
-
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
-    references: [user.id],
-  }),
-}));
-
-export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
-  user: one(user, {
-    fields: [subscriptions.createdByUserId],
     references: [user.id],
   }),
 }));
@@ -133,10 +93,6 @@ export const websitesRelations = relations(websites, ({ one, many }) => ({
   user: one(user, {
     fields: [websites.userId],
     references: [user.id],
-  }),
-  project: one(projects, {
-    fields: [websites.projectId],
-    references: [projects.id],
   }),
   organization_organizationId: one(organization, {
     fields: [websites.organizationId],

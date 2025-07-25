@@ -20,12 +20,16 @@ const websiteNameSchema = z
 
 const domainSchema = z.preprocess(
   (val) => {
-    if (typeof val !== 'string') return val;
+    if (typeof val !== 'string') {
+      return val;
+    }
     let domain = val.trim();
     if (domain.startsWith('http://') || domain.startsWith('https://')) {
       try {
         domain = new URL(domain).hostname;
-      } catch {}
+      } catch {
+        // Do nothing
+      }
     }
     return domain;
   },
@@ -67,7 +71,7 @@ const drizzleCache = createDrizzleCache({ redis, namespace: 'websites' });
 export const websitesRouter = createTRPCRouter({
   list: protectedProcedure
     .input(z.object({ organizationId: z.string().optional() }).default({}))
-    .query(async ({ ctx, input }) => {
+    .query(({ ctx, input }) => {
       const userId = ctx.user.id;
       const orgId = input.organizationId || '';
       const cacheKey = `list:${userId}:${orgId}`;
@@ -75,7 +79,7 @@ export const websitesRouter = createTRPCRouter({
         key: cacheKey,
         ttl: 60,
         tables: ['websites'],
-        queryFn: async () => {
+        queryFn: () => {
           const where = input.organizationId
             ? eq(websites.organizationId, input.organizationId)
             : and(
@@ -92,7 +96,7 @@ export const websitesRouter = createTRPCRouter({
 
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
+    .query(({ ctx, input }) => {
       const cacheKey = `getById:${input.id}`;
       return drizzleCache.withCache({
         key: cacheKey,
