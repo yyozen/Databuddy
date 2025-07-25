@@ -1,6 +1,6 @@
 // Thanks to better-auth for the code
 
-import * as fs from 'node:fs/promises';
+import fs from 'node:fs/promises';
 import fg from 'fast-glob';
 import { remarkInstall } from 'fumadocs-docgen';
 import matter from 'gray-matter';
@@ -28,7 +28,9 @@ ${processed}`;
 
   const scanned = await Promise.all(scan);
 
-  return new Response(scanned.join('\n\n'));
+  return new Response(scanned.join('\n\n'), {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
 }
 
 async function processContent(content: string): Promise<string> {
