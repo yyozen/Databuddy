@@ -50,15 +50,15 @@ function WebsiteMapPage() {
   const { id } = useParams<{ id: string }>();
   const [mode, setMode] = useState<"total" | "perCapita">("total");
 
-  if (!id) {
-    return <div>No website ID</div>;
-  }
-
-  const { results, isLoading, getDataForQuery } = useMapLocationData(id, {
+  const { isLoading, getDataForQuery } = useMapLocationData(id, {
     start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end_date: new Date().toISOString().split('T')[0],
     granularity: 'daily'
   });
+
+  if (!id) {
+    return <div>No website ID</div>;
+  }
 
   const locationData: LocationData = {
     countries: (getDataForQuery("map-countries", "country") || []).map((item: { name: string; visitors: number; pageviews: number; country_code?: string; country_name?: string }) => ({
