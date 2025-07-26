@@ -138,7 +138,7 @@ export default function Comparison() {
 							</div>
 						</div>
 
-						{features.map((feature, index) => (
+						{features.map((feature) => (
 							<div
 								className="border-border/50 border-b transition-colors last:border-b-0 hover:bg-muted/30"
 								key={feature.name}

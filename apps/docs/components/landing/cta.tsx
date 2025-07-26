@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, BarChart2, Check, Plus, Zap } from 'lucide-react';
+import { ArrowRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import LiquidChrome from '../bits/liquid';
@@ -32,7 +32,7 @@ export default function CTA() {
 						<Plus className="ml-auto h-8 w-8 translate-x-[16.5px] translate-y-[.5px] text-muted-foreground" />
 					</div>
 
-					{ctaItems.map((item, index) => (
+					{ctaItems.map((item) => (
 						<Link
 							className={cn(
 								'group flex transform-gpu flex-col justify-center border-border border-t-[1.2px] border-l-[1.2px] p-10 transition-colors hover:bg-muted/50 md:min-h-[240px] md:border-t-0'

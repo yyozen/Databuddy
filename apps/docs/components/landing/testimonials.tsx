@@ -158,7 +158,7 @@ function SlidingTestimonials({
 	testimonials: typeof testimonials;
 	reverse?: boolean;
 }) {
-	const duplicatedTestimonials = Array(15).fill(rowTestimonials).flat();
+	const duplicatedTestimonials = new Array(15).fill(rowTestimonials).flat();
 
 	return (
 		<div className="group relative flex gap-5 overflow-hidden">

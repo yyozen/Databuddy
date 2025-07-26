@@ -147,7 +147,9 @@ function calculateDatabuddyCost(events: number) {
 			remaining -= tierEvents;
 		}
 		prev = max;
-		if (remaining <= 0) break;
+		if (remaining <= 0) {
+			break;
+		}
 	}
 	return cost;
 }
@@ -164,7 +166,9 @@ function calculateFlatOverage(
 			break;
 		}
 	}
-	if (events <= plan.events) return plan.price;
+	if (events <= plan.events) {
+		return plan.price;
+	}
 	return plan.price + (events - plan.events) * overage;
 }
 
@@ -180,21 +184,27 @@ function calculatePosthogCost(events: number) {
 			remaining -= tierEvents;
 		}
 		prev = max;
-		if (remaining <= 0) break;
+		if (remaining <= 0) {
+			break;
+		}
 	}
 	return cost;
 }
 
 function calculatePlausibleCost(events: number) {
 	for (const tier of PLAUSIBLE_TIERS) {
-		if (typeof tier.price === 'number' && events <= tier.max) return tier.price;
+		if (typeof tier.price === 'number' && events <= tier.max) {
+			return tier.price;
+		}
 	}
 	return 'Contact Sales';
 }
 
 function calculateFathomCost(events: number) {
 	for (const tier of FATHOM_TIERS) {
-		if (typeof tier.price === 'number' && events <= tier.max) return tier.price;
+		if (typeof tier.price === 'number' && events <= tier.max) {
+			return tier.price;
+		}
 	}
 	return 'Contact Sales';
 }
@@ -218,12 +228,7 @@ function DatabuddyOverageTooltip() {
 					</div>
 					<div className="space-y-2">
 						{DATABUDDY_TIERS.map((tier, i) => {
-							const from =
-								i === 0
-									? 0
-									: typeof DATABUDDY_TIERS[i - 1].to === 'number'
-										? Number(DATABUDDY_TIERS[i - 1].to) + 1
-										: 0;
+							const from = i === 0 ? 0 : Number(DATABUDDY_TIERS[i - 1].to) + 1;
 							const to =
 								tier.to === 'inf' ? '∞' : Number(tier.to).toLocaleString();
 							return (
@@ -269,12 +274,7 @@ function PosthogOverageTooltip() {
 					</div>
 					<div className="space-y-2">
 						{POSTHOG_TIERS.map((tier, i) => {
-							const from =
-								i === 0
-									? 0
-									: typeof POSTHOG_TIERS[i - 1].to === 'number'
-										? Number(POSTHOG_TIERS[i - 1].to) + 1
-										: 0;
+							const from = i === 0 ? 0 : Number(POSTHOG_TIERS[i - 1].to) + 1;
 							const to =
 								tier.to === 'inf' ? '∞' : Number(tier.to).toLocaleString();
 							return (

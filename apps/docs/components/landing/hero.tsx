@@ -9,7 +9,7 @@ export default function Hero() {
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 
 	const handleFullscreen = () => {
-		if (iframeRef.current && iframeRef.current.requestFullscreen) {
+		if (iframeRef.current?.requestFullscreen) {
 			iframeRef.current.requestFullscreen();
 		}
 	};
@@ -55,8 +55,10 @@ export default function Hero() {
 
 						{/* Main headline */}
 						<div className="space-y-4">
-							<h1 className="font-bold text-4xl tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-								<span className="text-foreground">Privacy-first</span>
+							<h1 className="font-semibold text-4xl tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
+								<span className="text-foreground tracking-tight">
+									Privacy-first
+								</span>
 								<br />
 								<span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
 									analytics for devs
@@ -85,6 +87,7 @@ export default function Hero() {
 								}}
 								onMouseEnter={() => setIsHovered(true)}
 								onMouseLeave={() => setIsHovered(false)}
+								role="tablist"
 							>
 								<iframe
 									allowFullScreen

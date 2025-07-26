@@ -1,4 +1,4 @@
-import { HelpCircle, MessageSquareText } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 const faqs = [
 	{
