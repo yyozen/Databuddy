@@ -452,7 +452,7 @@ export const funnelsRouter = createTRPCRouter({
 						steps: input.steps,
 						filters: input.filters,
 						createdBy: ctx.user.id,
-					} as any)
+					})
 					.returning();
 
 				logger.success('Funnel created', `Created funnel "${input.name}"`, {
@@ -509,7 +509,7 @@ export const funnelsRouter = createTRPCRouter({
 					.set({
 						...updates,
 						updatedAt: new Date().toISOString(),
-					} as any)
+					})
 					.where(
 						and(
 							eq(funnelDefinitions.id, id),
@@ -564,7 +564,7 @@ export const funnelsRouter = createTRPCRouter({
 					.set({
 						deletedAt: new Date().toISOString(),
 						isActive: false,
-					} as any)
+					})
 					.where(
 						and(
 							eq(funnelDefinitions.id, input.id),

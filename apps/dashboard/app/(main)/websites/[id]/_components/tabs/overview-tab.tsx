@@ -13,7 +13,6 @@ import {
 	LayoutIcon,
 	MonitorIcon,
 	QuestionIcon,
-	TelevisionIcon,
 	TimerIcon,
 	UsersIcon,
 	WarningIcon,
@@ -25,7 +24,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useAtom } from 'jotai';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DataTable } from '@/components/analytics/data-table';
 import { StatCard } from '@/components/analytics/stat-card';
 import {
@@ -60,8 +59,6 @@ import {
 	getBrowserIcon,
 	getOSIcon,
 	PercentageBadge,
-	processBrowserData,
-	processDeviceData,
 	TechnologyIcon,
 } from '../utils/technology-helpers';
 import type { FullTabProps, MetricPoint } from '../utils/types';
@@ -120,8 +117,12 @@ function LiveUserIndicator({ websiteId }: { websiteId: string }) {
 	}
 
 	const getChangeColor = () => {
-		if (change === 'up') return 'text-green-500';
-		if (change === 'down') return 'text-red-500';
+		if (change === 'up') {
+			return 'text-green-500';
+		}
+		if (change === 'down') {
+			return 'text-red-500';
+		}
 		return 'text-foreground';
 	};
 
@@ -198,13 +199,7 @@ const deviceTypeColorMap: Record<string, string> = {
 	unknown: 'text-gray-400',
 };
 
-function DeviceTypeCell({
-	device_type,
-	name,
-}: {
-	device_type: string;
-	name: string;
-}) {
+function DeviceTypeCell({ device_type }: { device_type: string }) {
 	const Icon = deviceTypeIconMap[device_type] || QuestionIcon;
 	const colorClass =
 		deviceTypeColorMap[device_type] || deviceTypeColorMap.unknown;
@@ -226,7 +221,6 @@ function DeviceTypeCell({
 export function WebsiteOverviewTab({
 	websiteId,
 	dateRange,
-	websiteData,
 	isRefreshing,
 	setIsRefreshing,
 }: FullTabProps) {
@@ -433,7 +427,9 @@ export function WebsiteOverviewTab({
 	};
 
 	const chartData = (() => {
-		if (!analytics.events_by_date?.length) return [];
+		if (!analytics.events_by_date?.length) {
+			return [];
+		}
 		const filteredEvents = filterFutureEvents(analytics.events_by_date);
 		return filteredEvents.map((event: any): ChartDataPoint => {
 			const filtered: ChartDataPoint = {
@@ -459,7 +455,9 @@ export function WebsiteOverviewTab({
 	})();
 
 	const miniChartData = (() => {
-		if (!analytics.events_by_date?.length) return {};
+		if (!analytics.events_by_date?.length) {
+			return {};
+		}
 		const filteredEvents = filterFutureEvents(analytics.events_by_date);
 		const createChartSeries = (
 			field: string,
@@ -479,7 +477,9 @@ export function WebsiteOverviewTab({
 			pagesPerSession: createChartSeries('pages_per_session'),
 			bounceRate: createChartSeries('bounce_rate'),
 			sessionDuration: createChartSeries('avg_session_duration', (value) => {
-				if (value < 60) return Math.round(value);
+				if (value < 60) {
+					return Math.round(value);
+				}
 				const minutes = Math.floor(value / 60);
 				const seconds = Math.round(value % 60);
 				return minutes * 60 + seconds;
@@ -563,7 +563,9 @@ export function WebsiteOverviewTab({
 	};
 
 	const formatNumber = (value: number | null | undefined): string => {
-		if (value == null || Number.isNaN(value)) return '0';
+		if (value == null || Number.isNaN(value)) {
+			return '0';
+		}
 		return Intl.NumberFormat(undefined, {
 			notation: 'compact',
 			maximumFractionDigits: 1,
@@ -754,7 +756,9 @@ export function WebsiteOverviewTab({
 			const validEntries = period
 				.map((item) => Number(item[field]))
 				.filter((value) => !Number.isNaN(value) && value > 0);
-			if (validEntries.length === 0) return 0;
+			if (validEntries.length === 0) {
+				return 0;
+			}
 			return (
 				validEntries.reduce((acc, value) => acc + value, 0) /
 				validEntries.length
@@ -804,7 +808,9 @@ export function WebsiteOverviewTab({
 			minimumBase = 0
 		) => {
 			const change = calculateTrendPercentage(current, previous, minimumBase);
-			if (change === undefined) return change;
+			if (change === undefined) {
+				return change;
+			}
 			return {
 				change,
 				current,
@@ -919,8 +925,12 @@ export function WebsiteOverviewTab({
 						title: 'SESSION DURATION',
 						value: (() => {
 							const duration = analytics.summary?.avg_session_duration;
-							if (!duration) return '0s';
-							if (duration < 60) return `${duration.toFixed(1)}s`;
+							if (!duration) {
+								return '0s';
+							}
+							if (duration < 60) {
+								return `${duration.toFixed(1)}s`;
+							}
 							const minutes = Math.floor(duration / 60);
 							const seconds = Math.round(duration % 60);
 							return `${minutes}m ${seconds}s`;
@@ -930,13 +940,17 @@ export function WebsiteOverviewTab({
 						chartData: miniChartData.sessionDuration,
 						trend: calculateTrends.session_duration,
 						formatValue: (value: number) => {
-							if (value < 60) return `${Math.round(value)}s`;
+							if (value < 60) {
+								return `${Math.round(value)}s`;
+							}
 							const minutes = Math.floor(value / 60);
 							const seconds = Math.round(value % 60);
 							return `${minutes}m ${seconds}s`;
 						},
 						formatChartValue: (value: number) => {
-							if (value < 60) return `${Math.round(value)}s`;
+							if (value < 60) {
+								return `${Math.round(value)}s`;
+							}
 							const minutes = Math.floor(value / 60);
 							const seconds = Math.round(value % 60);
 							return `${minutes}m ${seconds}s`;
@@ -1048,7 +1062,7 @@ export function WebsiteOverviewTab({
 				initialPageSize={8}
 				isLoading={isLoading}
 				minHeight={350}
-				renderSubRow={(subRow: any, parentRow: any, index: number) => {
+				renderSubRow={(subRow: any, parentRow: any) => {
 					const propertyKey = subRow.key;
 					const propertyTotal = subRow.total;
 					const propertyValues = subRow.values;
