@@ -12,7 +12,7 @@
     "@trpc/react-query": "^11.4.3",
     "autumn-js": "^0.0.111",
     "superjson": "^2.2.2",
-    "zod": "^4.0.5"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "typescript": "^5.4.5"
