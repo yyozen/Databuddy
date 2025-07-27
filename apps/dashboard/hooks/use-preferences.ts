@@ -30,15 +30,15 @@ export function usePreferences() {
 
 	const updateMutation = trpc.preferences.updateUserPreferences.useMutation();
 
-	// Get effective timezone (browser timezone if 'auto')
 	const getEffectiveTimezone = useCallback(() => {
-		if (!preferences) return getBrowserTimezone();
+		if (!preferences) {
+			return getBrowserTimezone();
+		}
 		return preferences.timezone === 'auto'
 			? getBrowserTimezone()
 			: preferences.timezone;
 	}, [preferences]);
 
-	// Format a date according to user preferences
 	const formatWithPreferences = useCallback(
 		(
 			date: Date | string | number,
@@ -47,7 +47,9 @@ export function usePreferences() {
 				customFormat?: string;
 			}
 		) => {
-			if (!date) return '';
+			if (!date) {
+				return '';
+			}
 			const timezone = getEffectiveTimezone();
 			return formatDate(date, {
 				timezone,
@@ -60,7 +62,6 @@ export function usePreferences() {
 		[preferences, getEffectiveTimezone]
 	);
 
-	// Convert a date to the user's timezone
 	const convertToUserTimezone = useCallback(
 		(date: Date | string | number) => {
 			const timezone = getEffectiveTimezone();

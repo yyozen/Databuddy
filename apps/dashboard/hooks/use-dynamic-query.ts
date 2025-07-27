@@ -26,7 +26,7 @@ import {
 	useQuery,
 } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
-import { formatDuration } from '../app/(main)/websites/[id]/profiles/_components/profile-utils';
+import { formatDuration } from '@/app/(main)/websites/[id]/profiles/_components/profile-utils';
 import { usePreferences } from './use-preferences';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -1193,7 +1193,6 @@ export function useSessionsData(
  * Transform profiles data from API2 format to frontend format
  */
 function transformProfilesData(profiles: any[]): ProfileData[] {
-	// Group profiles by visitor_id to combine sessions
 	const profilesByVisitor = new Map();
 
 	for (const profile of profiles) {

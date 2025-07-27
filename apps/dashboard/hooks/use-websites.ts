@@ -54,12 +54,12 @@ export function useCreateWebsite() {
 
 			return { previousWebsites, queryKey };
 		},
-		onError: (err, newWebsite, context) => {
+		onError: (_, __, context) => {
 			if (context?.previousWebsites) {
 				utils.websites.list.setData(context.queryKey, context.previousWebsites);
 			}
 		},
-		onSettled: (data, error, variables, context) => {
+		onSettled: (_, __, ___, context) => {
 			utils.websites.list.invalidate(context?.queryKey);
 		},
 	});
@@ -92,7 +92,7 @@ export function useUpdateWebsite() {
 
 			return { previousWebsites, previousWebsite, listKey };
 		},
-		onError: (err, updatedWebsite, context) => {
+		onError: (_, updatedWebsite, context) => {
 			if (context?.previousWebsites && context.listKey) {
 				utils.websites.list.setData(context.listKey, context.previousWebsites);
 			}
@@ -103,7 +103,7 @@ export function useUpdateWebsite() {
 				);
 			}
 		},
-		onSettled: (data, error, variables, context) => {
+		onSettled: (data, __, ___, context) => {
 			utils.websites.list.invalidate(context?.listKey);
 			if (data) {
 				utils.websites.getById.invalidate({ id: data.id });
@@ -134,7 +134,7 @@ export function useDeleteWebsite() {
 
 			return { previousWebsites, previousWebsite, listKey };
 		},
-		onError: (err, { id }, context) => {
+		onError: (_, { id }, context) => {
 			if (context?.previousWebsites && context.listKey) {
 				utils.websites.list.setData(context.listKey, context.previousWebsites);
 			}
@@ -142,7 +142,7 @@ export function useDeleteWebsite() {
 				utils.websites.getById.setData({ id }, context.previousWebsite);
 			}
 		},
-		onSettled: (data, error, { id }, context) => {
+		onSettled: (_, __, { id }, context) => {
 			utils.websites.list.invalidate(context?.listKey);
 			utils.websites.getById.invalidate({ id });
 		},

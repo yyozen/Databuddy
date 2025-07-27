@@ -2,47 +2,32 @@ import { authClient } from '@databuddy/auth/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-type SessionData = {
-	session: {
-		token: string;
-	};
-};
-
-function isSessionData(data: any): data is SessionData {
-	return (
-		data &&
-		typeof data === 'object' &&
-		'session' in data &&
-		'token' in data.session
-	);
-}
-
-interface CreateOrganizationData {
+type CreateOrganizationData = {
 	name: string;
 	slug?: string;
 	logo?: string;
-	metadata?: Record<string, any>;
-}
+	metadata?: Record<string, unknown>;
+};
 
-interface UpdateOrganizationData {
+type UpdateOrganizationData = {
 	name?: string;
 	slug?: string;
 	logo?: string;
-	metadata?: Record<string, any>;
-}
+	metadata?: Record<string, unknown>;
+};
 
-interface InviteMemberData {
+type InviteMemberData = {
 	email: string;
 	role: 'owner' | 'admin' | 'member';
 	organizationId?: string;
 	resend?: boolean;
-}
+};
 
-interface UpdateMemberData {
+type UpdateMemberData = {
 	memberId: string;
 	role: 'owner' | 'admin' | 'member';
 	organizationId?: string;
-}
+};
 
 const QUERY_KEYS = {
 	organization: (slug: string) => ['organization', slug] as const,
@@ -74,11 +59,7 @@ const createMutation = <TData, TVariables>(
 	},
 });
 
-/**
- * Main organizations hook using Better Auth reactive data
- */
 export function useOrganizations() {
-	const queryClient = useQueryClient();
 	const {
 		data,
 		error: organizationsError,
@@ -101,8 +82,9 @@ export function useOrganizations() {
 					logo: data.logo,
 					metadata: data.metadata,
 				});
-				if (error)
+				if (error) {
 					throw new Error(error.message || 'Failed to create organization');
+				}
 				return result;
 			},
 			'Organization created successfully',
@@ -119,7 +101,9 @@ export function useOrganizations() {
 				organizationId?: string;
 				data: UpdateOrganizationData;
 			}) => {
-				if (!organizationId) throw new Error('Organization ID is required');
+				if (!organizationId) {
+					throw new Error('Organization ID is required');
+				}
 				const { data: result, error } = await authClient.organization.update({
 					organizationId,
 					data: {
@@ -129,8 +113,9 @@ export function useOrganizations() {
 						metadata: data.metadata,
 					},
 				});
-				if (error)
+				if (error) {
 					throw new Error(error.message || 'Failed to update organization');
+				}
 				return result;
 			},
 			'Organization updated successfully',
@@ -185,8 +170,9 @@ export function useOrganizations() {
 				const { data: result, error } = await authClient.organization.delete({
 					organizationId,
 				});
-				if (error)
+				if (error) {
 					throw new Error(error.message || 'Failed to delete organization');
+				}
 				return result;
 			},
 			'Organization deleted successfully',
@@ -197,23 +183,24 @@ export function useOrganizations() {
 	const setActiveOrganizationMutation = useMutation({
 		mutationFn: async (organizationId: string | null) => {
 			if (organizationId === null) {
-				// Unset active organization by calling setActive with empty object
 				const { data: result, error } = await authClient.organization.setActive(
 					{
 						organizationId: null,
 					}
 				);
-				if (error)
+				if (error) {
 					throw new Error(
 						error.message || 'Failed to unset active organization'
 					);
+				}
 				return result;
 			}
 			const { data: result, error } = await authClient.organization.setActive({
 				organizationId,
 			});
-			if (error)
+			if (error) {
 				throw new Error(error.message || 'Failed to set active organization');
+			}
 			return result;
 		},
 		onSuccess: () => {
@@ -225,26 +212,21 @@ export function useOrganizations() {
 	});
 
 	return {
-		// Data
 		organizations,
 		activeOrganization,
 
-		// Loading states
 		isLoading: isOrganizationsPending || isActiveOrganizationPending,
 
-		// Error states
 		organizationsError,
 		activeOrganizationError,
 		hasError: !!organizationsError || !!activeOrganizationError,
 
-		// Actions
 		createOrganization: createOrganizationMutation.mutate,
 		updateOrganization: updateOrganizationMutation.mutate,
 		deleteOrganization: deleteOrganizationMutation.mutate,
 		setActiveOrganization: setActiveOrganizationMutation.mutate,
 		uploadOrganizationLogo: uploadOrganizationLogoMutation.mutate,
 
-		// Action states
 		isCreatingOrganization: createOrganizationMutation.isPending,
 		isUpdatingOrganization: updateOrganizationMutation.isPending,
 		isDeletingOrganization: deleteOrganizationMutation.isPending,
@@ -253,9 +235,6 @@ export function useOrganizations() {
 	};
 }
 
-/**
- * Organization members hook with TanStack Query
- */
 export function useOrganizationMembers(organizationId: string) {
 	const queryClient = useQueryClient();
 
@@ -272,7 +251,9 @@ export function useOrganizationMembers(organizationId: string) {
 					query: { organizationId },
 				}
 			);
-			if (error) throw new Error(error.message || 'Failed to fetch members');
+			if (error) {
+				throw new Error(error.message || 'Failed to fetch members');
+			}
 			return data?.members || [];
 		},
 		enabled: !!organizationId,
@@ -294,7 +275,9 @@ export function useOrganizationMembers(organizationId: string) {
 						organizationId: data.organizationId,
 						resend: data.resend,
 					});
-				if (error) throw new Error(error.message || 'Failed to invite member');
+				if (error) {
+					throw new Error(error.message || 'Failed to invite member');
+				}
 				return result;
 			},
 			'Member invited successfully',
@@ -317,8 +300,9 @@ export function useOrganizationMembers(organizationId: string) {
 						role: data.role,
 						organizationId: data.organizationId,
 					});
-				if (error)
+				if (error) {
 					throw new Error(error.message || 'Failed to update member role');
+				}
 				return result;
 			},
 			'Member role updated successfully',
@@ -335,7 +319,9 @@ export function useOrganizationMembers(organizationId: string) {
 						memberIdOrEmail,
 						organizationId,
 					});
-				if (error) throw new Error(error.message || 'Failed to remove member');
+				if (error) {
+					throw new Error(error.message || 'Failed to remove member');
+				}
 				return result;
 			},
 			'Member removed successfully',
@@ -351,21 +337,16 @@ export function useOrganizationMembers(organizationId: string) {
 		hasError: !!error,
 		refetch,
 
-		// Actions
 		inviteMember: inviteMemberMutation.mutate,
 		updateMember: updateMemberMutation.mutate,
 		removeMember: removeMemberMutation.mutate,
 
-		// Action states
 		isInvitingMember: inviteMemberMutation.isPending,
 		isUpdatingMember: updateMemberMutation.isPending,
 		isRemovingMember: removeMemberMutation.isPending,
 	};
 }
 
-/**
- * Organization invitations hook
- */
 export function useOrganizationInvitations(organizationId: string) {
 	const queryClient = useQueryClient();
 
@@ -380,8 +361,9 @@ export function useOrganizationInvitations(organizationId: string) {
 			const { data, error } = await authClient.organization.listInvitations({
 				query: { organizationId },
 			});
-			if (error)
+			if (error) {
 				throw new Error(error.message || 'Failed to fetch invitations');
+			}
 			return data || [];
 		},
 		enabled: !!organizationId,
@@ -394,8 +376,9 @@ export function useOrganizationInvitations(organizationId: string) {
 					await authClient.organization.cancelInvitation({
 						invitationId,
 					});
-				if (error)
+				if (error) {
 					throw new Error(error.message || 'Failed to cancel invitation');
+				}
 				return result;
 			},
 			'Invitation cancelled successfully',
@@ -414,17 +397,12 @@ export function useOrganizationInvitations(organizationId: string) {
 		hasError: !!error,
 		refetch,
 
-		// Actions
 		cancelInvitation: cancelInvitationMutation.mutate,
 
-		// Action states
 		isCancellingInvitation: cancelInvitationMutation.isPending,
 	};
 }
 
-/**
- * User invitations hook (invitations received by current user)
- */
 export function useUserInvitations() {
 	const queryClient = useQueryClient();
 
@@ -437,8 +415,9 @@ export function useUserInvitations() {
 		queryKey: QUERY_KEYS.userInvitations,
 		queryFn: async () => {
 			const { data, error } = await authClient.organization.listInvitations();
-			if (error)
+			if (error) {
 				throw new Error(error.message || 'Failed to fetch user invitations');
+			}
 			return data || [];
 		},
 	});
@@ -454,8 +433,9 @@ export function useUserInvitations() {
 					await authClient.organization.acceptInvitation({
 						invitationId,
 					});
-				if (error)
+				if (error) {
 					throw new Error(error.message || 'Failed to accept invitation');
+				}
 				return result;
 			},
 			'Invitation accepted successfully',
@@ -471,8 +451,9 @@ export function useUserInvitations() {
 					await authClient.organization.rejectInvitation({
 						invitationId,
 					});
-				if (error)
+				if (error) {
 					throw new Error(error.message || 'Failed to reject invitation');
+				}
 				return result;
 			},
 			'Invitation rejected',

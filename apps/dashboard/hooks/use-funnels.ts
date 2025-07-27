@@ -1,19 +1,13 @@
 import type { DateRange } from '@databuddy/shared';
-import {
-	useMutation,
-	useQueries,
-	useQuery,
-	useQueryClient,
-} from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
 
-// Types
 export interface FunnelStep {
 	type: 'PAGE_VIEW' | 'EVENT' | 'CUSTOM';
 	target: string;
 	name: string;
-	conditions?: Record<string, any>;
+	conditions?: Record<string, unknown>;
 }
 
 export interface FunnelFilter {
@@ -64,7 +58,6 @@ export interface CreateFunnelData {
 	filters?: FunnelFilter[];
 }
 
-// Simple autocomplete data types
 export interface AutocompleteData {
 	customEvents: string[];
 	pagePaths: string[];
@@ -88,7 +81,6 @@ export interface FunnelAnalyticsByReferrerResult {
 	conversion_rate: number;
 }
 
-// Hook for managing funnels (CRUD operations)
 export function useFunnels(websiteId: string, enabled = true) {
 	const queryClient = useQueryClient();
 
@@ -107,14 +99,12 @@ export function useFunnels(websiteId: string, enabled = true) {
 		[query.data]
 	);
 
-	// Create funnel mutation
 	const createMutation = trpc.funnels.create.useMutation({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: [['funnels', 'list']] });
 		},
 	});
 
-	// Update funnel mutation
 	const updateMutation = trpc.funnels.update.useMutation({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: [['funnels', 'list']] });
@@ -124,7 +114,6 @@ export function useFunnels(websiteId: string, enabled = true) {
 		},
 	});
 
-	// Delete funnel mutation
 	const deleteMutation = trpc.funnels.delete.useMutation({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: [['funnels', 'list']] });
@@ -140,14 +129,13 @@ export function useFunnels(websiteId: string, enabled = true) {
 		error: query.error,
 		refetch: query.refetch,
 
-		// Mutations
-		createFunnel: async (funnelData: CreateFunnelData) => {
+		createFunnel: (funnelData: CreateFunnelData) => {
 			return createMutation.mutateAsync({
 				websiteId,
 				...funnelData,
 			});
 		},
-		updateFunnel: async ({
+		updateFunnel: ({
 			funnelId,
 			updates,
 		}: {
@@ -159,11 +147,10 @@ export function useFunnels(websiteId: string, enabled = true) {
 				...updates,
 			});
 		},
-		deleteFunnel: async (funnelId: string) => {
+		deleteFunnel: (funnelId: string) => {
 			return deleteMutation.mutateAsync({ id: funnelId });
 		},
 
-		// Mutation states
 		isCreating: createMutation.isPending,
 		isUpdating: updateMutation.isPending,
 		isDeleting: deleteMutation.isPending,
@@ -174,7 +161,6 @@ export function useFunnels(websiteId: string, enabled = true) {
 	};
 }
 
-// Hook for single funnel details
 export function useFunnel(websiteId: string, funnelId: string, enabled = true) {
 	return trpc.funnels.getById.useQuery(
 		{ id: funnelId, websiteId },
@@ -182,7 +168,6 @@ export function useFunnel(websiteId: string, funnelId: string, enabled = true) {
 	);
 }
 
-// Hook for funnel analytics data
 export function useFunnelAnalytics(
 	websiteId: string,
 	funnelId: string,
@@ -200,7 +185,6 @@ export function useFunnelAnalytics(
 	);
 }
 
-// Hook for funnel analytics grouped by referrer
 export function useFunnelAnalyticsByReferrer(
 	websiteId: string,
 	funnelId: string,
@@ -218,22 +202,18 @@ export function useFunnelAnalyticsByReferrer(
 	);
 }
 
-// Hook for comprehensive funnel analytics using direct endpoints
 export function useEnhancedFunnelAnalytics(
 	websiteId: string,
 	funnelId: string,
 	dateRange: DateRange,
 	enabled = true
 ) {
-	// Get funnel definition
 	const funnelQuery = useFunnel(websiteId, funnelId, enabled);
 
-	// Get analytics data using direct endpoint
 	const analyticsQuery = useFunnelAnalytics(websiteId, funnelId, dateRange, {
 		enabled,
 	});
 
-	// Process and structure the enhanced data
 	const enhancedData = useMemo(() => {
 		const analytics = analyticsQuery.data;
 
@@ -260,7 +240,6 @@ export function useEnhancedFunnelAnalytics(
 		};
 	}, [analyticsQuery.data]);
 
-	// Calculate loading and error states
 	const isLoading = funnelQuery.isLoading || analyticsQuery.isLoading;
 	const error = funnelQuery.error || analyticsQuery.error;
 
@@ -275,7 +254,7 @@ export function useEnhancedFunnelAnalytics(
 		},
 	};
 }
-// Hook for funnel comparison
+
 export function useFunnelComparison(
 	websiteId: string,
 	funnelIds: string[],
@@ -314,7 +293,6 @@ export function useFunnelComparison(
 	};
 }
 
-// Hook to get funnel performance metrics (for overview cards)
 export function useFunnelPerformance(
 	websiteId: string,
 	dateRange: DateRange,
@@ -346,7 +324,9 @@ export function useFunnelPerformance(
 	const performanceData = useMemo(() => {
 		return results
 			.map((result, index) => {
-				if (!result.data) return null;
+				if (!result.data) {
+					return null;
+				}
 				return {
 					funnelId: funnels[index].id,
 					funnelName: funnels[index].name,

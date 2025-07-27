@@ -1,5 +1,5 @@
 import type { GoalFilter } from '@databuddy/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
 
@@ -66,10 +66,10 @@ export function useGoals(websiteId: string, enabled = true) {
 		isLoading: query.isLoading,
 		error: query.error,
 		refetch: query.refetch,
-		createGoal: async (goalData: CreateGoalData) => {
+		createGoal: (goalData: CreateGoalData) => {
 			return createMutation.mutateAsync(goalData);
 		},
-		updateGoal: async ({
+		updateGoal: ({
 			goalId,
 			updates,
 		}: {
@@ -78,7 +78,7 @@ export function useGoals(websiteId: string, enabled = true) {
 		}) => {
 			return updateMutation.mutateAsync({ id: goalId, ...updates });
 		},
-		deleteGoal: async (goalId: string) => {
+		deleteGoal: (goalId: string) => {
 			return deleteMutation.mutateAsync({ id: goalId });
 		},
 		isCreating: createMutation.isPending,

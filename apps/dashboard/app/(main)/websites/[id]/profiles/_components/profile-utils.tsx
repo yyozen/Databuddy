@@ -1,12 +1,10 @@
 import { GlobeIcon } from 'lucide-react';
-import Image from 'next/image';
 import {
 	getBrowserIcon,
 	getDeviceTypeIcon,
 	getOSIcon,
 } from '../../_components/utils/technology-helpers';
 
-// Default date range for testing
 export const getDefaultDateRange = () => {
 	const today = new Date();
 	const thirtyDaysAgo = new Date(today);
@@ -18,7 +16,6 @@ export const getDefaultDateRange = () => {
 	};
 };
 
-// Helper function to get device icon
 export const getDeviceIcon = (device: string) => {
 	return getDeviceTypeIcon(device, 'md');
 };
@@ -67,7 +64,6 @@ export const getCountryFlag = (country: string) => {
 	);
 };
 
-// Helper function to format duration
 export const formatDuration = (seconds: number): string => {
 	if (!seconds || seconds < 60) {
 		return `${Math.round(seconds || 0)}s`;

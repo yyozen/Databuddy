@@ -3,12 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type {
-	ApiResponse,
 	CreateRevenueConfigData,
 	RevenueConfig,
 } from '@/app/(main)/revenue/utils/types';
 
-// API client functions - following the same pattern as use-websites.ts
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 async function apiRequest<T>(
@@ -33,11 +31,12 @@ async function apiRequest<T>(
 	return data;
 }
 
-// API functions
 const revenueApi = {
 	getConfig: async (): Promise<RevenueConfig | null> => {
 		const result = await apiRequest<RevenueConfig>('/revenue/config');
-		if (result.error) throw new Error(result.error);
+		if (result.error) {
+			throw new Error(result.error);
+		}
 		return result.data || null;
 	},
 
@@ -48,9 +47,12 @@ const revenueApi = {
 			method: 'POST',
 			body: JSON.stringify(data),
 		});
-		if (result.error) throw new Error(result.error);
-		if (!result.data)
+		if (result.error) {
+			throw new Error(result.error);
+		}
+		if (!result.data) {
 			throw new Error('No data returned from save revenue config');
+		}
 		return result.data;
 	},
 
@@ -61,9 +63,12 @@ const revenueApi = {
 				method: 'POST',
 			}
 		);
-		if (result.error) throw new Error(result.error);
-		if (!result.data)
+		if (result.error) {
+			throw new Error(result.error);
+		}
+		if (!result.data) {
 			throw new Error('No data returned from regenerate webhook token');
+		}
 		return result.data;
 	},
 
@@ -71,24 +76,24 @@ const revenueApi = {
 		const result = await apiRequest<{ success: boolean }>('/revenue/config', {
 			method: 'DELETE',
 		});
-		if (result.error) throw new Error(result.error);
-		if (!result.data)
+		if (result.error) {
+			throw new Error(result.error);
+		}
+		if (!result.data) {
 			throw new Error('No data returned from delete revenue config');
+		}
 		return result.data;
 	},
 };
 
-// Query keys
 const revenueKeys = {
 	all: ['revenue'] as const,
 	config: () => [...revenueKeys.all, 'config'] as const,
 };
 
-// Hook for managing revenue configuration
 export function useRevenueConfig() {
 	const queryClient = useQueryClient();
 
-	// Fetch revenue config with React Query
 	const {
 		data: config,
 		isLoading,
@@ -100,15 +105,14 @@ export function useRevenueConfig() {
 			try {
 				return await revenueApi.getConfig();
 			} catch (error) {
-				console.error('Error fetching revenue config:', error);
+				// biome-ignore lint/complexity/noUselessCatch: databuddy handles catching client side errors
 				throw error;
 			}
 		},
-		staleTime: 30_000, // 30 seconds
+		staleTime: 30_000,
 		refetchOnWindowFocus: false,
 	});
 
-	// Create or update config mutation
 	const createOrUpdateMutation = useMutation({
 		mutationFn: async (data: CreateRevenueConfigData) => {
 			return await revenueApi.createOrUpdateConfig(data);
@@ -127,7 +131,6 @@ export function useRevenueConfig() {
 		},
 	});
 
-	// Regenerate webhook token mutation
 	const regenerateTokenMutation = useMutation({
 		mutationFn: async () => {
 			return await revenueApi.regenerateWebhookToken();
@@ -141,7 +144,6 @@ export function useRevenueConfig() {
 		},
 	});
 
-	// Delete config mutation
 	const deleteMutation = useMutation({
 		mutationFn: async () => {
 			return await revenueApi.deleteConfig();
@@ -156,17 +158,13 @@ export function useRevenueConfig() {
 	});
 
 	return {
-		// Data
 		config,
-
-		// UI States
 		isLoading,
 		isError,
 		isCreating: createOrUpdateMutation.isPending,
 		isRegeneratingToken: regenerateTokenMutation.isPending,
 		isDeleting: deleteMutation.isPending,
 
-		// Actions
 		createOrUpdateConfig: createOrUpdateMutation.mutate,
 		regenerateWebhookToken: regenerateTokenMutation.mutate,
 		deleteConfig: deleteMutation.mutate,
