@@ -5,7 +5,6 @@ import {
 	ClockIcon,
 	DotsThreeOutlineVerticalIcon,
 	DownloadIcon,
-	ImageSquareIcon,
 	MagnifyingGlassIcon,
 	TrashIcon,
 } from '@phosphor-icons/react';
@@ -32,7 +31,6 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
 	Sheet,
 	SheetContent,
@@ -66,10 +64,18 @@ function formatRelativeTime(timestamp: number): string {
 	const hours = Math.floor(diff / (1000 * 60 * 60));
 	const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-	if (minutes < 1) return 'Just now';
-	if (minutes < 60) return `${minutes}m ago`;
-	if (hours < 24) return `${hours}h ago`;
-	if (days < 7) return `${days}d ago`;
+	if (minutes < 1) {
+		return 'Just now';
+	}
+	if (minutes < 60) {
+		return `${minutes}m ago`;
+	}
+	if (hours < 24) {
+		return `${hours}h ago`;
+	}
+	if (days < 7) {
+		return `${days}d ago`;
+	}
 	return new Date(timestamp).toLocaleDateString();
 }
 
@@ -101,11 +107,7 @@ export function ChatHistorySheet({ isOpen, onClose }: ChatHistorySheetProps) {
 								...chat,
 								lastMessage: lastUserMessage?.content || 'No messages yet',
 							};
-						} catch (error) {
-							console.error(
-								`Failed to load messages for ${chat.websiteId}:`,
-								error
-							);
+						} catch (_error) {
 							return {
 								...chat,
 								lastMessage: 'Error loading messages',
@@ -115,8 +117,7 @@ export function ChatHistorySheet({ isOpen, onClose }: ChatHistorySheetProps) {
 				);
 
 				setChatHistory(chatsWithPreview);
-			} catch (error) {
-				console.error('Failed to load chat history:', error);
+			} catch (_error) {
 			} finally {
 				setIsLoading(false);
 			}
@@ -134,9 +135,7 @@ export function ChatHistorySheet({ isOpen, onClose }: ChatHistorySheetProps) {
 				prev.filter((chat) => chat.websiteId !== websiteId)
 			);
 			setDeleteConfirm(null);
-		} catch (error) {
-			console.error('Failed to delete chat:', error);
-		}
+		} catch (_error) {}
 	};
 
 	const handleExportChat = async (websiteId: string, websiteName?: string) => {
@@ -153,9 +152,7 @@ export function ChatHistorySheet({ isOpen, onClose }: ChatHistorySheetProps) {
 			a.click();
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
-		} catch (error) {
-			console.error('Failed to export chat:', error);
-		}
+		} catch (_error) {}
 	};
 
 	const handleSelectChat = (websiteId: string, websiteName?: string) => {

@@ -1,5 +1,5 @@
 import { chQuery } from '@databuddy/db';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
 	try {
@@ -47,9 +47,7 @@ export async function GET() {
         WHERE metric = 'MemoryTracking'
         LIMIT 1
       `);
-		} catch (error) {
-			console.warn('Memory metrics not available:', error);
-		}
+		} catch (_error) {}
 
 		// Get recent query performance (simplified for compatibility)
 		let recentQueries = [
@@ -71,10 +69,7 @@ export async function GET() {
         WHERE event_time >= now() - INTERVAL 1 HOUR
           AND type = 'QueryFinish'
       `);
-		} catch (error) {
-			// Query log might not be available or accessible
-			console.warn('Query log not accessible:', error);
-		}
+		} catch (_error) {}
 
 		return NextResponse.json({
 			success: true,
@@ -98,7 +93,6 @@ export async function GET() {
 			},
 		});
 	} catch (error) {
-		console.error('Error fetching database stats:', error);
 		return NextResponse.json(
 			{
 				success: false,

@@ -68,12 +68,18 @@ interface DataTableProps<TData extends { name: string | number }, TValue> {
 }
 
 function getRowPercentage(row: any): number {
-	if (row.marketShare !== undefined)
+	if (row.marketShare !== undefined) {
 		return Number.parseFloat(row.marketShare) || 0;
-	if (row.percentage !== undefined)
+	}
+	if (row.percentage !== undefined) {
 		return Number.parseFloat(row.percentage) || 0;
-	if (row.percent !== undefined) return Number.parseFloat(row.percent) || 0;
-	if (row.share !== undefined) return Number.parseFloat(row.share) || 0;
+	}
+	if (row.percent !== undefined) {
+		return Number.parseFloat(row.percent) || 0;
+	}
+	if (row.share !== undefined) {
+		return Number.parseFloat(row.share) || 0;
+	}
 	return 0;
 }
 
@@ -151,7 +157,7 @@ const EnhancedSkeleton = ({ minHeight }: { minHeight: string | number }) => (
 	</div>
 );
 
-function FullScreenTable<TData extends { name: string | number }, TValue>({
+function FullScreenTable<TData extends { name: string | number }, _TValue>({
 	data,
 	columns,
 	search,
@@ -209,21 +215,23 @@ function FullScreenTable<TData extends { name: string | number }, TValue>({
 		x: number;
 		y: number;
 	} | null>(null);
-	const handleCellMouseEnter = (e: React.MouseEvent, value: string) => {
+	const _handleCellMouseEnter = (e: React.MouseEvent, value: string) => {
 		const target = e.currentTarget as HTMLElement;
 		if (target.scrollWidth > target.clientWidth) {
 			const rect = target.getBoundingClientRect();
 			setTooltip({ value, x: rect.left + rect.width / 2, y: rect.top });
 		}
 	};
-	const handleCellMouseLeave = () => setTooltip(null);
+	const _handleCellMouseLeave = () => setTooltip(null);
 	const toggleRowExpansion = (rowId: string) => {
 		setExpandedRow((prev) => (prev === rowId ? null : rowId));
 	};
 
 	// Keyboard navigation for tabs
 	useEffect(() => {
-		if (!tabs || tabs.length < 2) return;
+		if (!tabs || tabs.length < 2) {
+			return;
+		}
 		if (tabFocusIndex >= 0 && tabRefs.current[tabFocusIndex]) {
 			tabRefs.current[tabFocusIndex]?.focus();
 		}
@@ -287,7 +295,6 @@ function FullScreenTable<TData extends { name: string | number }, TValue>({
 					<nav
 						aria-label="Data view options"
 						className="inline-flex gap-0.5 rounded bg-muted/20 p-0.5"
-						role="tablist"
 					>
 						{tabs.map((tab, idx) => {
 							const isActive = activeTab === tab.id;
@@ -624,7 +631,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 			}
 			if (e.key === 'Tab' && focusable && focusable.length) {
 				const first = focusable[0];
-				const last = focusable[focusable.length - 1];
+				const last = focusable.at(-1);
 				if (e.shiftKey && document.activeElement === first) {
 					e.preventDefault();
 					last.focus();
@@ -676,7 +683,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 
 	const displayData = table.getRowModel().rows;
 
-	const getFieldFromTabId = (tabId: string): string => {
+	const _getFieldFromTabId = (tabId: string): string => {
 		const mapping: Record<string, string> = {
 			errors_by_page: 'path',
 			errors_by_browser: 'browser_name',

@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
 			},
 		});
 	} catch (error) {
-		console.error('Error exporting data:', error);
 		return NextResponse.json(
 			{
 				success: false,

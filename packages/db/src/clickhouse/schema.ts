@@ -548,13 +548,10 @@ export interface AnalyticsEvent {
  */
 export async function initClickHouseSchema() {
 	try {
-		console.info('Initializing ClickHouse schema...');
-
 		// Create the analytics database
 		await clickHouse.command({
 			query: CREATE_DATABASE,
 		});
-		console.info(`Created database: ${ANALYTICS_DATABASE}`);
 
 		// Create tables
 		const tables = [
@@ -574,10 +571,7 @@ export async function initClickHouseSchema() {
 			await clickHouse.command({
 				query: table.query,
 			});
-			console.info(`Created table: ${ANALYTICS_DATABASE}.${table.name}`);
 		}
-
-		console.info('ClickHouse schema initialization completed successfully');
 		return {
 			success: true,
 			message: 'ClickHouse schema initialized successfully',
@@ -587,7 +581,6 @@ export async function initClickHouseSchema() {
 			},
 		};
 	} catch (error) {
-		console.error('Error initializing ClickHouse schema:', error);
 		return {
 			success: false,
 			message: 'Failed to initialize ClickHouse schema',

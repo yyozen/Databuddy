@@ -199,8 +199,7 @@ export function WebsiteAudienceTab({
 
 		try {
 			await refetchBatch();
-		} catch (error) {
-			console.error('Failed to refresh audience data:', error);
+		} catch (_error) {
 		} finally {
 			setIsRefreshing(false);
 		}

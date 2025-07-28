@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
 			data: result,
 		});
 	} catch (error) {
-		console.error('Error executing query:', error);
 		return NextResponse.json(
 			{
 				success: false,

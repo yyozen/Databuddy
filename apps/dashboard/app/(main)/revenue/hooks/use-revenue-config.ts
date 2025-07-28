@@ -38,7 +38,9 @@ async function apiRequest<T>(
 const revenueApi = {
 	getConfig: async (): Promise<RevenueConfig | null> => {
 		const result = await apiRequest<RevenueConfig>('/revenue/config');
-		if (result.error) throw new Error(result.error);
+		if (result.error) {
+			throw new Error(result.error);
+		}
 		return result.data || null;
 	},
 
@@ -49,9 +51,12 @@ const revenueApi = {
 			method: 'POST',
 			body: JSON.stringify(data),
 		});
-		if (result.error) throw new Error(result.error);
-		if (!result.data)
+		if (result.error) {
+			throw new Error(result.error);
+		}
+		if (!result.data) {
 			throw new Error('No data returned from save revenue config');
+		}
 		return result.data;
 	},
 
@@ -62,9 +67,12 @@ const revenueApi = {
 				method: 'POST',
 			}
 		);
-		if (result.error) throw new Error(result.error);
-		if (!result.data)
+		if (result.error) {
+			throw new Error(result.error);
+		}
+		if (!result.data) {
 			throw new Error('No data returned from regenerate webhook token');
+		}
 		return result.data;
 	},
 
@@ -72,9 +80,12 @@ const revenueApi = {
 		const result = await apiRequest<{ success: boolean }>('/revenue/config', {
 			method: 'DELETE',
 		});
-		if (result.error) throw new Error(result.error);
-		if (!result.data)
+		if (result.error) {
+			throw new Error(result.error);
+		}
+		if (!result.data) {
 			throw new Error('No data returned from delete revenue config');
+		}
 		return result.data;
 	},
 };
@@ -100,12 +111,7 @@ export function useRevenueConfig() {
 	} = useQuery({
 		queryKey: revenueKeys.config(),
 		queryFn: async () => {
-			try {
-				return await revenueApi.getConfig();
-			} catch (error) {
-				console.error('Error fetching revenue config:', error);
-				throw error;
-			}
+			return await revenueApi.getConfig();
 		},
 		staleTime: 30_000, // 30 seconds
 		refetchOnWindowFocus: false,

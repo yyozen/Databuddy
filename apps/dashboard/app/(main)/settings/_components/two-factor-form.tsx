@@ -72,9 +72,7 @@ export function TwoFactorForm() {
 							!!(user as any).hasTwoFactor
 					);
 				}
-			} catch (error) {
-				console.error('Failed to check 2FA status:', error);
-			}
+			} catch (_error) {}
 		};
 
 		if (session) {
@@ -178,7 +176,9 @@ export function TwoFactorForm() {
 	// Handle regenerate backup codes
 	const handleRegenerateBackupCodes = async () => {
 		const password = prompt('Enter your password to generate new backup codes');
-		if (!password) return;
+		if (!password) {
+			return;
+		}
 
 		setIsLoading(true);
 		try {
@@ -213,7 +213,9 @@ export function TwoFactorForm() {
 
 	// Download backup codes as a text file
 	const downloadBackupCodes = () => {
-		if (!backupCodes || backupCodes.length === 0) return;
+		if (!backupCodes || backupCodes.length === 0) {
+			return;
+		}
 
 		const fileName = 'databuddy-backup-codes.txt';
 		const content = `
@@ -247,7 +249,9 @@ export function TwoFactorForm() {
 
 	// Show backup codes component
 	const BackupCodesDisplay = () => {
-		if (!backupCodes || backupCodes.length === 0) return null;
+		if (!backupCodes || backupCodes.length === 0) {
+			return null;
+		}
 
 		return (
 			<div className="rounded-md border bg-muted/50 p-4">

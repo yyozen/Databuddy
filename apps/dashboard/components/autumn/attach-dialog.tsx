@@ -43,7 +43,7 @@ export default function AttachDialog(params?: AttachDialogProps) {
 		setOptionsInput(params?.preview?.options || []);
 	}, [params?.preview?.options]);
 
-	if (!(params && params.preview)) {
+	if (!params?.preview) {
 		return <></>;
 	}
 
@@ -115,9 +115,7 @@ export default function AttachDialog(params?: AttachDialogProps) {
 						{loading ? (
 							<Loader2 className="h-4 w-4 animate-spin" />
 						) : (
-							<>
-								<span className="flex gap-1 whitespace-nowrap">Confirm</span>
-							</>
+							<span className="flex gap-1 whitespace-nowrap">Confirm</span>
 						)}
 					</Button>
 				</DialogFooter>
@@ -184,7 +182,7 @@ export const OptionsInput = ({
 				onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 					const newOptions = [...optionsInput];
 					newOptions[index].quantity =
-						Number.parseInt(e.target.value) * billing_units;
+						Number.parseInt(e.target.value, 10) * billing_units;
 					setOptionsInput(newOptions);
 				}}
 				value={quantity ? quantity / billing_units : ''}

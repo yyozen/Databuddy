@@ -60,11 +60,7 @@ export async function* handleChartResponse(
 			},
 			debugInfo: context.user.role === 'ADMIN' ? context.debugInfo : undefined,
 		};
-	} catch (queryError: unknown) {
-		console.error('❌ SQL execution error', {
-			error: queryError instanceof Error ? queryError.message : 'Unknown error',
-			sql: parsedAiJson.sql,
-		});
+	} catch (_queryError: unknown) {
 		yield {
 			type: 'error',
 			content: 'Database query failed. The data might not be available.',

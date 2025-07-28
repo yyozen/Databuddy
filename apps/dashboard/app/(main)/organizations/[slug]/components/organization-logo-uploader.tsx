@@ -125,9 +125,8 @@ export function OrganizationLogoUploader({
 					},
 				}
 			);
-		} catch (e) {
+		} catch (_e) {
 			toast.error('Failed to crop image.');
-			console.error(e);
 		}
 	};
 

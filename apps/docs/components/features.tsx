@@ -12,11 +12,9 @@ import {
 	Shield,
 	TrendingUp,
 	Users,
-	Zap,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import LiquidChrome from './bits/liquid';
 import Testimonials from './landing/testimonials';
 
 const whyWeExist = [
@@ -133,7 +131,7 @@ export default function Features({ stars }: FeaturesProps) {
 						<Plus className="ml-auto h-8 w-8 translate-x-[16.5px] translate-y-[.5px] text-muted-foreground" />
 						<Plus className="ml-auto h-8 w-8 translate-x-[16.5px] translate-y-[.5px] text-muted-foreground" />
 					</div>
-					{whyWeExist.map((item, index) => (
+					{whyWeExist.map((item, _index) => (
 						<div
 							className={cn(
 								'flex transform-gpu flex-col justify-center border-border border-t-[1.2px] border-l-[1.2px] p-10 md:min-h-[240px] md:border-t-0'
@@ -184,7 +182,7 @@ export default function Features({ stars }: FeaturesProps) {
 						<Plus className="ml-auto h-8 w-8 translate-x-[16.5px] translate-y-[.5px] text-muted-foreground" />
 						<Plus className="ml-auto h-8 w-8 translate-x-[16.5px] translate-y-[.5px] text-muted-foreground" />
 					</div>
-					{whatYouGet.map((item, index) => (
+					{whatYouGet.map((item, _index) => (
 						<div
 							className={cn(
 								'flex transform-gpu flex-col justify-center border-border border-t-[1.2px] border-b-[1.2px] border-l-[1.2px] p-10 md:min-h-[240px] md:border-t-0'

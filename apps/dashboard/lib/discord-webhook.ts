@@ -286,16 +286,12 @@ class DiscordWebhook {
 					});
 
 					if (!response.ok) {
-						console.error(
-							`Discord webhook failed: ${response.status} ${response.statusText}`
-						);
 						resolve(false);
 						return;
 					}
 
 					resolve(true);
-				} catch (error) {
-					console.error('Discord webhook error:', error);
+				} catch (_error) {
 					resolve(false);
 				}
 			});

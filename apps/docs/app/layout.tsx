@@ -1,5 +1,4 @@
 import './global.css';
-import { Databuddy } from '@databuddy/sdk';
 import { RootProvider } from 'fumadocs-ui/provider';
 import type { Metadata, Viewport } from 'next';
 import { Geist } from 'next/font/google';

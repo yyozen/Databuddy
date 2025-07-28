@@ -94,10 +94,7 @@ export function generateSitemapEntries(): MetadataRoute.Sitemap {
 				}
 			}
 		}
-	} catch (error) {
-		// Fallback to static entries if dynamic generation fails
-		console.warn('Failed to generate dynamic sitemap, using fallback:', error);
-
+	} catch (_error) {
 		const fallbackEntries = [
 			{ url: '/docs', priority: 1.0, changeFrequency: 'weekly' as const },
 			{

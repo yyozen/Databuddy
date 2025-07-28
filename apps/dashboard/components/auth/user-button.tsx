@@ -1,6 +1,6 @@
 'use client';
 
-import { logout, signOut } from '@databuddy/auth/client';
+import { signOut } from '@databuddy/auth/client';
 import {
 	CreditCardIcon,
 	HouseIcon,
@@ -8,7 +8,7 @@ import {
 	UserIcon,
 } from '@phosphor-icons/react';
 import Link from 'next/link';
-import { redirect, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useSession } from '@/components/layout/session-provider';
@@ -30,7 +30,9 @@ export function UserButton() {
 	const router = useRouter();
 
 	const getUserInitials = () => {
-		if (!session?.user?.name) return 'U';
+		if (!session?.user?.name) {
+			return 'U';
+		}
 		return session.user.name
 			.split(' ')
 			.map((n) => n[0])

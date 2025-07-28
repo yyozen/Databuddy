@@ -69,7 +69,7 @@ const COMPETITORS = [
 		plans: [{ name: 'Free', price: 0, events: 1_000_000 }],
 		overage: false,
 		overageTooltip: false,
-		calc: (events: number) => 0,
+		calc: (_events: number) => 0,
 	},
 	{
 		name: 'Plausible',
