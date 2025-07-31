@@ -1,15 +1,15 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import {
+	ArrowSquareOutIcon,
 	CaretDownIcon,
 	CaretRightIcon,
 	ClockIcon,
 	EyeIcon,
-	WarningIcon,
-	ArrowSquareOutIcon,
 	SparkleIcon,
+	WarningIcon,
 } from '@phosphor-icons/react';
+import dynamic from 'next/dynamic';
 import React, { useCallback } from 'react';
 import { FaviconImage } from '@/components/analytics/favicon-image';
 import { Badge } from '@/components/ui/badge';
@@ -19,13 +19,20 @@ import {
 	CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
-const SessionEventTimeline = dynamic(() => import('./session-event-timeline').then(mod => ({ default: mod.SessionEventTimeline })), {
-	loading: () => (
-		<div className="flex items-center justify-center p-4">
-			<div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-		</div>
-	)
-});
+const SessionEventTimeline = dynamic(
+	() =>
+		import('./session-event-timeline').then((mod) => ({
+			default: mod.SessionEventTimeline,
+		})),
+	{
+		loading: () => (
+			<div className="flex items-center justify-center p-4">
+				<div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+			</div>
+		),
+	}
+);
+
 import {
 	getBrowserIconComponent,
 	getCountryFlag,

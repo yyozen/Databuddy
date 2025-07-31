@@ -5,11 +5,13 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
+import type {
+	ActiveOrganization,
+	Organization,
+} from '@/hooks/use-organizations';
 import { TeamView } from './team-view';
-import type { ActiveOrganization, Organization } from '@/hooks/use-organizations';
 
 export function TeamsTab({
 	organization,

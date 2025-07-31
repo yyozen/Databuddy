@@ -26,7 +26,7 @@ import {
 import {
 	type ActiveOrganization,
 	type Organization,
-useOrganizations,
+	useOrganizations,
 } from '@/hooks/use-organizations';
 import { cn, getOrganizationInitials } from '@/lib/utils';
 import { OnboardingCard } from './onboarding-card';
@@ -74,6 +74,7 @@ export function OrganizationsTab({
 		try {
 			deleteOrganization(organizationId);
 		} catch (error) {
+			console.error('Failed to delete organization:', error);
 			toast.error('Failed to delete organization');
 		} finally {
 			setDeletingId(null);

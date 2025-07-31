@@ -447,7 +447,7 @@ async function checkDuplicate(
 async function logBlockedTraffic(
 	request: Request,
 	body: any,
-	query: any,
+	_query: any,
 	blockReason: string,
 	blockCategory: string,
 	botName?: string,

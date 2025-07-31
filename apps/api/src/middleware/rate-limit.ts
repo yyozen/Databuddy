@@ -1,6 +1,6 @@
 import { auth } from '@databuddy/auth';
-import { getRateLimitIdentifier, rateLimiters } from '@databuddy/rpc';
 import { cacheable } from '@databuddy/redis';
+import { getRateLimitIdentifier, rateLimiters } from '@databuddy/rpc';
 import { Elysia } from 'elysia';
 
 export interface RateLimitOptions {
@@ -39,7 +39,6 @@ export function createRateLimitMiddleware(options: RateLimitOptions) {
 		if (!options.skipAuth) {
 			const session = await getCachedAuthSession(request.headers);
 			userId = session?.user?.id;
-			
 		}
 
 		const identifier = getRateLimitIdentifier(userId, request.headers);

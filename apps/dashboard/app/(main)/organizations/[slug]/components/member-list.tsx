@@ -111,7 +111,9 @@ export function MemberList({
 	);
 
 	const handleRemove = async () => {
-		if (!memberToRemove) return;
+		if (!memberToRemove) {
+			return;
+		}
 		await onRemoveMember(memberToRemove.id);
 		setMemberToRemove(null);
 	};

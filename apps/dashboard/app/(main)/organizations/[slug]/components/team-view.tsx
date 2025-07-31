@@ -3,18 +3,18 @@
 import {
 	CrownIcon,
 	EnvelopeIcon,
+	type Icon as IconType,
 	PlusIcon,
 	UsersIcon,
-	type Icon as IconType,
 } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-	useOrganizationInvitations,
-	useOrganizationMembers,
 	type ActiveOrganization,
 	type Organization,
+	useOrganizationInvitations,
+	useOrganizationMembers,
 } from '@/hooks/use-organizations';
 import { InvitationList } from './invitation-list';
 import { InviteMemberDialog } from './invite-member-dialog';

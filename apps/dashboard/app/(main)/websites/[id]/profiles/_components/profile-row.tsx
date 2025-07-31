@@ -1,14 +1,14 @@
 'use client';
 
-import dayjs from 'dayjs';
 import {
+	ArrowSquareOutIcon,
 	CaretDownIcon,
 	CaretRightIcon,
 	ClockIcon,
-	ArrowSquareOutIcon,
 	EyeIcon,
 	UsersIcon,
 } from '@phosphor-icons/react';
+import dayjs from 'dayjs';
 import { FaviconImage } from '@/components/analytics/favicon-image';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -249,9 +249,9 @@ export function ProfileRow({
 								First Visit
 							</div>
 							<div className="font-medium">
-															{profile.first_visit
-								? dayjs(profile.first_visit).format('MMM D, YYYY')
-								: 'Unknown'}
+								{profile.first_visit
+									? dayjs(profile.first_visit).format('MMM D, YYYY')
+									: 'Unknown'}
 							</div>
 						</div>
 						<div>
@@ -259,9 +259,9 @@ export function ProfileRow({
 								Last Visit
 							</div>
 							<div className="font-medium">
-															{profile.last_visit
-								? dayjs(profile.last_visit).format('MMM D, YYYY')
-								: 'Unknown'}
+								{profile.last_visit
+									? dayjs(profile.last_visit).format('MMM D, YYYY')
+									: 'Unknown'}
 							</div>
 						</div>
 						<div>
@@ -305,9 +305,9 @@ export function ProfileRow({
 													{session.session_name}
 												</div>
 												<div className="text-muted-foreground text-xs">
-																									{session.first_visit
-													? dayjs(session.first_visit).format('MMM D, HH:mm')
-													: 'Unknown'}
+													{session.first_visit
+														? dayjs(session.first_visit).format('MMM D, HH:mm')
+														: 'Unknown'}
 												</div>
 											</div>
 										</div>

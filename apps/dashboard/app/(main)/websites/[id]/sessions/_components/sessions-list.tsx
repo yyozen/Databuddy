@@ -1,7 +1,7 @@
 'use client';
 
+import { SpinnerIcon, UserIcon } from '@phosphor-icons/react';
 import dynamic from 'next/dynamic';
-import { UserIcon, SpinnerIcon } from '@phosphor-icons/react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,13 +9,16 @@ import { useSessionsData } from '@/hooks/use-dynamic-query';
 import { WebsitePageHeader } from '../../_components/website-page-header';
 import { getDefaultDateRange } from './session-utils';
 
-const SessionRow = dynamic(() => import('./session-row').then(mod => ({ default: mod.SessionRow })), {
-	loading: () => (
-		<div className="flex items-center justify-center p-4">
-			<SpinnerIcon className="h-4 w-4 animate-spin" />
-		</div>
-	)
-});
+const SessionRow = dynamic(
+	() => import('./session-row').then((mod) => ({ default: mod.SessionRow })),
+	{
+		loading: () => (
+			<div className="flex items-center justify-center p-4">
+				<SpinnerIcon className="h-4 w-4 animate-spin" />
+			</div>
+		),
+	}
+);
 
 interface SessionsListProps {
 	websiteId: string;

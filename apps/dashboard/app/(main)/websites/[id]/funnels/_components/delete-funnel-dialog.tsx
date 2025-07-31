@@ -47,11 +47,11 @@ export function DeleteFunnelDialog({
 					</div>
 				</AlertDialogHeader>
 				<AlertDialogFooter className="gap-3 border-border/50 border-t pt-6">
-					<AlertDialogCancel className="rounded-lg border-border/50 px-6 py-2 font-medium hover:border-border hover:bg-muted/50 cursor-pointer">
+					<AlertDialogCancel className="cursor-pointer rounded-lg border-border/50 px-6 py-2 font-medium hover:border-border hover:bg-muted/50">
 						Cancel
 					</AlertDialogCancel>
 					<AlertDialogAction
-						className="rounded-lg bg-destructive px-6 py-2 font-medium text-destructive-foreground shadow-lg hover:bg-destructive/90 hover:shadow-xl cursor-pointer"
+						className="cursor-pointer rounded-lg bg-destructive px-6 py-2 font-medium text-destructive-foreground shadow-lg hover:bg-destructive/90 hover:shadow-xl"
 						onClick={onConfirm}
 					>
 						Delete Funnel

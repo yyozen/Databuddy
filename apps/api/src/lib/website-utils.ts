@@ -143,7 +143,7 @@ export async function deriveWebsiteContext({ request }: { request: Request }) {
 		getCachedWebsite(website_id),
 		website_id && session?.user
 			? getTimezone(request, session)
-			: getTimezone(request, null)
+			: getTimezone(request, null),
 	]);
 
 	if (!website) {

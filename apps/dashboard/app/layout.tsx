@@ -133,8 +133,8 @@ export default function RootLayout({
 			{process.env.NODE_ENV === 'development' && (
 				<Script
 					crossOrigin="anonymous"
-						src="//unpkg.com/react-scan/dist/auto.global.js"
-					/>
+					src="//unpkg.com/react-scan/dist/auto.global.js"
+				/>
 			)}
 			<body className="flex h-full min-h-screen flex-col bg-background text-foreground antialiased">
 				<Providers>
