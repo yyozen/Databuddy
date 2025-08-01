@@ -3,7 +3,7 @@ export async function register() {
 		const { KubiksSDK } = await import('@kubiks/otel-nextjs');
 
 		const sdk = new KubiksSDK({
-			service: 'your-service-name',
+			service: 'Dashboard',
 		});
 
 		sdk.start();
