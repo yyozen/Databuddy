@@ -32,6 +32,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "@xyflow/react": "^12.7.0",
     "autumn-js": "catalog:",
+    "babel-plugin-react-compiler": "^19.1.0-rc.2",
     "class-variance-authority": "catalog:",
     "classnames": "^2.5.1",
     "clsx": "catalog:",
