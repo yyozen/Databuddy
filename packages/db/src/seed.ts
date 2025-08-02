@@ -8,44 +8,30 @@ const eventCount = Number(process.argv[4]) || 100;
 const BROWSERS = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Opera'];
 const OS_NAMES = ['Windows', 'macOS', 'Linux', 'Android', 'iOS'];
 const DEVICE_TYPES = ['desktop', 'mobile', 'tablet'];
-const EVENT_NAMES = [
-	'screen_view',
-	'page_exit',
+// Custom events that would be tracked via track() calls
+const CUSTOM_EVENTS = [
 	'click',
+	'button_click',
 	'form_submit',
-	'scroll',
-	'file_download',
-	'video_play',
 	'signup',
 	'login',
+	'logout',
 	'purchase',
 	'add_to_cart',
 	'remove_from_cart',
 	'checkout_started',
-	'payment_info_added',
-	'order_completed',
-	'newsletter_signup',
-	'contact_form_submit',
 	'search',
 	'filter_applied',
-	'product_viewed',
-	'category_viewed',
-	'share_content',
-	'download_started',
-	'video_started',
-	'video_completed',
-	'comment_posted',
-	'rating_given',
-	'wishlist_added',
-	'coupon_applied',
-	'referral_sent',
-	'account_created',
-	'profile_updated',
-	'password_reset',
-	'logout',
-	'feature_used',
-	'help_clicked',
-	'feedback_submitted',
+	'video_play',
+	'video_pause',
+	'download',
+	'newsletter_signup',
+	'contact_form',
+	'feature_toggle',
+	'share',
+	'error_occurred',
+	'api_call',
+	'user_interaction',
 ];
 
 const BLOG_CATEGORIES = [
@@ -226,7 +212,19 @@ function generateReferrers() {
 function generateCustomProperties(eventName: string) {
 	const baseProps: Record<string, unknown> = {};
 
+	// Core databuddy.js events have specific property patterns
 	switch (eventName) {
+		case 'page_exit':
+			// page_exit events include engagement metrics (handled in main event generation)
+			return {};
+		case 'link_out':
+			return {
+				href: faker.internet.url(),
+				text: faker.lorem.words({ min: 1, max: 4 }),
+			};
+		case 'screen_view':
+			// screen_view events include page_count (handled in main event generation)
+			return {};
 		case 'purchase':
 		case 'order_completed':
 			return {
@@ -382,117 +380,282 @@ function generatePageTitle(path: string): string {
 const PATHS = generatePaths();
 const REFERRERS = generateReferrers();
 
-(async () => {
-	console.log(
-		`Generating ${eventCount} events for client: ${clientId} on domain: ${domain}`
-	);
+// Generate realistic user pools and sessions
+const UNIQUE_USERS = Math.max(10, Math.floor(eventCount / 8)); // ~8 events per user on average
+const SESSIONS_PER_USER = 2.5; // Average sessions per user
+const TOTAL_SESSIONS = Math.floor(UNIQUE_USERS * SESSIONS_PER_USER);
 
-	const events = Array.from({ length: eventCount }, () => {
-		const baseTime = faker.date.recent({ days: 30 }).getTime();
-		const sessionId = faker.string.uuid();
-		const anonymousId = faker.string.uuid();
+// Pre-generate user pool
+const USER_POOL = Array.from({ length: UNIQUE_USERS }, () => ({
+	anonymousId: `anon_${faker.string.uuid()}`,
+	country: faker.location.countryCode(),
+	region: faker.location.state(),
+	city: faker.location.city(),
+	timezone: faker.helpers.arrayElement([
+		'America/New_York',
+		'Europe/London',
+		'Asia/Tokyo',
+		'Australia/Sydney',
+		'Pacific/Honolulu',
+	]),
+	language: faker.helpers.arrayElement([
+		'en-US',
+		'en-GB',
+		'fr-FR',
+		'de-DE',
+		'es-ES',
+		'pt-BR',
+		'ja-JP',
+	]),
+	deviceType: faker.helpers.arrayElement(DEVICE_TYPES),
+	browser: faker.helpers.arrayElement(BROWSERS),
+	os: faker.helpers.arrayElement(OS_NAMES),
+	screenResolution: `${faker.helpers.arrayElement([1920, 1366, 1440, 1280, 1024])}x${faker.helpers.arrayElement([1080, 768, 900, 720, 640])}`,
+}));
 
-		const deviceType = faker.helpers.arrayElement(DEVICE_TYPES);
-		const browser = faker.helpers.arrayElement(BROWSERS);
-		const os = faker.helpers.arrayElement(OS_NAMES);
-		const path = faker.helpers.arrayElement(PATHS);
-		const referrer = faker.helpers.arrayElement(REFERRERS);
-		const eventName = faker.helpers.arrayElement(EVENT_NAMES);
-		const customProps = generateCustomProperties(eventName);
+// Pre-generate session pool
+const SESSION_POOL = Array.from({ length: TOTAL_SESSIONS }, () => {
+	const user = faker.helpers.arrayElement(USER_POOL);
+	const sessionStartTime = faker.date.recent({ days: 30 }).getTime();
+	return {
+		sessionId: `sess_${faker.string.uuid()}`,
+		anonymousId: user.anonymousId,
+		sessionStartTime,
+		user,
+		eventsInSession: faker.number.int({ min: 1, max: 15 }), // 1-15 events per session
+		referrer: faker.helpers.arrayElement(REFERRERS),
+	};
+});
 
-		return {
-			id: faker.string.uuid(),
-			client_id: clientId,
-			event_name: eventName,
-			anonymous_id: anonymousId,
-			time: baseTime,
-			session_id: sessionId,
-			timestamp: baseTime,
-			session_start_time:
-				baseTime - faker.number.int({ min: 0, max: 1_800_000 }),
-			referrer: referrer === 'direct' ? undefined : referrer,
-			url: `https://${domain}${path}`,
-			path,
-			title: generatePageTitle(path),
-			ip: faker.internet.ip(),
-			user_agent: faker.internet.userAgent(),
-			browser_name: browser,
-			browser_version: faker.system.semver(),
-			os_name: os,
-			os_version: faker.system.semver(),
-			device_type: deviceType,
-			device_brand:
-				deviceType === 'mobile'
-					? faker.helpers.arrayElement(['Apple', 'Samsung', 'Google'])
-					: null,
-			device_model:
-				deviceType === 'mobile' ? faker.commerce.productName() : null,
-			country: faker.location.countryCode(),
-			region: faker.location.state(),
-			city: faker.location.city(),
-			screen_resolution: `${faker.helpers.arrayElement([1920, 1366, 1440, 1280, 1024])}x${faker.helpers.arrayElement([1080, 768, 900, 720, 640])}`,
-			viewport_size: `${faker.number.int({ min: 800, max: 1920 })}x${faker.number.int({ min: 600, max: 1080 })}`,
-			language: faker.location.language().alpha2,
-			connection_type: faker.helpers.arrayElement([
-				'wifi',
-				'4g',
-				'ethernet',
-				'3g',
-			]),
-			rtt: faker.number.int({ min: 10, max: 500 }),
-			downlink: faker.number.float({ min: 1, max: 100, fractionDigits: 1 }),
-			time_on_page: faker.number.float({ min: 5, max: 600, fractionDigits: 1 }),
-			scroll_depth: faker.number.float({ min: 0, max: 100, fractionDigits: 1 }),
-			interaction_count: faker.number.int({ min: 0, max: 20 }),
-			exit_intent: faker.datatype.boolean() ? 1 : 0,
-			page_count: faker.number.int({ min: 1, max: 10 }),
-			is_bounce: faker.datatype.boolean() ? 1 : 0,
-			has_exit_intent: faker.datatype.boolean() ? 1 : 0,
-			page_size: faker.number.int({ min: 50_000, max: 5_000_000 }),
-			utm_source: faker.helpers.maybe(
-				() =>
-					faker.helpers.arrayElement([
-						'google',
-						'facebook',
-						'twitter',
-						'email',
-					]),
-				{ probability: 0.3 }
-			),
-			utm_medium: faker.helpers.maybe(
-				() => faker.helpers.arrayElement(['cpc', 'organic', 'social', 'email']),
-				{ probability: 0.3 }
-			),
-			utm_campaign: faker.helpers.maybe(() => faker.lorem.slug(), {
-				probability: 0.2,
-			}),
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Seed script needs comprehensive data generation
+function createSingleEvent(
+	client: string,
+	websiteDomain: string,
+	eventIndex = 0
+) {
+	// Pick a session based on event distribution
+	const sessionIndex = Math.floor(eventIndex / (eventCount / TOTAL_SESSIONS));
+	const session = SESSION_POOL[Math.min(sessionIndex, SESSION_POOL.length - 1)];
+	const user = session.user;
+
+	// Generate event time within session (sessions can span up to 2 hours)
+	const maxSessionDuration = 2 * 60 * 60 * 1000; // 2 hours
+	const sessionProgress =
+		(eventIndex % Math.ceil(eventCount / TOTAL_SESSIONS)) /
+		Math.ceil(eventCount / TOTAL_SESSIONS);
+	const baseTime =
+		session.sessionStartTime + sessionProgress * maxSessionDuration;
+
+	const path = faker.helpers.arrayElement(PATHS);
+
+	// Determine if this is the last event in the session for page_exit
+	const isLastEventInSession =
+		sessionProgress > 0.8 || faker.datatype.boolean({ probability: 0.2 });
+
+	// Generate event based on realistic distribution from databuddy.js
+	let eventName: string;
+	if (isLastEventInSession && faker.datatype.boolean({ probability: 0.8 })) {
+		// 80% chance of page_exit for last events in session
+		eventName = 'page_exit';
+	} else {
+		eventName = faker.helpers.weightedArrayElement([
+			{ weight: 70, value: 'screen_view' }, // Main page views
+			{ weight: 5, value: 'link_out' }, // Outgoing links
+			{ weight: 25, value: faker.helpers.arrayElement(CUSTOM_EVENTS) }, // Custom events
+		]);
+	}
+
+	const customProps = generateCustomProperties(eventName);
+	const isPageExit = eventName === 'page_exit';
+
+	return {
+		id: faker.string.uuid(),
+		client_id: client,
+		event_name: eventName,
+		anonymous_id: session.anonymousId,
+		time: baseTime,
+		session_id: session.sessionId,
+		timestamp: baseTime,
+		session_start_time: session.sessionStartTime,
+		referrer: session.referrer === 'direct' ? undefined : session.referrer,
+		url: `https://${websiteDomain}${path}`,
+		path,
+		title: generatePageTitle(path),
+		ip: faker.internet.ip(),
+		user_agent: faker.internet.userAgent(),
+		browser_name: user.browser,
+		browser_version: faker.system.semver(),
+		os_name: user.os,
+		os_version: faker.system.semver(),
+		device_type: user.deviceType,
+		device_brand:
+			user.deviceType === 'mobile'
+				? faker.helpers.arrayElement(['Apple', 'Samsung', 'Google'])
+				: null,
+		device_model:
+			user.deviceType === 'mobile' ? faker.commerce.productName() : null,
+		country: user.country,
+		region: user.region,
+		city: user.city,
+		screen_resolution: user.screenResolution,
+		viewport_size: `${faker.number.int({ min: 800, max: 1920 })}x${faker.number.int({ min: 600, max: 1080 })}`,
+		language: user.language,
+		timezone: user.timezone,
+		connection_type: faker.helpers.arrayElement([
+			'wifi',
+			'4g',
+			'ethernet',
+			'3g',
+		]),
+		rtt: faker.number.int({ min: 10, max: 500 }),
+		downlink: faker.number.float({ min: 1, max: 100, fractionDigits: 1 }),
+		// Engagement metrics - only populated for page_exit events or screen_view
+		time_on_page:
+			isPageExit || eventName === 'screen_view'
+				? faker.number.float({ min: 5, max: 600, fractionDigits: 1 })
+				: undefined,
+		scroll_depth: isPageExit
+			? faker.number.float({ min: 10, max: 100, fractionDigits: 1 })
+			: undefined,
+		interaction_count: isPageExit
+			? faker.number.int({ min: 0, max: 50 })
+			: undefined,
+		exit_intent: isPageExit ? (faker.datatype.boolean() ? 1 : 0) : 0,
+		page_count:
+			eventName === 'screen_view' || isPageExit
+				? faker.number.int({ min: 1, max: 10 })
+				: 1,
+		is_bounce: isPageExit
+			? faker.number.int({ min: 1, max: 10 }) === 1
+				? 1
+				: 0 // 10% bounce rate
+			: 0,
+		has_exit_intent: isPageExit
+			? faker.datatype.boolean({ probability: 0.15 })
+				? 1
+				: 0 // 15% exit intent
+			: undefined,
+		page_size: faker.number.int({ min: 50_000, max: 5_000_000 }),
+		// UTM parameters - from URL or referrer
+		utm_source: faker.helpers.maybe(
+			() =>
+				faker.helpers.arrayElement(['google', 'facebook', 'twitter', 'email']),
+			{ probability: 0.3 }
+		),
+		utm_medium: faker.helpers.maybe(
+			() => faker.helpers.arrayElement(['cpc', 'organic', 'social', 'email']),
+			{ probability: 0.3 }
+		),
+		utm_campaign: faker.helpers.maybe(() => faker.lorem.slug(), {
+			probability: 0.2,
+		}),
+
+		// Performance metrics - only for screen_view events when trackPerformance is enabled
+		load_time:
+			eventName === 'screen_view'
+				? faker.number.int({ min: 200, max: 5000 })
+				: undefined,
+		dom_ready_time:
+			eventName === 'screen_view'
+				? faker.number.int({ min: 100, max: 3000 })
+				: undefined,
+		dom_interactive:
+			eventName === 'screen_view'
+				? faker.number.int({ min: 50, max: 2000 })
+				: undefined,
+		ttfb:
+			eventName === 'screen_view'
+				? faker.number.int({ min: 50, max: 1000 })
+				: undefined,
+		connection_time:
+			eventName === 'screen_view'
+				? faker.number.int({ min: 10, max: 200 })
+				: undefined,
+		request_time:
+			eventName === 'screen_view'
+				? faker.number.int({ min: 20, max: 500 })
+				: undefined,
+		render_time:
+			eventName === 'screen_view'
+				? faker.number.int({ min: 50, max: 1000 })
+				: undefined,
+		redirect_time:
+			eventName === 'screen_view'
+				? faker.number.int({ min: 0, max: 100 })
+				: undefined,
+		domain_lookup_time:
+			eventName === 'screen_view'
+				? faker.number.int({ min: 5, max: 100 })
+				: undefined,
+		// Web Vitals - only for screen_view events with trackWebVitals enabled
+		fcp:
+			eventName === 'screen_view' &&
+			faker.datatype.boolean({ probability: 0.3 })
+				? faker.number.int({ min: 500, max: 4000 })
+				: undefined,
+		lcp:
+			eventName === 'screen_view' &&
+			faker.datatype.boolean({ probability: 0.3 })
+				? faker.number.int({ min: 1000, max: 6000 })
+				: undefined,
+		cls:
+			eventName === 'screen_view' &&
+			faker.datatype.boolean({ probability: 0.3 })
+				? faker.number.float({ min: 0, max: 0.5, fractionDigits: 3 })
+				: undefined,
+		fid:
+			eventName === 'screen_view' &&
+			faker.datatype.boolean({ probability: 0.2 })
+				? faker.number.int({ min: 10, max: 300 })
+				: undefined,
+		inp:
+			eventName === 'screen_view' &&
+			faker.datatype.boolean({ probability: 0.2 })
+				? faker.number.int({ min: 50, max: 500 })
+				: undefined,
+		href: faker.helpers.maybe(() => faker.internet.url(), {
+			probability: 0.2,
+		}),
+		text: faker.helpers.maybe(() => faker.lorem.words({ min: 1, max: 5 }), {
+			probability: 0.2,
+		}),
+		value: faker.helpers.maybe(() => faker.commerce.price(), {
+			probability: 0.1,
+		}),
+		// Add event-specific properties
+		...(eventName === 'page_exit' && {
+			// page_exit events get unique eventId for deduplication
+			event_id: `exit_${session.sessionId}_${btoa(path)}_${baseTime}`,
+		}),
+		...(eventName === 'screen_view' && {
+			// screen_view events include performance data
 			load_time: faker.number.int({ min: 200, max: 5000 }),
 			dom_ready_time: faker.number.int({ min: 100, max: 3000 }),
 			dom_interactive: faker.number.int({ min: 50, max: 2000 }),
 			ttfb: faker.number.int({ min: 50, max: 1000 }),
-			connection_time: faker.number.int({ min: 10, max: 200 }),
 			request_time: faker.number.int({ min: 20, max: 500 }),
 			render_time: faker.number.int({ min: 50, max: 1000 }),
-			redirect_time: faker.number.int({ min: 0, max: 100 }),
-			domain_lookup_time: faker.number.int({ min: 5, max: 100 }),
-			fcp: faker.number.int({ min: 500, max: 4000 }),
-			lcp: faker.number.int({ min: 1000, max: 6000 }),
-			cls: faker.number.float({ min: 0, max: 0.5, fractionDigits: 3 }),
-			fid: faker.number.int({ min: 10, max: 300 }),
-			inp: faker.number.int({ min: 50, max: 500 }),
-			href: faker.helpers.maybe(() => faker.internet.url(), {
-				probability: 0.2,
-			}),
-			text: faker.helpers.maybe(() => faker.lorem.words({ min: 1, max: 5 }), {
-				probability: 0.2,
-			}),
-			value: faker.helpers.maybe(() => faker.commerce.price(), {
-				probability: 0.1,
-			}),
-			properties: JSON.stringify(customProps),
-			created_at: Date.now(),
-		};
-	});
+		}),
+
+		properties: JSON.stringify(customProps),
+		created_at: Date.now(),
+	};
+}
+
+(async () => {
+	console.log(
+		`Generating ${eventCount} events for client: ${clientId} on domain: ${domain}`
+	);
+	console.log(
+		`Creating realistic journeys: ${UNIQUE_USERS} users across ${TOTAL_SESSIONS} sessions`
+	);
+
+	const events = Array.from({ length: eventCount }, (_, index) =>
+		createSingleEvent(clientId, domain, index)
+	);
+
+	// Sort events by time to ensure chronological order
+	events.sort((a, b) => a.time - b.time);
 
 	await clickHouse.insert({
 		table: TABLE_NAMES.events,
