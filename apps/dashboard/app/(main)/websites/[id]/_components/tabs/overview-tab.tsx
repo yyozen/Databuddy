@@ -497,19 +497,20 @@ export function WebsiteOverviewTab({
 				date: formatDateByGranularity(event.date, dateRange.granularity),
 			};
 			if (visibleMetrics.pageviews) {
-				filtered.pageviews = event.pageviews;
+				filtered.pageviews = event.pageviews as number;
 			}
 			if (visibleMetrics.visitors) {
-				filtered.visitors = event.visitors || event.unique_visitors || 0;
+				filtered.visitors =
+					(event.visitors as number) || (event.unique_visitors as number) || 0;
 			}
 			if (visibleMetrics.sessions) {
-				filtered.sessions = event.sessions;
+				filtered.sessions = event.sessions as number;
 			}
 			if (visibleMetrics.bounce_rate) {
-				filtered.bounce_rate = event.bounce_rate;
+				filtered.bounce_rate = event.bounce_rate as number;
 			}
 			if (visibleMetrics.avg_session_duration) {
-				filtered.avg_session_duration = event.avg_session_duration;
+				filtered.avg_session_duration = event.avg_session_duration as number;
 			}
 			return filtered;
 		});
