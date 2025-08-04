@@ -16,14 +16,14 @@ interface HelpDialogProps {
 
 const helpItems = [
 	{
-		href: 'https://databuddy.com/docs',
+		href: 'https://www.databuddy.cc/docs',
 		icon: BookOpenIcon,
 		title: 'Documentation',
 		description: 'Read guides and API references',
 		external: true,
 	},
 	{
-		href: 'mailto:support@databuddy.com',
+		href: 'mailto:support@databuddy.cc',
 		icon: ChatCircleIcon,
 		title: 'Contact Support',
 		description: 'Get help from our support team',
