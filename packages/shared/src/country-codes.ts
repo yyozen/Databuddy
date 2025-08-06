@@ -107,6 +107,7 @@ export const COUNTRY_NAME_TO_CODE: Record<string, string> = {
 	Honduras: 'HN',
 	'Hong Kong': 'HK',
 	Hungary: 'HU',
+	Kosovo: 'XK',
 	Iceland: 'IS',
 	India: 'IN',
 	Indonesia: 'ID',

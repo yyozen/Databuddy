@@ -1,4 +1,4 @@
-import z from 'zod/v4';
+import z from 'zod';
 import { MAX_FUTURE_MS, MIN_TIMESTAMP, VALIDATION_LIMITS } from '../constants';
 import {
 	LANGUAGE_REGEX,
@@ -63,11 +63,10 @@ export const analyticsEventSchema = z.object({
 	sessionStartTime: timestampSchema,
 	referrer: (process.env.NODE_ENV === 'development'
 		? z.any()
-		: z
-				.union([
-					z.url({ protocol: /^https?$/, hostname: z.regexes.domain }),
-					z.literal('direct'),
-				])
+		: z.union([
+				z.url({ protocol: /^https?$/, hostname: z.regexes.domain }),
+				z.literal('direct'),
+			])
 	)
 		.nullable()
 		.optional(),

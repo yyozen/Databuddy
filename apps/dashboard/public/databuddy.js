@@ -410,7 +410,6 @@
 
 				if (isNetworkError) {
 					for (const event of batchEvents) {
-						// Re-wrap the event for retry
 						const originalEvent = {
 							type: 'track',
 							payload: event,
@@ -419,6 +418,7 @@
 						this.send(originalEvent);
 					}
 				} else {
+					// biome-ignore lint/style/noUselessElse: <explanation>
 				}
 
 				return null;
@@ -479,10 +479,8 @@
 				finalProperties = { value: properties };
 			}
 
-			// Collect base context data
 			const baseContext = this.getBaseContext();
 
-			// Collect performance data for page views
 			let performanceData = {};
 			if (
 				(eventName === 'screen_view' || eventName === 'page_view') &&
@@ -507,7 +505,7 @@
 					timestamp: Date.now(),
 					...baseContext,
 					...performanceData,
-					...finalProperties,
+					properties: { ...finalProperties },
 				},
 			};
 
@@ -730,13 +728,11 @@
 				});
 			}
 
-			// Simple exit handler
 			const exitHandler = () => {
 				if (this.options.enableBatching) {
 					this.flushBatch();
 				}
 
-				// Always track exit data, let the server handle deduplication
 				this.trackExitData();
 
 				this.isInternalNavigation = false;
@@ -756,10 +752,8 @@
 
 			const baseContext = this.getBaseContext();
 
-			// Create consistent exit event ID based on session, path, and page start time
 			const exitEventId = `exit_${this.sessionId}_${btoa(window.location.pathname)}_${this.pageEngagementStart}`;
 
-			// Clamp page_count, interaction_count, time_on_page
 			const page_count = Math.min(10_000, this.pageCount);
 			const interaction_count = Math.min(10_000, this.interactionCount);
 			const time_on_page = Math.min(
@@ -786,7 +780,6 @@
 				},
 			};
 
-			// Send immediately
 			this.sendExitEventImmediately(exitEvent);
 		}
 
@@ -987,7 +980,6 @@
 			const utmParams = this.getUtmParams();
 			const connectionInfo = this.getConnectionInfo();
 
-			// Clamp viewport size
 			let width = window.innerWidth;
 			let height = window.innerHeight;
 			if (
@@ -1003,7 +995,6 @@
 			}
 			const viewport_size = width && height ? `${width}x${height}` : null;
 
-			// Clamp screen resolution
 			let screenWidth = window.screen.width;
 			let screenHeight = window.screen.height;
 			if (
@@ -1020,7 +1011,6 @@
 			const screen_resolution =
 				screenWidth && screenHeight ? `${screenWidth}x${screenHeight}` : null;
 
-			// Validate referrer and path as URLs
 			let referrer = this.global?.referrer || document.referrer || 'direct';
 			try {
 				if (referrer && referrer !== 'direct') {
@@ -1039,20 +1029,16 @@
 			}
 
 			return {
-				// Page context
 				path,
 				title: document.title,
 				referrer,
-				// User context
 				screen_resolution,
 				viewport_size,
 				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 				language: navigator.language,
-				// Connection info
 				connection_type: connectionInfo.connection_type,
 				rtt: connectionInfo.rtt,
 				downlink: connectionInfo.downlink,
-				// UTM parameters
 				utm_source: utmParams.utm_source,
 				utm_medium: utmParams.utm_medium,
 				utm_campaign: utmParams.utm_campaign,
