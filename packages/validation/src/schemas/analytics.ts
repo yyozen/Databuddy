@@ -212,8 +212,5 @@ export const analyticsEventSchema = z.object({
 		.max(VALIDATION_LIMITS.VALUE_MAX_LENGTH)
 		.nullable()
 		.optional(),
-	properties: z
-		.record(z.union([z.string(), z.number(), z.boolean(), z.null()]))
-		.optional()
-		.nullable(),
+	properties: z.record(z.any(), z.any()).optional().nullable(),
 });
