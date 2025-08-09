@@ -4,12 +4,16 @@ import {
 	FloppyDiskIcon,
 	GearIcon,
 	GlobeIcon,
+	KeyIcon,
 	TrashIcon,
 	WarningIcon,
 } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { ApiKeyCreateDialog } from '@/components/organizations/api-key-create-dialog';
+import { ApiKeyDetailDialog } from '@/components/organizations/api-key-detail-dialog';
+import { ApiKeyList } from '@/components/organizations/api-key-list';
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -48,6 +52,11 @@ export function SettingsTab({ organization }: SettingsTabProps) {
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
+
+	// API Keys dialogs state
+	const [showCreateKey, setShowCreateKey] = useState(false);
+	const [showKeyDetail, setShowKeyDetail] = useState(false);
+	const [selectedKeyId, setSelectedKeyId] = useState<string | null>(null);
 
 	const { updateOrganizationAsync, deleteOrganizationAsync } =
 		useOrganizations();
@@ -260,6 +269,33 @@ export function SettingsTab({ organization }: SettingsTabProps) {
 				</CardContent>
 			</Card>
 
+			{/* API Keys */}
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<KeyIcon
+							className="h-5 w-5 not-dark:text-primary"
+							size={16}
+							weight="duotone"
+						/>
+						API Keys
+					</CardTitle>
+					<CardDescription>
+						Create and manage API keys for this organization
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<ApiKeyList
+						onCreateNew={() => setShowCreateKey(true)}
+						onSelect={(id) => {
+							setSelectedKeyId(id);
+							setShowKeyDetail(true);
+						}}
+						organizationId={organization.id}
+					/>
+				</CardContent>
+			</Card>
+
 			{/* Danger Zone */}
 			<Card className="border-destructive/20 bg-destructive/5">
 				<CardHeader>
@@ -285,6 +321,21 @@ export function SettingsTab({ organization }: SettingsTabProps) {
 								and any shared resources will be removed.
 							</p>
 						</div>
+
+						{/* API Key Dialogs */}
+						<ApiKeyCreateDialog
+							onOpenChange={setShowCreateKey}
+							open={showCreateKey}
+							organizationId={organization.id}
+						/>
+						<ApiKeyDetailDialog
+							keyId={selectedKeyId}
+							onOpenChange={(open) => {
+								setShowKeyDetail(open);
+								if (!open) setSelectedKeyId(null);
+							}}
+							open={showKeyDetail}
+						/>
 						<Button
 							className="rounded-lg"
 							onClick={() => setShowDeleteDialog(true)}

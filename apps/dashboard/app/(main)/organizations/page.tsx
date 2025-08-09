@@ -174,7 +174,7 @@ function PageHeader({ onNewOrg }: { onNewOrg: () => void }) {
 				</p>
 			</div>
 			<Button className="w-full rounded sm:w-auto" onClick={onNewOrg} size="sm">
-				<PlusIcon className="mr-2 h-4 w-4" size={16} />
+				<PlusIcon className="mr-2 h-4 w-4 not-dark:text-primary" size={16} />
 				New Organization
 			</Button>
 		</div>
@@ -275,7 +275,10 @@ function MainView({
 							className="relative h-10 cursor-pointer touch-manipulation whitespace-nowrap rounded-none px-2 text-xs transition-colors hover:bg-muted/50 sm:px-4 sm:text-sm"
 							value="organizations"
 						>
-							<BuildingsIcon className="mr-1 h-3 w-3" size={16} />
+							<BuildingsIcon
+								className="mr-1 h-3 w-3 not-dark:text-primary"
+								size={16}
+							/>
 							<span className="hidden sm:inline">Organizations</span>
 							{activeTab === 'organizations' && (
 								<div className="absolute bottom-0 left-0 h-[2px] w-full rounded bg-primary" />
@@ -287,7 +290,10 @@ function MainView({
 							)}
 							value="teams"
 						>
-							<UsersIcon className="mr-1 h-3 w-3" size={16} />
+							<UsersIcon
+								className="mr-1 h-3 w-3 not-dark:text-primary"
+								size={16}
+							/>
 							<span className="hidden sm:inline">Teams</span>
 							{activeTab === 'teams' && (
 								<div className="absolute bottom-0 left-0 h-[2px] w-full rounded bg-primary" />

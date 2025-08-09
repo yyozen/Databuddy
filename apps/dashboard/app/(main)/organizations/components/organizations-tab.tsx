@@ -180,7 +180,7 @@ export function OrganizationsTab({
 											</p>
 											<div className="mt-2 flex items-center gap-1">
 												<CalendarIcon
-													className="h-3 w-3 text-muted-foreground"
+													className="h-3 w-3 not-dark:text-primary text-muted-foreground"
 													size={16}
 												/>
 												<span className="text-muted-foreground text-xs">
@@ -211,7 +211,7 @@ export function OrganizationsTab({
 												) : (
 													<>
 														<ArrowRightIcon
-															className="mr-2 h-3 w-3"
+															className="mr-2 h-3 w-3 not-dark:text-primary"
 															size={16}
 														/>
 														Switch to This Organization
@@ -231,7 +231,10 @@ export function OrganizationsTab({
 															variant="outline"
 														>
 															<Link href={`/organizations/${org.slug}`}>
-																<GearIcon className="mr-2 h-3 w-3" size={16} />
+																<GearIcon
+																	className="mr-2 h-3 w-3 not-dark:text-primary"
+																	size={16}
+																/>
 																Settings
 															</Link>
 														</Button>
