@@ -40,7 +40,7 @@ export default function PricingPage() {
 	);
 
 	return (
-		<div className="px-4 py-10 sm:px-6 lg:px-8">
+		<div className="px-4 pt-10 sm:px-6 lg:px-8">
 			<div className="mx-auto w-full max-w-7xl">
 				<header className="mb-8 text-center sm:mb-10">
 					<h1 className="mb-2 font-bold text-3xl tracking-tight sm:text-4xl">
