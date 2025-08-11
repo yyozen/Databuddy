@@ -1,12 +1,21 @@
 'use client';
 
-import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
-import { useEffect, useState } from 'react';
+import { XIcon } from '@phosphor-icons/react';
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getQueryTypes } from './actions';
+import { JsonNode } from './json-viewer';
 import {
 	type BatchQueryResponse,
 	type DynamicQueryRequest,
@@ -18,165 +27,6 @@ interface QueryType {
 	defaultLimit?: number;
 	customizable?: boolean;
 	allowedFilters?: string[];
-}
-
-// JSON Tree Viewer Component
-interface JsonNodeProps {
-	data: unknown;
-	name?: string;
-	level?: number;
-}
-
-function JsonNode({ data, name, level = 0 }: JsonNodeProps) {
-	const [isExpanded, setIsExpanded] = useState(true); // Open by default
-	const indent = level * 12;
-
-	// Simple value renderer
-	const renderValue = (value: unknown, key?: string) => (
-		<div className="flex items-center py-0.5" style={{ paddingLeft: indent }}>
-			{key && <span className="mr-2 text-blue-400">{key}:</span>}
-			<span className={getValueColor(value)}>{formatValue(value)}</span>
-		</div>
-	);
-
-	// Get color for different value types
-	const getValueColor = (value: unknown) => {
-		if (value === null) {
-			return 'text-gray-400';
-		}
-		if (typeof value === 'string') {
-			return 'text-green-400';
-		}
-		if (typeof value === 'number' || typeof value === 'boolean') {
-			return 'text-yellow-400';
-		}
-		return 'text-gray-300';
-	};
-
-	// Format value for display
-	const formatValue = (value: unknown) => {
-		if (value === null) {
-			return 'null';
-		}
-		if (typeof value === 'string') {
-			return `"${value}"`;
-		}
-		return String(value);
-	};
-
-	// Handle primitive values
-	if (
-		data === null ||
-		typeof data === 'string' ||
-		typeof data === 'number' ||
-		typeof data === 'boolean'
-	) {
-		return renderValue(data, name);
-	}
-
-	// Handle arrays
-	if (Array.isArray(data)) {
-		if (data.length === 0) {
-			return renderValue('[]', name);
-		}
-		return (
-			<div>
-				<button
-					className="flex w-full items-center py-0.5 text-left hover:bg-gray-700/30"
-					onClick={() => setIsExpanded(!isExpanded)}
-					style={{ paddingLeft: indent }}
-					type="button"
-				>
-					{isExpanded ? (
-						<CaretDownIcon className="mr-1 h-3 w-3" />
-					) : (
-						<CaretRightIcon className="mr-1 h-3 w-3" />
-					)}
-					{name && <span className="mr-2 text-blue-400">{name}:</span>}
-					<span className="text-gray-300">[</span>
-				</button>
-				{isExpanded && (
-					<>
-						{data.map((item, index) => (
-							<JsonNode
-								data={item}
-								key={`${name || 'root'}-${index}`}
-								level={level + 1}
-							/>
-						))}
-						<div
-							className="flex items-center py-0.5"
-							style={{ paddingLeft: indent }}
-						>
-							<span className="text-gray-300">]</span>
-						</div>
-					</>
-				)}
-				{!isExpanded && (
-					<div
-						className="flex items-center py-0.5"
-						style={{ paddingLeft: indent }}
-					>
-						<span className="text-gray-300">]</span>
-					</div>
-				)}
-			</div>
-		);
-	}
-
-	// Handle objects
-	if (typeof data === 'object' && data !== null) {
-		const keys = Object.keys(data as Record<string, unknown>);
-		if (keys.length === 0) {
-			return renderValue('{}', name);
-		}
-		return (
-			<div>
-				<button
-					className="flex w-full items-center py-0.5 text-left hover:bg-gray-700/30"
-					onClick={() => setIsExpanded(!isExpanded)}
-					style={{ paddingLeft: indent }}
-					type="button"
-				>
-					{isExpanded ? (
-						<CaretDownIcon className="mr-1 h-3 w-3" />
-					) : (
-						<CaretRightIcon className="mr-1 h-3 w-3" />
-					)}
-					{name && <span className="mr-2 text-blue-400">{name}:</span>}
-					<span className="text-gray-300">{'{'}</span>
-				</button>
-				{isExpanded && (
-					<>
-						{keys.map((key) => (
-							<JsonNode
-								data={(data as Record<string, unknown>)[key]}
-								key={key}
-								level={level + 1}
-								name={key}
-							/>
-						))}
-						<div
-							className="flex items-center py-0.5"
-							style={{ paddingLeft: indent }}
-						>
-							<span className="text-gray-300">{'}'}</span>
-						</div>
-					</>
-				)}
-				{!isExpanded && (
-					<div
-						className="flex items-center py-0.5"
-						style={{ paddingLeft: indent }}
-					>
-						<span className="text-gray-300">{'}'}</span>
-					</div>
-				)}
-			</div>
-		);
-	}
-
-	return null;
 }
 
 function CornerDecorations() {
@@ -205,38 +55,37 @@ function CornerDecorations() {
 export function QueryDemo() {
 	const [availableTypes, setAvailableTypes] = useState<QueryType[]>([]);
 	const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
+	const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [result, setResult] = useState<BatchQueryResponse | null>(null);
-
-	// Load available query types on mount
-	useEffect(() => {
-		const loadTypes = async () => {
-			const data = await getQueryTypes();
-			if (data.success) {
-				const types = data.types.map((name) => ({
-					name,
-					defaultLimit: data.configs[name]?.defaultLimit,
-					customizable: data.configs[name]?.customizable,
-					allowedFilters: data.configs[name]?.allowedFilters,
-				}));
-				setAvailableTypes(types);
-			}
-		};
-		loadTypes();
-	}, []);
-
-	const handleTypeToggle = (typeName: string) => {
-		const newSelected = new Set(selectedTypes);
-		if (newSelected.has(typeName)) {
-			newSelected.delete(typeName);
-		} else {
-			newSelected.add(typeName);
+	const listContainerRef = useRef<HTMLDivElement | null>(null);
+	const savedScrollTopRef = useRef<number | null>(null);
+	const clearSelection = () => {
+		const viewport = listContainerRef.current?.querySelector(
+			'[data-slot="scroll-area-viewport"]'
+		) as HTMLElement | null;
+		if (viewport) {
+			savedScrollTopRef.current = viewport.scrollTop;
+			viewport.style.setProperty('overflow-anchor', 'none');
 		}
-		setSelectedTypes(newSelected);
+		setSelectedTypes(new Set());
+		setSelectedOrder([]);
 	};
 
-	const handleExecuteQuery = async () => {
-		if (selectedTypes.size === 0) {
+	const displayedTypes = useMemo(() => {
+		const selectedSet = new Set(selectedOrder);
+		const selectedTypesOrdered = selectedOrder
+			.map((name) => availableTypes.find((t) => t.name === name))
+			.filter(Boolean) as QueryType[];
+		const unselectedTypes = availableTypes.filter(
+			(t) => !selectedSet.has(t.name)
+		);
+		return [...selectedTypesOrdered, ...unselectedTypes];
+	}, [availableTypes, selectedOrder]);
+
+	// Load available query types on mount
+	const runQueries = useCallback(async (parameters: string[]) => {
+		if (parameters.length === 0) {
 			return;
 		}
 
@@ -247,7 +96,7 @@ export function QueryDemo() {
 			const queries: DynamicQueryRequest[] = [
 				{
 					id: 'custom-query',
-					parameters: Array.from(selectedTypes),
+					parameters,
 					limit: 50,
 				},
 			];
@@ -276,8 +125,8 @@ export function QueryDemo() {
 						queryId: 'custom-query',
 						data: [],
 						meta: {
-							parameters: Array.from(selectedTypes),
-							total_parameters: selectedTypes.size,
+							parameters,
+							total_parameters: parameters.length,
 							page: 1,
 							limit: 50,
 							filters_applied: 0,
@@ -288,6 +137,81 @@ export function QueryDemo() {
 		} finally {
 			setIsLoading(false);
 		}
+	}, []);
+
+	useEffect(() => {
+		const loadTypes = async () => {
+			const data = await getQueryTypes();
+			if (data.success) {
+				const types = data.types.map((name) => ({
+					name,
+					defaultLimit: data.configs[name]?.defaultLimit,
+					customizable: data.configs[name]?.customizable,
+					allowedFilters: data.configs[name]?.allowedFilters,
+				}));
+				setAvailableTypes(types);
+
+				const sortedByUtility = [...types].sort((a, b) => {
+					const aScore =
+						(a.customizable ? 1 : 0) * 2 + (a.allowedFilters?.length || 0);
+					const bScore =
+						(b.customizable ? 1 : 0) * 2 + (b.allowedFilters?.length || 0);
+					return bScore - aScore;
+				});
+				const defaultSelectedNames = sortedByUtility
+					.slice(0, Math.min(3, sortedByUtility.length))
+					.map((t) => t.name);
+				if (defaultSelectedNames.length > 0) {
+					setSelectedTypes(new Set(defaultSelectedNames));
+					setSelectedOrder(defaultSelectedNames);
+					runQueries(defaultSelectedNames);
+				}
+			}
+		};
+		loadTypes();
+	}, [runQueries]);
+
+	const handleTypeToggle = (typeName: string) => {
+		// hack to preserve current scroll position of the scrollarea viewport
+		const viewport = listContainerRef.current?.querySelector(
+			'[data-slot="scroll-area-viewport"]'
+		) as HTMLElement | null;
+		if (viewport) {
+			savedScrollTopRef.current = viewport.scrollTop;
+			// prevent browser scroll anchoring from jumping to the moved item
+			viewport.style.setProperty('overflow-anchor', 'none');
+		}
+		const newSelected = new Set(selectedTypes);
+		if (newSelected.has(typeName)) {
+			newSelected.delete(typeName);
+			setSelectedOrder((prev) => prev.filter((n) => n !== typeName));
+		} else {
+			newSelected.add(typeName);
+			setSelectedOrder((prev) => [...prev, typeName]);
+		}
+		setSelectedTypes(newSelected);
+	};
+
+	// restore the scroll position immediately after the DOM updates from reordering
+	useLayoutEffect(() => {
+		if (savedScrollTopRef.current !== null) {
+			const viewport = listContainerRef.current?.querySelector(
+				'[data-slot="scroll-area-viewport"]'
+			) as HTMLElement | null;
+			if (viewport) {
+				viewport.scrollTop = savedScrollTopRef.current;
+				viewport.style.removeProperty('overflow-anchor');
+			}
+			savedScrollTopRef.current = null;
+		}
+	});
+
+	const handleExecuteQuery = async () => {
+		if (selectedTypes.size === 0) {
+			return;
+		}
+
+		await runQueries([...selectedOrder]);
 	};
 
 	return (
@@ -300,58 +224,72 @@ export function QueryDemo() {
 						{selectedTypes.size > 0 && (
 							<Badge className="font-mono text-xs" variant="secondary">
 								{selectedTypes.size} selected
+								<button
+									aria-label="Clear selection"
+									className={`${
+										selectedTypes.size > 5
+											? 'pointer-events-auto ml-1 w-4 scale-100 opacity-100'
+											: 'pointer-events-none ml-0 w-0 scale-95 opacity-0'
+									} inline-flex h-4 items-center justify-center rounded transition-all duration-200 hover:bg-muted/40`}
+									onClick={clearSelection}
+									type="button"
+								>
+									<XIcon className="size-3" weight="duotone" />
+								</button>
 							</Badge>
 						)}
 					</div>
 
-					<ScrollArea className="h-80 lg:h-96">
-						<div className="grid grid-cols-1 gap-2 pr-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
-							{availableTypes.map((type) => (
-								<Card
-									className={`group relative cursor-pointer transition-all duration-200 hover:shadow-md ${
-										selectedTypes.has(type.name)
-											? 'bg-primary/5 shadow-inner'
-											: 'border-border/50 bg-card/70 hover:border-border'
-									}`}
-									key={type.name}
-									onClick={() => handleTypeToggle(type.name)}
-								>
-									<CardContent className="p-2">
-										<div className="flex items-center justify-between gap-2">
-											<div className="min-w-0 flex-1">
-												<div className="flex items-center gap-2">
-													<code className="truncate font-medium font-mono text-xs">
-														{type.name}
-													</code>
-													{type.customizable && (
-														<Badge
-															className="px-1.5 py-0.5 text-[10px] leading-none"
-															variant="outline"
-														>
-															Custom
-														</Badge>
+					<div ref={listContainerRef}>
+						<ScrollArea className="h-80 lg:h-96">
+							<div className="grid grid-cols-1 gap-2 pr-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
+								{displayedTypes.map((type) => (
+									<Card
+										className={`group relative cursor-pointer transition-all duration-200 hover:shadow-md ${
+											selectedTypes.has(type.name)
+												? 'bg-primary/5 shadow-inner'
+												: 'border-border/50 bg-card/70 hover:border-border'
+										}`}
+										key={type.name}
+										onClick={() => handleTypeToggle(type.name)}
+									>
+										<CardContent className="p-2">
+											<div className="flex items-center justify-between gap-2">
+												<div className="min-w-0 flex-1">
+													<div className="flex items-center gap-2">
+														<code className="truncate font-medium font-mono text-xs">
+															{type.name}
+														</code>
+														{type.customizable && (
+															<Badge
+																className="px-1.5 py-0.5 text-[10px] leading-none"
+																variant="outline"
+															>
+																Custom
+															</Badge>
+														)}
+													</div>
+													{type.defaultLimit && (
+														<div className="mt-0.5 text-[10px] text-muted-foreground">
+															Limit: {type.defaultLimit}
+														</div>
 													)}
 												</div>
-												{type.defaultLimit && (
-													<div className="mt-0.5 text-[10px] text-muted-foreground">
-														Limit: {type.defaultLimit}
-													</div>
-												)}
+												<div
+													className={`h-3 w-3 flex-shrink-0 rounded-full border transition-colors ${
+														selectedTypes.has(type.name)
+															? 'border-primary bg-primary'
+															: 'border-muted-foreground/30'
+													}`}
+												/>
 											</div>
-											<div
-												className={`h-3 w-3 flex-shrink-0 rounded-full border transition-colors ${
-													selectedTypes.has(type.name)
-														? 'border-primary bg-primary'
-														: 'border-muted-foreground/30'
-												}`}
-											/>
-										</div>
-									</CardContent>
-									<CornerDecorations />
-								</Card>
-							))}
-						</div>
-					</ScrollArea>
+										</CardContent>
+										<CornerDecorations />
+									</Card>
+								))}
+							</div>
+						</ScrollArea>
+					</div>
 
 					<Button
 						className="w-full"
@@ -377,16 +315,25 @@ export function QueryDemo() {
 						)}
 					</div>
 
-					<Card className="relative flex-1 border-border/50 bg-black">
+					<Card className="relative flex-1 border-border/50 bg-white dark:bg-black">
 						<CardContent className="h-80 p-0 lg:h-96">
 							<ScrollArea className="h-full">
-								<div className="p-4 font-mono text-xs">
-									{result ? (
+								<div className="select-text break-words p-4 font-mono text-[13px] leading-6 tracking-tight sm:text-[13.5px]">
+									{isLoading ? (
+										<div className="space-y-2">
+											<Skeleton className="h-4 w-5/6" />
+											<Skeleton className="h-4 w-2/3" />
+											<Skeleton className="h-4 w-11/12" />
+											<Skeleton className="h-4 w-3/4" />
+											<Skeleton className="h-4 w-1/2" />
+											<Skeleton className="h-4 w-10/12" />
+											<Skeleton className="h-4 w-8/12" />
+											<Skeleton className="h-4 w-9/12" />
+										</div>
+									) : result ? (
 										<JsonNode data={result} />
 									) : (
-										<div className="text-gray-400">
-											{/* Execute query to see API response */}
-										</div>
+										<div className="text-gray-400" />
 									)}
 								</div>
 							</ScrollArea>
