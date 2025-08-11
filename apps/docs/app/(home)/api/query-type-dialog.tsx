@@ -5,15 +5,15 @@ import { CheckCircleIcon, CopyIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from '@/components/ui/sheet';
 import {
 	Table,
 	TableBody,
@@ -40,16 +40,18 @@ function DetailRow({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="text-sm">
-			<div className="font-medium">{label}</div>
-			<div className="pt-1 text-foreground/90">{children}</div>
+		<div className="space-y-2">
+			<div className="font-semibold text-foreground text-sm">{label}</div>
+			<div className="text-muted-foreground text-sm">{children}</div>
 		</div>
 	);
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
 	return (
-		<span className="rounded bg-muted px-1.5 py-0.5 text-xs">{children}</span>
+		<span className="rounded border bg-muted px-2 py-1 font-medium text-muted-foreground text-xs">
+			{children}
+		</span>
 	);
 }
 
@@ -59,15 +61,17 @@ function UsageSection({ typeKey }: { typeKey: string }) {
 	const snippetDisplay = `curl -X POST "${baseUrl}/v1/query?website_id=YOUR_WEBSITE_ID" \\\n  -H "Content-Type: application/json" \\\n  -H "X-Api-Key: YOUR_API_KEY" \\\n  -d '{\n  "id": "example",\n  "parameters": ["${typeKey}"],\n  "limit": 100\n}'`;
 
 	return (
-		<div className="space-y-2">
+		<div className="space-y-4">
 			<div className="flex items-center justify-between">
-				<div className="font-medium text-sm">Usage</div>
+				<h3 className="font-semibold text-foreground text-sm">Usage Example</h3>
 				<CopyButton text={snippetCopy} />
 			</div>
-			<div className="rounded border bg-muted/50 p-2 sm:p-3">
-				<pre className="overflow-x-auto text-[11px] sm:text-xs">
-					{snippetDisplay}
-				</pre>
+			<div className="overflow-hidden rounded border bg-muted">
+				<div className="p-4">
+					<pre className="overflow-x-auto text-foreground text-xs leading-relaxed">
+						{snippetDisplay}
+					</pre>
+				</div>
 			</div>
 		</div>
 	);
@@ -78,34 +82,88 @@ function OutputFieldsTable({ meta }: { meta?: QueryBuilderMeta }) {
 		return null;
 	}
 	return (
-		<div className="hidden sm:block">
-			<div className="mb-2 font-medium text-sm">Output fields</div>
-			<Table className="min-w-[640px] sm:min-w-[760px]">
-				<TableHeader>
-					<TableRow>
-						<TableHead>name</TableHead>
-						<TableHead>type</TableHead>
-						<TableHead>label</TableHead>
-						<TableHead>description</TableHead>
-						<TableHead>unit</TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{meta.output_fields.map((f) => (
-						<TableRow key={f.name}>
-							<TableCell>
-								<code className="font-mono text-xs">{f.name}</code>
-							</TableCell>
-							<TableCell className="capitalize">{f.type}</TableCell>
-							<TableCell>{f.label || '-'}</TableCell>
-							<TableCell className="max-w-[40rem] truncate">
-								{f.description || '-'}
-							</TableCell>
-							<TableCell>{f.unit || ''}</TableCell>
-						</TableRow>
-					))}
-				</TableBody>
-			</Table>
+		<div className="space-y-4">
+			<h3 className="font-semibold text-foreground text-sm">Output Fields</h3>
+
+			{/* Mobile: Card Layout */}
+			<div className="space-y-3 sm:hidden">
+				{meta.output_fields.map((field) => (
+					<div className="rounded border bg-card p-4" key={field.name}>
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<code className="rounded bg-muted px-2 py-1 font-medium font-mono text-xs">
+									{field.name}
+								</code>
+								<span className="rounded border bg-background px-2 py-1 font-medium text-xs capitalize">
+									{field.type}
+								</span>
+							</div>
+							{field.label && (
+								<div className="text-sm">
+									<span className="text-muted-foreground">Label:</span>{' '}
+									{field.label}
+								</div>
+							)}
+							{field.description && (
+								<div className="text-sm">
+									<span className="text-muted-foreground">Description:</span>{' '}
+									{field.description}
+								</div>
+							)}
+							{field.unit && (
+								<div className="text-sm">
+									<span className="text-muted-foreground">Unit:</span>{' '}
+									{field.unit}
+								</div>
+							)}
+						</div>
+					</div>
+				))}
+			</div>
+
+			{/* Desktop: Table Layout */}
+			<div className="hidden sm:block">
+				<div className="overflow-hidden rounded border">
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead className="font-semibold">Name</TableHead>
+								<TableHead className="font-semibold">Type</TableHead>
+								<TableHead className="font-semibold">Label</TableHead>
+								<TableHead className="font-semibold">Description</TableHead>
+								<TableHead className="font-semibold">Unit</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{meta.output_fields.map((field) => (
+								<TableRow key={field.name}>
+									<TableCell>
+										<code className="rounded bg-muted px-2 py-1 font-medium font-mono text-xs">
+											{field.name}
+										</code>
+									</TableCell>
+									<TableCell>
+										<span className="rounded border bg-background px-2 py-1 font-medium text-xs capitalize">
+											{field.type}
+										</span>
+									</TableCell>
+									<TableCell className="text-muted-foreground">
+										{field.label || '-'}
+									</TableCell>
+									<TableCell className="max-w-[20rem] text-muted-foreground">
+										<div className="truncate" title={field.description}>
+											{field.description || '-'}
+										</div>
+									</TableCell>
+									<TableCell className="text-muted-foreground">
+										{field.unit || '-'}
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -119,92 +177,119 @@ export function QueryTypeDialog({
 	children,
 }: Props) {
 	return (
-		<Dialog>
-			<DialogTrigger asChild>{children}</DialogTrigger>
-			<DialogContent className="sm:max-w-3xl md:max-w-4xl">
-				<DialogHeader>
-					<DialogTitle>
-						<code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-							{typeKey}
-						</code>
-						{meta?.title ? (
-							<span className="ml-2 text-foreground/80">{meta.title}</span>
-						) : null}
-					</DialogTitle>
-					{meta?.description ? (
-						<DialogDescription>{meta.description}</DialogDescription>
-					) : null}
-				</DialogHeader>
+		<Sheet>
+			<SheetTrigger asChild>{children}</SheetTrigger>
+			<SheetContent className="w-full overflow-hidden sm:max-w-2xl">
+				<div className="flex h-full flex-col">
+					<SheetHeader className="shrink-0 border-border border-b pb-6">
+						<SheetTitle className="flex flex-wrap items-center gap-2">
+							<code className="rounded border bg-primary px-2.5 py-1.5 font-medium font-mono text-primary-foreground text-sm">
+								{typeKey}
+							</code>
+							{meta?.title && (
+								<span className="text-lg text-muted-foreground">
+									{meta.title}
+								</span>
+							)}
+						</SheetTitle>
+						{meta?.description && (
+							<SheetDescription className="text-left text-muted-foreground">
+								{meta.description}
+							</SheetDescription>
+						)}
+					</SheetHeader>
 
-				<ScrollArea className="max-h-[65vh] sm:max-h-[75vh]">
-					<div className="space-y-5 pr-3 sm:space-y-6 sm:pr-4">
-						<div className="flex flex-wrap items-center gap-2">
-							{customizable ? (
-								<Badge variant="outline">Customizable</Badge>
-							) : null}
-							{typeof defaultLimit === 'number' ? (
-								<Badge variant="secondary">Default limit: {defaultLimit}</Badge>
-							) : null}
-						</div>
-
-						{allowedFilters && allowedFilters.length > 0 ? (
-							<div>
-								<div className="mb-2 font-medium text-sm">Allowed filters</div>
-								<div className="flex flex-wrap gap-1.5">
-									{allowedFilters.map((f) => (
-										<code
-											className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs"
-											key={f}
-										>
-											{f}
-										</code>
-									))}
+					<ScrollArea className="flex-1">
+						<div className="space-y-8 py-6">
+							{/* Quick Info Section */}
+							<div className="rounded border bg-card p-6">
+								<div className="space-y-4">
+									<h3 className="font-semibold text-foreground">Quick Info</h3>
+									<div className="flex flex-wrap gap-2">
+										{customizable && (
+											<Badge
+												className="border-primary bg-primary text-primary-foreground"
+												variant="outline"
+											>
+												Customizable
+											</Badge>
+										)}
+										{typeof defaultLimit === 'number' && (
+											<Badge variant="secondary">
+												Default limit: {defaultLimit.toLocaleString()}
+											</Badge>
+										)}
+										{meta?.category && (
+											<Badge variant="outline">{meta.category}</Badge>
+										)}
+									</div>
 								</div>
 							</div>
-						) : null}
 
-						{meta?.supports_granularity?.length ? (
-							<div className="text-sm">
-								<span className="font-medium">Granularity:</span>{' '}
-								{meta.supports_granularity.join(', ')}
-							</div>
-						) : null}
+							{/* Configuration Section */}
+							{(allowedFilters?.length ||
+								meta?.supports_granularity?.length ||
+								meta?.tags?.length) && (
+								<div className="rounded border bg-muted p-6">
+									<div className="space-y-6">
+										<h3 className="font-semibold text-foreground">
+											Configuration
+										</h3>
 
-						<div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
-							<div className="space-y-3">
-								{meta?.supports_granularity?.length ? (
-									<DetailRow label="Granularity">
-										{meta.supports_granularity.join(', ')}
-									</DetailRow>
-								) : null}
+										<div className="grid gap-6 sm:grid-cols-2">
+											{allowedFilters?.length && (
+												<DetailRow label="Allowed Filters">
+													<div className="flex flex-wrap gap-1.5">
+														{allowedFilters.map((filter) => (
+															<code
+																className="rounded border bg-background px-2 py-1 font-mono text-xs"
+																key={filter}
+															>
+																{filter}
+															</code>
+														))}
+													</div>
+												</DetailRow>
+											)}
 
-								{typeof defaultLimit === 'number' ? (
-									<DetailRow label="Default limit">{defaultLimit}</DetailRow>
-								) : null}
-
-								{meta?.category ? (
-									<DetailRow label="Category">{meta.category}</DetailRow>
-								) : null}
-
-								{meta?.tags?.length ? (
-									<DetailRow label="Tags">
-										<div className="flex flex-wrap gap-1.5">
-											{meta.tags.map((tag) => (
-												<Chip key={tag}>{tag}</Chip>
-											))}
+											{meta?.supports_granularity?.length && (
+												<DetailRow label="Granularity Support">
+													<div className="text-muted-foreground">
+														{meta.supports_granularity.join(', ')}
+													</div>
+												</DetailRow>
+											)}
 										</div>
-									</DetailRow>
-								) : null}
+
+										{meta?.tags?.length && (
+											<DetailRow label="Tags">
+												<div className="flex flex-wrap gap-2">
+													{meta.tags.map((tag) => (
+														<Chip key={tag}>{tag}</Chip>
+													))}
+												</div>
+											</DetailRow>
+										)}
+									</div>
+								</div>
+							)}
+
+							{/* Usage Example Section */}
+							<div className="rounded border bg-card p-6">
+								<UsageSection typeKey={typeKey} />
 							</div>
 
-							<UsageSection typeKey={typeKey} />
+							{/* Output Fields Section */}
+							{meta?.output_fields?.length && (
+								<div className="rounded border bg-muted p-6">
+									<OutputFieldsTable meta={meta} />
+								</div>
+							)}
 						</div>
-
-						<OutputFieldsTable meta={meta} />
-					</div>
-				</ScrollArea>
-			</DialogContent>
-		</Dialog>
+					</ScrollArea>
+				</div>
+			</SheetContent>
+		</Sheet>
 	);
 }
 
@@ -220,6 +305,11 @@ function CopyButton({ text }: { text: string }) {
 
 	return (
 		<Button
+			className={
+				copied
+					? 'border-green-500 bg-green-100 text-green-600 hover:bg-green-200'
+					: 'border-border bg-background hover:bg-muted'
+			}
 			onClick={() => {
 				navigator.clipboard
 					.writeText(text)
@@ -231,12 +321,14 @@ function CopyButton({ text }: { text: string }) {
 			variant={copied ? 'secondary' : 'outline'}
 		>
 			{copied ? (
-				<span className="inline-flex items-center gap-1">
-					<CheckCircleIcon className="size-4" weight="duotone" /> Copied
+				<span className="inline-flex items-center gap-1.5">
+					<CheckCircleIcon className="size-4" weight="duotone" />
+					<span className="font-medium text-sm">Copied!</span>
 				</span>
 			) : (
-				<span className="inline-flex items-center gap-1">
-					<CopyIcon className="size-4" weight="duotone" /> Copy
+				<span className="inline-flex items-center gap-1.5">
+					<CopyIcon className="size-4" weight="duotone" />
+					<span className="font-medium text-sm">Copy</span>
 				</span>
 			)}
 		</Button>
