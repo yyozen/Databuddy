@@ -106,7 +106,7 @@ function processNonDocPages(
 function processBlogPages(baseUrl: string): Promise<MetadataRoute.Sitemap> {
 	return getPosts()
 		.then((data) => {
-			if (!data?.posts) {
+			if ('error' in data || !data?.posts) {
 				return [];
 			}
 
