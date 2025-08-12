@@ -71,8 +71,7 @@ const testimonials = [
 		profession: 'Founder, OpenCut',
 		link: 'https://x.com/mazeincoding/status/1943019005339455631',
 		social: null,
-		description:
-			"@trydatabuddy is the only analytics i love, it's so simple and easy to use.",
+		description: '@trydatabuddy is the only analytics i love.',
 		avatar: 'maze.jpg',
 	},
 	{
