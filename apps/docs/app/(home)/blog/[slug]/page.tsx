@@ -4,13 +4,14 @@ import {
 	CalendarIcon,
 	ClockIcon,
 	UserIcon,
+	WarningCircleIcon,
 } from '@phosphor-icons/react/ssr';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { SITE_URL } from '@/app/util/constants';
 import { Footer } from '@/components/footer';
+import { SciFiButton } from '@/components/landing/scifi-btn';
 import { Prose } from '@/components/prose';
 import { getPosts, getSinglePost } from '@/lib/blog-query';
 
@@ -36,46 +37,49 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
 	const slug = (await params).slug;
 
-	const data = await getSinglePost(slug);
+	try {
+		const data = await getSinglePost(slug);
+		if (!data?.post) {
+			return { title: 'Not Found | Databuddy' };
+		}
 
-	if (!data?.post) {
-		return notFound();
+		return {
+			title: `${data.post.title} | Databuddy`,
+			description: data.post.description,
+			twitter: {
+				title: `${data.post.title} | Databuddy`,
+				description: data.post.description,
+				card: 'summary_large_image',
+				images: [
+					{
+						url: data.post.coverImage ?? `${SITE_URL}/og.webp`,
+						width: '1200',
+						height: '630',
+						alt: data.post.title,
+					},
+				],
+			},
+			openGraph: {
+				title: `${data.post.title} | Databuddy`,
+				description: data.post.description,
+				type: 'article',
+				images: [
+					{
+						url: data.post.coverImage ?? `${SITE_URL}/og.webp`,
+						width: '1200',
+						height: '630',
+						alt: data.post.title,
+					},
+				],
+				publishedTime: new Date(data.post.publishedAt).toISOString(),
+				authors: [
+					...data.post.authors.map((author: { name: string }) => author.name),
+				],
+			},
+		};
+	} catch {
+		return { title: 'Not Found | Databuddy' };
 	}
-
-	return {
-		title: `${data.post.title} | Databuddy`,
-		description: data.post.description,
-		twitter: {
-			title: `${data.post.title} | Databuddy`,
-			description: data.post.description,
-			card: 'summary_large_image',
-			images: [
-				{
-					url: data.post.coverImage ?? `${SITE_URL}/og.webp`,
-					width: '1200',
-					height: '630',
-					alt: data.post.title,
-				},
-			],
-		},
-		openGraph: {
-			title: `${data.post.title} | Databuddy`,
-			description: data.post.description,
-			type: 'article',
-			images: [
-				{
-					url: data.post.coverImage ?? `${SITE_URL}/og.webp`,
-					width: '1200',
-					height: '630',
-					alt: data.post.title,
-				},
-			],
-			publishedTime: new Date(data.post.publishedAt).toISOString(),
-			authors: [
-				...data.post.authors.map((author: { name: string }) => author.name),
-			],
-		},
-	};
 }
 
 export default async function PostPage({
@@ -83,13 +87,71 @@ export default async function PostPage({
 }: {
 	params: Promise<{ slug: string }>;
 }) {
-	const slug = (await params).slug;
+	const { slug } = await params;
+	const result = (await getSinglePost(slug)) as {
+		post?: import('@/types/post').Post;
+		error?: boolean;
+		status?: number;
+		statusText?: string;
+	};
 
-	const { post } = await getSinglePost(slug);
+	if (!result?.post) {
+		return (
+			<>
+				<div className="relative flex min-h-[60vh] w-full items-center justify-center overflow-hidden px-4 pt-10 sm:px-6 sm:pt-12 lg:px-8">
+					{/* Main Content */}
+					<div className="relative z-10 mx-auto w-full max-w-lg text-center">
+						<div className="group relative">
+							<div className="relative rounded border border-border bg-card/50 p-8 backdrop-blur-sm transition-all duration-300 hover:border-border/80 hover:bg-card/70 sm:p-12">
+								<WarningCircleIcon
+									className="mx-auto mb-4 h-12 w-12 text-muted-foreground transition-colors duration-300 group-hover:text-foreground sm:h-16 sm:w-16"
+									weight="duotone"
+								/>
+								<h1 className="mb-3 text-balance font-semibold text-2xl leading-tight tracking-tight sm:text-3xl md:text-4xl">
+									Post Not Found
+								</h1>
+								<p className="mb-6 font-medium text-muted-foreground text-sm leading-relaxed tracking-tight sm:text-base">
+									The article you're looking for seems to have been moved or no
+									longer exists.
+								</p>
+								<div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+									<SciFiButton asChild className="flex-1 sm:flex-initial">
+										<Link aria-label="Back to blog" href="/blog">
+											<ArrowLeftIcon className="h-4 w-4" weight="fill" />
+											Back to Blog
+										</Link>
+									</SciFiButton>
+								</div>
+							</div>
 
-	if (!post) {
-		return notFound();
+							{/* Sci-fi corners */}
+							<div className="pointer-events-none absolute inset-0">
+								<div className="absolute top-0 left-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
+									<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
+									<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
+								</div>
+								<div className="-scale-x-[1] absolute top-0 right-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
+									<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
+									<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
+								</div>
+								<div className="-scale-y-[1] absolute bottom-0 left-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
+									<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
+									<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
+								</div>
+								<div className="-scale-[1] absolute right-0 bottom-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
+									<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
+									<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<Footer />
+			</>
+		);
 	}
+
+	const post = result.post;
 
 	const estimateReadingTime = (htmlContent: string): string => {
 		const text = htmlContent.replace(STRIP_HTML_REGEX, ' ');
