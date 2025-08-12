@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Footer } from '@/components/footer';
+import { SciFiButton } from '@/components/landing/scifi-btn';
 import Section from '@/components/landing/section';
 import { Spotlight } from '@/components/landing/spotlight';
 import { getPosts } from '@/lib/blog-query';
@@ -219,32 +220,48 @@ export default async function BlogPage() {
 							))}
 						</div>
 					) : (
-						<div className="group relative rounded border border-border bg-card/50 p-12 text-center backdrop-blur-sm">
-							<h3 className="mb-4 font-semibold text-foreground text-xl">
-								No Posts Yet
-							</h3>
-							<p className="text-muted-foreground">
-								We're working on some amazing content. Check back soon for
-								insights on privacy-first analytics and modern web development.
-							</p>
+						<div className="mx-auto max-w-lg">
+							<div className="group relative">
+								<div className="relative rounded border border-border bg-card/50 p-8 text-center backdrop-blur-sm transition-all duration-300 hover:border-border/80 hover:bg-card/70 sm:p-12">
+									<TagIcon
+										className="mx-auto mb-4 h-12 w-12 text-muted-foreground transition-colors duration-300 group-hover:text-foreground sm:h-16 sm:w-16"
+										weight="duotone"
+									/>
+									<h1 className="mb-3 text-balance font-semibold text-2xl leading-tight tracking-tight sm:text-3xl md:text-4xl">
+										No Posts Yet
+									</h1>
+									<p className="mb-6 font-medium text-muted-foreground text-sm leading-relaxed tracking-tight sm:text-base">
+										We're working on some amazing content. Check back soon for
+										insights on privacy-first analytics and modern web
+										development.
+									</p>
+									<div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+										<SciFiButton asChild className="flex-1 sm:flex-initial">
+											<Link aria-label="Back to home" href="/">
+												Back to Home
+											</Link>
+										</SciFiButton>
+									</div>
+								</div>
 
-							{/* Sci-fi corners */}
-							<div className="pointer-events-none absolute inset-0">
-								<div className="absolute top-0 left-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
-									<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
-									<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
-								</div>
-								<div className="-scale-x-[1] absolute top-0 right-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
-									<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
-									<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
-								</div>
-								<div className="-scale-y-[1] absolute bottom-0 left-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
-									<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
-									<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
-								</div>
-								<div className="-scale-[1] absolute right-0 bottom-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
-									<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
-									<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
+								{/* Sci-fi corners */}
+								<div className="pointer-events-none absolute inset-0">
+									<div className="absolute top-0 left-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
+										<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
+										<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
+									</div>
+									<div className="-scale-x-[1] absolute top-0 right-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
+										<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
+										<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
+									</div>
+									<div className="-scale-y-[1] absolute bottom-0 left-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
+										<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
+										<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
+									</div>
+									<div className="-scale-[1] absolute right-0 bottom-0 h-2 w-2 group-hover:animate-[cornerGlitch_0.6s_ease-in-out]">
+										<div className="absolute top-0 left-0.5 h-0.5 w-1.5 origin-left bg-foreground" />
+										<div className="absolute top-0 left-0 h-2 w-0.5 origin-top bg-foreground" />
+									</div>
 								</div>
 							</div>
 						</div>
