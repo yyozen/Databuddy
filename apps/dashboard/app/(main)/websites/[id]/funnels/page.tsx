@@ -1,7 +1,7 @@
 'use client';
 
 import { FunnelIcon, TrendDownIcon } from '@phosphor-icons/react';
-import { format, subDays, subHours } from 'date-fns';
+import dayjs from 'dayjs';
 import { useAtom } from 'jotai';
 import { useParams } from 'next/navigation';
 import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
@@ -145,8 +145,10 @@ export default function FunnelsPage() {
 		(range: (typeof quickRanges)[0]) => {
 			const now = new Date();
 			const start = range.hours
-				? subHours(now, range.hours)
-				: subDays(now, range.days || 7);
+				? dayjs(now).subtract(range.hours, 'hour').toDate()
+				: dayjs(now)
+						.subtract(range.days || 7, 'day')
+						.toDate();
 			setDateRangeAction({ startDate: start, endDate: now });
 		},
 		[setDateRangeAction]
@@ -340,16 +342,18 @@ export default function FunnelsPage() {
 						{quickRanges.map((range) => {
 							const now = new Date();
 							const start = range.hours
-								? subHours(now, range.hours)
-								: subDays(now, range.days || 7);
+								? dayjs(now).subtract(range.hours, 'hour').toDate()
+								: dayjs(now)
+										.subtract(range.days || 7, 'day')
+										.toDate();
 							const dayPickerCurrentRange = dayPickerSelectedRange;
 							const isActive =
 								dayPickerCurrentRange?.from &&
 								dayPickerCurrentRange?.to &&
-								format(dayPickerCurrentRange.from, 'yyyy-MM-dd') ===
-									format(start, 'yyyy-MM-dd') &&
-								format(dayPickerCurrentRange.to, 'yyyy-MM-dd') ===
-									format(now, 'yyyy-MM-dd');
+								dayjs(dayPickerCurrentRange.from).format('YYYY-MM-DD') ===
+									dayjs(start).format('YYYY-MM-DD') &&
+								dayjs(dayPickerCurrentRange.to).format('YYYY-MM-DD') ===
+									dayjs(now).format('YYYY-MM-DD');
 
 							return (
 								<Button
