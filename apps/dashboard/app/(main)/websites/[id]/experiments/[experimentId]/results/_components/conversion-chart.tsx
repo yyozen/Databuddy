@@ -1,15 +1,14 @@
 'use client';
 
-import { ChartLineIcon } from '@phosphor-icons/react';
 import dayjs from 'dayjs';
-import { MetricsChart } from '@/components/charts/metrics-chart';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { Experiment } from '@/hooks/use-experiments';
 
 interface ConversionChartProps {
 	experiment: Experiment;
 }
 
-// Mock data generator following the same pattern as overview-tab
+// Mock data generator
 const generateTimeSeriesData = (startDate: Date, days: number) => {
 	const data = [];
 	for (let i = 0; i < days; i++) {
@@ -19,7 +18,7 @@ const generateTimeSeriesData = (startDate: Date, days: number) => {
 		const variantRate = 12.4 + (Math.random() - 0.5) * 2;
 		
 		data.push({
-			date: date.format('YYYY-MM-DD'),
+			date: date.format('MMM D'),
 			control: Number(controlRate.toFixed(1)),
 			variant: Number(variantRate.toFixed(1)),
 		});
@@ -27,24 +26,89 @@ const generateTimeSeriesData = (startDate: Date, days: number) => {
 	return data;
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+	if (!active || !payload || !payload.length) return null;
+
+	return (
+		<div className="rounded border bg-card p-3 shadow-lg">
+			<p className="font-medium text-sm">{label}</p>
+			<div className="mt-2 space-y-1">
+				{payload.map((entry: any, index: number) => (
+					<div key={index} className="flex items-center gap-2 text-xs">
+						<div 
+							className="h-2 w-2 rounded-full" 
+							style={{ backgroundColor: entry.color }}
+						/>
+						<span className="capitalize">{entry.dataKey}:</span>
+						<span className="font-medium">{entry.value}%</span>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+};
+
 export function ConversionChart({ experiment }: ConversionChartProps) {
 	const days = dayjs().diff(dayjs(experiment.createdAt), 'days') || 1;
-	const data = generateTimeSeriesData(new Date(experiment.createdAt), Math.min(days, 30));
+	const data = generateTimeSeriesData(new Date(experiment.createdAt), Math.min(days, 14));
 
 	return (
 		<div className="rounded border bg-card shadow-sm">
-			<div className="flex flex-col items-start justify-between gap-3 border-b p-4 sm:flex-row">
-				<div>
-					<h2 className="font-semibold text-lg tracking-tight">
-						Conversion Rates
-					</h2>
-					<p className="text-muted-foreground text-sm">
-						Daily conversion rates for control vs variant
-					</p>
-				</div>
+			<div className="border-b p-4">
+				<h2 className="font-semibold text-lg tracking-tight">
+					Conversion Rates
+				</h2>
+				<p className="text-muted-foreground text-sm">
+					Control vs variant performance over time
+				</p>
 			</div>
-			<div>
-				<MetricsChart data={data} height={350} isLoading={false} />
+			<div className="p-4">
+				<div className="h-64">
+					<ResponsiveContainer width="100%" height="100%">
+						<AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+							<defs>
+								<linearGradient id="controlGradient" x1="0" y1="0" x2="0" y2="1">
+									<stop offset="5%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.3} />
+									<stop offset="95%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.1} />
+								</linearGradient>
+								<linearGradient id="variantGradient" x1="0" y1="0" x2="0" y2="1">
+									<stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+									<stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
+								</linearGradient>
+							</defs>
+							<CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+							<XAxis 
+								dataKey="date" 
+								tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+								axisLine={false}
+								tickLine={false}
+							/>
+							<YAxis 
+								tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+								axisLine={false}
+								tickLine={false}
+								domain={['dataMin - 1', 'dataMax + 1']}
+							/>
+							<Tooltip content={<CustomTooltip />} />
+							<Area
+								type="monotone"
+								dataKey="control"
+								stroke="hsl(var(--muted-foreground))"
+								strokeWidth={2}
+								fillOpacity={1}
+								fill="url(#controlGradient)"
+							/>
+							<Area
+								type="monotone"
+								dataKey="variant"
+								stroke="hsl(var(--primary))"
+								strokeWidth={2}
+								fillOpacity={1}
+								fill="url(#variantGradient)"
+							/>
+						</AreaChart>
+					</ResponsiveContainer>
+				</div>
 			</div>
 		</div>
 	);

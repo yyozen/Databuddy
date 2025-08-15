@@ -28,13 +28,13 @@ export function ExperimentSummaryCards({ experiment }: ExperimentSummaryCardsPro
 	};
 
 	return (
-		<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-4">
+		<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
 			<StatCard
 				title="CONVERSION LIFT"
 				value={`+${results.lift}%`}
 				description={`${results.conversionRateVariant}% vs ${results.conversionRateControl}%`}
 				icon={TrendUpIcon}
-				variant="positive"
+				variant="success"
 				className="h-full"
 			/>
 
@@ -49,16 +49,8 @@ export function ExperimentSummaryCards({ experiment }: ExperimentSummaryCardsPro
 			<StatCard
 				title="SAMPLE SIZE"
 				value={formatNumber(results.sampleSizeControl + results.sampleSizeVariant)}
-				description={`${formatNumber(results.sampleSizeControl)} / ${formatNumber(results.sampleSizeVariant)}`}
+				description={`${formatNumber(results.sampleSizeControl)} total participants`}
 				icon={UsersIcon}
-				className="h-full"
-			/>
-
-			<StatCard
-				title="DURATION"
-				value={`${results.duration} days`}
-				description={`Since ${dayjs(experiment.createdAt).format('MMM D')}`}
-				icon={CalendarIcon}
 				className="h-full"
 			/>
 		</div>

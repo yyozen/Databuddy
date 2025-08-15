@@ -102,7 +102,7 @@ export default function ExperimentResultsPage() {
 		<div className="mx-auto max-w-[1600px] space-y-6 mt-6">
 			<WebsitePageHeader
 				title={experiment?.name || 'Experiment Results'}
-				description="View detailed A/B test results and statistical analysis"
+				description="A/B test performance data"
 				icon={<FlaskIcon className="h-6 w-6 text-primary" size={16} weight="duotone" />}
 				websiteId={websiteId}
 				websiteName={websiteData?.name || undefined}
@@ -111,16 +111,6 @@ export default function ExperimentResultsPage() {
 				onRefresh={handleRefresh}
 				showBackButton={true}
 				variant="minimal"
-				additionalActions={
-					experiment && (
-						<ExperimentResultsHeader
-							experiment={experiment}
-							onDeclareWinner={() => {}}
-							onPauseExperiment={() => {}}
-							onExportResults={() => {}}
-						/>
-					)
-				}
 			/>
 
 			{isVisible && (
