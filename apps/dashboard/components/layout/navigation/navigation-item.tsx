@@ -69,12 +69,11 @@ export function NavigationItem({
 				<Icon
 					aria-hidden="true"
 					className={cn(
-						'h-5 w-5 transition-colors duration-200',
+						'h-4 w-4 transition-colors duration-200',
 						isActive
 							? 'text-primary'
 							: 'not-dark:text-primary group-hover:text-primary'
 					)}
-					size={32}
 					weight="duotone"
 				/>
 			</span>
