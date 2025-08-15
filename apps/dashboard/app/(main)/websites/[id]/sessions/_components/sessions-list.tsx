@@ -108,7 +108,6 @@ export function SessionsList({ websiteId }: SessionsListProps) {
 		const rawSessions = (data.session_list as unknown[]) || [];
 		const transformedSessions = rawSessions.map((session: unknown) => {
 			const sessionData = session as Record<string, unknown>;
-			// Transform ClickHouse tuple events to objects
 			const events = Array.isArray(sessionData.events)
 				? transformSessionEvents(sessionData.events)
 				: [];
@@ -123,10 +122,8 @@ export function SessionsList({ websiteId }: SessionsListProps) {
 		});
 
 		if (page === 1) {
-			// First page - replace all sessions
 			setAllSessions(transformedSessions);
 		} else {
-			// Subsequent pages - append new sessions (deduplicate by session_id)
 			setAllSessions((prev) => {
 				const existingIds = new Set(
 					prev.map((s) => (s as Record<string, unknown>).session_id)
