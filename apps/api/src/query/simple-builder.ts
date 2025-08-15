@@ -7,6 +7,7 @@ import type {
 } from './types';
 import { FilterOperators } from './types';
 import { applyPlugins } from './utils';
+import { mapScreenResolutionToDeviceType, type DeviceType } from './screen-resolution-to-device-type';
 
 export class SimpleQueryBuilder {
 	private config: SimpleQueryConfig;
@@ -21,6 +22,60 @@ export class SimpleQueryBuilder {
 		this.config = config;
 		this.request = request;
 		this.websiteDomain = websiteDomain;
+	}
+
+	private getDeviceTypeFilterCondition(deviceType: DeviceType): string {
+		// Create SQL condition that matches the same logic as mapScreenResolutionToDeviceType
+		// This replicates the heuristics from screen-resolution-to-device-type.ts in SQL
+		
+		// First, get common/known resolutions for exact matches
+		const commonResolutions: Record<string, DeviceType> = {
+			'896x414': 'mobile', '844x390': 'mobile', '932x430': 'mobile', '800x360': 'mobile',
+			'780x360': 'mobile', '736x414': 'mobile', '667x375': 'mobile', '640x360': 'mobile', '568x320': 'mobile',
+			'1366x1024': 'tablet', '1280x800': 'tablet', '1180x820': 'tablet', '1024x768': 'tablet', '1280x720': 'tablet',
+			'1366x768': 'laptop', '1440x900': 'laptop', '1536x864': 'laptop',
+			'1920x1080': 'desktop', '2560x1440': 'desktop', '3840x2160': 'desktop',
+			'3440x1440': 'ultrawide', '3840x1600': 'ultrawide', '5120x1440': 'ultrawide',
+		};
+
+		const exactMatches = Object.entries(commonResolutions)
+			.filter(([_, type]) => type === deviceType)
+			.map(([resolution, _]) => `'${resolution}'`)
+			.join(', ');
+
+		// SQL for parsing resolution dimensions
+		const widthExpr = "toFloat64(substring(screen_resolution, 1, position(screen_resolution, 'x') - 1))";
+		const heightExpr = "toFloat64(substring(screen_resolution, position(screen_resolution, 'x') + 1))";
+		const longSideExpr = `greatest(${widthExpr}, ${heightExpr})`;
+		const shortSideExpr = `least(${widthExpr}, ${heightExpr})`;
+		const aspectExpr = `${longSideExpr} / ${shortSideExpr}`;
+
+		// Device type heuristics (matching screen-resolution-to-device-type.ts logic)
+		const heuristicCondition = (() => {
+			switch (deviceType) {
+				case 'mobile':
+					return `(${shortSideExpr} <= 480)`;
+				case 'tablet':
+					return `(${shortSideExpr} <= 900 AND ${shortSideExpr} > 480)`;
+				case 'laptop':
+					return `(${longSideExpr} <= 1600 AND ${shortSideExpr} > 900)`;
+				case 'desktop':
+					return `(${longSideExpr} <= 3000 AND ${longSideExpr} > 1600)`;
+				case 'ultrawide':
+					return `(${aspectExpr} >= 2.0 AND ${longSideExpr} >= 2560)`;
+				case 'watch':
+					return `(${longSideExpr} <= 400 AND ${aspectExpr} >= 0.85 AND ${aspectExpr} <= 1.15)`;
+				case 'unknown':
+				default:
+					return '1 = 0'; // Never matches
+			}
+		})();
+
+		// Combine exact matches and heuristics
+		if (exactMatches) {
+			return `(screen_resolution IN (${exactMatches}) OR ${heuristicCondition})`;
+		}
+		return heuristicCondition;
 	}
 
 	private buildFilter(filter: Filter, index: number) {
@@ -91,6 +146,18 @@ export class SimpleQueryBuilder {
 			return {
 				clause: `${normalizedReferrerExpression} ${operator} {${key}:String}`,
 				params: { [key]: filter.value },
+			};
+		}
+
+		// Special handling for device_type filters - convert to screen_resolution filters
+		if (filter.field === 'device_type' && typeof filter.value === 'string') {
+			const deviceType = filter.value as DeviceType;
+			const condition = this.getDeviceTypeFilterCondition(deviceType);
+			
+			// Return the condition directly without parameters since it's self-contained
+			return {
+				clause: condition,
+				params: {},
 			};
 		}
 
