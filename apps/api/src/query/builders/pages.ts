@@ -6,14 +6,14 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
 	top_pages: {
 		table: Analytics.events,
 		fields: [
-			"CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END as name",
+			"decodeURLComponent(CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END) as name",
 			'COUNT(*) as pageviews',
 			'COUNT(DISTINCT anonymous_id) as visitors',
 			'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage',
 		],
 		where: ["event_name = 'screen_view'"],
 		groupBy: [
-			"CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END",
+			"decodeURLComponent(CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END)",
 		],
 		orderBy: 'pageviews DESC',
 		limit: 100,
@@ -199,7 +199,7 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
 		],
 		where: ["event_name = 'screen_view'"],
 		groupBy: [
-			"CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END",
+			"decodeURLComponent(CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END)",
 		],
 		orderBy: 'pageviews DESC',
 		limit: 100,

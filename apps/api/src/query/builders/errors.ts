@@ -79,4 +79,18 @@ export const ErrorsBuilders: Record<string, SimpleQueryConfig> = {
 		timeField: 'timestamp',
 		allowedFilters: ['message', 'path', 'browser_name', 'country'],
 	},
+
+	error_summary: {
+		table: Analytics.errors,
+		fields: [
+			'COUNT(*) as totalErrors',
+			'uniq(message) as uniqueErrorTypes',
+			'uniq(anonymous_id) as affectedUsers',
+			'uniq(session_id) as affectedSessions',
+		],
+		where: ["message != ''"],
+		timeField: 'timestamp',
+		allowedFilters: ['message', 'path', 'browser_name', 'country'],
+		customizable: true,
+	},
 };

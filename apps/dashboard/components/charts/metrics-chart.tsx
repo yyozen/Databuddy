@@ -1,4 +1,4 @@
-import { LineChart } from 'lucide-react';
+import { ChartLineIcon } from '@phosphor-icons/react';
 import { useCallback, useMemo, useState } from 'react';
 import {
 	Area,
@@ -142,7 +142,7 @@ export function MetricsChart({
 			>
 				<CardHeader className="px-6 py-6">
 					<CardTitle className="flex items-center gap-2 font-semibold text-lg">
-						<LineChart className="h-5 w-5 text-primary" />
+						<ChartLineIcon className="h-5 w-5 text-primary" />
 						{title}
 					</CardTitle>
 					{description && (
@@ -152,7 +152,7 @@ export function MetricsChart({
 				<CardContent className="flex items-center justify-center p-8">
 					<div className="py-12 text-center">
 						<div className="relative">
-							<LineChart
+							<ChartLineIcon
 								className="mx-auto h-16 w-16 text-muted-foreground/20"
 								strokeWidth={1.5}
 							/>

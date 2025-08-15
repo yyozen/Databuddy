@@ -64,17 +64,6 @@ interface BrowserEntry {
 	versions: BrowserVersion[];
 }
 
-interface RawBrowserData {
-	name?: string;
-	browser_name?: string;
-	browser_version?: string;
-	visitors?: number;
-	pageviews?: number;
-	sessions?: number;
-	percentage?: number;
-	versions?: BrowserVersion[];
-}
-
 interface ScreenResolutionEntry {
 	name: string;
 	visitors: number;
@@ -98,7 +87,6 @@ interface ProcessedData {
 		languages: GeographicEntry[];
 	};
 	device: DeviceData;
-	browsers: RawBrowserData[];
 }
 
 const formatNumber = (value: number | null | undefined): string => {
@@ -143,15 +131,7 @@ const getConnectionIcon = (connection: string): React.ReactNode => {
 	return <GlobeIcon className="h-4 w-4 text-primary" />;
 };
 
-const normalizeData = (data: any[]): GeographicEntry[] =>
-	data?.map((item: any) => ({
-		name: item.country_name || item.name || 'Unknown',
-		visitors: item.visitors || 0,
-		pageviews: item.pageviews || 0,
-		percentage: item.percentage || 0,
-		country_code: item.country_code,
-		country_name: item.country_name,
-	})) || [];
+// API already provides clean, normalized data - no transformation needed
 
 export function WebsiteAudienceTab({
 	websiteId,
@@ -178,12 +158,6 @@ export function WebsiteAudienceTab({
 					'screen_resolution',
 					'connection_type',
 				],
-				limit: 50,
-				filters,
-			},
-			{
-				id: 'browsers-grouped',
-				parameters: ['browsers_grouped'],
 				limit: 50,
 				filters,
 			},
@@ -245,7 +219,6 @@ export function WebsiteAudienceTab({
 					screen_resolution: [],
 					connection_type: [],
 				},
-				browsers: [],
 			};
 		}
 
@@ -253,17 +226,15 @@ export function WebsiteAudienceTab({
 			(r) => r.queryId === 'geographic-data'
 		);
 		const deviceResult = batchResults.find((r) => r.queryId === 'device-data');
-		const browsersResult = batchResults.find(
-			(r) => r.queryId === 'browsers-grouped'
-		);
+
 
 		return {
 			geographic: {
-				countries: normalizeData(geographicResult?.data?.country || []),
-				regions: normalizeData(geographicResult?.data?.region || []),
-				cities: normalizeData(geographicResult?.data?.city || []),
-				timezones: normalizeData(geographicResult?.data?.timezone || []),
-				languages: normalizeData(geographicResult?.data?.language || []),
+				countries: geographicResult?.data?.country || [],
+				regions: geographicResult?.data?.region || [],
+				cities: geographicResult?.data?.city || [],
+				timezones: geographicResult?.data?.timezone || [],
+				languages: geographicResult?.data?.language || [],
 			},
 			device: {
 				device_type: deviceResult?.data?.device_type || [],
@@ -272,122 +243,26 @@ export function WebsiteAudienceTab({
 				screen_resolution: deviceResult?.data?.screen_resolution || [],
 				connection_type: deviceResult?.data?.connection_type || [],
 			},
-			browsers: browsersResult?.data?.browsers_grouped || [],
 		};
 	}, [batchResults]);
 
 	const processedBrowserData = useMemo((): BrowserEntry[] => {
-		const rawData = processedData.browsers;
-		if (!rawData?.length) {
-			return [];
-		}
-
-		if (rawData.length > 0 && rawData[0].versions) {
-			return rawData
-				.map(
-					(browser: RawBrowserData) =>
-						({
-							...browser,
-							name: browser.name || 'Unknown',
-							browserName: browser.name || 'Unknown',
-							visitors: browser.visitors || 0,
-							pageviews: browser.pageviews || 0,
-							sessions: browser.sessions || 0,
-							percentage: browser.percentage || 0,
-							versions:
-								browser.versions?.sort(
-									(a: BrowserVersion, b: BrowserVersion) =>
-										(b.visitors || 0) - (a.visitors || 0)
-								) || [],
-						}) as BrowserEntry
-				)
-				.sort(
-					(a: BrowserEntry, b: BrowserEntry) =>
-						(b.visitors || 0) - (a.visitors || 0)
-				);
-		}
-
-		const browserGroups: Record<string, BrowserEntry> = rawData.reduce(
-			(acc: Record<string, BrowserEntry>, browser: RawBrowserData) => {
-				const browserName = browser.browser_name || 'Unknown';
-				if (!acc[browserName]) {
-					acc[browserName] = {
-						name: browserName,
-						browserName,
-						visitors: 0,
-						pageviews: 0,
-						sessions: 0,
-						percentage: 0,
-						versions: [],
-					};
-				}
-
-				acc[browserName].visitors += browser.visitors || 0;
-				acc[browserName].pageviews += browser.pageviews || 0;
-				acc[browserName].sessions += browser.sessions || 0;
-				acc[browserName].versions.push({
-					version: browser.browser_version || 'Unknown',
-					visitors: browser.visitors || 0,
-					pageviews: browser.pageviews || 0,
-					sessions: browser.sessions || 0,
-				});
-
-				return acc;
-			},
-			{}
-		);
-
-		const browserArray = Object.values(browserGroups) as BrowserEntry[];
-		const totalVisitors = browserArray.reduce(
-			(sum: number, browser: BrowserEntry) => sum + (browser.visitors || 0),
-			0
-		);
-
-		return browserArray
-			.map((browser: BrowserEntry) => ({
-				...browser,
-				percentage:
-					totalVisitors > 0
-						? Math.round((browser.visitors / totalVisitors) * 100)
-						: 0,
-				versions:
-					browser.versions?.sort(
-						(a: BrowserVersion, b: BrowserVersion) =>
-							(b.visitors || 0) - (a.visitors || 0)
-					) || [],
-			}))
-			.sort(
-				(a: BrowserEntry, b: BrowserEntry) =>
-					(b.visitors || 0) - (a.visitors || 0)
-			);
-	}, [processedData.browsers]);
+		// API already provides clean data with percentages and sorting
+		return (processedData.device.browser_name || []).map((browser: any) => ({
+			...browser,
+			browserName: browser.name,
+			sessions: browser.sessions || 0,
+			versions: [], // No versions in simple browser data
+		}));
+	}, [processedData.device.browser_name]);
 
 	const processedConnectionData = useMemo((): ConnectionEntry[] => {
-		const connectionData = processedData.device.connection_type;
-		if (!connectionData?.length) {
-			return [];
-		}
-
-		const totalVisitors = connectionData.reduce(
-			(sum: number, item: any) => sum + item.visitors,
-			0
-		);
-
-		return connectionData
-			.map((item: any) => ({
-				name: item.name || 'Unknown',
-				visitors: item.visitors,
-				pageviews: item.pageviews || 0,
-				percentage:
-					totalVisitors > 0
-						? Math.round((item.visitors / totalVisitors) * 100)
-						: 0,
-				iconComponent: getConnectionIcon(item.name || ''),
-				category: 'connection' as const,
-			}))
-			.sort(
-				(a: ConnectionEntry, b: ConnectionEntry) => b.visitors - a.visitors
-			);
+		// API already provides sorted data with percentages
+		return (processedData.device.connection_type || []).map((item: any) => ({
+			...item,
+			iconComponent: getConnectionIcon(item.name || ''),
+			category: 'connection' as const,
+		}));
 	}, [processedData.device.connection_type]);
 
 	const isLoading = isBatchLoading || isRefreshing;
@@ -796,10 +671,7 @@ export function WebsiteAudienceTab({
 			{
 				id: 'countries',
 				label: 'Countries',
-				data: processedData.geographic.countries.map((item, index) => ({
-					...item,
-					_uniqueKey: `country-${item.country_code || item.name}-${index}`,
-				})),
+				data: processedData.geographic.countries,
 				columns: countryColumns,
 				getFilter: (row: any) => ({
 					field: 'country',
@@ -809,10 +681,7 @@ export function WebsiteAudienceTab({
 			{
 				id: 'regions',
 				label: 'Regions',
-				data: processedData.geographic.regions.map((item, index) => ({
-					...item,
-					_uniqueKey: `region-${item.name}-${index}`,
-				})),
+				data: processedData.geographic.regions,
 				columns: geographicColumns,
 				getFilter: (row: any) => ({
 					field: 'region',
@@ -822,10 +691,7 @@ export function WebsiteAudienceTab({
 			{
 				id: 'cities',
 				label: 'Cities',
-				data: processedData.geographic.cities.map((item, index) => ({
-					...item,
-					_uniqueKey: `city-${item.name}-${index}`,
-				})),
+				data: processedData.geographic.cities,
 				columns: cityColumns,
 				getFilter: (row: any) => ({
 					field: 'city',
@@ -837,10 +703,7 @@ export function WebsiteAudienceTab({
 						{
 							id: 'languages',
 							label: 'Languages',
-							data: processedData.geographic.languages.map((item, index) => ({
-								...item,
-								_uniqueKey: `language-${item.name}-${index}`,
-							})),
+													data: processedData.geographic.languages,
 							columns: languageColumns,
 							getFilter: (row: any) => ({
 								field: 'language',
@@ -852,10 +715,7 @@ export function WebsiteAudienceTab({
 			{
 				id: 'timezones',
 				label: 'Timezones',
-				data: processedData.geographic.timezones.map((item, index) => ({
-					...item,
-					_uniqueKey: `timezone-${item.name}-${index}`,
-				})),
+				data: processedData.geographic.timezones,
 				columns: timezoneColumns,
 				getFilter: (row: any) => ({
 					field: 'timezone',

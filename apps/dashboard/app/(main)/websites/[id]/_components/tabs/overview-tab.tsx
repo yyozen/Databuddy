@@ -357,10 +357,7 @@ export function WebsiteOverviewTab({
 
 	const pagesTabs = useTableTabs({
 		top_pages: {
-			data: (analytics.top_pages || []).map((page: PageData) => ({
-				...page,
-				name: decodeURIComponent(page.name),
-			})),
+			data: analytics.top_pages || [],
 			label: 'Top Pages',
 			primaryField: 'name',
 			primaryHeader: 'Page',
@@ -370,10 +367,7 @@ export function WebsiteOverviewTab({
 			}),
 		},
 		entry_pages: {
-			data: (analytics.entry_pages || []).map((page: PageData) => ({
-				...page,
-				name: decodeURIComponent(page.name),
-			})),
+			data: analytics.entry_pages || [],
 			label: 'Entry Pages',
 			primaryField: 'name',
 			primaryHeader: 'Page',
@@ -383,10 +377,7 @@ export function WebsiteOverviewTab({
 			}),
 		},
 		exit_pages: {
-			data: (analytics.exit_pages || []).map((page: PageData) => ({
-				...page,
-				name: decodeURIComponent(page.name),
-			})),
+			data: analytics.exit_pages || [],
 			label: 'Exit Pages',
 			primaryField: 'name',
 			primaryHeader: 'Page',
