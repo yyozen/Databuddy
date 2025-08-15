@@ -12,7 +12,6 @@ import {
 	TargetIcon,
 	UsersIcon,
 	XIcon,
-	type Icon as PhosphorIcon
 } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -25,22 +24,10 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
-interface DemoNavigationItem {
-	title: string;
-	items: DemoNavigationItemItem[];
-}
-
-interface DemoNavigationItemItem {
-	name: string;
-	icon: PhosphorIcon;
-	href: string;
-	highlight: boolean;
-}
-
 const DEMO_WEBSITE_ID = 'OXmNQsViBT-FOS_wZCTHc';
 const DEMO_WEBSITE_URL = 'https://www.databuddy.cc';
 
-const demoNavigation: DemoNavigationItem[] = [
+const demoNavigation = [
 	{
 		title: 'Web Analytics',
 		items: [
@@ -215,28 +202,19 @@ function Sidebar() {
 											<li key={item.name}>
 												<Link
 													className={cn(
-														'group flex items-center gap-x-3 rounded px-3 py-2 text-sm transition-all duration-200',
-														'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1',
+														'flex cursor-pointer items-center gap-3 rounded px-3 py-2 text-sm transition-all',
 														isActive
-															? 'bg-accent font-medium text-foreground shadow-sm'
-															: 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+															? 'bg-primary/15 font-medium text-primary'
+															: 'text-foreground hover:bg-accent/70'
 													)}
 													href={item.href}
 												>
-													<span className="flex-shrink-0">
-														<Icon
-															aria-hidden="true"
-															className={cn(
-																'h-5 w-5 transition-colors duration-200',
-																isActive
-																	? 'text-primary'
-																	: 'not-dark:text-primary group-hover:text-primary'
-															)}
-															size={32}
-															weight="duotone"
-														/>
-													</span>
-													<span className="flex-grow truncate">{item.name}</span>
+													<Icon
+														aria-hidden="true"
+														className={cn('h-4 w-4', isActive && 'text-primary')}
+														weight="duotone"
+													/>
+													<span className="truncate">{item.name}</span>
 												</Link>
 											</li>
 										);

@@ -178,13 +178,25 @@ export function useExperiments(websiteId: string) {
 	};
 }
 
-export function useExperimentById(websiteId: string, experimentId: string) {
-	return trpc.experiments.getById.useQuery(
-		{ websiteId, id: experimentId },
+export function useExperiment(experimentId: string, websiteId: string) {
+	const {
+		data,
+		isLoading,
+		error,
+		refetch,
+	} = trpc.experiments.getById.useQuery(
+		{ id: experimentId, websiteId },
 		{
-			enabled: !!websiteId && !!experimentId,
+			enabled: !!experimentId && !!websiteId,
 			refetchOnWindowFocus: false,
-			staleTime: 2 * 60 * 1000, // 2 minutes
+			staleTime: 5 * 60 * 1000, // 5 minutes
 		}
 	);
+
+	return {
+		data,
+		isLoading,
+		error,
+		refetch,
+	};
 }

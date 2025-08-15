@@ -1,20 +1,8 @@
 'use client';
 
-import {
-	CalendarIcon,
-	ChartLineIcon,
-	CodeIcon,
-	DotsThreeIcon,
-	Eye,
-	FlaskIcon,
-	LinkIcon,
-	PencilIcon,
-	PlayIcon,
-	StopIcon,
-	TrashIcon,
-	UsersIcon,
-} from '@phosphor-icons/react';
+import { DotsThreeIcon, FlaskIcon, PauseIcon, PencilIcon, PlayIcon, TrashIcon, ChartLineIcon } from '@phosphor-icons/react';
 import dayjs from 'dayjs';
+import Link from 'next/link';
 import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,60 +20,13 @@ interface ExperimentCardProps {
 	experiment: Experiment;
 	onEdit: (experiment: Experiment) => void;
 	onDelete: (experimentId: string) => void;
-	onToggleStatus?: (
-		experimentId: string,
-		newStatus: 'running' | 'paused'
-	) => void;
+	onToggleStatus?: (experimentId: string, newStatus: 'running' | 'paused') => void;
+	websiteId: string;
 }
 
 const statusConfig = {
-	draft: {
-		label: 'Draft',
-		variant: 'secondary' as const,
-		color: 'text-muted-foreground',
-		bgColor: 'bg-muted/50',
-	},
-	running: {
-		label: 'Running',
-		variant: 'default' as const,
-		color: 'text-green-600',
-		bgColor: 'bg-green-50 dark:bg-green-950',
-	},
-	paused: {
-		label: 'Paused',
-		variant: 'outline' as const,
-		color: 'text-orange-600',
-		bgColor: 'bg-orange-50 dark:bg-orange-950',
-	},
-	completed: {
-		label: 'Completed',
-		variant: 'secondary' as const,
-		color: 'text-blue-600',
-		bgColor: 'bg-blue-50 dark:bg-blue-950',
-	},
-};
-
-const getVariantIcon = (type: string, size = 14) => {
-	switch (type) {
-		case 'visual':
-			return <Eye className="text-blue-600" size={size} weight="duotone" />;
-		case 'redirect':
-			return (
-				<LinkIcon className="text-green-600" size={size} weight="duotone" />
-			);
-		case 'code':
-			return (
-				<CodeIcon className="text-purple-600" size={size} weight="duotone" />
-			);
-		default:
-			return (
-				<FlaskIcon
-					className="text-muted-foreground"
-					size={size}
-					weight="duotone"
-				/>
-			);
-	}
+	running: { label: 'Running', variant: 'default' as const },
+	paused: { label: 'Paused', variant: 'outline' as const },
 };
 
 export const ExperimentCard = memo(function ExperimentCardComponent({
@@ -93,26 +34,18 @@ export const ExperimentCard = memo(function ExperimentCardComponent({
 	onEdit,
 	onDelete,
 	onToggleStatus,
+	websiteId,
 }: ExperimentCardProps) {
-	const statusInfo = statusConfig[experiment.status];
-	const hasVariants = Boolean(
-		experiment.variants && experiment.variants.length > 0
-	);
-	const hasGoals = Boolean(experiment.goals && experiment.goals.length > 0);
-	const variantTypes = experiment.variants
-		? [...new Set(experiment.variants.map((v) => v.type))]
-		: [];
-
+	const statusInfo = statusConfig[experiment.status as keyof typeof statusConfig];
+	
 	const handleToggleStatus = () => {
-		if (!onToggleStatus) {
-			return;
-		}
+		if (!onToggleStatus) return;
 		const newStatus = experiment.status === 'running' ? 'paused' : 'running';
 		onToggleStatus(experiment.id, newStatus);
 	};
 
 	return (
-		<Card className="group relative rounded border-border/50 transition-all duration-200 hover:border-primary/30 hover:shadow-lg">
+		<Card className="group relative rounded transition-all duration-200 hover:border-primary/30 hover:shadow-lg">
 			<CardHeader className="pb-4">
 				<div className="flex items-start justify-between">
 					<div className="flex-1 space-y-2">
@@ -137,16 +70,29 @@ export const ExperimentCard = memo(function ExperimentCardComponent({
 						</div>
 
 						<div className="flex items-center gap-2">
-							<Badge
-								className={`font-medium ${statusInfo.bgColor} ${statusInfo.color}`}
-								variant={statusInfo.variant}
-							>
-								{statusInfo.label}
+							<Badge variant={statusInfo?.variant || 'secondary'}>
+								{statusInfo?.label || 'Draft'}
 							</Badge>
-							<div className="flex items-center gap-1 text-muted-foreground text-xs">
-								<UsersIcon size={12} weight="duotone" />
-								<span>{experiment.trafficAllocation}% traffic</span>
-							</div>
+							{onToggleStatus && (experiment.status === 'running' || experiment.status === 'paused') && (
+								<Button
+									size="sm"
+									variant="ghost"
+									className="h-6 px-2"
+									onClick={handleToggleStatus}
+								>
+									{experiment.status === 'running' ? (
+										<>
+											<PauseIcon className="mr-1 h-3 w-3" size={12} />
+											Pause
+										</>
+									) : (
+										<>
+											<PlayIcon className="mr-1 h-3 w-3" size={12} />
+											Start
+										</>
+									)}
+								</Button>
+							)}
 						</div>
 					</div>
 
@@ -163,25 +109,8 @@ export const ExperimentCard = memo(function ExperimentCardComponent({
 						<DropdownMenuContent align="end" className="w-48">
 							<DropdownMenuItem onClick={() => onEdit(experiment)}>
 								<PencilIcon className="mr-2 h-4 w-4" size={16} />
-								Edit Experiment
+								Edit
 							</DropdownMenuItem>
-							{onToggleStatus &&
-								(experiment.status === 'running' ||
-									experiment.status === 'paused') && (
-									<DropdownMenuItem onClick={handleToggleStatus}>
-										{experiment.status === 'running' ? (
-											<>
-												<StopIcon className="mr-2 h-4 w-4" size={16} />
-												Pause
-											</>
-										) : (
-											<>
-												<PlayIcon className="mr-2 h-4 w-4" size={16} />
-												Resume
-											</>
-										)}
-									</DropdownMenuItem>
-								)}
 							<DropdownMenuSeparator />
 							<DropdownMenuItem
 								className="text-destructive focus:text-destructive"
@@ -195,81 +124,20 @@ export const ExperimentCard = memo(function ExperimentCardComponent({
 				</div>
 			</CardHeader>
 
-			<CardContent className="space-y-4">
-				{/* Experiment Details */}
-				<div className="grid grid-cols-2 gap-4 text-sm">
-					<div className="space-y-1">
-						<div className="flex items-center gap-1 text-muted-foreground">
-							<FlaskIcon size={12} weight="duotone" />
-							<span>Variants</span>
-						</div>
-						<div className="font-medium text-foreground">
-							{hasVariants ? experiment.variants?.length || 0 : 0}
-						</div>
-					</div>
-					<div className="space-y-1">
-						<div className="flex items-center gap-1 text-muted-foreground">
-							<ChartLineIcon size={12} weight="duotone" />
-							<span>Goals</span>
-						</div>
-						<div className="font-medium text-foreground">
-							{hasGoals ? experiment.goals?.length || 0 : 0}
-						</div>
-					</div>
+			<CardContent className="space-y-3">
+				<div className="flex items-center justify-between text-xs">
+					<span className="text-muted-foreground">Created</span>
+					<span className="font-medium text-foreground">
+						{dayjs(experiment.createdAt).format('MMM D, YYYY')}
+					</span>
 				</div>
-
-				{/* Variant Types */}
-				{variantTypes.length > 0 && (
-					<div className="space-y-2">
-						<div className="text-muted-foreground text-xs">Variant Types:</div>
-						<div className="flex gap-2">
-							{variantTypes.map((type) => (
-								<div
-									className="flex items-center gap-1 rounded-md bg-muted/50 px-2 py-1 text-xs"
-									key={type}
-								>
-									{getVariantIcon(type, 12)}
-									<span className="capitalize">{type}</span>
-								</div>
-							))}
-						</div>
-					</div>
-				)}
-
-				{/* Timestamps */}
-				<div className="space-y-2 border-border/50 border-t pt-3">
-					<div className="flex items-center justify-between text-xs">
-						<div className="flex items-center gap-1 text-muted-foreground">
-							<CalendarIcon size={12} weight="duotone" />
-							<span>Created</span>
-						</div>
-						<span className="font-medium text-foreground">
-							{dayjs(experiment.createdAt).format('MMM D, YYYY')}
-						</span>
-					</div>
-					{experiment.startDate && (
-						<div className="flex items-center justify-between text-xs">
-							<div className="flex items-center gap-1 text-muted-foreground">
-								<PlayIcon size={12} weight="duotone" />
-								<span>Started</span>
-							</div>
-							<span className="font-medium text-foreground">
-								{dayjs(experiment.startDate).format('MMM D, YYYY')}
-							</span>
-						</div>
-					)}
-					{experiment.endDate && (
-						<div className="flex items-center justify-between text-xs">
-							<div className="flex items-center gap-1 text-muted-foreground">
-								<StopIcon size={12} weight="duotone" />
-								<span>Ended</span>
-							</div>
-							<span className="font-medium text-foreground">
-								{dayjs(experiment.endDate).format('MMM D, YYYY')}
-							</span>
-						</div>
-					)}
-				</div>
+				
+				<Link href={`/websites/${websiteId}/experiments/${experiment.id}/results`}>
+					<Button size="sm" className="w-full" variant="outline">
+						<ChartLineIcon className="mr-2 h-4 w-4" size={16} />
+						View Results
+					</Button>
+				</Link>
 			</CardContent>
 		</Card>
 	);

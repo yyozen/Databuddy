@@ -142,19 +142,14 @@ export default function ExperimentsPage() {
 					updates: {
 						name: data.name,
 						description: data.description || undefined,
-						status: data.status,
-						trafficAllocation: data.trafficAllocation,
-						startDate: data.startDate || undefined,
-						endDate: data.endDate || undefined,
-						primaryGoal: data.primaryGoal || undefined,
 					},
 				});
 			} else {
-				// Create new experiment
 				const createData = data as Omit<CreateExperimentData, 'websiteId'>;
 				await createExperiment({
 					...createData,
 					websiteId,
+					status: 'running',
 				});
 			}
 			setIsDialogOpen(false);
@@ -265,6 +260,7 @@ export default function ExperimentsPage() {
 							setIsDialogOpen(true);
 						}}
 						onToggleExperimentStatus={handleToggleExperimentStatus}
+						websiteId={websiteId}
 					/>
 				</Suspense>
 			)}
