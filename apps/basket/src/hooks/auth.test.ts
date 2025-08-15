@@ -10,7 +10,7 @@ import {
 } from './auth';
 
 // Mock the logger to prevent console output during tests
-vi.mock('../lib/logger', () => ({
+vi.mock('../../lib/logger', () => ({
 	logger: {
 		warn: vi.fn(),
 		error: vi.fn(),

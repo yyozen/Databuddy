@@ -3,6 +3,7 @@ import { CaretLeftIcon, PlanetIcon } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FaviconImage } from '@/components/analytics/favicon-image';
 
 interface WebsiteHeaderProps {
 	website: Website | null | undefined;
@@ -31,10 +32,18 @@ export function WebsiteHeader({ website }: WebsiteHeaderProps) {
 
 			<div className="rounded-lg border border-border/50 bg-accent/30 px-2 py-2">
 				<h2 className="flex items-center truncate font-semibold text-base">
-					<PlanetIcon
-						className="mr-2 h-5 w-5 text-primary/70"
-						size={64}
-						weight="duotone"
+					<FaviconImage
+						altText={`${website?.name || website?.domain || 'Website'} favicon`}
+						className="mr-2"
+						domain={website?.domain || ''}
+						fallbackIcon={
+							<PlanetIcon
+								className="text-primary/70"
+								size={20}
+								weight="duotone"
+							/>
+						}
+						size={20}
 					/>
 					{website?.name || website?.domain || (
 						<Skeleton className="h-5 w-36" />

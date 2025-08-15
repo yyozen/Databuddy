@@ -9,6 +9,7 @@ interface FaviconImageProps {
 	altText?: string;
 	size?: number;
 	className?: string;
+	fallbackIcon?: React.ReactNode;
 }
 
 const hostnameRegex = /^https?:\/\//;
@@ -19,6 +20,7 @@ export function FaviconImage({
 	altText,
 	size = 20,
 	className = '',
+	fallbackIcon,
 }: FaviconImageProps) {
 	const [error, setError] = useState(false);
 
@@ -44,12 +46,14 @@ export function FaviconImage({
 				className={`${className} flex items-center justify-center rounded-sm`}
 				style={{ width: size, height: size }}
 			>
-				<GlobeIcon
-					aria-label={altText || 'Website icon'}
-					className="not-dark:text-primary text-muted-foreground"
-					size={size}
-					weight="duotone"
-				/>
+				{fallbackIcon || (
+					<GlobeIcon
+						aria-label={altText || 'Website icon'}
+						className="not-dark:text-primary text-muted-foreground"
+						size={size}
+						weight="duotone"
+					/>
+				)}
 			</div>
 		);
 	}
