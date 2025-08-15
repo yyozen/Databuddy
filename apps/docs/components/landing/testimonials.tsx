@@ -85,7 +85,7 @@ const testimonials = [
 	{
 		name: 'Ping Maxwell',
 		profession: 'SWE, Better-auth',
-		link: 'https://x.com/PingStruggles/status/1944862561935221168',
+		link: 'https://x.com/PingStruggles/status/194486256193522168',
 		social: null,
 		description:
 			"Databuddy is the only analytics platform I've used that I can genuinely say is actually GDPR compliant, and an absolute beast of a product.  Worth a try!",
@@ -95,7 +95,7 @@ const testimonials = [
 		name: 'Fynn',
 		profession: 'Founder, Studiis',
 		description:
-			'it’s actually such a upgrade to switch from posthog to @trydatabuddy',
+			'it\'s actually such a upgrade to switch from posthog to @trydatabuddy',
 		link: 'https://x.com/_fqnn_/status/1955577969189306785',
 		social: null,
 		avatar:
@@ -234,7 +234,7 @@ export default function Testimonials(): ReactElement {
 	return (
 		<div className="relative w-full">
 			{/* Header Section */}
-			<div className="mb-8 px-4 text-center sm:px-6 lg:mb-12 lg:px-8">
+			<div className="mb-8 text-center lg:mb-12">
 				<h2 className="mb-4 font-medium text-2xl leading-tight sm:text-3xl lg:text-4xl xl:text-5xl">
 					What developers are saying
 				</h2>
@@ -245,7 +245,7 @@ export default function Testimonials(): ReactElement {
 			</div>
 
 			{/* Testimonials Marquee */}
-			<div className="flex flex-col gap-4 px-4 sm:px-0 lg:gap-5">
+			<div className="flex flex-col gap-4 lg:gap-5">
 				<SlidingTestimonials
 					testimonials={testimonials.slice(
 						0,

@@ -82,9 +82,9 @@ export const Description = () => {
 	};
 
 	return (
-		<div className="w-full pt-6 sm:pt-8">
+		<div className="w-full">
 			{/* Mobile Layout */}
-			<div className="block px-4 lg:hidden">
+			<div className="block lg:hidden">
 				<div className="mb-8 text-center">
 					<h2 className="mb-8 font-medium text-2xl leading-tight sm:text-3xl">
 						Most Analytics Tools are
@@ -99,7 +99,7 @@ export const Description = () => {
 				</div>
 
 				{/* Mobile Content */}
-				<div className="flex min-h-[100px] items-center justify-center px-6">
+				<div className="flex min-h-[100px] items-center justify-center">
 					<AnimatePresence mode="popLayout">
 						<motion.div
 							animate="center"
@@ -117,9 +117,9 @@ export const Description = () => {
 
 			{/* Desktop Layout */}
 			<div className="hidden w-full items-center justify-center lg:flex">
-				<div className="flex w-full max-w-6xl items-center justify-center">
+				<div className="flex w-full max-w-7xl items-center justify-center">
 					{/* Left Column - Titles */}
-					<div className="flex-1 px-8 xl:px-12">
+					<div className="flex-1">
 						<h2 className="mb-8 font-medium text-2xl leading-tight xl:mb-12 xl:text-3xl">
 							Most Analytics Tools are
 						</h2>
@@ -143,7 +143,7 @@ export const Description = () => {
 					<div className="mx-6 h-60 w-px flex-shrink-0 bg-border xl:mx-8" />
 
 					{/* Right Column - Content */}
-					<div className="flex-1 px-8 xl:px-12">
+					<div className="flex-1">
 						<div className="flex min-h-[140px] items-center xl:min-h-[180px]">
 							<AnimatePresence mode="popLayout">
 								<motion.div

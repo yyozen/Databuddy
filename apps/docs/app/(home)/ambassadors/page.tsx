@@ -27,7 +27,7 @@ export default function AmbassadorsPage() {
 				className="border-border border-t bg-background/30"
 				id="ambassador-form"
 			>
-				<div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8">
+				<div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
 					<AmbassadorForm />
 				</div>
 			</Section>

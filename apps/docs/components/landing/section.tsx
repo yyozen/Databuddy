@@ -21,13 +21,18 @@ const Section = ({
 			className={`relative w-full ${customPaddings ? '' : 'py-8 sm:py-12 lg:py-16 xl:py-20'} ${className || ''} `}
 			id={id}
 		>
-			{children}
+			<div className="flex w-full">
+				{/* Left border line - hidden on mobile, visible on larger screens */}
+				<div className="hidden w-px flex-shrink-0 bg-stone-200 lg:block dark:bg-border" />
 
-			{/* Left border line - hidden on mobile, visible on larger screens */}
-			<div className="pointer-events-none absolute top-0 left-4 hidden h-[calc(100%_+_30px)] w-px bg-stone-200 sm:left-6 lg:left-16 lg:block xl:left-16 dark:bg-border" />
+				{/* Content with spacing */}
+				<div className="flex-1 px-4 sm:px-6 lg:px-8">
+					{children}
+				</div>
 
-			{/* Right border line - hidden on mobile, visible on larger screens */}
-			<div className="pointer-events-none absolute top-0 right-4 hidden h-[calc(100%_+_30px)] w-px bg-stone-200 sm:right-6 lg:right-14 lg:block xl:right-14 dark:bg-border" />
+				{/* Right border line - hidden on mobile, visible on larger screens */}
+				<div className="hidden w-px flex-shrink-0 bg-stone-200 lg:block dark:bg-border" />
+			</div>
 
 			{crosses && <SectionSvg crossesOffset={crossesOffset} />}
 		</div>

@@ -30,7 +30,7 @@ const faqs = [
 
 export default function FAQ() {
 	return (
-		<div className="mx-auto w-full max-w-5xl">
+		<div className="w-full">
 			<div className="space-y-8 lg:space-y-12">
 				{/* Header Section */}
 				<div className="text-center lg:text-left">
@@ -41,7 +41,7 @@ export default function FAQ() {
 
 				{/* FAQ Accordion */}
 				<div className="w-full">
-					<Accordion className="w-full space-y-4" collapsible type="single">
+					<Accordion className="w-full " collapsible type="single">
 						{faqs.map((faq) => (
 							<AccordionItem
 								className="bg-background/50 transition-colors duration-200 hover:bg-background/80"

@@ -16,7 +16,7 @@ export default function DemoContainer() {
 		"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 1'%3E%3Crect width='1' height='1' fill='%23666666'/%3E%3C/svg%3E";
 
 	return (
-		<div className="mx-auto mt-24 mb-24 w-full max-w-7xl px-8">
+		<div className="mx-auto mt-24 mb-24 w-full">
 			<div className="group relative bg-background/80 p-2 shadow-2xl backdrop-blur-sm">
 				<div
 					className="-top-px absolute inset-x-0 h-px opacity-30"
