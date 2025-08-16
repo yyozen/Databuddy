@@ -2,8 +2,9 @@ import { Elysia, t } from 'elysia';
 import { logger } from '../lib/logger';
 import { processExport, type ExportRequest } from '../lib/export';
 import { createRateLimitMiddleware } from '../middleware/rate-limit';
-import { auth } from '@databuddy/auth';
-import { getCachedWebsite } from '../lib/website-utils';
+import { websitesApi, auth } from '@databuddy/auth';
+import { db, eq, websites } from '@databuddy/db';
+import { cacheable } from '@databuddy/redis';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 
@@ -14,6 +15,78 @@ const exportRateLimit = createRateLimitMiddleware({
 	type: 'expensive',
 	skipAuth: false,
 });
+
+// Cached website lookup (same as in RPC utils)
+const getWebsiteById = cacheable(
+	async (id: string) => {
+		try {
+			if (!id) {
+				return null;
+			}
+			return await db.query.websites.findFirst({
+				where: eq(websites.id, id),
+			});
+		} catch (error) {
+			console.error('Error fetching website by ID:', error, { id });
+			return null;
+		}
+	},
+	{
+		expireInSec: 600,
+		prefix: 'website_by_id',
+		staleWhileRevalidate: true,
+		staleTime: 60,
+	}
+);
+
+/**
+ * Authorize website access using the same pattern as RPC routers
+ */
+async function authorizeWebsiteAccess(
+	headers: Headers,
+	websiteId: string,
+	permission: 'read' | 'update' | 'delete' | 'transfer'
+) {
+	const website = await getWebsiteById(websiteId);
+
+	if (!website) {
+		throw new Error('Website not found');
+	}
+
+	// Public websites allow read access
+	if (permission === 'read' && website.isPublic) {
+		return website;
+	}
+
+	// Get user session
+	const session = await auth.api.getSession({ headers });
+	const user = session?.user;
+
+	if (!user) {
+		throw new Error('Authentication is required for this action');
+	}
+
+	// Admin users have full access
+	if (user.role === 'ADMIN') {
+		return website;
+	}
+
+	// Check organization permissions
+	if (website.organizationId) {
+		const { success } = await websitesApi.hasPermission({
+			headers,
+			body: { permissions: { website: [permission] } },
+		});
+		if (!success) {
+			throw new Error('You do not have permission to perform this action');
+		}
+	} else if (website.userId !== user.id) {
+		// Check direct ownership
+		throw new Error('You are not the owner of this website');
+	}
+
+	return website;
+}
 
 export const exportRoute = new Elysia({ prefix: '/v1/export' })
 	.use(exportRateLimit)
@@ -27,93 +100,15 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 				const websiteId = body.website_id;
 				
 				if (!websiteId) {
-					logger.warn('Export request missing website_id', {
-						requestId,
-						userAgent: request.headers.get('user-agent'),
-						ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-					});
-					return new Response(
-						JSON.stringify({
-							success: false,
-							error: 'Website ID is required',
-							code: 'MISSING_WEBSITE_ID',
-						}),
-						{ 
-							status: 400,
-							headers: { 'Content-Type': 'application/json' }
-						}
-					);
+					return createErrorResponse(400, 'MISSING_WEBSITE_ID', 'Website ID is required');
 				}
 
-				// Get user session
-				const session = await auth.api.getSession({ headers: request.headers });
-				const user = session?.user;
-
-				if (!user) {
-					logger.warn('Export request without authentication', {
-						requestId,
-						websiteId,
-						userAgent: request.headers.get('user-agent'),
-						ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-					});
-					return new Response(
-						JSON.stringify({
-							success: false,
-							error: 'Authentication required',
-							code: 'AUTH_REQUIRED',
-						}),
-						{ 
-							status: 401,
-							headers: { 'Content-Type': 'application/json' }
-						}
-					);
-				}
-
-				// Get website and verify ownership
-				const website = await getCachedWebsite(websiteId);
-				if (!website) {
-					logger.warn('Export request for non-existent website', {
-						requestId,
-						websiteId,
-						userId: user.id,
-						userAgent: request.headers.get('user-agent'),
-						ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-					});
-					return new Response(
-						JSON.stringify({
-							success: false,
-							error: 'Website not found',
-							code: 'WEBSITE_NOT_FOUND',
-						}),
-						{ 
-							status: 404,
-							headers: { 'Content-Type': 'application/json' }
-						}
-					);
-				}
-
-				// Check if user owns the website (assuming website has userId field)
-				if (website.userId !== user.id) {
-					logger.warn('Export request for unauthorized website', {
-						requestId,
-						websiteId,
-						userId: user.id,
-						websiteOwnerId: website.userId,
-						userAgent: request.headers.get('user-agent'),
-						ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-					});
-					return new Response(
-						JSON.stringify({
-							success: false,
-							error: 'Access denied. You may not have permission to export data for this website.',
-							code: 'ACCESS_DENIED',
-						}),
-						{ 
-							status: 403,
-							headers: { 'Content-Type': 'application/json' }
-						}
-					);
-				}
+				// Use the same authorization pattern as RPC routers
+				const website = await authorizeWebsiteAccess(
+					request.headers, 
+					websiteId, 
+					'read'
+				);
 
 				// Validate and sanitize date inputs
 				const { validatedDates, error: dateError } = validateDateRange(
@@ -125,22 +120,11 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 					logger.warn('Export request with invalid dates', {
 						requestId,
 						websiteId,
-						userId: user.id,
 						startDate: body.start_date,
 						endDate: body.end_date,
 						error: dateError,
 					});
-					return new Response(
-						JSON.stringify({
-							success: false,
-							error: dateError,
-							code: 'INVALID_DATE_RANGE',
-						}),
-						{ 
-							status: 400,
-							headers: { 'Content-Type': 'application/json' }
-						}
-					);
+					return createErrorResponse(400, 'INVALID_DATE_RANGE', dateError);
 				}
 
 				// Validate export format
@@ -149,28 +133,15 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 					logger.warn('Export request with invalid format', {
 						requestId,
 						websiteId,
-						userId: user.id,
 						format,
 					});
-					return new Response(
-						JSON.stringify({
-							success: false,
-							error: 'Invalid export format. Supported formats: csv, json, txt, proto',
-							code: 'INVALID_FORMAT',
-						}),
-						{ 
-							status: 400,
-							headers: { 'Content-Type': 'application/json' }
-						}
-					);
+					return createErrorResponse(400, 'INVALID_FORMAT', 'Invalid export format. Supported formats: csv, json, txt, proto');
 				}
 
 				// Log export initiation for audit trail
 				logger.info('Data export initiated', {
 					requestId,
 					websiteId,
-					userId: user.id,
-					userEmail: user.email,
 					startDate: validatedDates.startDate,
 					endDate: validatedDates.endDate,
 					format,
@@ -193,8 +164,6 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 				logger.info('Data export completed successfully', {
 					requestId,
 					websiteId,
-					userId: user.id,
-					userEmail: user.email,
 					filename: result.filename,
 					fileSize: result.buffer.length,
 					totalRecords: result.metadata.totalRecords,
@@ -223,18 +192,20 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 					timestamp: new Date().toISOString(),
 				});
 
-				return new Response(
-					JSON.stringify({
-						success: false,
-						error: 'Export failed. Please try again later.',
-						code: 'EXPORT_FAILED',
-						requestId,
-					}),
-					{ 
-						status: 500,
-						headers: { 'Content-Type': 'application/json' }
+				// Handle authorization errors specifically
+				if (error instanceof Error) {
+					if (error.message.includes('not found')) {
+						return createErrorResponse(404, 'WEBSITE_NOT_FOUND', 'Website not found', requestId);
 					}
-				);
+					if (error.message.includes('Authentication is required')) {
+						return createErrorResponse(401, 'AUTH_REQUIRED', 'Authentication required', requestId);
+					}
+					if (error.message.includes('permission') || error.message.includes('owner')) {
+						return createErrorResponse(403, 'ACCESS_DENIED', 'Access denied. You may not have permission to export data for this website.', requestId);
+					}
+				}
+
+				return createErrorResponse(500, 'EXPORT_FAILED', 'Export failed. Please try again later.', requestId);
 			}
 		},
 		{
@@ -264,6 +235,24 @@ export const exportRoute = new Elysia({ prefix: '/v1/export' })
 			}),
 		}
 	);
+
+/**
+ * Creates a standardized error response
+ */
+function createErrorResponse(status: number, code: string, message: string, requestId?: string) {
+	return new Response(
+		JSON.stringify({
+			success: false,
+			error: message,
+			code,
+			...(requestId && { requestId }),
+		}),
+		{ 
+			status,
+			headers: { 'Content-Type': 'application/json' }
+		}
+	);
+}
 
 /**
  * Validates and sanitizes date range inputs
