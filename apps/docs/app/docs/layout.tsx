@@ -2,7 +2,7 @@ import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import type { ReactNode } from 'react';
 import { baseOptions } from '@/app/layout.config';
 import CustomSidebar from '@/components/custom-sidebar';
-import { Navbar } from '@/components/navbar';
+import { DocsNavbar } from '@/components/docs-navbar';
 import { source } from '@/lib/source';
 
 async function getGithubStars(): Promise<number | null> {
@@ -39,7 +39,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
 			{...baseOptions}
 			nav={{
 				enabled: true,
-				component: <Navbar stars={stars} />,
+				component: <DocsNavbar stars={stars} />,
 			}}
 			sidebar={{
 				enabled: true,

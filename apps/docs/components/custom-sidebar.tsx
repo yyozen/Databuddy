@@ -31,7 +31,7 @@ export default function CustomSidebar() {
 	};
 
 	return (
-		<div className="fixed top-16 left-0 z-30 h-[calc(100vh-4rem)]">
+		<div className="fixed top-16 left-0 z-30 hidden h-[calc(100vh-4rem)] md:block">
 			<aside className="flex h-full w-[268px] flex-col overflow-y-auto border-border border-t border-r bg-background lg:w-[286px]">
 				<div className="flex h-full flex-col">
 					<button

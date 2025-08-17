@@ -290,68 +290,76 @@ Tracks clicks on links that navigate away from your site.
 
 <Accordion title="trackScrollDepth (default: false)">
   Measures how far users scroll down the page (e.g., 25%, 50%, 75%, 100%
-  milestones). ```tsx // Example: Enabling Scroll Depth tracking
+  milestones). 
+```tsx // Example: Enabling Scroll Depth tracking
   <Databuddy
     clientId="your-client-id"
     trackScrollDepth={true}
   />
-  // Script tag: data-track-scroll-depth="true" ``` **Events tracked**:
+  ```
   `scroll_depth` (or integrated into `screen_view` events).
 </Accordion>
 
 <Accordion title="trackEngagement (default: false)">
   Tracks user engagement metrics like time on page and interaction counts.
-  ```tsx // Example: Enabling Engagement tracking
+  ```tsx
   <Databuddy
     clientId="your-client-id"
     trackEngagement={true}
   />
-  // Script tag: data-track-engagement="true" ``` **Events tracked**:
-  `page_exit` (with engagement metrics), potentially custom events.
+  ```
+  **Events tracked**: `page_exit` (with engagement metrics), potentially custom events.
 </Accordion>
 
 <Accordion title="trackExitIntent (default: false)">
   Detects when a user's mouse movement suggests they are about to leave the
-  page. ```tsx // Example: Enabling Exit Intent tracking
+  page. 
+```tsx
   <Databuddy
     clientId="your-client-id"
     trackExitIntent={true}
   />
-  // Script tag: data-track-exit-intent="true" ``` **Events tracked**: Adds
+  ```
+  **Events tracked**: Adds
   `has_exit_intent` to relevant events like `screen_view` or `page_exit`.
 </Accordion>
 
 <Accordion title="trackInteractions (default: false)">
   Tracks various user interactions like clicks, form submissions (if not covered
   by other specific trackers), and potentially other UI element interactions.
-  ```tsx // Example: Enabling Interaction tracking
+  ```tsx
   <Databuddy
     clientId="your-client-id"
     trackInteractions={true}
   />
-  // Script tag: data-track-interactions="true" ``` **Events tracked**:
+  ```
+  **Events tracked**:
   `button_click`, `form_submit`, etc.
 </Accordion>
 
 <Accordion title="trackBounceRate (default: false)">
   Helps in identifying sessions where users leave after viewing only a single
-  page. ```tsx // Example: Enabling Bounce Rate tracking
+  page. 
+```tsx
   <Databuddy
     clientId="your-client-id"
     trackBounceRate={true}
   />
-  // Script tag: data-track-bounce-rate="true" ``` **Events tracked**: Adds
+  ```
+  **Events tracked**: Adds
   `is_bounce` to relevant events like `screen_view` or `page_exit`.
 </Accordion>
 
 <Accordion title="trackHashChanges (default: false)">
   Tracks changes to the URL hash (`#`) for single-page applications that use
-  hash-based routing. ```tsx // Example: Enabling Hash Change tracking
+  hash-based routing. 
+```tsx
   <Databuddy
     clientId="your-client-id"
     trackHashChanges={true}
   />
-  // Script tag: data-track-hash-changes="true" ``` **Events tracked**: Can
+  ```
+  **Events tracked**: Can
   trigger `screen_view` or dedicated hash change events.
 </Accordion>
 
@@ -600,8 +608,8 @@ The `event` object passed to the filter function typically includes `name` (stri
   The `clientSecret` is used for server-side operations and should **never** be
   exposed in client-side browser code. It's typically used in backend
   integrations or secure environments where the SDK might be used for
-  server-to-server event tracking. ```tsx // Example: Server-side or secure
-  environment usage
+  server-to-server event tracking. 
+```tsx
   <Databuddy
     clientId="your-client-id"
     clientSecret="your-client-secret"
@@ -613,21 +621,21 @@ The `event` object passed to the filter function typically includes `name` (stri
   The `waitForProfile` option (default: `false`) can be used in advanced
   scenarios where you need to ensure user profile information is available
   before any events are sent. This might be relevant if you load user data
-  asynchronously and need it attached to initial events. ```tsx // Example:
-  Enabling waitForProfile
+  asynchronously and need it attached to initial events. 
+```tsx
   <Databuddy
     clientId="your-client-id"
     waitForProfile={true}
   />
-  // Script tag: data-wait-for-profile="true" ```
+  ```
 </Accordion>
 
 <Accordion title="sdk and sdkVersion (Advanced)">
   These options, `sdk` (default: `'web'`) and `sdkVersion` (defaults to the
   package version), are primarily for internal use or for developers creating
   custom integrations or forks of the SDK. Overriding these is generally not
-  needed for standard web usage. ```tsx // Example: Overriding SDK metadata
-  (rarely needed)
+  needed for standard web usage. 
+```tsx
   <Databuddy
     clientId="your-client-id"
     sdk="custom-js-integration"
