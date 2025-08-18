@@ -2,7 +2,6 @@ import type { Website } from '@databuddy/shared';
 import { CaretLeftIcon, PlanetIcon } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { FaviconImage } from '@/components/analytics/favicon-image';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface WebsiteHeaderProps {
@@ -11,48 +10,49 @@ interface WebsiteHeaderProps {
 
 export function WebsiteHeader({ website }: WebsiteHeaderProps) {
 	return (
-		<div className="space-y-3">
-			{/* Back button */}
-			<Button
-				asChild
-				className="group w-full justify-start text-muted-foreground hover:text-foreground"
-				size="sm"
-				variant="ghost"
+		<div className="border-border border-b bg-accent/20">
+			{/* Back navigation */}
+			<button
+				className="flex w-full items-center gap-3 px-5 py-2.5 text-left font-medium text-foreground text-sm transition-colors hover:bg-muted/50"
+				type="button"
 			>
-				<Link href="/websites">
+				<Link className="flex w-full items-center gap-3" href="/websites">
 					<CaretLeftIcon
-						className="group-hover:-translate-x-0.5 mr-2 h-4 w-4 transition-transform"
-						size={32}
+						className="hover:-translate-x-0.5 size-4 flex-shrink-0 transition-transform"
 						weight="fill"
 					/>
-					Back to Websites
+					<span className="flex-1 text-muted-foreground text-xs">
+						Back to Websites
+					</span>
 				</Link>
-			</Button>
+			</button>
 
-			{/* Website info card */}
-			<div className="rounded-lg border bg-card p-3 py-2">
-				<div className="flex items-center gap-3">
-					<FaviconImage
-						altText={`${website?.name || website?.domain || 'Website'} favicon`}
-						className="flex-shrink-0"
-						domain={website?.domain || ''}
-						fallbackIcon={
-							<PlanetIcon
-								className="text-primary/70"
-								size={20}
-								weight="duotone"
-							/>
-						}
-						size={20}
-					/>
+			{/* Website info - enhanced with background and better spacing */}
+			<div className="border-border border-t bg-gradient-to-r from-accent/30 to-accent/10 px-5 py-3">
+				<div className="flex w-full items-center gap-3">
+					<div className="rounded-lg bg-background/80 p-1.5 shadow-sm ring-1 ring-border/50">
+						<FaviconImage
+							altText={`${website?.name || website?.domain || 'Website'} favicon`}
+							className="size-5 flex-shrink-0"
+							domain={website?.domain || ''}
+							fallbackIcon={
+								<PlanetIcon
+									className="text-primary/70"
+									size={20}
+									weight="duotone"
+								/>
+							}
+							size={20}
+						/>
+					</div>
 					<div className="min-w-0 flex-1">
-						<h2 className="truncate font-semibold text-sm">
+						<h2 className="truncate font-semibold text-foreground text-sm">
 							{website?.name || website?.domain || (
 								<Skeleton className="h-4 w-32" />
 							)}
 						</h2>
 						{website?.domain ? (
-							<p className="truncate text-muted-foreground text-xs">
+							<p className="truncate text-muted-foreground/80 text-xs">
 								{website.domain}
 							</p>
 						) : (

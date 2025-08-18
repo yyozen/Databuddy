@@ -7,20 +7,19 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useWebsites } from '@/hooks/use-websites';
 import { cn } from '@/lib/utils';
+import { CategorySidebar } from './category-sidebar';
 import {
-	demoNavigation,
-	mainNavigation,
-	sandboxNavigation,
-	websiteNavigation,
+	getDefaultCategory,
+	getNavigationWithWebsites,
 } from './navigation/navigation-config';
 import { NavigationSection } from './navigation/navigation-section';
 import { SandboxHeader } from './navigation/sandbox-header';
+import type { NavigationSection as NavigationSectionType } from './navigation/types';
 import { WebsiteHeader } from './navigation/website-header';
 import { OrganizationSelector } from './organization-selector';
-import { TopHeader } from './top-header';
 
 type NavigationConfig = {
-	navigation: typeof mainNavigation;
+	navigation: NavigationSectionType[];
 	header: React.ReactNode;
 	currentWebsiteId?: string | null;
 };
@@ -28,7 +27,8 @@ type NavigationConfig = {
 export function Sidebar() {
 	const pathname = usePathname();
 	const [isMobileOpen, setIsMobileOpen] = useState(false);
-	const { websites } = useWebsites();
+	const [selectedCategory, setSelectedCategory] = useState<string>();
+	const { websites, isLoading: isLoadingWebsites } = useWebsites();
 	const sidebarRef = useRef<HTMLDivElement>(null);
 	const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -48,49 +48,73 @@ export function Sidebar() {
 		setIsMobileOpen(false);
 	}, []);
 
-	const openSidebar = useCallback(() => {
-		previousFocusRef.current = document.activeElement as HTMLElement;
-		setIsMobileOpen(true);
-	}, []);
+	// const openSidebar = useCallback(() => {
+	// 	previousFocusRef.current = document.activeElement as HTMLElement;
+	// 	setIsMobileOpen(true);
+	// }, []);
 
-	const toggleSidebar = useCallback(() => {
-		if (isMobileOpen) {
-			closeSidebar();
-		} else {
-			openSidebar();
-		}
-	}, [isMobileOpen, closeSidebar, openSidebar]);
+	// Mobile sidebar toggle for hamburger menu (if needed later)
+	// const toggleSidebar = useCallback(() => {
+	// 	if (isMobileOpen) {
+	// 		closeSidebar();
+	// 	} else {
+	// 		openSidebar();
+	// 	}
+	// }, [isMobileOpen, closeSidebar, openSidebar]);
 
 	const getNavigationConfig = useMemo((): NavigationConfig => {
-		if (isWebsite) {
-			return {
-				navigation: websiteNavigation,
-				header: <WebsiteHeader website={currentWebsite} />,
-				currentWebsiteId: websiteId,
-			};
-		}
+		const contextConfig = getNavigationWithWebsites(
+			pathname,
+			websites,
+			isLoadingWebsites
+		);
+		const defaultCat = getDefaultCategory(pathname);
+		const activeCat = selectedCategory || defaultCat;
 
-		if (isDemo) {
-			return {
-				navigation: demoNavigation,
-				header: <WebsiteHeader website={currentWebsite} />,
-				currentWebsiteId: websiteId,
-			};
-		}
+		// Get navigation from centralized config
+		const navSections =
+			contextConfig.navigationMap[
+				activeCat as keyof typeof contextConfig.navigationMap
+			] ||
+			contextConfig.navigationMap[
+				contextConfig.defaultCategory as keyof typeof contextConfig.navigationMap
+			];
 
-		if (isSandbox) {
-			return {
-				navigation: sandboxNavigation,
-				header: <SandboxHeader />,
-				currentWebsiteId: 'sandbox',
-			};
+		// Determine header based on context
+		let headerComponent: React.ReactNode;
+		let currentId: string | null | undefined;
+
+		if (isWebsite || isDemo) {
+			headerComponent = isWebsite ? (
+				<WebsiteHeader website={currentWebsite} />
+			) : (
+				<OrganizationSelector />
+			);
+			currentId = websiteId;
+		} else if (isSandbox) {
+			headerComponent = <SandboxHeader />;
+			currentId = 'sandbox';
+		} else {
+			headerComponent = <OrganizationSelector />;
+			currentId = undefined;
 		}
 
 		return {
-			navigation: mainNavigation,
-			header: <OrganizationSelector />,
+			navigation: navSections,
+			header: headerComponent,
+			currentWebsiteId: currentId,
 		};
-	}, [isWebsite, isDemo, isSandbox, websiteId, currentWebsite]);
+	}, [
+		pathname,
+		selectedCategory,
+		isWebsite,
+		isDemo,
+		isSandbox,
+		websiteId,
+		currentWebsite,
+		websites,
+		isLoadingWebsites,
+	]);
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -120,7 +144,13 @@ export function Sidebar() {
 
 	return (
 		<>
-			<TopHeader toggleMobileSidebar={toggleSidebar} />
+			{/* Category Sidebar - Desktop only */}
+			<div className="hidden md:block">
+				<CategorySidebar
+					onCategoryChange={setSelectedCategory}
+					selectedCategory={selectedCategory}
+				/>
+			</div>
 
 			{isMobileOpen && (
 				<div
@@ -139,8 +169,10 @@ export function Sidebar() {
 			<nav
 				aria-hidden={!isMobileOpen}
 				className={cn(
-					'fixed inset-y-0 left-0 z-40 w-64 bg-background',
-					'border-r pt-16 transition-transform duration-200 ease-out md:translate-x-0',
+					'fixed inset-y-0 z-40 w-64 bg-background',
+					'border-r transition-transform duration-200 ease-out',
+					'left-0 md:left-12', // Mobile: left-0, Desktop: left-12 (after category sidebar)
+					'md:translate-x-0',
 					isMobileOpen ? 'translate-x-0' : '-translate-x-full'
 				)}
 				ref={sidebarRef}
@@ -157,22 +189,23 @@ export function Sidebar() {
 					<span className="sr-only">Close sidebar</span>
 				</Button>
 
-				<ScrollArea className="h-[calc(100vh-4rem)]">
-					<nav
-						aria-label="Main navigation"
-						className="select-none space-y-4 p-3"
-					>
+				<ScrollArea className="h-full">
+					<div className="flex h-full flex-col">
 						{header}
-						{navigation.map((section) => (
-							<NavigationSection
-								currentWebsiteId={currentWebsiteId}
-								items={section.items}
-								key={section.title}
-								pathname={pathname}
-								title={section.title}
-							/>
-						))}
-					</nav>
+
+						<nav aria-label="Main navigation" className="flex flex-col">
+							{navigation.map((section) => (
+								<NavigationSection
+									currentWebsiteId={currentWebsiteId}
+									icon={section.icon}
+									items={section.items}
+									key={section.title}
+									pathname={pathname}
+									title={section.title}
+								/>
+							))}
+						</nav>
+					</div>
 				</ScrollArea>
 			</nav>
 		</>

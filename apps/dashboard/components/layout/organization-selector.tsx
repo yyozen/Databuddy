@@ -55,6 +55,79 @@ function filterOrganizations<T extends { name: string; slug?: string | null }>(
 	return filtered;
 }
 
+interface OrganizationSelectorTriggerProps {
+	activeOrganization: {
+		name: string;
+		slug?: string | null;
+		logo?: string | null;
+	} | null;
+	isOpen: boolean;
+	isSettingActiveOrganization: boolean;
+}
+
+function OrganizationSelectorTrigger({
+	activeOrganization,
+	isOpen,
+	isSettingActiveOrganization,
+}: OrganizationSelectorTriggerProps) {
+	return (
+		<div
+			className={cn(
+				'w-full border-border border-b bg-accent/20 px-5 py-3 transition-colors',
+				'hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+				isSettingActiveOrganization && 'cursor-not-allowed opacity-70',
+				isOpen && 'bg-accent/30'
+			)}
+		>
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-3">
+					<div className="rounded-lg bg-background/80 p-1.5 shadow-sm ring-1 ring-border/50">
+						<Avatar className="h-5 w-5">
+							<AvatarImage
+								alt={activeOrganization?.name || 'Personal'}
+								src={activeOrganization?.logo || undefined}
+							/>
+							<AvatarFallback className="bg-transparent font-medium text-xs">
+								{activeOrganization?.name ? (
+									getOrganizationInitials(activeOrganization.name)
+								) : (
+									<UserIcon
+										className="not-dark:text-primary"
+										weight="duotone"
+									/>
+								)}
+							</AvatarFallback>
+						</Avatar>
+					</div>
+					<div className="min-w-0 flex-1">
+						<span className="truncate font-semibold text-foreground text-sm">
+							{activeOrganization?.name || 'Personal'}
+						</span>
+						<p className="truncate text-muted-foreground/80 text-xs">
+							{activeOrganization?.slug || 'Your workspace'}
+						</p>
+					</div>
+				</div>
+				{isSettingActiveOrganization ? (
+					<SpinnerGapIcon
+						aria-label="Switching workspace"
+						className="h-4 w-4 animate-spin text-muted-foreground"
+						weight="duotone"
+					/>
+				) : (
+					<CaretDownIcon
+						className={cn(
+							'h-4 w-4 text-muted-foreground transition-transform duration-200',
+							isOpen && 'rotate-180'
+						)}
+						weight="fill"
+					/>
+				)}
+			</div>
+		</div>
+	);
+}
+
 export function OrganizationSelector() {
 	const {
 		organizations,
@@ -117,9 +190,11 @@ export function OrganizationSelector() {
 
 	if (isLoading) {
 		return (
-			<div className="rounded border border-border/50 bg-accent/30 px-2 py-2">
+			<div className="border-border border-b bg-accent/20 px-5 py-3">
 				<div className="flex items-center gap-3">
-					<Skeleton className="h-8 w-8 rounded" />
+					<div className="rounded-lg bg-background/80 p-1.5 shadow-sm ring-1 ring-border/50">
+						<Skeleton className="h-5 w-5 rounded" />
+					</div>
 					<div className="space-y-1">
 						<Skeleton className="h-4 w-24 rounded" />
 						<Skeleton className="h-3 w-16 rounded" />
@@ -131,9 +206,16 @@ export function OrganizationSelector() {
 
 	if (hasError && !isActiveOrgNotFound) {
 		return (
-			<div className="rounded border border-destructive/50 bg-destructive/10 px-3 py-2 text-destructive">
-				<div className="flex items-center gap-2 text-sm">
-					<span>Failed to load workspaces</span>
+			<div className="border-border border-b bg-destructive/10 px-5 py-3">
+				<div className="flex items-center gap-3">
+					<div className="rounded bg-background/80 p-1.5 shadow-sm ring-1 ring-destructive/50">
+						<UserIcon className="h-5 w-5 text-destructive" weight="duotone" />
+					</div>
+					<div className="min-w-0 flex-1">
+						<span className="font-semibold text-destructive text-sm">
+							Failed to load workspaces
+						</span>
+					</div>
 				</div>
 			</div>
 		);
@@ -154,63 +236,16 @@ export function OrganizationSelector() {
 					<Button
 						aria-expanded={isOpen}
 						aria-haspopup="listbox"
-						className="h-auto w-full p-0 hover:bg-transparent"
+						className="h-auto w-full rounded-none p-0 hover:bg-transparent"
 						disabled={isSettingActiveOrganization}
 						type="button"
 						variant="ghost"
 					>
-						<div
-							className={cn(
-								'w-full rounded border border-border/50 bg-accent/30 px-2 py-2 transition-colors',
-								'hover:border-border/70 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-								isSettingActiveOrganization && 'cursor-not-allowed opacity-70',
-								isOpen && 'border-border/70 bg-accent/50'
-							)}
-						>
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-3">
-									<Avatar className="h-8 w-8 border border-border/50">
-										<AvatarImage
-											alt={activeOrganization?.name || 'Personal'}
-											src={activeOrganization?.logo || undefined}
-										/>
-										<AvatarFallback className="bg-muted font-medium text-xs">
-											{activeOrganization?.name ? (
-												getOrganizationInitials(activeOrganization.name)
-											) : (
-												<UserIcon
-													className="not-dark:text-primary"
-													weight="duotone"
-												/>
-											)}
-										</AvatarFallback>
-									</Avatar>
-									<div className="flex min-w-0 flex-col text-left">
-										<span className="max-w-[140px] truncate font-medium text-sm sm:max-w-[180px]">
-											{activeOrganization?.name || 'Personal'}
-										</span>
-										<span className="max-w-[140px] truncate text-muted-foreground text-xs sm:max-w-[180px]">
-											{activeOrganization?.slug || 'Your workspace'}
-										</span>
-									</div>
-								</div>
-								{isSettingActiveOrganization ? (
-									<SpinnerGapIcon
-										aria-label="Switching workspace"
-										className="h-4 w-4 animate-spin text-muted-foreground"
-										weight="duotone"
-									/>
-								) : (
-									<CaretDownIcon
-										className={cn(
-											'h-4 w-4 text-muted-foreground transition-transform duration-200',
-											isOpen && 'rotate-180'
-										)}
-										weight="fill"
-									/>
-								)}
-							</div>
-						</div>
+						<OrganizationSelectorTrigger
+							activeOrganization={activeOrganization}
+							isOpen={isOpen}
+							isSettingActiveOrganization={isSettingActiveOrganization}
+						/>
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start" className="w-72 p-1" sideOffset={4}>
