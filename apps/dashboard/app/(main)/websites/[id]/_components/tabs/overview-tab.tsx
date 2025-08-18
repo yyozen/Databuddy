@@ -152,7 +152,12 @@ const QUERY_CONFIG = {
 			'utm_campaigns',
 		] as string[],
 		tech: ['device_types', 'browsers', 'operating_systems'] as string[],
-		customEvents: ['custom_events', 'custom_event_properties', 'outbound_links', 'outbound_domains'] as string[],
+		customEvents: [
+			'custom_events',
+			'custom_event_properties',
+			'outbound_links',
+			'outbound_domains',
+		] as string[],
 	},
 } as const;
 
@@ -310,7 +315,6 @@ export function WebsiteOverviewTab({
 				try {
 					await refetchBatch();
 				} catch {
-					// Handle error silently or use proper error reporting
 				} finally {
 					setIsRefreshing(false);
 				}
@@ -338,7 +342,6 @@ export function WebsiteOverviewTab({
 			primaryHeader: 'Source',
 			customCell: referrerCustomCell,
 			getFilter: (row: any) => {
-				// For referrers, use the referrer field and get the actual referrer URL
 				return {
 					field: 'referrer',
 					value: row.referrer,
@@ -439,7 +442,7 @@ export function WebsiteOverviewTab({
 		});
 	};
 
-	const chartData = (() => {
+	const chartData = useMemo(() => {
 		if (!analytics.events_by_date?.length) {
 			return [];
 		}
@@ -466,9 +469,9 @@ export function WebsiteOverviewTab({
 			}
 			return filtered;
 		});
-	})();
+	}, [analytics.events_by_date, dateRange.granularity, visibleMetrics]);
 
-	const miniChartData = (() => {
+	const miniChartData = useMemo(() => {
 		if (!analytics.events_by_date?.length) {
 			return {};
 		}
@@ -501,110 +504,73 @@ export function WebsiteOverviewTab({
 				return minutes * 60 + seconds;
 			}),
 		};
-	})();
+	}, [analytics.events_by_date, dateRange.granularity]);
 
-	const processedDeviceData = (() => {
-		const deviceData = analytics.device_types || [];
-		return deviceData.map(
-			(item: { name: string; visitors: number; percentage: number }) => ({
-				name: item.name,
-				visitors: item.visitors,
-				percentage: item.percentage,
-			})
-		);
-	})();
+	const togglePropertyExpansion = useCallback((propertyId: string) => {
+		setExpandedProperties((prev) => {
+			const newExpanded = new Set(prev);
+			if (newExpanded.has(propertyId)) {
+				newExpanded.delete(propertyId);
+			} else {
+				newExpanded.add(propertyId);
+			}
+			return newExpanded;
+		});
+	}, []);
 
-	const processedBrowserData = (() => {
-		const browserData = analytics.browser_versions || [];
-		return browserData.map((item: TechnologyData) => ({
-			name: item.name,
-			visitors: item.visitors,
-			pageviews: item.pageviews,
-			percentage: item.percentage ?? 0,
-			icon: getBrowserIcon(item.name),
-			category: 'browser',
-		}));
-	})();
-
-	const processedOSData = (analytics.operating_systems || []).map(
-		(item: TechnologyData) => ({
-			name: item.name,
-			visitors: item.visitors,
-			pageviews: item.pageviews,
-			percentage: item.percentage ?? 0,
-			icon: getOSIcon(item.name),
-			category: 'os',
-		})
-	);
-
-	const togglePropertyExpansion = (propertyId: string) => {
-		const newExpanded = new Set(expandedProperties);
-		if (newExpanded.has(propertyId)) {
-			newExpanded.delete(propertyId);
-		} else {
-			newExpanded.add(propertyId);
-		}
-		setExpandedProperties(newExpanded);
-	};
-
-	const processedCustomEventsData = (() => {
+	const processedCustomEventsData = useMemo(() => {
 		if (!customEventsData?.custom_events?.length) {
 			return [];
 		}
 		const customEvents = customEventsData.custom_events;
 		const propertiesData = customEventsData.custom_event_properties || [];
 
-		return customEvents.map((event: CustomEventData) => {
-			// Find properties for this event
-			const eventProperties = propertiesData.filter(
-				(prop: EventProperty) => prop.name === event.name
-			);
+		const propertiesByEvent = new Map<string, EventProperty[]>();
+		for (const prop of propertiesData) {
+			if (!propertiesByEvent.has(prop.name)) {
+				propertiesByEvent.set(prop.name, []);
+			}
+			propertiesByEvent.get(prop.name)?.push(prop);
+		}
 
-			// Group properties by key and aggregate values
+		return customEvents.map((event: CustomEventData) => {
+			const eventProperties = propertiesByEvent.get(event.name) || [];
+
 			const propertyCategories: PropertyCategory[] = [];
-			const propertyMap = new Map<
-				string,
-				Map<
-					string,
-					{
-						count: number;
-					}
-				>
-			>();
+			const propertyMap = new Map<string, Map<string, { count: number }>>();
 
 			for (const prop of eventProperties) {
-				// Data is already pre-aggregated from API with percentages
 				const key = prop.property_key;
 				const value = prop.property_value;
-				const data = {
-					count: prop.count,
-				};
 
 				if (!propertyMap.has(key)) {
 					propertyMap.set(key, new Map());
 				}
 
-				const valueMap = propertyMap.get(key);
-				if (valueMap) {
-					valueMap.set(value, data);
-				}
+				propertyMap.get(key)?.set(value, { count: prop.count });
 			}
 
-			// Convert to array format for display - use pre-computed percentages
 			for (const [key, valueMap] of propertyMap.entries()) {
-				const values = Array.from(valueMap.entries()).map(([value, data]) => ({
+				const values = Array.from(valueMap.entries(), ([value, data]) => ({
 					value,
 					count: data.count,
+					percentage: 0,
+					percentage_within_event: 0,
+					unique_users: 0,
+					unique_sessions: 0,
 				}));
 
 				const total = values.reduce((sum, item) => sum + item.count, 0);
+				values.sort((a, b) => b.count - a.count);
 
 				propertyCategories.push({
 					key,
 					total,
-					values: values.sort((a, b) => b.count - a.count) as PropertyValue[],
+					values,
 				});
 			}
+
+			propertyCategories.sort((a, b) => b.total - a.total);
 
 			return {
 				...event,
@@ -615,18 +581,21 @@ export function WebsiteOverviewTab({
 				first_occurrence_formatted: event.first_occurrence
 					? new Date(event.first_occurrence).toLocaleDateString()
 					: 'N/A',
-				propertyCategories: propertyCategories.sort(
-					(a, b) => b.total - a.total
-				),
+				propertyCategories,
 			};
 		});
-	})();
+	}, [
+		customEventsData?.custom_events,
+		customEventsData?.custom_event_properties,
+	]);
 
-	const createTechnologyCell = () => (info: CellInfo) => {
+	const createTechnologyCell = (type: 'browser' | 'os') => (info: CellInfo) => {
 		const entry = info.row.original as TechnologyData;
+		const icon =
+			type === 'browser' ? getBrowserIcon(entry.name) : getOSIcon(entry.name);
 		return (
 			<div className="flex items-center gap-3">
-				<TechnologyIcon entry={entry} size="md" />
+				<TechnologyIcon entry={{ ...entry, icon, category: type }} size="md" />
 				<span className="font-medium">{entry.name}</span>
 			</div>
 		);
@@ -637,15 +606,18 @@ export function WebsiteOverviewTab({
 		return <PercentageBadge percentage={percentage} />;
 	};
 
-	const formatNumber = (value: number | null | undefined): string => {
-		if (value == null || Number.isNaN(value)) {
-			return '0';
-		}
-		return Intl.NumberFormat(undefined, {
-			notation: 'compact',
-			maximumFractionDigits: 1,
-		}).format(value);
-	};
+	const formatNumber = useCallback(
+		(value: number | null | undefined): string => {
+			if (value == null || Number.isNaN(value)) {
+				return '0';
+			}
+			return Intl.NumberFormat(undefined, {
+				notation: 'compact',
+				maximumFractionDigits: 1,
+			}).format(value);
+		},
+		[]
+	);
 
 	const createMetricCell = (label: string) => (info: CellInfo) => (
 		<div>
@@ -689,7 +661,7 @@ export function WebsiteOverviewTab({
 			id: 'name',
 			accessorKey: 'name',
 			header: 'Browser',
-			cell: createTechnologyCell(),
+			cell: createTechnologyCell('browser'),
 		},
 		{
 			id: 'visitors',
@@ -724,7 +696,7 @@ export function WebsiteOverviewTab({
 			id: 'name',
 			accessorKey: 'name',
 			header: 'Operating System',
-			cell: createTechnologyCell(),
+			cell: createTechnologyCell('os'),
 		},
 		{
 			id: 'visitors',
@@ -796,19 +768,27 @@ export function WebsiteOverviewTab({
 			header: 'Destination URL',
 			cell: (info: CellInfo) => {
 				const href = info.getValue() as string;
-				const domain = new URL(href).hostname;
+				let domain = href;
+				try {
+					domain = new URL(href).hostname;
+				} catch {
+					domain = href;
+				}
 				return (
 					<div className="flex flex-col gap-1">
 						<a
+							className="max-w-[300px] truncate font-medium text-primary hover:underline"
 							href={href}
-							target="_blank"
 							rel="noopener noreferrer"
-							className="font-medium text-primary hover:underline truncate max-w-[300px]"
+							target="_blank"
 							title={href}
 						>
 							{domain}
 						</a>
-						<span className="text-muted-foreground text-xs truncate max-w-[300px]" title={href}>
+						<span
+							className="max-w-[300px] truncate text-muted-foreground text-xs"
+							title={href}
+						>
 							{href}
 						</span>
 					</div>
@@ -822,7 +802,7 @@ export function WebsiteOverviewTab({
 			cell: (info: CellInfo) => {
 				const text = info.getValue() as string;
 				return (
-					<span className="font-medium truncate max-w-[200px]" title={text}>
+					<span className="max-w-[200px] truncate font-medium" title={text}>
 						{text || '(no text)'}
 					</span>
 				);
@@ -1237,13 +1217,13 @@ export function WebsiteOverviewTab({
 			{/* Custom Events Table */}
 			<DataTable
 				description="User-defined events, interactions, and outbound link tracking"
-				isLoading={isLoading}
-				minHeight={350}
-				onAddFilter={onAddFilter}
 				expandable={true}
 				getSubRows={(row: CustomEventData) =>
 					row.propertyCategories as unknown as CustomEventData[]
 				}
+				isLoading={isLoading}
+				minHeight={350}
+				onAddFilter={onAddFilter}
 				renderSubRow={(subRow: CustomEventData, parentRow: CustomEventData) => {
 					const typedSubRow = subRow as unknown as PropertyCategory;
 					const propertyKey = typedSubRow.key;
@@ -1332,7 +1312,7 @@ export function WebsiteOverviewTab({
 						columns: outboundLinksColumns,
 						getFilter: (row: any) => ({
 							field: 'href',
-							value: row.href,
+							value: (row as OutboundLinkData).href,
 						}),
 					},
 					{
@@ -1342,7 +1322,7 @@ export function WebsiteOverviewTab({
 						columns: outboundDomainsColumns,
 						getFilter: (row: any) => ({
 							field: 'href',
-							value: `*${row.domain}*`,
+							value: `*${(row as OutboundDomainData).domain}*`,
 						}),
 					},
 				]}
@@ -1353,7 +1333,7 @@ export function WebsiteOverviewTab({
 			<div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
 				<DataTable
 					columns={deviceColumns}
-					data={processedDeviceData}
+					data={analytics.device_types || []}
 					description="Device breakdown"
 					initialPageSize={8}
 					isLoading={isLoading}
@@ -1364,10 +1344,9 @@ export function WebsiteOverviewTab({
 						{
 							id: 'devices',
 							label: 'Devices',
-							data: processedDeviceData,
+							data: analytics.device_types || [],
 							columns: deviceColumns,
-							getFilter: (row: any) => {
-								// Map display device names to filter values
+							getFilter: (row: TechnologyData) => {
 								const deviceDisplayToFilterMap: Record<string, string> = {
 									laptop: 'mobile',
 									tablet: 'tablet',
@@ -1385,7 +1364,7 @@ export function WebsiteOverviewTab({
 
 				<DataTable
 					columns={browserColumns}
-					data={processedBrowserData}
+					data={analytics.browser_versions || []}
 					description="Browser breakdown"
 					initialPageSize={8}
 					isLoading={isLoading}
@@ -1396,9 +1375,9 @@ export function WebsiteOverviewTab({
 						{
 							id: 'browsers',
 							label: 'Browsers',
-							data: processedBrowserData,
+							data: analytics.browser_versions || [],
 							columns: browserColumns,
-							getFilter: (row: any) => ({
+							getFilter: (row: TechnologyData) => ({
 								field: 'browser_name',
 								value: row.name,
 							}),
@@ -1409,7 +1388,7 @@ export function WebsiteOverviewTab({
 
 				<DataTable
 					columns={osColumns}
-					data={processedOSData}
+					data={analytics.operating_systems || []}
 					description="OS breakdown"
 					initialPageSize={8}
 					isLoading={isLoading}
@@ -1420,9 +1399,9 @@ export function WebsiteOverviewTab({
 						{
 							id: 'operating_systems',
 							label: 'Operating Systems',
-							data: processedOSData,
+							data: analytics.operating_systems || [],
 							columns: osColumns,
-							getFilter: (row: any) => ({
+							getFilter: (row: TechnologyData) => ({
 								field: 'os_name',
 								value: row.name,
 							}),
