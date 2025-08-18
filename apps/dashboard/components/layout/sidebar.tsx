@@ -11,6 +11,7 @@ import { useAccordionStates } from '@/hooks/use-persistent-state';
 import { useWebsites } from '@/hooks/use-websites';
 import { cn } from '@/lib/utils';
 import { CategorySidebar } from './category-sidebar';
+import { MobileCategorySelector } from './navigation/mobile-category-selector';
 import {
 	getDefaultCategory,
 	getNavigationWithWebsites,
@@ -161,7 +162,7 @@ export function Sidebar() {
 							<ListIcon className="h-5 w-5" weight="duotone" />
 						</Button>
 
-						<Link 
+						<Link
 							className="flex items-center gap-2 transition-opacity hover:opacity-80"
 							href="/websites"
 						>
@@ -230,6 +231,12 @@ export function Sidebar() {
 				<ScrollArea className="h-full md:h-full">
 					<div className="flex h-full flex-col">
 						{header}
+
+						{/* Mobile Category Selector */}
+						<MobileCategorySelector
+							onCategoryChange={setSelectedCategory}
+							selectedCategory={selectedCategory}
+						/>
 
 						<nav aria-label="Main navigation" className="flex flex-col">
 							{navigation.map((section) => (
