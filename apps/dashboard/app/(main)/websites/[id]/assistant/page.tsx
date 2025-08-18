@@ -22,8 +22,8 @@ const AIAssistantMain = dynamic(
 
 function AIAssistantLoadingSkeleton() {
 	return (
-		<div className="flex h-full flex-col gap-3">
-			<div className="flex flex-1 gap-3 overflow-hidden">
+		<div className="flex h-full min-h-0 flex-col gap-3">
+			<div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
 				<div className="flex flex-[2_2_0%] flex-col overflow-hidden rounded border bg-background shadow-sm">
 					<div className="flex-shrink-0 border-b p-3">
 						<Skeleton className="mb-1 h-5 w-32" />
@@ -81,5 +81,9 @@ export default function AssistantPage() {
 		return <AIAssistantLoadingSkeleton />;
 	}
 
-	return <AIAssistantMain />;
+	return (
+		<div className="h-full min-h-0">
+			<AIAssistantMain />
+		</div>
+	);
 }

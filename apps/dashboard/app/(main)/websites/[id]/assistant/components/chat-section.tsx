@@ -137,7 +137,7 @@ export default function ChatSection() {
 	};
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded border bg-gradient-to-br from-background to-muted/10 shadow-lg backdrop-blur-sm">
+		<div className="flex h-full min-h-0 flex-col overflow-hidden rounded border bg-gradient-to-br from-background to-muted/10 shadow-lg backdrop-blur-sm">
 			{/* Enhanced Header */}
 			<div className="flex flex-shrink-0 items-center justify-between border-b bg-gradient-to-r from-primary/5 to-accent/5 p-4">
 				<div className="flex min-w-0 flex-1 items-center gap-3">
@@ -201,9 +201,12 @@ export default function ChatSection() {
 			</div>
 
 			{/* Messages Area */}
-			<div className="min-h-0 flex-1 overflow-y-auto" ref={scrollAreaRef}>
+			<div
+				className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+				ref={scrollAreaRef}
+			>
 				{/* Welcome State */}
-				<div className="h-full px-4 py-3">
+				<div className="min-h-full px-4 py-3">
 					{!(hasMessages || isLoading) && (
 						<div className="fade-in-0 slide-in-from-bottom-4 h-full animate-in space-y-6 duration-500">
 							<div className="flex h-full flex-col justify-between">

@@ -56,11 +56,11 @@ export default function AIAssistantMain() {
 
 	return (
 		<div className="h-full bg-gradient-to-br from-background to-muted/20">
-			<div className="flex h-full flex-1 flex-col gap-3 overflow-hidden lg:flex-row">
+			<div className="flex h-full flex-col gap-3 overflow-hidden lg:flex-row">
 				<div
 					className={cn(
-						'flex flex-col overflow-hidden',
-						shouldShowVisualization ? 'lg:flex-[0.6]' : 'flex-1'
+						'flex min-h-0 flex-col overflow-hidden',
+						shouldShowVisualization ? 'flex-1 lg:flex-[3]' : 'flex-1'
 					)}
 				>
 					<Suspense fallback={<ChatSkeleton />}>
@@ -68,7 +68,7 @@ export default function AIAssistantMain() {
 					</Suspense>
 				</div>
 				{shouldShowVisualization && (
-					<div className="flex flex-[0.4] flex-col overflow-hidden">
+					<div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-[2]">
 						<Suspense fallback={<VisualizationSkeleton />}>
 							<VisualizationSection />
 						</Suspense>
