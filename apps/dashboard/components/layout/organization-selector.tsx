@@ -6,9 +6,7 @@ import {
 	PlusIcon,
 	SpinnerGapIcon,
 	UserIcon,
-	UsersIcon,
 } from '@phosphor-icons/react';
-import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { CreateOrganizationDialog } from '@/components/organizations/create-organization-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -73,7 +71,7 @@ function OrganizationSelectorTrigger({
 	return (
 		<div
 			className={cn(
-				'flex h-16 w-full items-center border-sidebar-border border-b bg-sidebar-accent px-5 py-3 transition-colors',
+				'flex h-12 w-full items-center border-sidebar-border border-b bg-sidebar-accent px-3 py-3 transition-colors',
 				'hover:bg-sidebar-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
 				isSettingActiveOrganization && 'cursor-not-allowed opacity-70',
 				isOpen && 'bg-sidebar-accent/60'
@@ -138,20 +136,16 @@ export function OrganizationSelector() {
 		hasError,
 		activeOrganizationError,
 	} = useOrganizations();
-	const router = useRouter();
 	const [isOpen, setIsOpen] = useState(false);
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 	const [query, setQuery] = useState('');
 
-	// Handle case where active organization is not found (deleted)
 	const [hasHandledMissingOrg, setHasHandledMissingOrg] = useState(false);
 
-	// Check if the error indicates the organization was not found
 	const isActiveOrgNotFound =
 		activeOrganizationError?.message?.includes('ORGANIZATION_NOT_FOUND') ||
 		activeOrganizationError?.message?.includes('Organization not found');
 
-	// Auto-recover from deleted active organization
 	if (
 		isActiveOrgNotFound &&
 		!hasHandledMissingOrg &&
@@ -181,16 +175,11 @@ export function OrganizationSelector() {
 		setIsOpen(false);
 	}, []);
 
-	const handleManageOrganizations = useCallback(() => {
-		router.push('/organizations');
-		setIsOpen(false);
-	}, [router]);
-
 	const filteredOrganizations = filterOrganizations(organizations, query);
 
 	if (isLoading) {
 		return (
-			<div className="flex h-16 w-full items-center border-sidebar-border border-b bg-sidebar-accent px-5 py-3">
+			<div className="flex h-12 w-full items-center border-sidebar-border border-b bg-sidebar-accent px-3 py-3">
 				<div className="flex w-full items-center justify-between">
 					<div className="flex items-center gap-3">
 						<div className="rounded-lg bg-sidebar/80 p-1.5 shadow-sm ring-1 ring-sidebar-border/50">
@@ -209,7 +198,7 @@ export function OrganizationSelector() {
 
 	if (hasError && !isActiveOrgNotFound) {
 		return (
-			<div className="border-sidebar-border border-b bg-destructive/10 px-5 py-3">
+			<div className="border-sidebar-border border-b bg-destructive/10 px-3 py-3">
 				<div className="flex items-center gap-3">
 					<div className="rounded bg-sidebar/80 p-1.5 shadow-sm ring-1 ring-destructive/50">
 						<UserIcon className="h-5 w-5 text-destructive" weight="duotone" />
@@ -251,24 +240,23 @@ export function OrganizationSelector() {
 						/>
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="start" className="w-72 p-1" sideOffset={4}>
-					{/* Personal Workspace */}
+				<DropdownMenuContent
+					align="start"
+					className="w-72 rounded-none border-sidebar-border bg-sidebar p-0"
+					sideOffset={0}
+				>
 					<DropdownMenuItem
 						className={cn(
-							'flex cursor-pointer items-center gap-3 rounded px-2 py-2 transition-colors',
-							'focus:bg-accent focus:text-accent-foreground',
-							!activeOrganization && 'bg-accent text-accent-foreground'
+							'flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors',
+							'hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground text-sidebar-foreground/70',
+							!activeOrganization && 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
 						)}
 						onClick={() => handleSelectOrganization(null)}
 					>
-						<Avatar className="h-6 w-6">
-							<AvatarFallback className="bg-muted text-xs">
-								<UserIcon className="not-dark:text-primary" weight="duotone" />
-							</AvatarFallback>
-						</Avatar>
+						<UserIcon className="h-5 w-5 not-dark:text-primary" weight="duotone" />
 						<div className="flex min-w-0 flex-1 flex-col items-start text-left">
 							<span className="text-left font-medium text-sm">Personal</span>
-							<span className="text-left text-muted-foreground text-xs">
+							<span className="text-left text-sidebar-foreground/70 text-xs">
 								Your workspace
 							</span>
 						</div>
@@ -281,22 +269,22 @@ export function OrganizationSelector() {
 					</DropdownMenuItem>
 
 					{filteredOrganizations && filteredOrganizations.length > 0 && (
-						<div className="flex flex-col gap-1">
-							<DropdownMenuSeparator className="my-1" />
+						<div className="flex flex-col">
+							<DropdownMenuSeparator className="my-1 bg-sidebar-border" />
 							{filteredOrganizations.map((org) => (
 								<DropdownMenuItem
 									className={cn(
-										'flex cursor-pointer items-center gap-3 rounded px-2 py-2 transition-colors',
-										'focus:bg-accent focus:text-accent-foreground',
+										'flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors',
+										'hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground text-sidebar-foreground/70',
 										activeOrganization?.id === org.id &&
-											'bg-accent text-accent-foreground'
+											'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
 									)}
 									key={org.id}
 									onClick={() => handleSelectOrganization(org.id)}
 								>
-									<Avatar className="h-6 w-6">
+									<Avatar className="h-5 w-5">
 										<AvatarImage alt={org.name} src={org.logo || undefined} />
-										<AvatarFallback className="bg-muted text-xs">
+										<AvatarFallback className="bg-sidebar-primary/30 text-xs">
 											{getOrganizationInitials(org.name)}
 										</AvatarFallback>
 									</Avatar>
@@ -304,13 +292,13 @@ export function OrganizationSelector() {
 										<span className="truncate text-left font-medium text-sm">
 											{org.name}
 										</span>
-										<span className="truncate text-left text-muted-foreground text-xs">
+										<span className="truncate text-left text-sidebar-foreground/70 text-xs">
 											{org.slug}
 										</span>
 									</div>
 									{activeOrganization?.id === org.id && (
 										<CheckIcon
-											className="h-4 w-4 text-primary"
+											className="h-4 w-4 not-dark:text-primary"
 											weight="duotone"
 										/>
 									)}
@@ -320,29 +308,18 @@ export function OrganizationSelector() {
 					)}
 
 					{filteredOrganizations.length === 0 && (
-						<div className="px-2 py-2 text-muted-foreground text-xs">
-							No workspaces match “{query}”.
+						<div className="px-4 py-2.5 text-sidebar-foreground/60 text-xs">
+							No workspaces match "{query}".
 						</div>
 					)}
 
-					<DropdownMenuSeparator className="my-1" />
+					<DropdownMenuSeparator className="my-1 bg-sidebar-border" />
 					<DropdownMenuItem
-						className="flex cursor-pointer items-center gap-3 rounded px-2 py-2 transition-colors focus:bg-accent focus:text-accent-foreground"
+						className="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground text-sidebar-foreground/70"
 						onClick={handleCreateOrganization}
 					>
-						<div className="flex h-6 w-6 items-center justify-center rounded bg-muted">
-							<PlusIcon className="not-dark:text-primary" />
-						</div>
+						<PlusIcon className="h-5 w-5 not-dark:text-primary" />
 						<span className="font-medium text-sm">Create Organization</span>
-					</DropdownMenuItem>
-					<DropdownMenuItem
-						className="flex cursor-pointer items-center gap-3 rounded px-2 py-2 transition-colors focus:bg-accent focus:text-accent-foreground"
-						onClick={handleManageOrganizations}
-					>
-						<div className="flex h-6 w-6 items-center justify-center rounded bg-muted">
-							<UsersIcon className="not-dark:text-primary" weight="duotone" />
-						</div>
-						<span className="font-medium text-sm">Manage Organizations</span>
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>

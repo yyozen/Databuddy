@@ -58,7 +58,7 @@ export function CategorySidebar({
 		<div className="fixed inset-y-0 left-0 z-40 w-12 border-r bg-sidebar-primary border-sidebar-border">
 			<div className="flex h-full flex-col">
 				{/* Logo */}
-				<div className="flex h-16 items-center justify-center border-sidebar-border border-b">
+				<div className="flex h-12 items-center justify-center border-sidebar-border border-b">
 					<Link 
 						className="relative flex-shrink-0 transition-opacity hover:opacity-80"
 						href="/websites"

@@ -149,7 +149,7 @@ export function Sidebar() {
 	return (
 		<>
 			{/* Mobile Header */}
-			<header className="fixed top-0 right-0 left-0 z-50 h-16 w-full border-b bg-background md:hidden">
+			<header className="fixed top-0 right-0 left-0 z-50 h-12 w-full border-b bg-background md:hidden">
 				<div className="flex h-full items-center justify-between px-4">
 					<div className="flex items-center gap-3">
 						<Button
@@ -209,8 +209,8 @@ export function Sidebar() {
 				className={cn(
 					'fixed inset-y-0 z-40 w-72 bg-sidebar',
 					'border-r border-sidebar-border transition-transform duration-200 ease-out',
-					'left-0 md:left-12', // Mobile: left-0, Desktop: left-12 (after category sidebar)
-					'pt-16 md:pt-0', // Mobile: account for mobile header, Desktop: no top padding
+					'left-0 md:left-12',
+					'pt-12 md:pt-0',
 					'md:translate-x-0',
 					isMobileOpen ? 'translate-x-0' : '-translate-x-full'
 				)}

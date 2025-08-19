@@ -12,7 +12,7 @@ export function WebsiteHeader({ website }: WebsiteHeaderProps) {
 	return (
 		<div className="border-sidebar-border border-b bg-sidebar-accent">
 			{/* Website info - aligned with logo section */}
-			<div className="flex h-16 items-center justify-center border-sidebar-border border-b bg-gradient-to-r from-sidebar-accent to-sidebar-accent/80 px-5">
+			<div className="flex h-12 items-center border-sidebar-border border-b bg-gradient-to-r from-sidebar-accent to-sidebar-accent/80 px-3">
 				<div className="flex w-full items-center gap-3">
 					<div className="rounded-lg bg-sidebar/80 p-1.5 shadow-sm ring-1 ring-sidebar-border/50">
 						<FaviconImage
@@ -50,7 +50,7 @@ export function WebsiteHeader({ website }: WebsiteHeaderProps) {
 
 			{/* Back navigation - aligned with category buttons */}
 			<button
-				className="group flex w-full cursor-pointer items-start justify-start p-2 transition-colors hover:bg-sidebar-accent/60"
+				className="group flex w-full cursor-pointer items-center justify-start px-3 py-2 transition-colors hover:bg-sidebar-accent/60"
 				type="button"
 			>
 				<Link className="flex items-center gap-2" href="/websites">

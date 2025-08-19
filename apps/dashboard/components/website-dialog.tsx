@@ -103,7 +103,7 @@ export function WebsiteDialog({
 				toast.success('Website created successfully!');
 			}
 			onOpenChange(false);
-		} catch (error) {
+		} catch (error: never) {
 			const message =
 				error.data?.code === 'CONFLICT'
 					? 'A website with this domain already exists.'
