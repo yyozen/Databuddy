@@ -1,16 +1,10 @@
 'use client';
 
-import { FloppyDiskIcon, GearIcon } from '@phosphor-icons/react';
+import { FloppyDiskIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card';
+
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { type Organization, useOrganizations } from '@/hooks/use-organizations';
@@ -69,80 +63,87 @@ export function GeneralSettings({ organization }: GeneralSettingsProps) {
 	const hasChanges = name !== organization.name || slug !== organization.slug;
 
 	return (
-		<div className="space-y-6">
-			<Card>
-				<CardHeader>
-					<div className="flex items-center gap-2">
-						<div className="rounded border p-2">
-							<GearIcon
-								className="h-5 w-5 not-dark:text-primary"
-								size={16}
-								weight="duotone"
-							/>
-						</div>
-						<div>
-							<CardTitle>Organization Details</CardTitle>
-							<CardDescription>
-								Update your organization's basic information and settings.
-							</CardDescription>
-						</div>
-					</div>
-				</CardHeader>
-				<CardContent className="space-y-6">
+		<div className="h-full p-6">
+			<div className="space-y-8">
+				{/* Content Sections */}
+				<div className="space-y-8">
 					{/* Logo Upload Section */}
-					<div className="space-y-4">
-						<OrganizationLogoUploader organization={organization} />
+					<div className="rounded border bg-card p-6">
+						<div className="space-y-4">
+							<div>
+								<h3 className="font-semibold text-lg">Organization Logo</h3>
+								<p className="text-muted-foreground text-sm">
+									Upload a logo to represent your organization
+								</p>
+							</div>
+							<OrganizationLogoUploader organization={organization} />
+						</div>
 					</div>
 
 					{/* Name and Slug Section */}
-					<div className="grid gap-4 sm:grid-cols-2">
-						<div className="space-y-2">
-							<Label htmlFor="name">Organization Name</Label>
-							<Input
-								id="name"
-								onChange={(e) => setName(e.target.value)}
-								placeholder="Enter organization name"
-								value={name}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="slug">Organization Slug</Label>
-							<Input
-								id="slug"
-								onChange={(e) => handleSlugChange(e.target.value)}
-								placeholder="organization-slug"
-								value={slug}
-							/>
-							<p className="text-muted-foreground text-xs">
-								This will be used in your organization URL
-							</p>
+					<div className="rounded border bg-card p-6">
+						<div className="space-y-6">
+							<div>
+								<h3 className="font-semibold text-lg">Basic Information</h3>
+								<p className="text-muted-foreground text-sm">
+									Configure your organization's name and URL identifier
+								</p>
+							</div>
+
+							<div className="grid gap-6 sm:grid-cols-2">
+								<div className="space-y-3">
+									<Label className="font-medium" htmlFor="name">
+										Organization Name
+									</Label>
+									<Input
+										id="name"
+										onChange={(e) => setName(e.target.value)}
+										placeholder="Enter organization name"
+										value={name}
+									/>
+								</div>
+								<div className="space-y-3">
+									<Label className="font-medium" htmlFor="slug">
+										Organization Slug
+									</Label>
+									<Input
+										id="slug"
+										onChange={(e) => handleSlugChange(e.target.value)}
+										placeholder="organization-slug"
+										value={slug}
+									/>
+									<p className="text-muted-foreground text-xs">
+										This will be used in your organization URL
+									</p>
+								</div>
+							</div>
+
+							{/* Save Button */}
+							{hasChanges && (
+								<div className="flex justify-end border-t pt-4">
+									<Button
+										className="px-6"
+										disabled={isSaving}
+										onClick={handleSave}
+									>
+										{isSaving ? (
+											<>
+												<div className="mr-2 h-4 w-4 animate-spin rounded-full border border-primary-foreground/30 border-t-primary-foreground" />
+												Saving...
+											</>
+										) : (
+											<>
+												<FloppyDiskIcon className="mr-2 h-4 w-4" size={16} />
+												Save Changes
+											</>
+										)}
+									</Button>
+								</div>
+							)}
 						</div>
 					</div>
-
-					{/* Save Button */}
-					{hasChanges && (
-						<div className="flex justify-end">
-							<Button
-								className="rounded"
-								disabled={isSaving}
-								onClick={handleSave}
-							>
-								{isSaving ? (
-									<>
-										<div className="mr-2 h-4 w-4 animate-spin rounded-full border border-primary-foreground/30 border-t-primary-foreground" />
-										Saving...
-									</>
-								) : (
-									<>
-										<FloppyDiskIcon className="mr-2 h-4 w-4" size={16} />
-										Save Changes
-									</>
-								)}
-							</Button>
-						</div>
-					)}
-				</CardContent>
-			</Card>
+				</div>
+			</div>
 		</div>
 	);
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { TrashIcon, WarningIcon } from '@phosphor-icons/react';
+import { TrashIcon } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -15,21 +15,15 @@ import {
 	AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card';
+
 import { type Organization, useOrganizations } from '@/hooks/use-organizations';
 import { TransferAssets } from './transfer-assets';
 
-interface DangerZoneSettingsProps {
+export function DangerZoneSettings({
+	organization,
+}: {
 	organization: Organization;
-}
-
-export function DangerZoneSettings({ organization }: DangerZoneSettingsProps) {
+}) {
 	const router = useRouter();
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -41,7 +35,7 @@ export function DangerZoneSettings({ organization }: DangerZoneSettingsProps) {
 		try {
 			await deleteOrganizationAsync(organization.id);
 			toast.success('Organization deleted successfully');
-			router.push('/organizations2');
+			router.push('/organizations');
 		} catch (_error) {
 			toast.error('Failed to delete organization');
 		} finally {
@@ -51,52 +45,52 @@ export function DangerZoneSettings({ organization }: DangerZoneSettingsProps) {
 	};
 
 	return (
-		<div className="space-y-6">
-			<Card className="border-destructive/20">
-				<CardHeader>
-					<div className="flex items-center gap-2">
-						<div className="rounded border border-destructive/20 bg-destructive/10 p-2">
-							<WarningIcon
-								className="h-5 w-5 text-destructive"
-								size={16}
-								weight="duotone"
-							/>
+		<div className="h-full p-6">
+			<div className="space-y-8">
+				{/* Content Sections */}
+				<div className="space-y-8">
+					{/* Transfer Assets Section */}
+					<div className="rounded-lg border bg-card">
+						<div className="border-b p-6">
+							<h3 className="font-semibold text-lg">Transfer Assets</h3>
+							<p className="text-muted-foreground text-sm">
+								Move websites between your personal account and organization
+							</p>
 						</div>
-						<div>
-							<CardTitle className="text-destructive">Danger Zone</CardTitle>
-							<CardDescription>
-								Irreversible and destructive actions for this organization.
-							</CardDescription>
+						<div className="p-6">
+							<TransferAssets organizationId={organization.id} />
 						</div>
 					</div>
-				</CardHeader>
-				<CardContent className="space-y-6">
-					<TransferAssets organizationId={organization.id} />
 
-					<div className="rounded border border-destructive/20 bg-destructive/5 p-4">
-						<div className="flex items-start justify-between">
-							<div className="flex-1">
-								<h4 className="font-medium text-destructive">
-									Delete Organization
-								</h4>
-								<p className="mt-1 text-destructive/80 text-sm">
-									Once you delete an organization, there is no going back.
-									Please be certain.
-								</p>
+					{/* Delete Organization Section */}
+					<div className="rounded-lg border border-destructive/20 bg-destructive/5">
+						<div className="p-6">
+							<div className="space-y-4">
+								<div>
+									<h3 className="font-semibold text-destructive text-lg">
+										Delete Organization
+									</h3>
+									<p className="text-destructive/80 text-sm">
+										Once you delete an organization, there is no going back.
+										Please be certain.
+									</p>
+								</div>
+
+								<div className="flex justify-end">
+									<Button
+										onClick={() => setShowDeleteDialog(true)}
+										size="default"
+										variant="destructive"
+									>
+										<TrashIcon className="mr-2 h-4 w-4" size={16} />
+										Delete Organization
+									</Button>
+								</div>
 							</div>
-							<Button
-								className="ml-4 rounded"
-								onClick={() => setShowDeleteDialog(true)}
-								size="sm"
-								variant="destructive"
-							>
-								<TrashIcon className="mr-2 h-4 w-4" size={16} />
-								Delete Organization
-							</Button>
 						</div>
 					</div>
-				</CardContent>
-			</Card>
+				</div>
+			</div>
 
 			<AlertDialog onOpenChange={setShowDeleteDialog} open={showDeleteDialog}>
 				<AlertDialogContent>

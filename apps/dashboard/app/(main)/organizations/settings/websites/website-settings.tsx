@@ -95,7 +95,7 @@ function EnhancedEmptyState() {
 					</Link>
 				</Button>
 
-				<div className="mt-8 max-w-md rounded-xl border bg-muted/50 p-6">
+				<div className="mt-8 max-w-md rounded border bg-muted/50 p-6">
 					<div className="flex items-start gap-3">
 						<div className="rounded-lg bg-primary/10 p-2">
 							<SparkleIcon

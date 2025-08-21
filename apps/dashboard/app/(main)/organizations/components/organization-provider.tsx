@@ -13,11 +13,10 @@ import {
 } from '@phosphor-icons/react';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { ApiKeyCreateDialog } from '@/components/organizations/api-key-create-dialog';
+
 import { CreateOrganizationDialog } from '@/components/organizations/create-organization-dialog';
 import { InviteMemberDialog } from '@/components/organizations/invite-member-dialog';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOrganizations } from '@/hooks/use-organizations';
 
@@ -30,7 +29,6 @@ export function OrganizationProvider({
 	const pathname = usePathname();
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 	const [showInviteMemberDialog, setShowInviteMemberDialog] = useState(false);
-	const [showCreateApiKeyDialog, setShowCreateApiKeyDialog] = useState(false);
 
 	const getPageInfo = () => {
 		if (pathname === '/organizations') {
@@ -93,11 +91,6 @@ export function OrganizationProvider({
 				description: 'Create and manage API keys for this organization',
 				icon: KeyIcon,
 				requiresOrg: true,
-				actionButton: {
-					text: 'Create API Key',
-					icon: PlusIcon,
-					action: () => setShowCreateApiKeyDialog(true),
-				},
 			};
 		}
 		if (pathname === '/organizations/settings/danger') {
@@ -135,7 +128,7 @@ export function OrganizationProvider({
 					<div className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center sm:gap-0 sm:px-6 sm:py-6">
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-4">
-								<div className="rounded-xl border border-primary/20 bg-primary/10 p-3">
+								<div className="rounded border border-primary/20 bg-primary/10 p-3">
 									<Skeleton className="h-6 w-6" />
 								</div>
 								<div>
@@ -162,7 +155,7 @@ export function OrganizationProvider({
 					<div className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center sm:gap-0 sm:px-6 sm:py-6">
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-4">
-								<div className="rounded-xl border border-primary/20 bg-primary/10 p-3">
+								<div className="rounded border border-primary/20 bg-primary/10 p-3">
 									<Icon
 										className="h-6 w-6 text-primary"
 										size={24}
@@ -192,33 +185,29 @@ export function OrganizationProvider({
 					</div>
 				</div>
 
-				<main className="flex-1 overflow-y-auto p-4 sm:p-6">
-					<div className="mx-auto max-w-6xl">
-						<Card className="p-6">
-							<div className="text-center">
-								<Icon
-									className="mx-auto mb-4 h-12 w-12 text-muted-foreground"
-									size={48}
-									weight="duotone"
-								/>
-								<h3 className="mb-2 font-semibold text-lg">
-									Select an Organization
-								</h3>
-								<p className="text-muted-foreground text-sm">
-									This feature requires an active organization.
-								</p>
-								<div className="mt-4">
-									<Button
-										className="rounded"
-										onClick={() => setShowCreateDialog(true)}
-										size="sm"
-									>
-										<BuildingsIcon className="mr-2 h-5 w-5" size={20} />
-										Create organization
-									</Button>
-								</div>
-							</div>
-						</Card>
+				<main className="flex flex-1 items-center justify-center p-6">
+					<div className="w-full max-w-md rounded-lg border bg-card p-8 text-center">
+						<Icon
+							className="mx-auto mb-4 h-12 w-12 text-muted-foreground"
+							size={48}
+							weight="duotone"
+						/>
+						<h3 className="mb-2 font-semibold text-lg">
+							Select an Organization
+						</h3>
+						<p className="text-muted-foreground text-sm">
+							This feature requires an active organization.
+						</p>
+						<div className="mt-6">
+							<Button
+								className="rounded"
+								onClick={() => setShowCreateDialog(true)}
+								size="default"
+							>
+								<BuildingsIcon className="mr-2 h-5 w-5" size={20} />
+								Create organization
+							</Button>
+						</div>
 					</div>
 				</main>
 			</div>
@@ -231,7 +220,7 @@ export function OrganizationProvider({
 				<div className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center sm:gap-0 sm:px-6 sm:py-6">
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-4">
-							<div className="rounded-xl border border-primary/20 bg-primary/10 p-3">
+							<div className="rounded border border-primary/20 bg-primary/10 p-3">
 								<Icon
 									className="h-6 w-6 text-primary"
 									size={24}
@@ -261,9 +250,7 @@ export function OrganizationProvider({
 				</div>
 			</div>
 
-			<main className="flex-1 overflow-y-auto p-4 sm:p-6">
-				<div className="mx-auto max-w-6xl">{children}</div>
-			</main>
+			<main className="flex-1 overflow-y-auto">{children}</main>
 
 			<CreateOrganizationDialog
 				isOpen={showCreateDialog}
@@ -274,14 +261,6 @@ export function OrganizationProvider({
 				<InviteMemberDialog
 					onOpenChange={setShowInviteMemberDialog}
 					open={showInviteMemberDialog}
-					organizationId={activeOrganization.id}
-				/>
-			)}
-
-			{activeOrganization && (
-				<ApiKeyCreateDialog
-					onOpenChange={setShowCreateApiKeyDialog}
-					open={showCreateApiKeyDialog}
 					organizationId={activeOrganization.id}
 				/>
 			)}

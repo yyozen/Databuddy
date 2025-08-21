@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ApiKeyCreateDialog } from '@/components/organizations/api-key-create-dialog';
 import { ApiKeyDetailDialog } from '@/components/organizations/api-key-detail-dialog';
 import { ApiKeyList } from '@/components/organizations/api-key-list';
-import { Card, CardContent } from '@/components/ui/card';
+
 import type { Organization } from '@/hooks/use-organizations';
 
 interface ApiKeySettingsProps {
@@ -28,16 +28,12 @@ export function ApiKeySettings({ organization }: ApiKeySettingsProps) {
 	};
 
 	return (
-		<div className="space-y-6">
-			<Card>
-				<CardContent className="pt-6">
-					<ApiKeyList
-						onCreateNew={handleCreateApiKey}
-						onSelect={handleSelectApiKey}
-						organizationId={organization.id}
-					/>
-				</CardContent>
-			</Card>
+		<div className="h-full p-6">
+			<ApiKeyList
+				onCreateNew={handleCreateApiKey}
+				onSelect={handleSelectApiKey}
+				organizationId={organization.id}
+			/>
 
 			{/* API Key Dialogs */}
 			<ApiKeyCreateDialog
