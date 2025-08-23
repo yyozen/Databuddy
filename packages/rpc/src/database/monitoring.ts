@@ -28,6 +28,24 @@ export interface TableStats {
 	indexSize: string;
 	lastVacuum?: string;
 	lastAnalyze?: string;
+	sequentialScans: number;
+	indexScans: number;
+	deadTuples: number;
+}
+
+export interface ExtensionInfo {
+	name: string;
+	version: string;
+	schema: string;
+	description: string;
+	installed: boolean;
+}
+
+export interface AvailableExtension {
+	name: string;
+	defaultVersion: string;
+	description: string;
+	comment: string;
 }
 
 /**
@@ -130,7 +148,7 @@ export async function getDatabaseStats(
  */
 export async function getTableStats(
 	connectionUrl: string,
-	limit = 20
+	limit?: number
 ): Promise<TableStats[]> {
 	const client = new Client({
 		connectionString: connectionUrl,
@@ -141,22 +159,26 @@ export async function getTableStats(
 	try {
 		await client.connect();
 
-		const result = await client.query(
-			`
+		const query = `
 			SELECT 
 				schemaname as schema_name,
 				relname as table_name,
-				n_tup_ins + n_tup_upd + n_tup_del as row_count,
+				n_live_tup as row_count,
 				pg_size_pretty(pg_total_relation_size(quote_ident(schemaname)||'.'||quote_ident(relname))) as total_size,
 				pg_size_pretty(pg_indexes_size(quote_ident(schemaname)||'.'||quote_ident(relname))) as index_size,
 				last_vacuum,
-				last_analyze
+				last_analyze,
+				seq_scan as sequential_scans,
+				idx_scan as index_scans,
+				n_dead_tup as dead_tuples
 			FROM pg_stat_user_tables 
 			ORDER BY pg_total_relation_size(quote_ident(schemaname)||'.'||quote_ident(relname)) DESC
-			LIMIT $1
-		`,
-			[limit]
-		);
+			${limit ? 'LIMIT $1' : ''}
+		`;
+
+		const result = limit
+			? await client.query(query, [limit])
+			: await client.query(query);
 
 		return result.rows.map((row) => ({
 			tableName: row.table_name,
@@ -170,7 +192,138 @@ export async function getTableStats(
 			lastAnalyze: row.last_analyze
 				? new Date(row.last_analyze).toISOString()
 				: undefined,
+			sequentialScans: Number.parseInt(row.sequential_scans || '0', 10),
+			indexScans: Number.parseInt(row.index_scans || '0', 10),
+			deadTuples: Number.parseInt(row.dead_tuples || '0', 10),
 		}));
+	} finally {
+		await client.end();
+	}
+}
+
+/**
+ * Get PostgreSQL extensions information
+ */
+export async function getExtensions(
+	connectionUrl: string
+): Promise<ExtensionInfo[]> {
+	const client = new Client({
+		connectionString: connectionUrl,
+		connectionTimeoutMillis: 10_000,
+		query_timeout: 30_000,
+	});
+
+	try {
+		await client.connect();
+
+		const result = await client.query(`
+			SELECT 
+				e.extname as name,
+				e.extversion as version,
+				n.nspname as schema,
+				COALESCE(c.description, 'No description available') as description,
+				true as installed
+			FROM pg_extension e
+			LEFT JOIN pg_namespace n ON n.oid = e.extnamespace
+			LEFT JOIN pg_description c ON c.objoid = e.oid AND c.classoid = 'pg_extension'::regclass
+			ORDER BY e.extname
+		`);
+
+		return result.rows.map((row) => ({
+			name: row.name,
+			version: row.version,
+			schema: row.schema,
+			description: row.description,
+			installed: row.installed,
+		}));
+	} finally {
+		await client.end();
+	}
+}
+
+/**
+ * Get available PostgreSQL extensions that can be installed
+ */
+export async function getAvailableExtensions(
+	connectionUrl: string
+): Promise<AvailableExtension[]> {
+	const client = new Client({
+		connectionString: connectionUrl,
+		connectionTimeoutMillis: 10_000,
+		query_timeout: 30_000,
+	});
+
+	try {
+		await client.connect();
+
+		const result = await client.query(`
+			SELECT 
+				name,
+				default_version,
+				comment
+			FROM pg_available_extensions
+			WHERE name NOT IN (
+				SELECT extname FROM pg_extension
+			)
+			ORDER BY name
+		`);
+
+		return result.rows.map((row) => ({
+			name: row.name,
+			defaultVersion: row.default_version,
+			description: row.comment || 'No description available',
+			comment: row.comment || '',
+		}));
+	} finally {
+		await client.end();
+	}
+}
+
+/**
+ * Install a PostgreSQL extension
+ */
+export async function installExtension(
+	connectionUrl: string,
+	extensionName: string,
+	schema?: string
+): Promise<void> {
+	const client = new Client({
+		connectionString: connectionUrl,
+		connectionTimeoutMillis: 10_000,
+		query_timeout: 30_000,
+	});
+
+	try {
+		await client.connect();
+
+		let query = `CREATE EXTENSION IF NOT EXISTS "${extensionName}"`;
+		if (schema) {
+			query += ` WITH SCHEMA "${schema}"`;
+		}
+
+		await client.query(query);
+	} finally {
+		await client.end();
+	}
+}
+
+/**
+ * Drop a PostgreSQL extension
+ */
+export async function dropExtension(
+	connectionUrl: string,
+	extensionName: string
+): Promise<void> {
+	const client = new Client({
+		connectionString: connectionUrl,
+		connectionTimeoutMillis: 10_000,
+		query_timeout: 30_000,
+	});
+
+	try {
+		await client.connect();
+
+		await client.query(`DROP EXTENSION IF EXISTS "${extensionName}"`);
 	} finally {
 		await client.end();
 	}

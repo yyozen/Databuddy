@@ -5,7 +5,9 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import {
 	createReadonlyUser,
+	getAvailableExtensions,
 	getDatabaseStats,
+	getExtensions,
 	getTableStats,
 	testConnection,
 } from '../database';
@@ -263,6 +265,32 @@ export const dbConnectionsRouter = createTRPCRouter({
 		}),
 
 	getTableStats: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				limit: z.number().optional(),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			const connection = await authorizeDbConnectionAccess(
+				ctx,
+				input.id,
+				'read'
+			);
+
+			try {
+				const decryptedUrl = decryptConnectionUrl(connection.url);
+				const stats = await getTableStats(decryptedUrl, input.limit);
+				return stats;
+			} catch (error) {
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: `Failed to get table stats: ${error.message}`,
+				});
+			}
+		}),
+
+	getExtensions: protectedProcedure
 		.input(z.object({ id: z.string() }))
 		.query(async ({ ctx, input }) => {
 			const connection = await authorizeDbConnectionAccess(
@@ -273,13 +301,65 @@ export const dbConnectionsRouter = createTRPCRouter({
 
 			try {
 				const decryptedUrl = decryptConnectionUrl(connection.url);
-				const stats = await getTableStats(decryptedUrl);
-				return stats;
+				const extensions = await getExtensions(decryptedUrl);
+				return extensions;
 			} catch (error) {
 				throw new TRPCError({
 					code: 'INTERNAL_SERVER_ERROR',
-					message: `Failed to get table stats: ${error.message}`,
+					message: `Failed to get extensions: ${error.message}`,
 				});
 			}
+		}),
+
+	getAvailableExtensions: protectedProcedure
+		.input(z.object({ id: z.string() }))
+		.query(async ({ ctx, input }) => {
+			const connection = await authorizeDbConnectionAccess(
+				ctx,
+				input.id,
+				'read'
+			);
+
+			try {
+				const decryptedUrl = decryptConnectionUrl(connection.url);
+				const availableExtensions = await getAvailableExtensions(decryptedUrl);
+				return availableExtensions;
+			} catch (error) {
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: `Failed to get available extensions: ${error.message}`,
+				});
+			}
+		}),
+
+	installExtension: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				extensionName: z.string(),
+				schema: z.string().optional(),
+			})
+		)
+		.mutation(() => {
+			throw new TRPCError({
+				code: 'FORBIDDEN',
+				message:
+					'Extension installation requires admin database access. This feature is not available with read-only connections.',
+			});
+		}),
+
+	dropExtension: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				extensionName: z.string(),
+			})
+		)
+		.mutation(() => {
+			throw new TRPCError({
+				code: 'FORBIDDEN',
+				message:
+					'Extension removal requires admin database access. This feature is not available with read-only connections.',
+			});
 		}),
 });
