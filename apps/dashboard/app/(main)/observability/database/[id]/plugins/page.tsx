@@ -4,6 +4,7 @@ import {
 	ArrowClockwiseIcon,
 	CheckIcon,
 	DatabaseIcon,
+	GearIcon,
 	MagnifyingGlassIcon,
 	PlusIcon,
 	ShieldCheckIcon,
@@ -478,6 +479,132 @@ function UpgradeConnectionDialog({
 	);
 }
 
+function ConfigurationRequiredDialog({
+	open,
+	onOpenChange,
+	extensionName,
+	warnings,
+}: {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	extensionName: string;
+	warnings: string[];
+}) {
+	const copyToClipboard = (text: string) => {
+		navigator.clipboard.writeText(text);
+	};
+
+	return (
+		<Dialog onOpenChange={onOpenChange} open={open}>
+			<DialogContent className="max-h-[80vh] max-w-lg overflow-y-auto">
+				<DialogHeader>
+					<DialogTitle className="flex items-center gap-2">
+						<GearIcon className="h-5 w-5" />
+						Configuration Required
+					</DialogTitle>
+					<DialogDescription>
+						{extensionName} requires PostgreSQL server configuration changes.
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="space-y-4">
+					<Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
+						<WarningIcon className="h-4 w-4 text-blue-600" />
+						<AlertDescription className="text-blue-800 dark:text-blue-200">
+							<p className="font-medium text-sm">
+								Server Configuration Required
+							</p>
+							<p className="mt-1 text-xs">{warnings[0]}</p>
+						</AlertDescription>
+					</Alert>
+
+					<div className="space-y-3">
+						<h4 className="font-medium text-sm">Quick Setup:</h4>
+
+						<div className="space-y-2">
+							<div className="flex items-center gap-2">
+								<div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 font-medium text-blue-800 text-xs dark:bg-blue-900/20 dark:text-blue-400">
+									1
+								</div>
+								<span className="font-medium text-sm">
+									Edit postgresql.conf
+								</span>
+							</div>
+							<div className="ml-7">
+								<div className="relative">
+									<pre className="overflow-x-auto rounded bg-muted p-2 text-xs">
+										<code>{`shared_preload_libraries = '${extensionName}'`}</code>
+									</pre>
+									<Button
+										className="absolute top-1 right-1"
+										onClick={() =>
+											copyToClipboard(
+												`shared_preload_libraries = '${extensionName}'`
+											)
+										}
+										size="sm"
+										variant="ghost"
+									>
+										Copy
+									</Button>
+								</div>
+							</div>
+						</div>
+
+						<div className="space-y-2">
+							<div className="flex items-center gap-2">
+								<div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 font-medium text-blue-800 text-xs dark:bg-blue-900/20 dark:text-blue-400">
+									2
+								</div>
+								<span className="font-medium text-sm">Restart PostgreSQL</span>
+							</div>
+							<div className="ml-7">
+								<div className="relative">
+									<pre className="overflow-x-auto rounded bg-muted p-2 text-xs">
+										<code>sudo systemctl restart postgresql</code>
+									</pre>
+									<Button
+										className="absolute top-1 right-1"
+										onClick={() =>
+											copyToClipboard('sudo systemctl restart postgresql')
+										}
+										size="sm"
+										variant="ghost"
+									>
+										Copy
+									</Button>
+								</div>
+							</div>
+						</div>
+
+						<div className="flex items-center gap-2">
+							<div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 font-medium text-blue-800 text-xs dark:bg-blue-900/20 dark:text-blue-400">
+								3
+							</div>
+							<span className="font-medium text-sm">Try installing again</span>
+						</div>
+					</div>
+
+					<Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
+						<WarningIcon className="h-4 w-4 text-amber-600" />
+						<AlertDescription className="text-amber-800 text-xs dark:text-amber-200">
+							<strong>Note:</strong> Requires server admin access and will
+							restart PostgreSQL.
+						</AlertDescription>
+					</Alert>
+				</div>
+
+				<DialogFooter>
+					<Button onClick={() => onOpenChange(false)} variant="outline">
+						Later
+					</Button>
+					<Button onClick={() => onOpenChange(false)}>Done</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
 function RemoveExtensionDialog({
 	open,
 	onOpenChange,
@@ -581,6 +708,11 @@ export default function ExtensionsPage({ params }: ExtensionsPageProps) {
 	const [forceCascade, setForceCascade] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
+	const [configDialog, setConfigDialog] = useState<{
+		open: boolean;
+		extensionName: string;
+		warnings: string[];
+	}>({ open: false, extensionName: '', warnings: [] });
 
 	const resolvedParams = use(params);
 	const connectionId = resolvedParams.id;
@@ -601,17 +733,39 @@ export default function ExtensionsPage({ params }: ExtensionsPageProps) {
 
 	// Mutations
 	const installMutation = trpc.dbConnections.installExtension.useMutation({
-		onSuccess: (_, variables) => {
-			utils.dbConnections.getExtensions.invalidate({ id: connectionId });
-			utils.dbConnections.getAvailableExtensions.invalidate({
-				id: connectionId,
-			});
-			setInstallDialog(false);
-			setError(null);
-			setSuccess(
-				`Extension "${variables.extensionName}" installed successfully`
-			);
-			setTimeout(() => setSuccess(null), 5000);
+		onSuccess: (result, variables) => {
+			if (result?.success !== false) {
+				// Successful installation
+				utils.dbConnections.getExtensions.invalidate({ id: connectionId });
+				utils.dbConnections.getAvailableExtensions.invalidate({
+					id: connectionId,
+				});
+				setInstallDialog(false);
+				setError(null);
+				setSuccess(
+					`Extension "${variables.extensionName}" installed successfully`
+				);
+				setTimeout(() => setSuccess(null), 5000);
+			} else if (result.warnings) {
+				// Check if this is a configuration-required extension
+				const isConfigRequired = result.warnings.some(
+					(warning) =>
+						warning.includes('shared_preload_libraries') ||
+						warning.includes('restart')
+				);
+
+				if (isConfigRequired) {
+					setConfigDialog({
+						open: true,
+						extensionName: variables.extensionName,
+						warnings: result.warnings,
+					});
+					setInstallDialog(false);
+				} else {
+					setError(`Cannot install extension: ${result.warnings.join(', ')}`);
+				}
+				setSuccess(null);
+			}
 		},
 		onError: (err) => {
 			console.error('Failed to install extension:', err);
@@ -909,6 +1063,18 @@ export default function ExtensionsPage({ params }: ExtensionsPageProps) {
 					});
 				}}
 				open={upgradeDialog}
+			/>
+
+			{/* Configuration Required Dialog */}
+			<ConfigurationRequiredDialog
+				extensionName={configDialog.extensionName}
+				onOpenChange={(open) => {
+					if (!open) {
+						setConfigDialog({ open: false, extensionName: '', warnings: [] });
+					}
+				}}
+				open={configDialog.open}
+				warnings={configDialog.warnings}
 			/>
 
 			{/* Remove Extension Dialog */}
