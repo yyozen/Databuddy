@@ -1,5 +1,4 @@
-import { Analytics } from '../../types/tables';
-import type { SimpleQueryConfig } from '../types';
+import type { Filter, SimpleQueryConfig } from '../types';
 
 export const LinksBuilders: Record<string, SimpleQueryConfig> = {
 	outbound_links: {
@@ -58,34 +57,87 @@ export const LinksBuilders: Record<string, SimpleQueryConfig> = {
 			supports_granularity: ['hour', 'day'],
 			version: '1.0',
 		},
-		table: Analytics.events,
-		fields: [
-			'href',
-			'text',
-			'COUNT(*) as total_clicks',
-			'COUNT(DISTINCT anonymous_id) as unique_users',
-			'COUNT(DISTINCT session_id) as unique_sessions',
-			'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage',
-			'MAX(time) as last_clicked',
-		],
-		where: [
-			"event_name = 'link_out'",
-			'href IS NOT NULL',
-			"href != ''",
-			"href NOT LIKE '%undefined%'",
-			"href NOT LIKE '%null%'",
-			"length(href) > 7",
-			"href LIKE 'http%'",
-			"position('.' IN href) > 0",
-			"text IS NOT NULL",
-			"text != 'undefined'",
-			"text != 'null'",
-			"length(trim(text)) >= 0",
-		],
-		groupBy: ['href', 'text'],
-		orderBy: 'total_clicks DESC',
-		limit: 100,
-		timeField: 'time',
+		customSql: (
+			websiteId: string,
+			startDate: string,
+			endDate: string,
+			_filters?: Filter[],
+			_granularity?: unknown,
+			_limit?: number,
+			_offset?: number,
+			_timezone?: string,
+			filterConditions?: string[],
+			filterParams?: Record<string, Filter['value']>
+		) => {
+			const limit = _limit || 100;
+			const combinedWhereClause = filterConditions?.length
+				? `AND ${filterConditions.join(' AND ')}`
+				: '';
+
+			return {
+				sql: `
+					WITH enriched_links AS (
+						SELECT 
+							ol.href,
+							ol.text,
+							ol.anonymous_id,
+							ol.session_id,
+							ol.timestamp,
+							-- Get context from events table using session_id
+							e.path,
+							e.country,
+							e.device_type,
+							e.browser_name,
+							e.os_name,
+							e.referrer,
+							e.utm_source,
+							e.utm_medium,
+							e.utm_campaign
+						FROM analytics.outgoing_links ol
+						LEFT JOIN analytics.events e ON (
+							ol.session_id = e.session_id 
+							AND ol.client_id = e.client_id
+							AND abs(dateDiff('second', ol.timestamp, e.time)) < 60
+						)
+						WHERE 
+							ol.client_id = {websiteId:String}
+							AND ol.timestamp >= parseDateTimeBestEffort({startDate:String})
+							AND ol.timestamp <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
+							AND ol.href IS NOT NULL
+							AND ol.href != ''
+							AND ol.href NOT LIKE '%undefined%'
+							AND ol.href NOT LIKE '%null%'
+							AND length(ol.href) > 7
+							AND ol.href LIKE 'http%'
+							AND position('.' IN ol.href) > 0
+							AND ol.text != 'undefined'
+							AND ol.text != 'null'
+							AND length(trim(ol.text)) >= 0
+							${combinedWhereClause}
+					)
+					SELECT 
+						href,
+						text,
+						COUNT(*) as total_clicks,
+						COUNT(DISTINCT anonymous_id) as unique_users,
+						COUNT(DISTINCT session_id) as unique_sessions,
+						ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage,
+						MAX(timestamp) as last_clicked
+					FROM enriched_links
+					GROUP BY href, text
+					ORDER BY total_clicks DESC
+					LIMIT {limit:UInt32}
+				`,
+				params: {
+					websiteId,
+					startDate,
+					endDate,
+					limit,
+					...filterParams,
+				},
+			};
+		},
+		timeField: 'timestamp',
 		allowedFilters: [
 			'path',
 			'country',
@@ -96,6 +148,11 @@ export const LinksBuilders: Record<string, SimpleQueryConfig> = {
 			'utm_source',
 			'utm_medium',
 			'utm_campaign',
+			'client_id',
+			'anonymous_id',
+			'session_id',
+			'href',
+			'text',
 		],
 		customizable: true,
 	},
@@ -124,7 +181,8 @@ export const LinksBuilders: Record<string, SimpleQueryConfig> = {
 					name: 'unique_users',
 					type: 'number',
 					label: 'Unique Users',
-					description: 'Number of unique users who clicked links to this domain',
+					description:
+						'Number of unique users who clicked links to this domain',
 				},
 				{
 					name: 'unique_links',
@@ -144,32 +202,86 @@ export const LinksBuilders: Record<string, SimpleQueryConfig> = {
 			supports_granularity: ['hour', 'day'],
 			version: '1.0',
 		},
-		table: Analytics.events,
-		fields: [
-			'domain(href) as domain',
-			'COUNT(*) as total_clicks',
-			'COUNT(DISTINCT anonymous_id) as unique_users',
-			'COUNT(DISTINCT href) as unique_links',
-			'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage',
-		],
-		where: [
-			"event_name = 'link_out'",
-			'href IS NOT NULL',
-			"href != ''",
-			"href NOT LIKE '%undefined%'",
-			"href NOT LIKE '%null%'",
-			"length(href) > 7", // Minimum valid URL length (http://)
-			"href LIKE 'http%'", // Must start with http or https
-			"position('.' IN href) > 0", // Must contain at least one dot
-			"text IS NOT NULL",
-			"text != 'undefined'",
-			"text != 'null'",
-			"length(trim(text)) >= 0", // Allow empty text but not null
-		],
-		groupBy: ['domain(href)'],
-		orderBy: 'total_clicks DESC',
-		limit: 100,
-		timeField: 'time',
+
+		customSql: (
+			websiteId: string,
+			startDate: string,
+			endDate: string,
+			_filters?: Filter[],
+			_granularity?: unknown,
+			_limit?: number,
+			_offset?: number,
+			_timezone?: string,
+			filterConditions?: string[],
+			filterParams?: Record<string, Filter['value']>
+		) => {
+			const limit = _limit || 100;
+			const combinedWhereClause = filterConditions?.length
+				? `AND ${filterConditions.join(' AND ')}`
+				: '';
+
+			return {
+				sql: `
+					WITH enriched_links AS (
+						SELECT 
+							ol.href,
+							ol.text,
+							ol.anonymous_id,
+							ol.session_id,
+							ol.timestamp,
+							-- Get context from events table using session_id
+							e.path,
+							e.country,
+							e.device_type,
+							e.browser_name,
+							e.os_name,
+							e.referrer,
+							e.utm_source,
+							e.utm_medium,
+							e.utm_campaign
+						FROM analytics.outgoing_links ol
+						LEFT JOIN analytics.events e ON (
+							ol.session_id = e.session_id 
+							AND ol.client_id = e.client_id
+							AND abs(dateDiff('second', ol.timestamp, e.time)) < 60
+						)
+						WHERE 
+							ol.client_id = {websiteId:String}
+							AND ol.timestamp >= parseDateTimeBestEffort({startDate:String})
+							AND ol.timestamp <= parseDateTimeBestEffort(concat({endDate:String}, ' 23:59:59'))
+							AND ol.href IS NOT NULL
+							AND ol.href != ''
+							AND ol.href NOT LIKE '%undefined%'
+							AND ol.href NOT LIKE '%null%'
+							AND length(ol.href) > 7
+							AND ol.href LIKE 'http%'
+							AND position('.' IN ol.href) > 0
+							AND ol.text != 'undefined'
+							AND ol.text != 'null'
+							AND length(trim(ol.text)) >= 0
+							${combinedWhereClause}
+					)
+					SELECT 
+						domain(href) as domain,
+						COUNT(*) as total_clicks,
+						COUNT(DISTINCT anonymous_id) as unique_users,
+						COUNT(DISTINCT href) as unique_links,
+						ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage
+					FROM enriched_links
+					GROUP BY domain(href)
+					ORDER BY total_clicks DESC
+					LIMIT {limit:UInt32}
+				`,
+				params: {
+					websiteId,
+					startDate,
+					endDate,
+					limit,
+					...filterParams,
+				},
+			};
+		},
+		timeField: 'timestamp',
 		allowedFilters: [
 			'path',
 			'country',
@@ -180,6 +292,11 @@ export const LinksBuilders: Record<string, SimpleQueryConfig> = {
 			'utm_source',
 			'utm_medium',
 			'utm_campaign',
+			'client_id',
+			'anonymous_id',
+			'session_id',
+			'href',
+			'text',
 		],
 		customizable: true,
 	},

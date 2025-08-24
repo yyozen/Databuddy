@@ -16,6 +16,8 @@ export const Analytics = {
 	stripe_charges: 'analytics.stripe_charges',
 	stripe_refunds: 'analytics.stripe_refunds',
 	blocked_traffic: 'analytics.blocked_traffic',
+	outgoing_links: 'analytics.outgoing_links',
+	custom_events: 'analytics.custom_events',
 } as const;
 
 export type AnalyticsTable = (typeof Analytics)[keyof typeof Analytics];
