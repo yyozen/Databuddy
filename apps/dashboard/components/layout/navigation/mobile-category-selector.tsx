@@ -14,9 +14,13 @@ import { useDbConnections } from '@/hooks/use-db-connections';
 import { useWebsites } from '@/hooks/use-websites';
 import { cn } from '@/lib/utils';
 import {
+	categoryConfig,
+	createDatabasesNavigation,
+	createLoadingDatabasesNavigation,
+	createLoadingWebsitesNavigation,
+	createWebsitesNavigation,
+	getContextConfig,
 	getDefaultCategory,
-	getNavigationWithDatabases,
-	getNavigationWithWebsites,
 } from './navigation-config';
 
 interface MobileCategorySelectorProps {
@@ -34,17 +38,22 @@ export function MobileCategorySelector({
 		useDbConnections();
 
 	const { categories, defaultCategory } = useMemo(() => {
-		let config = getNavigationWithWebsites(
-			pathname,
-			websites,
-			isLoadingWebsites
-		);
-
-		config = getNavigationWithDatabases(
-			pathname,
-			databases,
-			isLoadingDatabases
-		);
+		const baseConfig = getContextConfig(pathname);
+		const config =
+			baseConfig === categoryConfig.main
+				? {
+						...baseConfig,
+						navigationMap: {
+							...baseConfig.navigationMap,
+							websites: isLoadingWebsites
+								? createLoadingWebsitesNavigation()
+								: createWebsitesNavigation(websites),
+							observability: isLoadingDatabases
+								? createLoadingDatabasesNavigation()
+								: createDatabasesNavigation(databases),
+						},
+					}
+				: baseConfig;
 
 		const defaultCat = getDefaultCategory(pathname);
 		return { categories: config.categories, defaultCategory: defaultCat };

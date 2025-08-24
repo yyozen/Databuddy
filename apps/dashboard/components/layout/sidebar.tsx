@@ -15,9 +15,13 @@ import { CategorySidebar } from './category-sidebar';
 import { DatabaseHeader } from './navigation/database-header';
 import { MobileCategorySelector } from './navigation/mobile-category-selector';
 import {
+	categoryConfig,
+	createDatabasesNavigation,
+	createLoadingDatabasesNavigation,
+	createLoadingWebsitesNavigation,
+	createWebsitesNavigation,
+	getContextConfig,
 	getDefaultCategory,
-	getNavigationWithDatabases,
-	getNavigationWithWebsites,
 } from './navigation/navigation-config';
 import { NavigationSection } from './navigation/navigation-section';
 import { SandboxHeader } from './navigation/sandbox-header';
@@ -84,33 +88,35 @@ export function Sidebar() {
 	}, [isMobileOpen, closeSidebar, openSidebar]);
 
 	const getNavigationConfig = useMemo((): NavigationConfig => {
-		// First apply websites navigation if applicable
-		let contextConfig = getNavigationWithWebsites(
-			pathname,
-			websites,
-			isLoadingWebsites
-		);
+		const baseConfig = getContextConfig(pathname);
 
-		// Then apply databases navigation if applicable
-		contextConfig = getNavigationWithDatabases(
-			pathname,
-			databases,
-			isLoadingDatabases
-		);
+		const populatedConfig =
+			baseConfig === categoryConfig.main
+				? {
+						...baseConfig,
+						navigationMap: {
+							...baseConfig.navigationMap,
+							websites: isLoadingWebsites
+								? createLoadingWebsitesNavigation()
+								: createWebsitesNavigation(websites),
+							observability: isLoadingDatabases
+								? createLoadingDatabasesNavigation()
+								: createDatabasesNavigation(databases),
+						},
+					}
+				: baseConfig;
 
 		const defaultCat = getDefaultCategory(pathname);
 		const activeCat = selectedCategory || defaultCat;
 
-		// Get navigation from centralized config
 		const navSections =
-			contextConfig.navigationMap[
-				activeCat as keyof typeof contextConfig.navigationMap
+			populatedConfig.navigationMap[
+				activeCat as keyof typeof populatedConfig.navigationMap
 			] ||
-			contextConfig.navigationMap[
-				contextConfig.defaultCategory as keyof typeof contextConfig.navigationMap
+			populatedConfig.navigationMap[
+				populatedConfig.defaultCategory as keyof typeof populatedConfig.navigationMap
 			];
 
-		// Determine header based on context
 		let headerComponent: React.ReactNode;
 		let currentId: string | null | undefined;
 

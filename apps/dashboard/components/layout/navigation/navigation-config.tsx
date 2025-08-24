@@ -35,7 +35,6 @@ import {
 } from '@phosphor-icons/react';
 import type { NavigationSection } from './types';
 
-// Function to create dynamic websites navigation
 export const createWebsitesNavigation = (
 	websites: Array<{ id: string; name: string | null; domain: string }>
 ): NavigationSection[] => [
@@ -73,7 +72,6 @@ export const createWebsitesNavigation = (
 	},
 ];
 
-// Personal settings and preferences
 export const personalNavigation: NavigationSection[] = [
 	{
 		title: 'Personal Settings',
@@ -238,7 +236,6 @@ export const billingNavigation: NavigationSection[] = [
 	},
 ];
 
-// Function to create dynamic databases navigation
 export const createDatabasesNavigation = (
 	databases: Array<{ id: string; name: string; type: string }>
 ): NavigationSection[] => [
@@ -365,7 +362,6 @@ export const websiteNavigation: NavigationSection[] = [
 	},
 ];
 
-// Generate demo navigation from website navigation (filtered for demo purposes)
 export const createDemoNavigation = (): NavigationSection[] => [
 	{
 		title: 'Demo Analytics',
@@ -494,7 +490,6 @@ export const getDefaultCategory = (pathname: string) => {
 	return config.defaultCategory;
 };
 
-// Function to create loading navigation for websites
 export const createLoadingWebsitesNavigation = (): NavigationSection[] => [
 	{
 		title: 'Websites',
@@ -519,7 +514,6 @@ export const createLoadingWebsitesNavigation = (): NavigationSection[] => [
 	},
 ];
 
-// Function to create loading navigation for databases
 export const createLoadingDatabasesNavigation = (): NavigationSection[] => [
 	{
 		title: 'Database Monitoring',
@@ -543,47 +537,3 @@ export const createLoadingDatabasesNavigation = (): NavigationSection[] => [
 		],
 	},
 ];
-
-export const getNavigationWithWebsites = (
-	pathname: string,
-	websites: Array<{ id: string; name: string | null; domain: string }> = [],
-	isLoading = false
-) => {
-	const config = getContextConfig(pathname);
-
-	if (config === categoryConfig.main) {
-		return {
-			...config,
-			navigationMap: {
-				...config.navigationMap,
-				websites: isLoading
-					? createLoadingWebsitesNavigation()
-					: createWebsitesNavigation(websites),
-			},
-		};
-	}
-
-	return config;
-};
-
-export const getNavigationWithDatabases = (
-	pathname: string,
-	databases: Array<{ id: string; name: string; type: string }> = [],
-	isLoading = false
-) => {
-	const config = getContextConfig(pathname);
-
-	if (config === categoryConfig.main) {
-		return {
-			...config,
-			navigationMap: {
-				...config.navigationMap,
-				observability: isLoading
-					? createLoadingDatabasesNavigation()
-					: createDatabasesNavigation(databases),
-			},
-		};
-	}
-
-	return config;
-};
