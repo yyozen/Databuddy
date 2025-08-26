@@ -275,7 +275,6 @@ export default function PerformancePage({ params }: PerformancePageProps) {
 		setTimeout(() => setSuccess(null), 5000);
 	};
 
-	// Transform query data to include name field for DataTable compatibility
 	const transformQueryData = useCallback(
 		(queries: QueryPerformanceSummary[]) => {
 			return queries.map((query) => ({
@@ -286,7 +285,6 @@ export default function PerformancePage({ params }: PerformancePageProps) {
 		[]
 	);
 
-	// Handle query row click
 	const handleQueryClick = useCallback(
 		(query: QueryPerformanceSummary & { name: string }) => {
 			setSelectedQuery(query);
@@ -295,7 +293,6 @@ export default function PerformancePage({ params }: PerformancePageProps) {
 		[]
 	);
 
-	// Create simplified query tabs for DataTable
 	const queryTabs = useMemo(
 		() => [
 			{
@@ -317,7 +314,7 @@ export default function PerformancePage({ params }: PerformancePageProps) {
 			} as const,
 		],
 		[metrics, transformQueryData]
-	) as any;
+	);
 
 	if (extensionLoading) {
 		return <LoadingState />;
@@ -507,7 +504,6 @@ export default function PerformancePage({ params }: PerformancePageProps) {
 						isLoading={metricsLoading}
 						minHeight={400}
 						onRowClick={(_, value) => {
-							// Find the query by its query text
 							const allQueries = [
 								...transformQueryData(metrics?.top_queries_by_time || []),
 								...transformQueryData(metrics?.top_queries_by_calls || []),
@@ -521,7 +517,7 @@ export default function PerformancePage({ params }: PerformancePageProps) {
 							}
 						}}
 						showSearch={true}
-						tabs={queryTabs as any}
+						tabs={queryTabs}
 						title=""
 					/>
 				</div>
