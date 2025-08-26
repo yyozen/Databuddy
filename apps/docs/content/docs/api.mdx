@@ -172,10 +172,6 @@ Compile a query to see the generated SQL without executing it.
 
 Execute custom SQL queries directly against your ClickHouse analytics database with enterprise-grade security.
 
-<Callout type="warning">
-  **Enterprise Feature**: Custom SQL requires an API key with `admin:apikeys` scope and specific client access permissions. This is a powerful feature that allows direct database access.
-</Callout>
-
 <CodeBlock 
   language="http"
   code="POST /v1/custom-sql/execute"
@@ -496,11 +492,6 @@ Track custom events programmatically using the basket endpoint.
 - `sessionId`: Session identifier (max 128 characters) - not needed for all use cases
 - `timestamp`: Unix timestamp in milliseconds (defaults to current time)
 - `properties`: JSON object with custom event properties
-
-<Callout type="tip">
-  **Simple tracking**: For basic event tracking, you only need `type` and `name`. The `anonymousId` and `sessionId` are useful for user journey tracking but not required for simple conversion or action tracking.
-</Callout>
-
 
 **Response:**
 
