@@ -33,7 +33,7 @@ const InfoRow = ({
 		<span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
 			{label}
 		</span>
-		<div className="rounded-lg border bg-muted/30 px-4 py-3">
+		<div className="rounded border bg-muted/30 px-4 py-3">
 			<span className="break-all font-mono text-sm">{value}</span>
 		</div>
 	</div>
@@ -163,7 +163,7 @@ Resource Usage:
 							</div>
 
 							<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-								<div className="rounded-lg border bg-card p-4">
+								<div className="rounded border bg-card p-4">
 									<div className="font-bold text-xl sm:text-2xl">
 										{formatTime(query.mean_exec_time)}
 									</div>
@@ -171,7 +171,7 @@ Resource Usage:
 										Average Response
 									</div>
 								</div>
-								<div className="rounded-lg border bg-card p-4">
+								<div className="rounded border bg-card p-4">
 									<div className="font-bold text-xl sm:text-2xl">
 										{query.calls.toLocaleString()}
 									</div>
@@ -179,7 +179,7 @@ Resource Usage:
 										Total Executions
 									</div>
 								</div>
-								<div className="rounded-lg border bg-card p-4">
+								<div className="rounded border bg-card p-4">
 									<div className="font-bold text-xl sm:text-2xl">
 										{query.cache_hit_ratio.toFixed(1)}%
 									</div>
@@ -187,7 +187,7 @@ Resource Usage:
 										Cache Hit Rate
 									</div>
 								</div>
-								<div className="rounded-lg border bg-card p-4">
+								<div className="rounded border bg-card p-4">
 									<div className="font-bold text-xl sm:text-2xl">
 										{query.percentage_of_total_time.toFixed(1)}%
 									</div>
@@ -304,7 +304,7 @@ Resource Usage:
 							</h3>
 							<div className="space-y-3">
 								{query.mean_exec_time > 100 && (
-									<div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/20">
+									<div className="rounded border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/20">
 										<div className="flex items-start gap-3">
 											<div className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-orange-500" />
 											<div className="min-w-0">
@@ -321,7 +321,7 @@ Resource Usage:
 								)}
 
 								{query.cache_hit_ratio < 90 && (
-									<div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/20">
+									<div className="rounded border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/20">
 										<div className="flex items-start gap-3">
 											<div className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
 											<div className="min-w-0">
@@ -338,7 +338,7 @@ Resource Usage:
 								)}
 
 								{query.calls > 10_000 && (
-									<div className="rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-800 dark:bg-purple-950/20">
+									<div className="rounded border border-purple-200 bg-purple-50 p-4 dark:border-purple-800 dark:bg-purple-950/20">
 										<div className="flex items-start gap-3">
 											<div className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-purple-500" />
 											<div className="min-w-0">
@@ -355,7 +355,7 @@ Resource Usage:
 								)}
 
 								{query.percentage_of_total_time > 10 && (
-									<div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
+									<div className="rounded border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
 										<div className="flex items-start gap-3">
 											<div className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
 											<div className="min-w-0">
@@ -374,7 +374,7 @@ Resource Usage:
 								{query.mean_exec_time <= 50 &&
 									query.cache_hit_ratio >= 95 &&
 									query.percentage_of_total_time <= 5 && (
-										<div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/20">
+										<div className="rounded border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/20">
 											<div className="flex items-start gap-3">
 												<div className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-green-500" />
 												<div className="min-w-0">
