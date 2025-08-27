@@ -13,7 +13,7 @@ import {
 	Mail,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,8 @@ import VisuallyHidden from '@/components/ui/visuallyhidden';
 
 function RegisterPageContent() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const selectedPlan = searchParams.get('plan');
 	const [isLoading, setIsLoading] = useState(false);
 	const [formData, setFormData] = useState({
 		name: '',
@@ -85,6 +87,11 @@ function RegisterPageContent() {
 						'Account created! Please check your email to verify your account.'
 					);
 					setRegistrationStep('verification-needed');
+
+					// Store plan selection for post-verification redirect
+					if (selectedPlan) {
+						localStorage.setItem('pendingPlanSelection', selectedPlan);
+					}
 					// router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
 				},
 			},
@@ -129,8 +136,15 @@ function RegisterPageContent() {
 					if (authToken) {
 						localStorage.setItem('authToken', authToken);
 					}
-					toast.success('Login successful!');
-					router.push('/home');
+					toast.success('Registration successful!');
+
+					// Redirect to billing with plan selection if plan was specified
+					if (selectedPlan) {
+						localStorage.setItem('pendingPlanSelection', selectedPlan);
+						router.push(`/billing?tab=plans&plan=${selectedPlan}`);
+					} else {
+						router.push('/home');
+					}
 				},
 				onError: () => {
 					toast.error('Login failed. Please try again.');

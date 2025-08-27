@@ -48,7 +48,7 @@ export function PlansComparisonTable({ plans }: Props) {
 										<div className="flex flex-col items-center gap-1">
 											<div className="flex items-center gap-2">
 												<span className="text-muted-foreground text-xs line-through">
-													$10.00
+													$9.99
 												</span>
 												<span className="font-medium text-green-600">
 													$2.00
@@ -233,7 +233,7 @@ export function PlansComparisonTable({ plans }: Props) {
 								>
 									<SciFiButton asChild>
 										<Link
-											href="https://app.databuddy.cc/login"
+											href={`https://app.databuddy.cc/register?plan=${p.id}`}
 											rel="noopener noreferrer"
 											target="_blank"
 										>

@@ -34,6 +34,7 @@ export default function BillingPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const activeTab = searchParams.get('tab') || 'overview';
+	const selectedPlan = searchParams.get('plan');
 
 	const navigateToPlans = () => {
 		router.push('/billing?tab=plans');
@@ -112,7 +113,7 @@ export default function BillingPage() {
 				)}
 				{activeTab === 'plans' && (
 					<Suspense fallback={<ComponentSkeleton />}>
-						<PlansTab />
+						<PlansTab selectedPlan={selectedPlan} />
 					</Suspense>
 				)}
 				{activeTab === 'history' && (

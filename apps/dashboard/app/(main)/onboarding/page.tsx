@@ -11,7 +11,8 @@ import {
 	SparkleIcon,
 	UsersIcon,
 } from '@phosphor-icons/react';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { CreateOrganizationDialog } from '@/components/organizations/create-organization-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -209,6 +210,7 @@ function CompletionSection() {
 }
 
 export default function OnboardingPage() {
+	const router = useRouter();
 	const [showCreateOrgDialog, setShowCreateOrgDialog] = useState(false);
 	const [showCreateWebsiteDialog, setShowCreateWebsiteDialog] = useState(false);
 
@@ -262,6 +264,15 @@ export default function OnboardingPage() {
 
 	const currentStepIndex = steps.findIndex((step) => !step.completed);
 	const allCompleted = currentStepIndex === -1;
+
+	// Check for pending plan selection and redirect to billing
+	useEffect(() => {
+		const pendingPlan = localStorage.getItem('pendingPlanSelection');
+		if (pendingPlan && allCompleted) {
+			localStorage.removeItem('pendingPlanSelection');
+			router.push(`/billing?tab=plans&plan=${pendingPlan}`);
+		}
+	}, [allCompleted, router]);
 
 	return (
 		<div className="container mx-auto max-w-4xl space-y-8 px-4 py-8">

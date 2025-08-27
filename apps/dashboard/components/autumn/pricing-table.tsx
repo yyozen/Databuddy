@@ -35,8 +35,10 @@ const PricingTableSkeleton = () => (
 
 export default function PricingTable({
 	productDetails,
+	selectedPlan,
 }: {
 	productDetails?: ProductDetails[];
+	selectedPlan?: string | null;
 }) {
 	const { attach } = useCustomer();
 	const [isAnnual, setIsAnnual] = useState(false);
@@ -158,6 +160,7 @@ export default function PricingTable({
 					isAnnualToggle={isAnnual}
 					multiInterval={multiInterval}
 					products={products}
+					selectedPlan={selectedPlan}
 					setIsAnnualToggle={setIsAnnual}
 				>
 					{products
@@ -177,6 +180,7 @@ export default function PricingTable({
 										? `Select recommended plan: ${plan.display?.name}`
 										: `Select plan: ${plan.display?.name}`,
 								}}
+								isSelected={selectedPlan === plan.id}
 								key={plan.id}
 								productId={plan.id}
 							/>
@@ -192,6 +196,7 @@ const PricingTableContext = createContext<{
 	setIsAnnualToggle: (isAnnual: boolean) => void;
 	products: Product[];
 	showFeatures: boolean;
+	selectedPlan?: string | null;
 }>({
 	isAnnualToggle: false,
 	setIsAnnualToggle: () => {
@@ -199,6 +204,7 @@ const PricingTableContext = createContext<{
 	},
 	products: [],
 	showFeatures: true,
+	selectedPlan: null,
 });
 
 export const usePricingTableContext = (componentName: string) => {
@@ -219,6 +225,7 @@ export const PricingTableContainer = ({
 	isAnnualToggle,
 	setIsAnnualToggle,
 	multiInterval,
+	selectedPlan,
 }: {
 	children?: React.ReactNode;
 	products?: Product[];
@@ -227,6 +234,7 @@ export const PricingTableContainer = ({
 	isAnnualToggle: boolean;
 	setIsAnnualToggle: (isAnnual: boolean) => void;
 	multiInterval: boolean;
+	selectedPlan?: string | null;
 }) => {
 	if (!products) {
 		throw new Error('products is required in <PricingTable />');
@@ -239,7 +247,13 @@ export const PricingTableContainer = ({
 	const hasRecommended = products?.some((p) => p.display?.recommend_text);
 	return (
 		<PricingTableContext.Provider
-			value={{ isAnnualToggle, setIsAnnualToggle, products, showFeatures }}
+			value={{
+				isAnnualToggle,
+				setIsAnnualToggle,
+				products,
+				showFeatures,
+				selectedPlan,
+			}}
 		>
 			<div
 				className={cn('flex flex-col items-center', hasRecommended && '!py-10')}
@@ -275,12 +289,14 @@ interface PricingCardProps {
 	className?: string;
 	onButtonClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 	buttonProps?: React.ComponentProps<'button'>;
+	isSelected?: boolean;
 }
 
 export const PricingCard = ({
 	productId,
 	className,
 	buttonProps,
+	isSelected = false,
 }: PricingCardProps) => {
 	const { products, showFeatures } = usePricingTableContext('PricingCard');
 
@@ -292,8 +308,17 @@ export const PricingCard = ({
 
 	const { name, display: productDisplay } = product;
 
-	const { buttonText } = getPricingTableContent(product);
+	const { buttonText: defaultButtonText } = getPricingTableContent(product);
 	const isRecommended = !!productDisplay?.recommend_text;
+	const { selectedPlan } = usePricingTableContext('PricingCard');
+
+	// Customize button text for selected plans
+	const buttonText =
+		selectedPlan === productId ? (
+			<span className="font-semibold">Complete Purchase →</span>
+		) : (
+			defaultButtonText
+		);
 	const mainPriceDisplay = product.properties?.is_free
 		? {
 				primary_text: 'Free',
@@ -345,6 +370,7 @@ export const PricingCard = ({
 				'relative h-full w-full max-w-xl rounded-lg border py-6 text-foreground shadow-sm transition-all duration-300',
 				isRecommended &&
 					'lg:-translate-y-6 animate-recommended-glow border-primary bg-secondary/40 lg:h-[calc(100%+48px)] lg:shadow-lg dark:shadow-zinc-800/80',
+				isSelected && 'border-primary bg-primary/5 ring-2 ring-primary/20',
 				className
 			)}
 		>
@@ -360,9 +386,16 @@ export const PricingCard = ({
 				<div className="h-full">
 					<div className="flex flex-col">
 						<div className="pb-4">
-							<h2 className="truncate px-6 font-semibold text-2xl">
-								{productDisplay?.name || name}
-							</h2>
+							<div className="flex items-center justify-between px-6">
+								<h2 className="truncate font-semibold text-2xl">
+									{productDisplay?.name || name}
+								</h2>
+								{isSelected && (
+									<div className="ml-2 rounded-full bg-primary px-3 py-1 font-medium text-primary-foreground text-xs">
+										Selected
+									</div>
+								)}
+							</div>
 							{productDisplay?.description && (
 								<div className="h-8 px-6 text-muted-foreground text-sm">
 									<p className="line-clamp-2">{productDisplay?.description}</p>
@@ -376,7 +409,7 @@ export const PricingCard = ({
 										<div className="flex flex-col gap-1">
 											<div className="flex items-center gap-2">
 												<span className="text-muted-foreground text-xs line-through">
-													$10.00
+													$9.99
 												</span>
 												<span className="font-medium text-green-600">
 													$2.00
