@@ -219,13 +219,11 @@ function getPercentageGradient(percentage: number): {
 	);
 }
 
-// Component for individual tab button to reduce complexity
-interface TabButtonProps {
-	tab: TabConfig<any>;
+// Simple tab button component
+interface TabButtonProps<TData> {
+	tab: TabConfig<TData>;
 	isActive: boolean;
 	itemCount: number;
-	isTabLoading?: boolean;
-	isTransitioning: boolean;
 	onTabChange: (tabId: string) => void;
 }
 
@@ -233,69 +231,26 @@ const TabButton = ({
 	tab,
 	isActive,
 	itemCount,
-	isTabLoading = false,
-	isTransitioning,
 	onTabChange,
 }: TabButtonProps) => (
 	<button
 		aria-controls={`tabpanel-${tab.id}`}
 		aria-selected={isActive}
 		className={cn(
-			'relative flex items-center gap-2 rounded-md px-3 py-2 font-medium text-sm transition-all duration-200',
-			'disabled:cursor-not-allowed disabled:opacity-60',
-			'group overflow-hidden',
+			'cursor-pointer border-b-2 px-3 py-2 text-sm transition-all duration-100 hover:text-foreground',
 			isActive
-				? 'scale-[1.02] transform bg-sidebar text-sidebar-foreground shadow-md'
-				: 'text-sidebar-foreground/70 hover:scale-[1.01] hover:transform hover:bg-sidebar-accent/40 hover:text-sidebar-foreground hover:shadow-sm',
-			isTabLoading && 'cursor-wait opacity-75'
+				? 'border-foreground text-foreground'
+				: 'border-transparent text-muted-foreground'
 		)}
-		disabled={isTransitioning || isTabLoading}
 		onClick={() => onTabChange(tab.id)}
 		role="tab"
-		tabIndex={isActive ? 0 : -1}
 		type="button"
 	>
-		{/* Active indicator */}
-		{isActive && (
-			<div className="absolute inset-0 animate-pulse rounded-md bg-gradient-to-r from-primary/20 to-primary/5" />
-		)}
-
-		{/* Tab content */}
-		<div className="relative z-10 flex items-center gap-2">
-			{/* Loading spinner */}
-			{isTabLoading && (
-				<SpinnerIcon className="h-3.5 w-3.5 animate-spin text-sidebar-foreground/60" />
-			)}
-
-			<span
-				className={cn(
-					'transition-colors duration-200',
-					isActive
-						? 'text-sidebar-foreground'
-						: 'text-sidebar-foreground/80 group-hover:text-sidebar-foreground'
-				)}
-			>
-				{tab.label}
+		{tab.label}
+		{itemCount > 0 && (
+			<span className="ml-1 text-xs opacity-60">
+				({itemCount > 999 ? '999+' : itemCount})
 			</span>
-
-			{/* Count badge */}
-			{itemCount > 0 && !isTabLoading && (
-				<span
-					className={cn(
-						'inline-flex h-5 min-w-[18px] items-center justify-center rounded-full px-1.5 font-semibold text-[10px] transition-all duration-200',
-						isActive
-							? 'border border-primary/30 bg-primary/20 text-primary shadow-sm'
-							: 'border border-transparent bg-sidebar-foreground/20 text-sidebar-foreground/70 group-hover:bg-sidebar-foreground/30 group-hover:text-sidebar-foreground'
-					)}
-				>
-					{itemCount > 999 ? '999+' : itemCount > 99 ? '99+' : itemCount}
-				</span>
-			)}
-		</div>
-
-		{/* Hover effect */}
-		{!(isActive || isTabLoading) && (
-			<div className="absolute inset-0 rounded-md bg-gradient-to-r from-transparent via-sidebar-accent/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 		)}
 	</button>
 );
@@ -450,37 +405,28 @@ function FullScreenTable<TData extends { name: string | number }>({
 					<XIcon size={20} />
 				</button>
 			</div>
-			{/* Tab bar, consistent with main DataTable */}
+			{/* Tab bar */}
 			{tabs && tabs.length > 1 && (
 				<div className="mt-2 px-3">
-					<div className="flex gap-0.5 rounded-lg bg-sidebar-accent/20 p-1 backdrop-blur-sm">
+					<div className="flex gap-1 border-b">
 						{tabs.map((tab, idx) => {
 							const isActive = activeTab === tab.id;
 							const itemCount = tab?.data?.length || 0;
-							const isTabLoading = tabLoadingStates?.[tab.id];
 
 							return (
-								<div
+								<TabButton
+									isActive={isActive}
+									itemCount={itemCount}
 									key={tab.id}
-									ref={(el) => {
-										tabRefs.current[idx] = el;
+									onTabChange={(tabId) => {
+										handleTabKeyDown(
+											{ key: 'Enter' } as React.KeyboardEvent,
+											idx
+										);
+										onTabChange?.(tabId);
 									}}
-								>
-									<TabButton
-										isActive={isActive}
-										isTabLoading={isTabLoading}
-										isTransitioning={isTransitioning}
-										itemCount={itemCount}
-										onTabChange={(tabId) => {
-											handleTabKeyDown(
-												{ key: 'Enter' } as React.KeyboardEvent,
-												idx
-											);
-											onTabChange?.(tabId);
-										}}
-										tab={tab}
-									/>
-								</div>
+									tab={tab}
+								/>
 							);
 						})}
 					</div>
@@ -710,19 +656,6 @@ function FullScreenTable<TData extends { name: string | number }>({
 							})}
 					</TableBody>
 				</Table>
-				{/* Tooltip for truncated cell */}
-				{tooltip && (
-					<div
-						className="pointer-events-none fixed z-50 rounded bg-foreground px-3 py-1 text-background text-xs shadow-lg"
-						style={{
-							left: tooltip.x,
-							top: tooltip.y - 32,
-							transform: 'translateX(-50%)',
-						}}
-					>
-						{tooltip.value}
-					</div>
-				)}
 			</div>
 		</div>
 	);
@@ -915,7 +848,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 
 					{tabs && tabs.length > 1 && (
 						<div className="mt-3">
-							<div className="flex gap-0.5 rounded bg-sidebar-accent/30 p-0.5">
+							<div className="flex gap-1 border-b">
 								{tabs.map((tab) => (
 									<Skeleton className="h-8 w-20 rounded" key={tab.id} />
 								))}
@@ -973,18 +906,15 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 				</div>
 
 				{tabs && tabs.length > 1 && (
-					<div className="mt-3 overflow-hidden">
-						<div className="flex gap-0.5 rounded-lg bg-sidebar-accent/20 p-1 backdrop-blur-sm">
+					<div className="mt-3">
+						<div className="flex gap-1 border-b">
 							{tabs.map((tab) => {
 								const isActive = activeTab === tab.id;
 								const itemCount = tab?.data?.length || 0;
-								const isTabLoading = tabLoadingStates?.[tab.id];
 
 								return (
 									<TabButton
 										isActive={isActive}
-										isTabLoading={isTabLoading}
-										isTransitioning={isTransitioning}
 										itemCount={itemCount}
 										key={tab.id}
 										onTabChange={handleTabChange}
