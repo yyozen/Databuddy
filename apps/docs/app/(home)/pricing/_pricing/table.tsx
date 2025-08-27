@@ -42,9 +42,25 @@ export function PlansComparisonTable({ plans }: Props) {
 									className={`px-4 py-3 text-center text-foreground sm:px-5 lg:px-6 ${p.id === 'pro' ? 'border-border border-x bg-primary/10' : ''}`}
 									key={`price-${p.id}`}
 								>
-									{p.priceMonthly === 0
-										? 'Free'
-										: `$${p.priceMonthly.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+									{p.priceMonthly === 0 ? (
+										'Free'
+									) : p.id === 'hobby' ? (
+										<div className="flex flex-col items-center gap-1">
+											<div className="flex items-center gap-2">
+												<span className="text-muted-foreground text-xs line-through">
+													$10.00
+												</span>
+												<span className="font-medium text-green-600">
+													$2.00
+												</span>
+											</div>
+											<span className="font-medium text-green-600 text-xs">
+												Limited time!
+											</span>
+										</div>
+									) : (
+										`$${p.priceMonthly.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+									)}
 								</td>
 							))}
 						</tr>

@@ -91,7 +91,7 @@ export const RAW_PLANS: RawPlan[] = [
 			{
 				type: 'price',
 				interval: 'month',
-				price: 1.99,
+				price: 9.99,
 				feature_id: null,
 				feature: null,
 			},

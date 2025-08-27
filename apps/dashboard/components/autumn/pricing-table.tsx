@@ -372,11 +372,29 @@ export const PricingCard = ({
 						<div className="mb-2">
 							<h3 className="mb-4 flex h-16 items-center border-y bg-secondary/40 px-6 font-semibold">
 								<div className="line-clamp-2">
-									{mainPriceDisplay?.primary_text}{' '}
-									{mainPriceDisplay?.secondary_text && (
-										<span className="mt-1 font-normal text-muted-foreground">
-											{mainPriceDisplay?.secondary_text}
-										</span>
+									{product.id === 'hobby' ? (
+										<div className="flex flex-col gap-1">
+											<div className="flex items-center gap-2">
+												<span className="text-muted-foreground text-xs line-through">
+													$10.00
+												</span>
+												<span className="font-medium text-green-600">
+													$2.00
+												</span>
+											</div>
+											<span className="font-medium text-green-600 text-xs">
+												Limited time!
+											</span>
+										</div>
+									) : (
+										<>
+											{mainPriceDisplay?.primary_text}{' '}
+											{mainPriceDisplay?.secondary_text && (
+												<span className="mt-1 font-normal text-muted-foreground">
+													{mainPriceDisplay?.secondary_text}
+												</span>
+											)}
+										</>
 									)}
 								</div>
 							</h3>
