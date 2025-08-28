@@ -321,7 +321,7 @@ async function insertCustomEvent(
 		customData.eventId,
 		VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 	);
-	q;
+
 	if (!eventId) {
 		eventId = randomUUID();
 	}
@@ -841,8 +841,12 @@ const app = new Elysia()
 						errors: parseResult.error.issues,
 					};
 				}
-				insertCustomEvent(body, clientId, userAgent, ip);
-				return { status: 'success', type: 'custom' };
+
+				const eventId = body.eventId || randomUUID();
+				const customEventWithId = { ...body, eventId };
+
+				await insertCustomEvent(customEventWithId, clientId, userAgent, ip);
+				return { status: 'success', type: 'custom', eventId };
 			}
 
 			if (eventType === 'outgoing_link') {
@@ -1132,11 +1136,15 @@ const app = new Elysia()
 						};
 					}
 					try {
-						await insertCustomEvent(event, clientId, userAgent, ip);
+						// Generate eventId if not provided
+						const eventId = event.eventId || randomUUID();
+						const customEventWithId = { ...event, eventId };
+
+						await insertCustomEvent(customEventWithId, clientId, userAgent, ip);
 						return {
 							status: 'success',
 							type: 'custom',
-							eventId: event.eventId,
+							eventId,
 						};
 					} catch (error) {
 						return {
