@@ -10,17 +10,17 @@ const logo = (height: number, width: number) => (
 	>
 		<title>Databuddy</title>
 		<path
-			clip-rule="evenodd"
+			clipRule="evenodd"
 			d="M9.66667 9.66667H14.5V14.5H9.66667V9.66667ZM14.5 14.5H19.3333V19.3333H14.5V14.5Z"
 			fill="white"
-			fill-rule="evenodd"
+			fillRule="evenodd"
 		/>
 		<path d="M29 4.83333H24.1667V24.1667H29V4.83333Z" fill="white" />
 		<path
-			clip-rule="evenodd"
+			clipRule="evenodd"
 			d="M0 0H24.1667V4.83333H4.83333V24.1667H24.1667V29H0V0Z"
 			fill="white"
-			fill-rule="evenodd"
+			fillRule="evenodd"
 		/>
 		<path
 			d="M51.2349 6.67191C56.4323 6.67191 59.3299 9.61556 59.3299 14.859C59.3299 20.0793 56.4783 23 51.3729 23H45.8535V6.67191H51.2349ZM48.7512 20.4473H51.2349C54.6845 20.4473 56.3633 18.6075 56.3633 14.859C56.3633 11.0414 54.6845 9.22461 51.2349 9.22461H48.7512V20.4473Z"

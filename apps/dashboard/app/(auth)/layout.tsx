@@ -23,7 +23,12 @@ export default async function AuthLayout({
 		<div className="flex h-screen">
 			<div className="relative hidden flex-col items-start justify-between overflow-hidden p-12 md:flex md:w-1/2">
 				<div className="absolute inset-0">
-					<Iridescence amplitude={0.2} color={[0.1, 0.2, 0.9]} speed={0.5} />
+					<Iridescence
+						amplitude={0.2}
+						color={[0.1, 0.2, 0.9]}
+						mouseReact={false}
+						speed={0.5}
+					/>
 				</div>
 				<Link className="relative z-10" href="https://www.databuddy.cc">
 					<Button
