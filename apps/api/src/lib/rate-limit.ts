@@ -26,14 +26,11 @@ export interface RateLimitResult {
 	reset: Date;
 }
 
-let redisClient: Redis;
+const redis = Redis.fromEnv();
 
 const rateLimiterCache = new Map<string, Ratelimit>();
 const ephemeralCache = new Map<string, number>();
 const inMemoryLimits = new Map<string, { count: number; resetTime: number }>();
-
-// Plan-based rate limiters matching pricing tiers
-const redis = Redis.fromEnv();
 
 export const ratelimit = {
 	free: new Ratelimit({
@@ -62,21 +59,6 @@ export const ratelimit = {
 	}),
 };
 
-function getRedisClient(): Redis | null {
-	if (
-		!redisClient &&
-		process.env.UPSTASH_REDIS_REST_URL &&
-		process.env.UPSTASH_REDIS_REST_TOKEN
-	) {
-		try {
-			redisClient = redis; // Use the same Redis instance
-		} catch {
-			// ignore
-		}
-	}
-	return redisClient || null;
-}
-
 function createRateLimiter(
 	type: RateLimitType,
 	customConfig?: { requests: number; window: string }
@@ -89,14 +71,9 @@ function createRateLimiter(
 		return cached;
 	}
 
-	const redisInstance = getRedisClient();
-	if (!redisInstance) {
-		return null;
-	}
-
 	try {
 		const rateLimiter = new Ratelimit({
-			redis: redisInstance,
+			redis,
 			limiter: Ratelimit.slidingWindow(config.requests, config.window as '1 m'),
 			analytics: true,
 			prefix: `@databuddy/ratelimit:${type}`,
@@ -121,18 +98,50 @@ function getRateLimitIdentifier(
 		return `user:${userId}`;
 	}
 
-	const apiKey =
-		request.headers.get('x-api-key') ||
-		request.headers.get('authorization')?.replace('Bearer ', '');
-	if (apiKey) {
-		return `apikey:${apiKey.substring(0, 8)}`;
+	let apiKey = request.headers.get('x-api-key');
+	if (!apiKey) {
+		const auth = request.headers.get('authorization');
+		if (auth?.toLowerCase().startsWith('bearer ')) {
+			apiKey = auth.slice(7).trim();
+		}
 	}
 
-	const ip =
-		request.headers.get('x-forwarded-for') ||
-		request.headers.get('x-real-ip') ||
-		'unknown';
-	return `ip:${ip}`;
+	if (apiKey) {
+		const keyHash = btoa(apiKey).slice(0, 12);
+		return `apikey:${keyHash}`;
+	}
+
+	let ip =
+		request.headers.get('cf-connecting-ip') || // Cloudflare real IP
+		request.headers.get('x-forwarded-for') || // Standard proxy chain
+		request.headers.get('x-real-ip') || // Nginx real IP
+		request.headers.get('x-client-ip') || // Alternative header
+		'direct';
+
+	if (ip.includes(',')) {
+		ip = ip.split(',')[0]?.trim() || 'direct';
+	}
+
+	const userAgent = request.headers.get('user-agent');
+	const agentHash = userAgent ? btoa(userAgent).slice(0, 6) : 'noua';
+
+	return `ip:${ip}:${agentHash}`;
+}
+
+function parseWindowMs(window: string): number {
+	if (window === '1 m') {
+		return 60_000;
+	}
+	if (window === '10 s') {
+		return 10_000;
+	}
+	if (window === '1 h') {
+		return 3_600_000;
+	}
+	if (window === '1 d') {
+		return 86_400_000;
+	}
+	return 60_000; // default fallback
 }
 
 function checkInMemoryRateLimit(
@@ -140,7 +149,7 @@ function checkInMemoryRateLimit(
 	config: { requests: number; window: string },
 	rate = 1
 ): RateLimitResult {
-	const windowMs = config.window === '1 m' ? 60_000 : 60_000;
+	const windowMs = parseWindowMs(config.window);
 	const now = Date.now();
 	const resetTime = Math.ceil(now / windowMs) * windowMs;
 	const key = `${identifier}:${resetTime}`;
