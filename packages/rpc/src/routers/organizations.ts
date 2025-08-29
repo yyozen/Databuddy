@@ -1,10 +1,18 @@
 import { websitesApi } from '@databuddy/auth';
-import { db, invitation, organization } from '@databuddy/db';
+import {
+	db,
+	invitation,
+	member,
+	organization,
+	session,
+	user,
+} from '@databuddy/db';
 import {
 	getPendingInvitationsSchema,
 	uploadOrganizationLogoSchema,
 } from '@databuddy/validation';
 import { TRPCError } from '@trpc/server';
+import { Autumn as autumn } from 'autumn-js';
 import { and, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { createTRPCRouter, protectedProcedure } from '../trpc';
@@ -221,4 +229,59 @@ export const organizationsRouter = createTRPCRouter({
 				});
 			}
 		}),
+
+	getUsage: protectedProcedure.query(async ({ ctx }) => {
+		const [orgResult] = await db
+			.select({
+				ownerId: user.id,
+				activeOrgId: session.activeOrganizationId,
+			})
+			.from(session)
+			.innerJoin(
+				organization,
+				eq(session.activeOrganizationId, organization.id)
+			)
+			.innerJoin(member, eq(organization.id, member.organizationId))
+			.innerJoin(user, eq(member.userId, user.id))
+			.where(and(eq(session.userId, ctx.user.id), eq(member.role, 'owner')))
+			.limit(1);
+
+		// Determine customer ID: organization owner or current user
+		const customerId = orgResult?.ownerId || ctx.user.id;
+
+		try {
+			const checkResult = await autumn.check({
+				customer_id: customerId,
+				feature_id: 'events',
+			});
+
+			const data = checkResult.data;
+			const used = data.usage ?? 0;
+			const usageLimit = data.usage_limit ?? 0;
+			const unlimited = data.unlimited ?? false;
+			const balance = data.balance ?? 0;
+			const includedUsage = data.included_usage ?? 0;
+
+			const remaining = unlimited ? null : Math.max(0, usageLimit - used);
+
+			return {
+				used,
+				limit: unlimited ? null : usageLimit,
+				unlimited,
+				balance,
+				remaining,
+				includedUsage,
+				isOrganizationUsage: Boolean(orgResult?.activeOrgId),
+				canUserUpgrade:
+					!orgResult?.activeOrgId || orgResult.ownerId === ctx.user.id,
+			};
+		} catch (error) {
+			console.error('Failed to check usage:', error);
+			throw new TRPCError({
+				code: 'INTERNAL_SERVER_ERROR',
+				message: 'Failed to retrieve usage data',
+				cause: error,
+			});
+		}
+	}),
 });
