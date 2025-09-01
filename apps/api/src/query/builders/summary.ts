@@ -71,7 +71,7 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
 
 			return {
 				sql: `
-[		WITH base_events AS (
+		WITH base_events AS (
 			SELECT
 			session_id,
 			anonymous_id,
@@ -130,7 +130,7 @@ export const SummaryBuilders: Record<string, SimpleQueryConfig> = {
 			ROUND(median(sd.duration), 2) as avg_session_duration,
 			(SELECT total_events FROM all_events) as total_events
 		FROM session_metrics
-		LEFT JOIN session_durations as sd ON session_metrics.session_id = sd.session_id]
+		LEFT JOIN session_durations as sd ON session_metrics.session_id = sd.session_id
         `,
 				params: {
 					websiteId,
