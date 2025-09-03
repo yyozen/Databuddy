@@ -4,6 +4,7 @@ import { ArrowCounterClockwiseIcon, BugIcon } from '@phosphor-icons/react';
 import dynamic from 'next/dynamic';
 import { useCallback, useState } from 'react';
 import { Area, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from 'recharts';
+import { METRIC_COLORS, METRICS } from '@/components/charts/metrics-constants';
 import { Button } from '@/components/ui/button';
 import { ErrorChartTooltip } from './error-chart-tooltip';
 
@@ -40,40 +41,53 @@ export const ErrorTrendsChart = ({ errorChartData }: ErrorTrendsChartProps) => {
 		setIsZoomed(false);
 	}, []);
 
-	const handleBrushChange = useCallback((brushData: any) => {
-		if (
-			brushData &&
-			brushData.startIndex !== undefined &&
-			brushData.endIndex !== undefined
-		) {
-			setZoomDomain({
-				startIndex: brushData.startIndex,
-				endIndex: brushData.endIndex,
-			});
-			setIsZoomed(true);
-		}
-	}, []);
+	const handleBrushChange = useCallback(
+		(brushData: { startIndex?: number; endIndex?: number }) => {
+			if (
+				brushData &&
+				brushData.startIndex !== undefined &&
+				brushData.endIndex !== undefined
+			) {
+				setZoomDomain({
+					startIndex: brushData.startIndex,
+					endIndex: brushData.endIndex,
+				});
+				setIsZoomed(true);
+			}
+		},
+		[]
+	);
 
 	if (!errorChartData.length) {
 		return (
 			<div className="flex h-full items-center justify-center rounded-lg border border-sidebar-border bg-sidebar/20 p-8 shadow-sm">
-				<div className="text-center max-w-md">
+				<div className="max-w-md text-center">
 					<BugIcon
-						className="mx-auto h-8 w-8 text-muted-foreground mb-4"
+						className="mx-auto mb-4 h-8 w-8 text-muted-foreground"
 						weight="duotone"
 					/>
 					<h3 className="mb-2 font-semibold text-sm">No error trend data</h3>
 					<p className="text-muted-foreground text-xs leading-relaxed">
-						Not enough data to display a trend chart. Error trends will appear here when your website encounters errors.
+						Not enough data to display a trend chart. Error trends will appear
+						here when your website encounters errors.
 					</p>
 				</div>
 			</div>
 		);
 	}
 
+	// Get the error metrics with proper colors from the constants
+	const totalErrorsMetric = METRICS.find((m) => m.key === 'total_errors');
+	const affectedUsersMetric = METRICS.find((m) => m.key === 'affected_users');
+
+	const totalErrorsColor =
+		totalErrorsMetric?.color || METRIC_COLORS.bounce_rate.primary;
+	const affectedUsersColor =
+		affectedUsersMetric?.color || METRIC_COLORS.session_duration.primary;
+
 	return (
 		<div className="flex h-full flex-col rounded-lg border border-sidebar-border bg-sidebar/10 shadow-sm">
-			<div className="flex items-center justify-between border-b border-sidebar-border p-4">
+			<div className="flex items-center justify-between border-sidebar-border border-b p-4">
 				<div>
 					<h3 className="font-semibold text-base">Error Trends</h3>
 					<p className="text-muted-foreground text-xs">
@@ -121,8 +135,16 @@ export const ErrorTrendsChart = ({ errorChartData }: ErrorTrendsChartProps) => {
 									y1="0"
 									y2="1"
 								>
-									<stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.25} />
-									<stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+									<stop
+										offset="5%"
+										stopColor={totalErrorsColor}
+										stopOpacity={0.25}
+									/>
+									<stop
+										offset="95%"
+										stopColor={totalErrorsColor}
+										stopOpacity={0.05}
+									/>
 								</linearGradient>
 								<linearGradient
 									id="colorAffectedUsers"
@@ -131,8 +153,16 @@ export const ErrorTrendsChart = ({ errorChartData }: ErrorTrendsChartProps) => {
 									y1="0"
 									y2="1"
 								>
-									<stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.25} />
-									<stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0.05} />
+									<stop
+										offset="5%"
+										stopColor={affectedUsersColor}
+										stopOpacity={0.25}
+									/>
+									<stop
+										offset="95%"
+										stopColor={affectedUsersColor}
+										stopOpacity={0.05}
+									/>
 								</linearGradient>
 							</defs>
 							<CartesianGrid
@@ -181,7 +211,7 @@ export const ErrorTrendsChart = ({ errorChartData }: ErrorTrendsChartProps) => {
 								fill="url(#colorTotalErrors)"
 								fillOpacity={1}
 								name="Total Errors"
-								stroke="hsl(var(--primary))"
+								stroke={totalErrorsColor}
 								strokeWidth={2}
 								type="monotone"
 							/>
@@ -190,7 +220,7 @@ export const ErrorTrendsChart = ({ errorChartData }: ErrorTrendsChartProps) => {
 								fill="url(#colorAffectedUsers)"
 								fillOpacity={1}
 								name="Affected Users"
-								stroke="hsl(var(--chart-2))"
+								stroke={affectedUsersColor}
 								strokeWidth={2}
 								type="monotone"
 							/>

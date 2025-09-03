@@ -1,5 +1,6 @@
 import {
 	Activity,
+	Bug,
 	Clock,
 	Eye,
 	Gauge,
@@ -449,8 +450,23 @@ export const CORE_WEB_VITALS_METRICS: MetricConfig[] = [
 	),
 ];
 
+// Error metrics
+export const ERROR_METRICS: MetricConfig[] = [
+	createMetric('total_errors', 'Total Errors', 'bounce_rate', Bug, (value) =>
+		value.toLocaleString()
+	),
+	createMetric(
+		'affected_users',
+		'Affected Users',
+		'session_duration',
+		Users,
+		(value) => value.toLocaleString()
+	),
+];
+
 export const METRICS = [
 	...ANALYTICS_METRICS,
 	...PERFORMANCE_METRICS,
 	...CORE_WEB_VITALS_METRICS,
+	...ERROR_METRICS,
 ];
