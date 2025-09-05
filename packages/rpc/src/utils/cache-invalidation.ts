@@ -85,15 +85,6 @@ export const invalidateWebsiteCaches = async (
 				namespace: 'mini-charts',
 			}).invalidateByKey(`mini-charts:public:${websiteId}`),
 		]);
-
-		logger.info(
-			'Caches invalidated',
-			`All caches invalidated for website ${websiteId}${reason ? ` - ${reason}` : ''}`,
-			{
-				websiteId,
-				userId,
-			}
-		);
 	} catch (error) {
 		logger.error(
 			'Failed to invalidate caches',
