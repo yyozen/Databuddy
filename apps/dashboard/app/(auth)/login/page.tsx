@@ -27,34 +27,43 @@ function LoginPage() {
 	const [showPassword, setShowPassword] = useState(false);
 	const [lastUsed, setLastUsed] = useState<string | null>(null);
 
-	const defaultCallbackUrl = searchParams.get('callback') || '/websites';
+	const callbackUrl = searchParams.get('callback') || '/websites';
 
 	useEffect(() => {
 		setLastUsed(localStorage.getItem('lastUsedLogin'));
 	}, []);
 
-	const handleSocialLogin = (provider: 'github' | 'google') => {
+	const handleGoogleLogin = () => {
 		setIsLoading(true);
-
-		const callbackUrl = searchParams.get('callback');
-		const finalCallbackUrl = callbackUrl || defaultCallbackUrl;
-
 		signIn.social({
-			provider,
-			callbackURL: finalCallbackUrl,
+			provider: 'google',
+			callbackURL: callbackUrl,
 			newUserCallbackURL: '/onboarding',
 			fetchOptions: {
 				onSuccess: () => {
-					localStorage.setItem('lastUsedLogin', provider);
-					if (callbackUrl) {
-						router.push(callbackUrl);
-					}
+					localStorage.setItem('lastUsedLogin', 'google');
 				},
 				onError: () => {
 					setIsLoading(false);
-					toast.error(
-						`${provider === 'github' ? 'GitHub' : 'Google'} login failed. Please try again.`
-					);
+					toast.error('Google login failed. Please try again.');
+				},
+			},
+		});
+	};
+
+	const handleGithubLogin = () => {
+		setIsLoading(true);
+		signIn.social({
+			provider: 'github',
+			callbackURL: callbackUrl,
+			newUserCallbackURL: '/onboarding',
+			fetchOptions: {
+				onSuccess: () => {
+					localStorage.setItem('lastUsedLogin', 'github');
+				},
+				onError: () => {
+					setIsLoading(false);
+					toast.error('GitHub login failed. Please try again.');
 				},
 			},
 		});
@@ -72,14 +81,10 @@ function LoginPage() {
 		await signIn.email({
 			email,
 			password,
-			callbackURL: defaultCallbackUrl,
+			callbackURL: callbackUrl,
 			fetchOptions: {
 				onSuccess: () => {
 					localStorage.setItem('lastUsedLogin', 'email');
-					const callbackUrl = searchParams.get('callback');
-					if (callbackUrl) {
-						router.push(callbackUrl);
-					}
 				},
 				onError: (error) => {
 					setIsLoading(false);
@@ -120,7 +125,7 @@ function LoginPage() {
 							<Button
 								className="relative flex h-11 w-full cursor-pointer items-center justify-center transition-all duration-200 hover:bg-primary/5"
 								disabled={isLoading}
-								onClick={() => handleSocialLogin('github')}
+								onClick={handleGithubLogin}
 								type="button"
 								variant="outline"
 							>
@@ -135,7 +140,7 @@ function LoginPage() {
 							<Button
 								className="relative flex h-11 w-full cursor-pointer items-center justify-center transition-all duration-200 hover:bg-primary/5"
 								disabled={isLoading}
-								onClick={() => handleSocialLogin('google')}
+								onClick={handleGoogleLogin}
 								type="button"
 								variant="outline"
 							>
@@ -161,7 +166,7 @@ function LoginPage() {
 						<form className="space-y-4" onSubmit={handleEmailPasswordLogin}>
 							<div className="space-y-2">
 								<Label className="font-medium text-foreground" htmlFor="email">
-									Email<span className="text-blue-700">*</span>
+									Email<span className="text-primary">*</span>
 								</Label>
 								<div className="relative">
 									<Input
@@ -189,7 +194,7 @@ function LoginPage() {
 										className="font-medium text-foreground"
 										htmlFor="password"
 									>
-										Password<span className="text-blue-700">*</span>
+										Password<span className="text-primary">*</span>
 									</Label>
 									<Link
 										className="h-auto cursor-pointer p-0 text-primary text-xs sm:text-sm"
