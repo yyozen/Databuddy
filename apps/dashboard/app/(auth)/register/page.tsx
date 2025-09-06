@@ -34,12 +34,10 @@ function RegisterPageContent() {
 	const searchParams = useSearchParams();
 	const selectedPlan = searchParams.get('plan');
 	const callbackUrl = searchParams.get('callback');
-	const prefilledEmail = searchParams.get('email');
-	const prefilledName = searchParams.get('name');
 	const [isLoading, setIsLoading] = useState(false);
 	const [formData, setFormData] = useState({
-		name: prefilledName || '',
-		email: prefilledEmail || '',
+		name: '',
+		email: '',
 		password: '',
 		confirmPassword: '',
 	});
@@ -569,7 +567,7 @@ function RegisterPageContent() {
 							className="font-medium text-primary hover:text-primary/80"
 							href={
 								callbackUrl
-									? `/login?email=${encodeURIComponent(formData.email)}&callback=${encodeURIComponent(callbackUrl)}`
+									? `/login?callback=${encodeURIComponent(callbackUrl)}`
 									: '/login'
 							}
 						>

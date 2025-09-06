@@ -28,14 +28,10 @@ function LoginPage() {
 	const [lastUsed, setLastUsed] = useState<string | null>(null);
 
 	const defaultCallbackUrl = searchParams.get('callback') || '/websites';
-	const prefilledEmail = searchParams.get('email');
 
 	useEffect(() => {
 		setLastUsed(localStorage.getItem('lastUsedLogin'));
-		if (prefilledEmail) {
-			setEmail(prefilledEmail);
-		}
-	}, [prefilledEmail]);
+	}, []);
 
 	const handlePostAuthCallback = () => {
 		const callbackUrl = searchParams.get('callback');

@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { account, and, db, eq, user } from '@databuddy/db';
+import { auth } from '@databuddy/auth';
+import { account, and, db, eq } from '@databuddy/db';
+import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 interface VercelTokenResponse {
@@ -26,6 +28,19 @@ export async function GET(request: NextRequest) {
 		if (!code) {
 			return NextResponse.redirect(
 				`${process.env.BETTER_AUTH_URL}/auth/error?error=missing_code`
+			);
+		}
+
+		// Check if user is authenticated
+		const session = await auth.api.getSession({ headers: await headers() });
+
+		// If no session, redirect to auth pages with the callback URL
+		if (!session?.user) {
+			const callbackUrl = new URL(request.url);
+			const completeIntegrationUrl = `${process.env.BETTER_AUTH_URL}${callbackUrl.pathname}${callbackUrl.search}`;
+
+			return NextResponse.redirect(
+				`${process.env.BETTER_AUTH_URL}/register?callback=${encodeURIComponent(completeIntegrationUrl)}`
 			);
 		}
 
@@ -76,21 +91,7 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
-		const existingUser = await db.query.user.findFirst({
-			where: eq(user.email, userInfo.email),
-		});
-
-		if (!existingUser) {
-			// Create the callback URL that will complete the integration after auth
-			const callbackUrl = new URL(request.url);
-			const completeIntegrationUrl = `${process.env.BETTER_AUTH_URL}${callbackUrl.pathname}${callbackUrl.search}`;
-
-			return NextResponse.redirect(
-				`${process.env.BETTER_AUTH_URL}/register?email=${encodeURIComponent(userInfo.email)}&name=${encodeURIComponent(userInfo.name || '')}&callback=${encodeURIComponent(completeIntegrationUrl)}`
-			);
-		}
-
-		const userId = existingUser.id;
+		const userId = session.user.id;
 
 		const existingAccount = await db.query.account.findFirst({
 			where: and(eq(account.userId, userId), eq(account.providerId, 'vercel')),
