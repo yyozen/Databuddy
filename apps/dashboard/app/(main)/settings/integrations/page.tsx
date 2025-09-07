@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIntegrations, useDisconnectIntegration, type Integration } from '@/hooks/use-integrations';
-import { trpc } from '@/lib/trpc';
 
 const categoryLabels = {
 	deployment: 'Deployment',
@@ -21,29 +20,31 @@ const categoryLabels = {
 function LoadingSkeleton() {
 	return (
 		<div className="space-y-8">
-			<div className="space-y-2">
-				<Skeleton className="h-8 w-48" />
-				<Skeleton className="h-4 w-96" />
+			<div className="space-y-3">
+				<Skeleton className="h-9 w-64" />
+				<Skeleton className="h-5 w-96" />
 			</div>
-			<div className="space-y-4">
-				<div className="flex items-center gap-2">
-					<Skeleton className="h-6 w-24" />
-					<Skeleton className="h-5 w-8" />
+			<div className="space-y-6">
+				<div className="flex items-center gap-3">
+					<Skeleton className="h-7 w-32" />
+					<Skeleton className="h-6 w-6 rounded-full" />
 				</div>
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{[1, 2, 3].map((num) => (
-						<Card key={num} className="animate-pulse">
-							<CardHeader className="pb-3">
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-3">
-										<Skeleton className="h-10 w-10 rounded" />
-										<Skeleton className="h-5 w-20" />
+				<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+					{[1, 2, 3, 4].map((num) => (
+						<Card key={num} className="animate-pulse border-0 shadow-sm">
+							<CardContent className="p-6">
+								<div className="space-y-4">
+									<div className="flex items-start justify-between">
+										<Skeleton className="h-12 w-12 rounded-lg" />
+										<Skeleton className="h-5 w-16 rounded-full" />
 									</div>
+									<div className="space-y-2">
+										<Skeleton className="h-6 w-24" />
+										<Skeleton className="h-4 w-full" />
+										<Skeleton className="h-4 w-3/4" />
+									</div>
+									<Skeleton className="h-9 w-full rounded-lg" />
 								</div>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<Skeleton className="h-12 w-full" />
-								<Skeleton className="h-9 w-full" />
 							</CardContent>
 						</Card>
 					))}
@@ -102,20 +103,7 @@ export default function IntegrationsPage() {
 	const handleConnect = (integration: Integration) => {
 		if (integration.id === 'vercel') {
 			setConnectingProvider(integration.id);
-			
-			// Redirect directly to Vercel OAuth
-			const clientId = process.env.NEXT_PUBLIC_VERCEL_CLIENT_ID;
-			const redirectUri = `${window.location.origin}/api/integrations/vercel/callback`;
-			const state = encodeURIComponent(window.location.href);
-			
-			const vercelAuthUrl = new URL('https://vercel.com/oauth/authorize');
-			vercelAuthUrl.searchParams.set('client_id', clientId || '');
-			vercelAuthUrl.searchParams.set('redirect_uri', redirectUri);
-			vercelAuthUrl.searchParams.set('response_type', 'code');
-			vercelAuthUrl.searchParams.set('scope', 'user:read');
-			vercelAuthUrl.searchParams.set('state', state);
-			
-			window.location.href = vercelAuthUrl.toString();
+			window.location.href = 'https://vercel.com/marketplace/databuddy';
 		}
 	};
 
@@ -148,14 +136,14 @@ export default function IntegrationsPage() {
 	return (
 		<div className="space-y-8">
 			{showSuccessMessage && (
-				<div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
-					<div className="flex items-center gap-3">
-						<CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
-						<div>
-							<h3 className="font-medium text-green-800 dark:text-green-200">
+				<div className="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/50">
+					<div className="flex items-start gap-3">
+						<CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+						<div className="flex-1">
+							<h3 className="font-semibold text-green-900 dark:text-green-100">
 								Integration Connected Successfully
 							</h3>
-							<p className="text-green-700 text-sm dark:text-green-300">
+							<p className="text-green-700 text-sm dark:text-green-300 mt-1">
 								Vercel has been connected to your account. You can now manage your deployments.
 							</p>
 						</div>
@@ -163,89 +151,94 @@ export default function IntegrationsPage() {
 							variant="ghost"
 							size="sm"
 							onClick={() => setShowSuccessMessage(false)}
-							className="ml-auto text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+							className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 -mt-1"
 						>
 							×
 						</Button>
 					</div>
 				</div>
 			)}
-			
-			<div className="space-y-2">
-				<h2 className="font-semibold text-2xl tracking-tight">Integrations</h2>
-				<p className="text-muted-foreground">
-					Connect your favorite tools and services to enhance your workflow.
-				</p>
-			</div>
-
+		
 			{Object.entries(groupedIntegrations).map(([category, categoryIntegrations]) => (
-				<div key={category} className="space-y-4">
-					<div className="flex items-center gap-2">
-						<h3 className="font-medium text-lg">{categoryLabels[category as keyof typeof categoryLabels]}</h3>
-						<Badge variant="secondary" className="text-xs">
+				<div key={category} className="space-y-6">
+					<div className="flex items-center gap-3">
+						<h2 className="font-semibold text-xl text-foreground">
+							{categoryLabels[category as keyof typeof categoryLabels]}
+						</h2>
+						<div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-medium">
 							{categoryIntegrations.length}
-						</Badge>
+						</div>
 					</div>
 
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+					<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{categoryIntegrations.map((integration) => (
-							<Card key={integration.id} className="relative shadow-sm transition-shadow hover:shadow-md">
-								<CardHeader className="pb-3">
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
-											<div className="flex h-10 w-10 items-center justify-center rounded border bg-background p-2">
+							<Card key={integration.id} className="group relative border-0 shadow-sm transition-all duration-200 hover:shadow-md hover:shadow-black/5">
+								<CardContent className="p-6">
+									<div className="space-y-4">
+										<div className="flex items-start justify-between">
+											<div className="flex h-12 w-12 items-center justify-center rounded-lg border bg-white shadow-sm">
 												<Image
 													src={integration.logo}
 													alt={`${integration.name} logo`}
-													width={24}
-													height={24}
-													className="h-6 w-6"
+													width={28}
+													height={28}
+													className="h-7 w-7 not-dark:brightness-0"
 												/>
 											</div>
-											<div>
-												<CardTitle className="text-base">{integration.name}</CardTitle>
-											</div>
+											{integration.connected && (
+												<Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-100">
+													Connected
+												</Badge>
+											)}
 										</div>
-										{integration.connected && (
-											<Badge variant="default" className="text-xs">
-												<LinkIcon className="mr-1 h-3 w-3" />
-												Connected
-											</Badge>
-										)}
-									</div>
-								</CardHeader>
-								<CardContent className="space-y-4">
-									<CardDescription className="text-sm leading-relaxed">
-										{integration.description}
-									</CardDescription>
-									
-									<div className="flex items-center justify-between">
-										{integration.connected ? (
-											<div className="flex gap-2">
-												<Button variant="outline" size="sm" disabled>
-													Configure
-												</Button>
+										
+										<div className="space-y-2">
+											<h3 className="font-semibold text-lg leading-none tracking-tight">
+												{integration.name}
+											</h3>
+											<p className="text-muted-foreground text-sm leading-relaxed">
+												{integration.description}
+											</p>
+										</div>
+										
+										<div className="pt-2">
+											{integration.connected ? (
+												<div className="flex gap-2">
+													<Button 
+														variant="outline" 
+														size="sm" 
+														className="flex-1"
+														disabled
+													>
+														Configure
+													</Button>
+													<Button 
+														variant="ghost" 
+														size="sm" 
+														className="text-destructive hover:text-destructive hover:bg-destructive/10"
+														onClick={() => handleDisconnect(integration)}
+														disabled={disconnectMutation.isPending}
+													>
+														{disconnectMutation.isPending ? 'Disconnecting...' : 'Disconnect'}
+													</Button>
+												</div>
+											) : (
 												<Button 
-													variant="ghost" 
-													size="sm" 
-													className="text-destructive hover:text-destructive"
-													onClick={() => handleDisconnect(integration)}
-													disabled={disconnectMutation.isPending}
+													onClick={() => handleConnect(integration)}
+													className="w-full font-medium"
+													disabled={connectingProvider === integration.id}
 												>
-													{disconnectMutation.isPending ? 'Disconnecting...' : 'Disconnect'}
+													{connectingProvider === integration.id ? (
+														'Connecting...'
+													) : (
+														<>
+															<PlusIcon className="mr-2 h-4 w-4" />
+															Connect
+														</>
+													)}
 												</Button>
-											</div>
-										) : (
-											<Button 
-												onClick={() => handleConnect(integration)}
-												size="sm"
-												className="w-full"
-												disabled={connectingProvider === integration.id}
-											>
-												<PlusIcon className="mr-2 h-4 w-4" />
-												{connectingProvider === integration.id ? 'Connecting...' : 'Connect'}
-											</Button>
-										)}
+											)}
+										</div>
 									</div>
 								</CardContent>
 							</Card>

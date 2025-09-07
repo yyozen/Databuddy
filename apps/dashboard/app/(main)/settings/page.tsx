@@ -145,7 +145,7 @@ export default function SettingsPage() {
 	return (
 		<div className="flex h-full flex-col">
 			<div className="border-b bg-gradient-to-r from-background via-background to-muted/20">
-				<div className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center sm:gap-0 sm:px-6 sm:py-6">
+				<div className="flex h-24 items-center px-4 sm:px-6">
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-4">
 							<div className="rounded-xl border border-primary/20 bg-primary/10 p-3">
@@ -167,7 +167,6 @@ export default function SettingsPage() {
 					</div>
 				</div>
 			</div>
-
 			<main className="flex-1 overflow-y-auto p-4 sm:p-6">
 				{activeTab === 'profile' && (
 					<Card className="shadow-sm">
@@ -265,13 +264,7 @@ export default function SettingsPage() {
 						</CardContent>
 					</Card>
 				)}
-				{activeTab === 'integrations' && (
-					<Card className="shadow-sm">
-						<CardContent className="pt-6">
-							<IntegrationsSection />
-						</CardContent>
-					</Card>
-				)}
+				{activeTab === 'integrations' && <IntegrationsSection />}
 				{activeTab === 'notifications' && (
 					<div className="flex h-full items-center justify-center">
 						<div className="text-center">
