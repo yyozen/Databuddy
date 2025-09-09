@@ -102,7 +102,7 @@ function WebsiteDetailsPage() {
 		} else if (isTrackingSetup === true && activeTab === 'tracking-setup') {
 			setActiveTab('overview');
 		}
-	}, [isTrackingSetup, activeTab, setActiveTab]);
+	}, [isTrackingSetup, activeTab]);
 
 	const renderTabContent = useCallback(
 		(tabId: TabId) => {
@@ -148,16 +148,7 @@ function WebsiteDetailsPage() {
 				</Suspense>
 			);
 		},
-		[
-			activeTab,
-			id,
-			dateRange,
-			data,
-			isRefreshing,
-			setIsRefreshing,
-			selectedFilters,
-			addFilter,
-		]
+		[activeTab, id, dateRange, data, isRefreshing, selectedFilters, addFilter]
 	);
 
 	if (isLoading || isTrackingSetup === null) {
