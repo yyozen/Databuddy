@@ -1,6 +1,11 @@
 import { websitesApi } from '@databuddy/auth';
 import { chQuery, db, eq, session, websites } from '@databuddy/db';
-import type { DailyUsageRow, DailyUsageByTypeRow, EventTypeBreakdown, UsageResponse } from '@databuddy/shared';
+import type {
+	DailyUsageRow,
+	DailyUsageByTypeRow,
+	EventTypeBreakdown,
+	UsageResponse,
+} from '@databuddy/shared';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { logger } from '../lib/logger';
@@ -12,7 +17,6 @@ const usageQuerySchema = z.object({
 	endDate: z.string().optional(),
 	organizationId: z.string().nullable().optional(),
 });
-
 
 const getDefaultDateRange = () => {
 	const endDate = new Date().toISOString().split('T')[0];
@@ -139,7 +143,10 @@ export const billingRouter = createTRPCRouter({
 					: getDefaultDateRange();
 
 			const organizationIdRaw = input.organizationId;
-			const organizationId = organizationIdRaw && organizationIdRaw.trim().length > 0 ? organizationIdRaw : null;
+			const organizationId =
+				organizationIdRaw && organizationIdRaw.trim().length > 0
+					? organizationIdRaw
+					: null;
 
 			if (organizationId) {
 				const { success } = await websitesApi.hasPermission({
@@ -181,18 +188,19 @@ export const billingRouter = createTRPCRouter({
 				}
 
 				// Execute both queries in parallel - ClickHouse does all aggregation
-				const [dailyUsageByTypeResults, eventTypeBreakdownResults] = await Promise.all([
-					chQuery<DailyUsageByTypeRow>(getDailyUsageByTypeQuery(), {
-						websiteIds,
-						startDate,
-						endDate,
-					}),
-					chQuery<EventTypeBreakdown>(getEventTypeBreakdownQuery(), {
-						websiteIds,
-						startDate,
-						endDate,
-					}),
-				]);
+				const [dailyUsageByTypeResults, eventTypeBreakdownResults] =
+					await Promise.all([
+						chQuery<DailyUsageByTypeRow>(getDailyUsageByTypeQuery(), {
+							websiteIds,
+							startDate,
+							endDate,
+						}),
+						chQuery<EventTypeBreakdown>(getEventTypeBreakdownQuery(), {
+							websiteIds,
+							startDate,
+							endDate,
+						}),
+					]);
 
 				// Calculate daily usage totals and total events from detailed breakdown
 				const dailyUsageMap = new Map<string, number>();
@@ -204,17 +212,22 @@ export const billingRouter = createTRPCRouter({
 					totalEvents += row.event_count;
 				}
 
-				const dailyUsageResults: DailyUsageRow[] = Array.from(dailyUsageMap.entries())
+				const dailyUsageResults: DailyUsageRow[] = Array.from(
+					dailyUsageMap.entries()
+				)
 					.map(([date, event_count]) => ({ date, event_count }))
 					.sort((a, b) => a.date.localeCompare(b.date));
 
-				logger.info(`Billing usage calculated for user ${ctx.user.id}: ${totalEvents} events across ${websiteIds.length} websites`, {
-					userId: ctx.user.id,
-					organizationId,
-					websiteCount: websiteIds.length,
-					totalEvents,
-					dateRange: { startDate, endDate },
-				});
+				logger.info(
+					`Billing usage calculated for user ${ctx.user.id}: ${totalEvents} events across ${websiteIds.length} websites`,
+					{
+						userId: ctx.user.id,
+						organizationId,
+						websiteCount: websiteIds.length,
+						totalEvents,
+						dateRange: { startDate, endDate },
+					}
+				);
 
 				return {
 					totalEvents,
@@ -225,11 +238,14 @@ export const billingRouter = createTRPCRouter({
 					dateRange: { startDate, endDate },
 				};
 			} catch (error) {
-				logger.error(`Failed to fetch billing usage for user ${ctx.user.id}: ${error instanceof Error ? error.message : String(error)}`, {
-					error: error instanceof Error ? error.message : String(error),
-					userId: ctx.user.id,
-					organizationId,
-				});
+				logger.error(
+					`Failed to fetch billing usage for user ${ctx.user.id}: ${error instanceof Error ? error.message : String(error)}`,
+					{
+						error: error instanceof Error ? error.message : String(error),
+						userId: ctx.user.id,
+						organizationId,
+					}
+				);
 				throw new TRPCError({
 					code: 'INTERNAL_SERVER_ERROR',
 					message: 'Failed to fetch billing usage data',

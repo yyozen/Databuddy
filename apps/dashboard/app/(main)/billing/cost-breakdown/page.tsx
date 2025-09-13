@@ -21,14 +21,18 @@ export default function CostBreakdownPage() {
 	const [dateRange, setDateRange] = useState(() => getDefaultDateRange());
 	const { activeOrganization } = useOrganizations();
 
-	const usageQueryInput = useMemo(() => ({
-		startDate: dateRange.startDate,
-		endDate: dateRange.endDate,
-		organizationId: activeOrganization?.id || null,
-	}), [dateRange, activeOrganization?.id]);
+	const usageQueryInput = useMemo(
+		() => ({
+			startDate: dateRange.startDate,
+			endDate: dateRange.endDate,
+			organizationId: activeOrganization?.id || null,
+		}),
+		[dateRange, activeOrganization?.id]
+	);
 
 	const { data: organizationUsage } = trpc.organizations.getUsage.useQuery();
-	const { data: usageData, isLoading } = trpc.billing.getUsage.useQuery(usageQueryInput);
+	const { data: usageData, isLoading } =
+		trpc.billing.getUsage.useQuery(usageQueryInput);
 
 	const handleDateRangeChange = (startDate: string, endDate: string) => {
 		setDateRange({ startDate, endDate });
@@ -39,9 +43,13 @@ export default function CostBreakdownPage() {
 
 		const includedUsage = organizationUsage.includedUsage || 0;
 		const totalEvents = usageData.totalEvents;
-		
+
 		if (organizationUsage.unlimited || totalEvents <= includedUsage) {
-			return { hasOverage: false, overageEvents: 0, includedEvents: totalEvents };
+			return {
+				hasOverage: false,
+				overageEvents: 0,
+				includedEvents: totalEvents,
+			};
 		}
 
 		const overageEvents = totalEvents - includedUsage;
@@ -53,12 +61,20 @@ export default function CostBreakdownPage() {
 			<div className="border-b bg-gradient-to-r from-background to-muted/20 px-6 py-6">
 				<div className="flex items-center gap-4">
 					<div className="rounded-xl border border-primary/20 bg-primary/10 p-3">
-						<ChartLineUpIcon className="h-6 w-6 text-primary" weight="duotone" />
+						<ChartLineUpIcon
+							className="h-6 w-6 text-primary"
+							weight="duotone"
+						/>
 					</div>
 					<div>
 						<div className="flex items-center gap-3">
-							<h1 className="text-2xl font-bold tracking-tight">Cost Breakdown</h1>
-							<Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+							<h1 className="text-2xl font-bold tracking-tight">
+								Cost Breakdown
+							</h1>
+							<Badge
+								variant="secondary"
+								className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+							>
 								<FlaskIcon className="mr-1" size={12} weight="duotone" />
 								Experimental
 							</Badge>
@@ -73,9 +89,9 @@ export default function CostBreakdownPage() {
 			<div className="flex-1 flex flex-col min-h-0">
 				<div className="flex-[3]">
 					<Suspense fallback={<Skeleton className="h-full w-full" />}>
-						<ConsumptionChart 
-							usageData={usageData} 
-							isLoading={isLoading} 
+						<ConsumptionChart
+							usageData={usageData}
+							isLoading={isLoading}
 							onDateRangeChange={handleDateRangeChange}
 							overageInfo={overageInfo}
 						/>
@@ -83,9 +99,9 @@ export default function CostBreakdownPage() {
 				</div>
 				<div className="flex-[2]">
 					<Suspense fallback={<Skeleton className="h-full w-full" />}>
-						<UsageBreakdownTable 
-							usageData={usageData} 
-							isLoading={isLoading} 
+						<UsageBreakdownTable
+							usageData={usageData}
+							isLoading={isLoading}
 							overageInfo={overageInfo}
 						/>
 					</Suspense>

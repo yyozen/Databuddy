@@ -17,7 +17,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { UsageResponse } from '@databuddy/shared';
 import { calculateOverageCost, type OverageInfo } from '../utils/billing-utils';
 
-
 type ViewMode = 'daily' | 'cumulative';
 
 import { METRIC_COLORS } from '@/components/charts/metrics-constants';
@@ -37,7 +36,12 @@ interface ConsumptionChartProps {
 	overageInfo: OverageInfo | null;
 }
 
-export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, overageInfo }: ConsumptionChartProps) {
+export function ConsumptionChart({
+	usageData,
+	isLoading,
+	onDateRangeChange,
+	overageInfo,
+}: ConsumptionChartProps) {
 	const [viewMode, setViewMode] = useState<ViewMode>('daily');
 	const [hiddenTypes, setHiddenTypes] = useState<Record<string, boolean>>({});
 
@@ -46,9 +50,11 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 
 		// Group the real daily usage by type data by date
 		const dailyDataMap = new Map<string, Record<string, number>>();
-		
+
 		// Initialize all dates with zero values for all event types
-		const allDates = [...new Set(usageData.dailyUsageByType.map(row => row.date))].sort();
+		const allDates = [
+			...new Set(usageData.dailyUsageByType.map((row) => row.date)),
+		].sort();
 		for (const date of allDates) {
 			dailyDataMap.set(date, {
 				event: 0,
@@ -68,10 +74,13 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 		}
 
 		// Convert to chart format with cumulative calculation if needed
-		let runningTotals = Object.keys(EVENT_TYPE_COLORS).reduce((acc, key) => {
-			acc[key] = 0;
-			return acc;
-		}, {} as Record<string, number>);
+		let runningTotals = Object.keys(EVENT_TYPE_COLORS).reduce(
+			(acc, key) => {
+				acc[key] = 0;
+				return acc;
+			},
+			{} as Record<string, number>
+		);
 
 		return Array.from(dailyDataMap.entries()).map(([date, eventCounts]) => {
 			const dayData: any = {
@@ -83,13 +92,13 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 			};
 
 			// Use real data from ClickHouse, not approximations
-			Object.keys(EVENT_TYPE_COLORS).forEach(eventType => {
+			Object.keys(EVENT_TYPE_COLORS).forEach((eventType) => {
 				if (hiddenTypes[eventType]) {
 					dayData[eventType] = 0;
 					return;
 				}
 				const actualAmount = eventCounts[eventType] || 0;
-				
+
 				if (viewMode === 'cumulative') {
 					runningTotals[eventType] += actualAmount;
 					dayData[eventType] = runningTotals[eventType];
@@ -129,23 +138,33 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 				</div>
 				<div className="flex-1 px-6 py-6 flex items-center justify-center">
 					<div className="text-center">
-						<CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" weight="duotone" />
+						<CalendarIcon
+							className="mx-auto h-12 w-12 text-muted-foreground mb-4"
+							weight="duotone"
+						/>
 						<h3 className="text-lg font-semibold">No Data Available</h3>
-						<p className="text-muted-foreground">No usage data found for the selected period</p>
+						<p className="text-muted-foreground">
+							No usage data found for the selected period
+						</p>
 					</div>
 				</div>
 			</div>
 		);
 	}
 
-	const maxValue = Math.max(...chartData.map(d => 
-		Object.keys(EVENT_TYPE_COLORS).reduce((sum, key) => sum + (d[key] || 0), 0)
-	));
+	const maxValue = Math.max(
+		...chartData.map((d) =>
+			Object.keys(EVENT_TYPE_COLORS).reduce(
+				(sum, key) => sum + (d[key] || 0),
+				0
+			)
+		)
+	);
 	const yAxisMax = Math.ceil(maxValue * 1.1);
 
 	return (
 		<div className="h-full flex flex-col border-b">
-				<div className="px-6 py-4 border-b bg-muted/20">
+			<div className="px-6 py-4 border-b bg-muted/20">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<ChartBarIcon className="h-5 w-5" weight="duotone" />
@@ -191,10 +210,13 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 							variant="outline"
 							size="sm"
 							onClick={() => {
-								const allHidden = Object.keys(EVENT_TYPE_COLORS).reduce((acc, key) => {
-									acc[key] = true;
-									return acc;
-								}, {} as Record<string, boolean>);
+								const allHidden = Object.keys(EVENT_TYPE_COLORS).reduce(
+									(acc, key) => {
+										acc[key] = true;
+										return acc;
+									},
+									{} as Record<string, boolean>
+								);
 								setHiddenTypes(allHidden);
 							}}
 							className="text-xs"
@@ -211,7 +233,7 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 							data={chartData}
 							margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
 							style={{
-								cursor: 'default'
+								cursor: 'default',
 							}}
 						>
 							<defs>
@@ -224,21 +246,13 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 										y1="0"
 										y2="1"
 									>
-										<stop
-											offset="0%"
-											stopColor={color}
-											stopOpacity={0.8}
-										/>
-										<stop
-											offset="100%"
-											stopColor={color}
-											stopOpacity={0.6}
-										/>
+										<stop offset="0%" stopColor={color} stopOpacity={0.8} />
+										<stop offset="100%" stopColor={color} stopOpacity={0.6} />
 									</linearGradient>
 								))}
 							</defs>
-							<XAxis 
-								dataKey="date" 
+							<XAxis
+								dataKey="date"
 								axisLine={{ stroke: 'var(--border)', strokeOpacity: 0.5 }}
 								tickLine={false}
 								tick={{
@@ -247,14 +261,19 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 									fontWeight: 500,
 								}}
 							/>
-							<YAxis 
+							<YAxis
 								axisLine={false}
 								tickLine={false}
-								tick={{ fontSize: 11, fill: 'var(--muted-foreground)', fontWeight: 500 }}
+								tick={{
+									fontSize: 11,
+									fill: 'var(--muted-foreground)',
+									fontWeight: 500,
+								}}
 								width={45}
 								domain={[0, yAxisMax]}
 								tickFormatter={(value) => {
-									if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+									if (value >= 1_000_000)
+										return `${(value / 1_000_000).toFixed(1)}M`;
 									if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
 									return value.toString();
 								}}
@@ -266,40 +285,57 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 											<div className="min-w-[200px] rounded border border-border/50 bg-card p-4">
 												<div className="mb-3 flex items-center gap-2 border-border/30 border-b pb-2">
 													<div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-													<p className="font-semibold text-foreground text-sm">{label}</p>
+													<p className="font-semibold text-foreground text-sm">
+														{label}
+													</p>
 												</div>
-											<div className="space-y-2.5">
-												{payload
-													.filter(entry => entry.value && (entry.value as number) > 0)
-													.map((entry, index) => {
-														const eventType = entry.dataKey as keyof typeof EVENT_TYPE_COLORS;
-														const color = EVENT_TYPE_COLORS[eventType];
-														const eventCount = entry.value as number;
-														const overageCost = usageData ? calculateOverageCost(eventCount, usageData.totalEvents, overageInfo) : 0;
-														
-														return (
-															<div key={index} className="group flex items-center justify-between gap-3">
-																<div className="flex items-center gap-2.5">
-																	<div 
-																		className="h-3 w-3 rounded-full shadow-sm ring-2 ring-background" 
-																		style={{ backgroundColor: color }}
-																	/>
-																	<span className="font-medium text-muted-foreground text-xs capitalize">
-																		{entry.dataKey?.toString().replace('_', ' ')}
-																	</span>
-																</div>
-																<div className="text-right">
-																	<div className="font-bold text-foreground text-sm group-hover:text-primary">
-																		{eventCount.toLocaleString()}
+												<div className="space-y-2.5">
+													{payload
+														.filter(
+															(entry) =>
+																entry.value && (entry.value as number) > 0
+														)
+														.map((entry, index) => {
+															const eventType =
+																entry.dataKey as keyof typeof EVENT_TYPE_COLORS;
+															const color = EVENT_TYPE_COLORS[eventType];
+															const eventCount = entry.value as number;
+															const overageCost = usageData
+																? calculateOverageCost(
+																		eventCount,
+																		usageData.totalEvents,
+																		overageInfo
+																	)
+																: 0;
+
+															return (
+																<div
+																	key={index}
+																	className="group flex items-center justify-between gap-3"
+																>
+																	<div className="flex items-center gap-2.5">
+																		<div
+																			className="h-3 w-3 rounded-full shadow-sm ring-2 ring-background"
+																			style={{ backgroundColor: color }}
+																		/>
+																		<span className="font-medium text-muted-foreground text-xs capitalize">
+																			{entry.dataKey
+																				?.toString()
+																				.replace('_', ' ')}
+																		</span>
 																	</div>
-																	<div className="text-xs text-muted-foreground">
-																		${overageCost.toFixed(6)}
+																	<div className="text-right">
+																		<div className="font-bold text-foreground text-sm group-hover:text-primary">
+																			{eventCount.toLocaleString()}
+																		</div>
+																		<div className="text-xs text-muted-foreground">
+																			${overageCost.toFixed(6)}
+																		</div>
 																	</div>
 																</div>
-															</div>
-														);
-													})}
-											</div>
+															);
+														})}
+												</div>
 											</div>
 										);
 									}
@@ -327,7 +363,10 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 								iconSize={10}
 								iconType="circle"
 								onClick={(payload) => {
-									const anyPayload = payload as unknown as { dataKey?: string | number; value?: string | number };
+									const anyPayload = payload as unknown as {
+										dataKey?: string | number;
+										value?: string | number;
+									};
 									const raw = anyPayload?.dataKey ?? anyPayload?.value;
 									if (raw == null) return;
 									const key = String(raw);
@@ -352,12 +391,16 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 									dataKey={eventType}
 									stackId="events"
 									fill={`url(#gradient-${eventType})`}
-									stroke={EVENT_TYPE_COLORS[eventType as keyof typeof EVENT_TYPE_COLORS]}
+									stroke={
+										EVENT_TYPE_COLORS[
+											eventType as keyof typeof EVENT_TYPE_COLORS
+										]
+									}
 									strokeWidth={0.5}
 									hide={!!hiddenTypes[eventType]}
 									style={{
 										filter: 'none',
-										transition: 'none'
+										transition: 'none',
 									}}
 								/>
 							))}

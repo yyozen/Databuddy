@@ -132,14 +132,21 @@ export function NavigationItem({
 					</span>
 				)}
 				{badge && (
-					<span className={cn(
-						"rounded px-1.5 py-0.5 text-xs font-medium",
-						badge.variant === 'purple' && "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-						badge.variant === 'blue' && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-						badge.variant === 'green' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-						badge.variant === 'orange' && "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
-						badge.variant === 'red' && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-					)}>
+					<span
+						className={cn(
+							'rounded px-1.5 py-0.5 text-xs font-medium',
+							badge.variant === 'purple' &&
+								'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+							badge.variant === 'blue' &&
+								'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+							badge.variant === 'green' &&
+								'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+							badge.variant === 'orange' &&
+								'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+							badge.variant === 'red' &&
+								'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+						)}
+					>
 						{badge.text}
 					</span>
 				)}

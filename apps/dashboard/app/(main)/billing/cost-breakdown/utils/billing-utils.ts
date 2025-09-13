@@ -12,7 +12,7 @@ export function calculateOverageCost(
 	overageInfo: OverageInfo | null
 ): number {
 	if (!overageInfo?.hasOverage || totalEvents === 0) return 0;
-	
+
 	const eventTypeRatio = eventCount / totalEvents;
 	const overageForThisType = overageInfo.overageEvents * eventTypeRatio;
 	return Math.max(0, overageForThisType) * EVENT_COST;
