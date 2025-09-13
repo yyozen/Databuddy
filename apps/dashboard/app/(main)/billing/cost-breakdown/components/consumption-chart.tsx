@@ -186,6 +186,20 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 								Daily
 							</Button>
 						</div>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => {
+								const allHidden = Object.keys(EVENT_TYPE_COLORS).reduce((acc, key) => {
+									acc[key] = true;
+									return acc;
+								}, {} as Record<string, boolean>);
+								setHiddenTypes(allHidden);
+							}}
+							className="text-xs"
+						>
+							Select None
+						</Button>
 					</div>
 				</div>
 			</div>
@@ -293,11 +307,21 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 								wrapperStyle={{ outline: 'none' }}
 							/>
 							<Legend
-								formatter={(value) => (
-									<span className="text-xs font-medium text-muted-foreground capitalize">
-										{value.replace('_', ' ')}
-									</span>
-								)}
+								formatter={(value) => {
+									const key = String(value);
+									const isHidden = hiddenTypes[key];
+									return (
+										<span
+											className={`inline-flex items-center text-xs font-medium capitalize transition-all duration-200 select-none leading-none ${
+												isHidden
+													? 'opacity-40 text-slate-600 line-through decoration-1'
+													: 'opacity-100 text-muted-foreground'
+											}`}
+										>
+											{key.replace('_', ' ')}
+										</span>
+									);
+								}}
 								iconSize={10}
 								iconType="circle"
 								onClick={(payload) => {
@@ -307,7 +331,13 @@ export function ConsumptionChart({ usageData, isLoading, onDateRangeChange, over
 									const key = String(raw);
 									setHiddenTypes((prev) => ({ ...prev, [key]: !prev[key] }));
 								}}
+								align="center"
+								verticalAlign="bottom"
+								layout="horizontal"
 								wrapperStyle={{
+									display: 'flex',
+									justifyContent: 'center',
+									gap: 12,
 									fontSize: '12px',
 									paddingTop: '20px',
 									fontWeight: 500,
