@@ -11,6 +11,10 @@ export interface NavigationItem {
 	production?: boolean;
 	domain?: string;
 	disabled?: boolean;
+	badge?: {
+		text: string;
+		variant: 'purple' | 'blue' | 'green' | 'orange' | 'red';
+	};
 }
 
 export interface NavigationSection {

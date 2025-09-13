@@ -1,6 +1,7 @@
 import { apikeysRouter } from './routers/apikeys';
 import { assistantRouter } from './routers/assistant';
 import { autocompleteRouter } from './routers/autocomplete';
+import { billingRouter } from './routers/billing';
 import { dbConnectionsRouter } from './routers/db-connections';
 import { experimentsRouter } from './routers/experiments';
 import { funnelsRouter } from './routers/funnels';
@@ -29,6 +30,7 @@ export const appRouter = createTRPCRouter({
 	performance: performanceRouter,
 	integrations: integrationsRouter,
 	vercel: vercelRouter,
+	billing: billingRouter,
 });
 
 export type AppRouter = typeof appRouter;

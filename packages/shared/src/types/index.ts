@@ -3,6 +3,7 @@
 export * from './analytics';
 export * from './api';
 export * from './assistant';
+export * from './billing';
 export * from './errors';
 export * from './journey';
 export * from './metrics';
