@@ -13,6 +13,7 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { FaviconImage } from '@/components/analytics/favicon-image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,22 +37,6 @@ interface ProjectRowProps {
 	integrationStatus?: any;
 }
 
-const formatTimeAgo = (timestamp: number): string => {
-	const now = Date.now();
-	const diff = now - timestamp;
-	const minutes = Math.floor(diff / (1000 * 60));
-	const hours = Math.floor(diff / (1000 * 60 * 60));
-	const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-	if (minutes < 60) {
-		return `${minutes}m ago`;
-	}
-	if (hours < 24) {
-		return `${hours}h ago`;
-	}
-	return `${days}d ago`;
-};
-
 const GitHubIcon = () => (
 	<svg
 		className="h-4 w-4 flex-shrink-0"
@@ -67,7 +52,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 	const badges = {
 		integrated: (
 			<Badge
-				className="flex items-center gap-1 border-green-200 bg-green-50 text-green-700 text-xs"
+				className="flex items-center gap-1 border-border bg-accent text-accent-foreground text-xs"
 				variant="outline"
 			>
 				<CheckCircleIcon className="h-3 w-3" />
@@ -76,7 +61,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 		),
 		orphaned: (
 			<Badge
-				className="flex items-center gap-1 border-yellow-200 bg-yellow-50 text-xs text-yellow-700"
+				className="flex items-center gap-1 border-border bg-muted text-muted-foreground text-xs"
 				variant="outline"
 			>
 				<WarningIcon className="h-3 w-3" />
@@ -85,7 +70,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 		),
 		invalid: (
 			<Badge
-				className="flex items-center gap-1 border-red-200 bg-red-50 text-red-700 text-xs"
+				className="flex items-center gap-1 border-destructive/20 bg-destructive/10 text-destructive text-xs"
 				variant="outline"
 			>
 				<XCircleIcon className="h-3 w-3" />
@@ -260,7 +245,7 @@ const DomainRow = ({
 							<span className="font-medium text-sm">{domain.name}</span>
 							{!domain.verified && (
 								<Badge
-									className="border-yellow-200 bg-yellow-50 text-xs text-yellow-600"
+									className="border-border bg-muted text-muted-foreground text-xs"
 									variant="outline"
 								>
 									Pending
@@ -272,19 +257,24 @@ const DomainRow = ({
 							{isIntegrated &&
 								domainStatus?.websiteName &&
 								domainStatus?.websiteId && (
-									<span className="text-green-700">
-										→{' '}
+									<div className="flex items-center gap-1">
+										<span className="text-muted-foreground">→</span>
 										<Link
-											className="hover:underline"
+											className="inline-flex items-center gap-1 rounded border border-border bg-accent px-2 py-1 font-medium text-accent-foreground text-xs transition-all hover:border-ring hover:bg-muted hover:shadow-sm"
 											href={`/websites/${domainStatus.websiteId}`}
 										>
 											{domainStatus.websiteName}
+											<ArrowRightIcon className="h-3 w-3" weight="bold" />
 										</Link>
-									</span>
+									</div>
 								)}
 							{hasIssues && (
 								<div className="flex items-center gap-2">
-									<span className="text-red-600">{domainStatus.issues[0]}</span>
+									<span className="text-destructive">
+										{domainStatus.length > 1
+											? domainStatus.issues.join(', ')
+											: domainStatus.issues[0]}
+									</span>
 									<TriageMenu
 										domain={domain}
 										domainStatus={domainStatus}
@@ -315,9 +305,6 @@ const DomainRow = ({
 									{domain.customEnvironmentId}
 								</Badge>
 							)}
-							<span>
-								Created {new Date(domain.createdAt).toLocaleDateString()}
-							</span>
 						</div>
 					</div>
 				</div>
@@ -415,9 +402,10 @@ export function ProjectRow({
 		try {
 			if (action === 'unintegrate') {
 				if (!envVarId) {
-					throw new Error(
+					toast.error(
 						'Environment variable ID is required for unintegrate action'
 					);
+					return;
 				}
 				await unintegrateMutation.mutateAsync({
 					projectId: project.id,
@@ -427,6 +415,7 @@ export function ProjectRow({
 					deleteWebsite: false, // Default to keeping the website
 					organizationId: activeOrganization?.id,
 				});
+				toast.success(`Successfully unintegrated ${domainName}`);
 			} else {
 				await triageIssueMutation.mutateAsync({
 					projectId: project.id,
@@ -436,12 +425,26 @@ export function ProjectRow({
 					websiteId,
 					organizationId: activeOrganization?.id,
 				});
+				toast.success(`Successfully resolved issues for ${domainName}`);
 			}
 
 			// Refresh the projects data to show updated status
 			await utils.vercel.getProjects.invalidate();
-		} catch (error) {
-			// Error handling is done by the mutation
+		} catch (error: any) {
+			// Handle specific error cases
+			if (error?.data?.code === 'UNAUTHORIZED') {
+				toast.error(
+					'Missing organization permissions. Please check your Vercel integration settings.'
+				);
+			} else if (error?.data?.code === 'FORBIDDEN') {
+				toast.error('Insufficient permissions to perform this action.');
+			} else if (error?.data?.code === 'NOT_FOUND') {
+				toast.error('Project or domain not found. It may have been deleted.');
+			} else if (error?.message) {
+				toast.error(error.message);
+			} else {
+				toast.error('An unexpected error occurred. Please try again.');
+			}
 		}
 	};
 
@@ -500,7 +503,7 @@ export function ProjectRow({
 							)}
 							{project.live && (
 								<Badge
-									className="ml-2 bg-green-100 text-green-800 text-xs dark:bg-green-900 dark:text-green-100"
+									className="ml-2 bg-accent text-accent-foreground text-xs"
 									variant="default"
 								>
 									Live
@@ -510,7 +513,7 @@ export function ProjectRow({
 					</div>
 				</div>
 
-				<div className="grid min-w-0 grid-cols-[1fr_auto] items-center gap-2 text-muted-foreground text-sm sm:grid-cols-[150px_1fr_100px_70px] sm:gap-4 lg:grid-cols-[200px_1fr_120px_80px]">
+				<div className="grid min-w-0 grid-cols-[1fr_auto] items-center gap-2 text-muted-foreground text-sm sm:grid-cols-[150px_1fr] sm:gap-4 lg:grid-cols-[200px_1fr]">
 					<div className="flex justify-start">
 						{project.link?.repo ? (
 							<Badge className="max-w-full" variant="outline">
@@ -534,16 +537,6 @@ export function ProjectRow({
 									{project.link.productionBranch}
 								</span>
 							</div>
-						) : (
-							<span className="text-muted-foreground">—</span>
-						)}
-					</div>
-
-					<div className="flex justify-end">
-						{project.updatedAt ? (
-							<span className="whitespace-nowrap">
-								{formatTimeAgo(project.updatedAt)}
-							</span>
 						) : (
 							<span className="text-muted-foreground">—</span>
 						)}
@@ -604,7 +597,7 @@ export function ProjectRow({
 															{integrationStatus?.summary && (
 																<>
 																	{' • '}
-																	<span className="text-green-700">
+																	<span className="text-accent-foreground">
 																		{integrationStatus.summary.integratedCount}{' '}
 																		integrated
 																	</span>
@@ -612,7 +605,7 @@ export function ProjectRow({
 																		0 && (
 																		<>
 																			{' • '}
-																			<span className="text-yellow-700">
+																			<span className="text-muted-foreground">
 																				{
 																					integrationStatus.summary
 																						.orphanedCount
@@ -625,7 +618,7 @@ export function ProjectRow({
 																		0 && (
 																		<>
 																			{' • '}
-																			<span className="text-red-700">
+																			<span className="text-destructive">
 																				{integrationStatus.summary.invalidCount}{' '}
 																				invalid
 																			</span>

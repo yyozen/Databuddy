@@ -4,6 +4,7 @@ import { autocompleteRouter } from './routers/autocomplete';
 import { billingRouter } from './routers/billing';
 import { dbConnectionsRouter } from './routers/db-connections';
 import { experimentsRouter } from './routers/experiments';
+import { flagsRouter } from './routers/flags';
 import { funnelsRouter } from './routers/funnels';
 import { goalsRouter } from './routers/goals';
 import { integrationsRouter } from './routers/integrations';
@@ -24,6 +25,7 @@ export const appRouter = createTRPCRouter({
 	autocomplete: autocompleteRouter,
 	apikeys: apikeysRouter,
 	experiments: experimentsRouter,
+	flags: flagsRouter,
 	assistant: assistantRouter,
 	organizations: organizationsRouter,
 	dbConnections: dbConnectionsRouter,

@@ -2,7 +2,6 @@
 
 import type { Website } from '@databuddy/shared';
 import {
-	ArrowRightIcon,
 	CheckIcon,
 	ClipboardIcon,
 	CodeIcon,
@@ -13,9 +12,8 @@ import {
 import dayjs from 'dayjs';
 import { useAtom } from 'jotai';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { DateRange as DayPickerRange } from 'react-day-picker';
-import { codeToHtml } from 'shiki';
 import { toast } from 'sonner';
 import { DateRangePicker } from '@/components/date-range-picker';
 import {
@@ -33,7 +31,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WebsiteDialog } from '@/components/website-dialog';
 import { useDataExport } from '@/hooks/use-data-export';
 import { useDeleteWebsite, useTogglePublicWebsite } from '@/hooks/use-websites';
@@ -46,15 +43,19 @@ import {
 	trackingOptionsAtom,
 } from '@/stores/jotai/filterAtoms';
 import {
+	InstallationTabs,
+	TrackingOptionsGrid,
+} from '../shared/tracking-components';
+import {
+	ADVANCED_TRACKING_OPTIONS,
+	BASIC_TRACKING_OPTIONS,
 	COPY_SUCCESS_TIMEOUT,
-	INSTALL_COMMANDS,
 	SETTINGS_TABS,
 	TOAST_MESSAGES,
-} from '../constants/settings-constants';
+} from '../shared/tracking-constants';
 import { generateNpmCode, generateScriptTag } from '../utils/code-generators';
 
 import type {
-	CodeBlockProps,
 	DeleteWebsiteDialogProps,
 	ExportFormat,
 	ExportTabProps,
@@ -342,233 +343,14 @@ function TrackingCodeTab({
 				</p>
 			</div>
 
-			<Tabs className="w-full" defaultValue="script">
-				<TabsList className="mb-1 grid h-6 grid-cols-2">
-					<TabsTrigger className="h-5 text-xs" value="script">
-						Script Tag
-					</TabsTrigger>
-					<TabsTrigger className="h-5 text-xs" value="npm">
-						NPM Package
-					</TabsTrigger>
-				</TabsList>
-
-				<TabsContent className="mt-0" value="script">
-					<CodeBlock
-						code={trackingCode}
-						copied={copiedBlockId === 'script-tag'}
-						description="Add this script to the <head> section of your website:"
-						onCopy={() =>
-							onCopyCode(
-								trackingCode,
-								'script-tag',
-								TOAST_MESSAGES.SCRIPT_COPIED
-							)
-						}
-					/>
-				</TabsContent>
-
-				<TabsContent className="mt-0" value="npm">
-					<div className="space-y-1">
-						<p className="mb-1 text-muted-foreground text-xs">
-							Install the DataBuddy package using your preferred package
-							manager:
-						</p>
-
-						<Tabs className="w-full" defaultValue="npm">
-							<TabsList className="mb-1 grid h-5 grid-cols-4">
-								<TabsTrigger className="h-4 text-xs" value="npm">
-									npm
-								</TabsTrigger>
-								<TabsTrigger className="h-4 text-xs" value="yarn">
-									yarn
-								</TabsTrigger>
-								<TabsTrigger className="h-4 text-xs" value="pnpm">
-									pnpm
-								</TabsTrigger>
-								<TabsTrigger className="h-4 text-xs" value="bun">
-									bun
-								</TabsTrigger>
-							</TabsList>
-
-							<TabsContent className="mt-0" value="npm">
-								<CodeBlock
-									code={INSTALL_COMMANDS.npm}
-									copied={copiedBlockId === 'npm-install'}
-									description=""
-									onCopy={() =>
-										onCopyCode(
-											INSTALL_COMMANDS.npm,
-											'npm-install',
-											TOAST_MESSAGES.COMMAND_COPIED
-										)
-									}
-								/>
-							</TabsContent>
-
-							<TabsContent className="mt-0" value="yarn">
-								<CodeBlock
-									code={INSTALL_COMMANDS.yarn}
-									copied={copiedBlockId === 'yarn-install'}
-									description=""
-									onCopy={() =>
-										onCopyCode(
-											INSTALL_COMMANDS.yarn,
-											'yarn-install',
-											TOAST_MESSAGES.COMMAND_COPIED
-										)
-									}
-								/>
-							</TabsContent>
-
-							<TabsContent className="mt-0" value="pnpm">
-								<CodeBlock
-									code={INSTALL_COMMANDS.pnpm}
-									copied={copiedBlockId === 'pnpm-install'}
-									description=""
-									onCopy={() =>
-										onCopyCode(
-											INSTALL_COMMANDS.pnpm,
-											'pnpm-install',
-											TOAST_MESSAGES.COMMAND_COPIED
-										)
-									}
-								/>
-							</TabsContent>
-
-							<TabsContent className="mt-0" value="bun">
-								<CodeBlock
-									code={INSTALL_COMMANDS.bun}
-									copied={copiedBlockId === 'bun-install'}
-									description=""
-									onCopy={() =>
-										onCopyCode(
-											INSTALL_COMMANDS.bun,
-											'bun-install',
-											TOAST_MESSAGES.COMMAND_COPIED
-										)
-									}
-								/>
-							</TabsContent>
-						</Tabs>
-
-						<CodeBlock
-							code={npmCode}
-							copied={copiedBlockId === 'tracking-code'}
-							description="Then initialize the tracker in your code:"
-							onCopy={() =>
-								onCopyCode(
-									npmCode,
-									'tracking-code',
-									TOAST_MESSAGES.TRACKING_COPIED
-								)
-							}
-						/>
-					</div>
-				</TabsContent>
-			</Tabs>
-
-			<WebsiteInfoSection websiteData={websiteData} websiteId={websiteId} />
-		</div>
-	);
-}
-
-function CodeBlock({ code, description, copied, onCopy }: CodeBlockProps) {
-	const [highlightedCode, setHighlightedCode] = useState<string>('');
-
-	// Determine language based on code content
-	const getLanguage = useCallback((codeContent: string) => {
-		if (
-			codeContent.includes('npm install') ||
-			codeContent.includes('bun add')
-		) {
-			return 'bash';
-		}
-		if (codeContent.includes('<script')) {
-			return 'html';
-		}
-		if (codeContent.includes('import') && codeContent.includes('from')) {
-			return 'jsx';
-		}
-		return 'javascript';
-	}, []);
-
-	useEffect(() => {
-		const highlightCode = async () => {
-			try {
-				const isDarkMode = document.documentElement.classList.contains('dark');
-				const theme = isDarkMode ? 'github-dark' : 'github-light';
-
-				const html = await codeToHtml(code, {
-					lang: getLanguage(code),
-					theme,
-				});
-				setHighlightedCode(html);
-			} catch (error) {
-				console.error('Error highlighting code:', error);
-				setHighlightedCode(`<pre><code>${code}</code></pre>`);
-			}
-		};
-
-		highlightCode();
-
-		// Listen for theme changes
-		const observer = new MutationObserver(() => {
-			highlightCode();
-		});
-
-		observer.observe(document.documentElement, {
-			attributes: true,
-			attributeFilter: ['class'],
-		});
-
-		return () => observer.disconnect();
-	}, [code, getLanguage]);
-
-	return (
-		<div className="space-y-2">
-			{description && (
-				<p className="text-muted-foreground text-sm">
-					{description ===
-					'Add this script to the <head> section of your website:' ? (
-						<>
-							Add this script to the{' '}
-							<code className="rounded bg-muted px-1 py-0.5 text-xs">
-								&lt;head&gt;
-							</code>{' '}
-							section of your website:
-						</>
-					) : (
-						description
-					)}
-				</p>
-			)}
-			<div className="relative">
-				<div
-					className="[&_pre]:!bg-transparent [&_code]:!bg-transparent [&_*]:!font-mono overflow-hidden rounded border bg-slate-50 p-6 text-sm leading-relaxed dark:bg-slate-900"
-					dangerouslySetInnerHTML={{ __html: highlightedCode }}
-					style={{
-						fontSize: '14px',
-						lineHeight: '1.6',
-						fontFamily:
-							'var(--font-geist-mono), ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-					}}
-				/>
-				<Button
-					className="absolute top-2 right-2 h-6 w-6 rounded border-0 shadow-none transition-colors duration-200 hover:bg-white/80 dark:hover:bg-slate-800/80"
-					onClick={onCopy}
-					size="icon"
-					variant="ghost"
-				>
-					{copied ? (
-						<CheckIcon className="h-3.5 w-3.5 text-green-500" weight="bold" />
-					) : (
-						<ClipboardIcon
-							className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground"
-							weight="regular"
-						/>
-					)}
-				</Button>
-			</div>
+			<InstallationTabs
+				copiedBlockId={copiedBlockId}
+				npmCode={npmCode}
+				onCopyCode={onCopyCode}
+				trackingCode={trackingCode}
+			>
+				<WebsiteInfoSection websiteData={websiteData} websiteId={websiteId} />
+			</InstallationTabs>
 		</div>
 	);
 }
@@ -581,23 +363,16 @@ function WebsiteInfoSection({
 	websiteId: string;
 }) {
 	return (
-		<div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-			<div className="space-y-3 rounded border bg-card p-4">
-				<h4 className="flex items-center gap-2 font-medium text-sm">
-					<div className="flex h-6 w-6 items-center justify-center rounded bg-muted">
-						<InfoIcon
-							className="h-3.5 w-3.5 text-muted-foreground"
-							weight="duotone"
-						/>
-					</div>
+		<div className="mt-4 space-y-3">
+			<div className="rounded border bg-card p-4">
+				<h4 className="mb-3 flex items-center gap-2 font-medium text-sm">
+					<InfoIcon className="h-4 w-4" weight="duotone" />
 					Website Details
 				</h4>
 				<div className="space-y-2 text-sm">
 					<div className="flex items-center justify-between">
 						<span className="text-muted-foreground">Created</span>
-						<span className="font-medium">
-							{new Date(websiteData.createdAt).toLocaleDateString()}
-						</span>
+						<span>{new Date(websiteData.createdAt).toLocaleDateString()}</span>
 					</div>
 					<div className="flex items-center justify-between">
 						<span className="text-muted-foreground">Website ID</span>
@@ -606,7 +381,7 @@ function WebsiteInfoSection({
 								{websiteId}
 							</code>
 							<Button
-								className="h-6 w-6 rounded hover:bg-muted/50"
+								className="h-6 w-6"
 								onClick={() => {
 									navigator.clipboard.writeText(websiteId);
 									toast.success(TOAST_MESSAGES.WEBSITE_ID_COPIED);
@@ -621,34 +396,14 @@ function WebsiteInfoSection({
 				</div>
 			</div>
 
-			<div className="rounded border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
-				<div className="flex flex-col gap-2">
-					<div className="flex items-center gap-2">
-						<div className="flex h-6 w-6 items-center justify-center rounded bg-blue-100 dark:bg-blue-900">
-							<CheckIcon
-								className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
-								weight="duotone"
-							/>
-						</div>
-						<h4 className="font-medium text-blue-900 text-sm dark:text-blue-100">
-							Ready to Track
-						</h4>
-					</div>
-
-					<div className="space-y-2">
-						<p className="text-blue-700 text-sm dark:text-blue-300">
-							Add the tracking code to your website to start collecting data.
-						</p>
-						<Button
-							className="h-6 px-0 text-blue-600 text-xs hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-							size="sm"
-							variant="link"
-						>
-							View Documentation
-							<ArrowRightIcon className="ml-1 h-3 w-3" weight="regular" />
-						</Button>
-					</div>
+			<div className="rounded border bg-muted/30 p-4">
+				<div className="mb-2 flex items-center gap-2">
+					<CheckIcon className="h-4 w-4" weight="duotone" />
+					<h4 className="font-medium text-sm">Ready to Track</h4>
 				</div>
+				<p className="text-muted-foreground text-sm">
+					Add the tracking code to your website to start collecting data.
+				</p>
 			</div>
 		</div>
 	);
@@ -658,87 +413,11 @@ function BasicTrackingTab({
 	trackingOptions,
 	onToggleOption,
 }: TrackingTabProps) {
-	const trackingOptionsConfig: Array<{
-		key: keyof TrackingOptions;
-		title: string;
-		description: string;
-		data: string[];
-		required?: boolean;
-		inverted?: boolean;
-	}> = [
-		{
-			key: 'disabled',
-			title: 'Enable Tracking',
-			description: 'Master switch for all tracking functionality',
-			required: false,
-			inverted: true, // This option is inverted (checked when disabled is false)
-			data: [
-				'Controls whether any tracking occurs',
-				'When disabled, no data is collected',
-				'Useful for privacy compliance or testing',
-			],
-		},
-		{
-			key: 'trackScreenViews',
-			title: 'Page Views',
-			description: 'Track when users navigate to different pages',
-			required: true,
-			data: ['Page URL, title and referrer', 'Timestamp', 'User session ID'],
-		},
-		{
-			key: 'trackHashChanges',
-			title: 'Hash Changes',
-			description: 'Track navigation using URL hash changes (SPA routing)',
-			data: [
-				'Hash fragment changes',
-				'Previous and new hash values',
-				'Useful for single-page applications',
-			],
-		},
-		{
-			key: 'trackSessions',
-			title: 'Sessions',
-			description: 'Track user sessions and engagement',
-			data: [
-				'Session duration',
-				'Session start/end times',
-				'Number of pages visited',
-				'Bounce detection',
-			],
-		},
-		{
-			key: 'trackInteractions',
-			title: 'Interactions',
-			description: 'Track button clicks and form submissions',
-			data: [
-				'Element clicked (button, link, etc.)',
-				'Element ID, class and text content',
-				'Form submission success/failure',
-			],
-		},
-		{
-			key: 'trackAttributes',
-			title: 'Data Attributes',
-			description: 'Track events automatically using HTML data-* attributes',
-			data: [
-				'Elements with data-track attributes',
-				'All data-* attribute values converted to camelCase',
-				'Automatic event generation from markup',
-			],
-		},
-		{
-			key: 'trackOutgoingLinks',
-			title: 'Outbound Links',
-			description: 'Track when users click links to external sites',
-			data: ['Target URL', 'Link text', 'Page URL where link was clicked'],
-		},
-	];
-
 	return (
 		<TrackingOptionsGrid
 			description="Configure what user activity and page data to collect"
 			onToggleOption={onToggleOption}
-			options={trackingOptionsConfig}
+			options={BASIC_TRACKING_OPTIONS}
 			title="Basic Tracking Options"
 			trackingOptions={trackingOptions}
 		/>
@@ -749,192 +428,14 @@ function AdvancedTrackingTab({
 	trackingOptions,
 	onToggleOption,
 }: TrackingTabProps) {
-	const advancedOptionsConfig: Array<{
-		key: keyof TrackingOptions;
-		title: string;
-		description: string;
-		data: string[];
-		required?: boolean;
-		inverted?: boolean;
-	}> = [
-		{
-			key: 'trackEngagement',
-			title: 'Engagement Tracking',
-			description: 'Track detailed user engagement metrics',
-			data: [
-				'Time on page',
-				'Scroll behavior',
-				'Mouse movements',
-				'Interaction patterns',
-			],
-		},
-		{
-			key: 'trackScrollDepth',
-			title: 'Scroll Depth',
-			description: 'Track how far users scroll on pages',
-			data: [
-				'Maximum scroll percentage',
-				'Scroll milestones (25%, 50%, 75%, 100%)',
-				'Time spent at different scroll positions',
-			],
-		},
-		{
-			key: 'trackErrors',
-			title: 'Error Tracking',
-			description: 'Track JavaScript errors and exceptions',
-			data: [
-				'Error message and type',
-				'Stack trace',
-				'Browser and OS info',
-				'Page URL where error occurred',
-			],
-		},
-		{
-			key: 'trackPerformance',
-			title: 'Performance',
-			description: 'Track page load and runtime performance',
-			data: [
-				'Page load time',
-				'DOM content loaded time',
-				'First paint and first contentful paint',
-				'Resource timing',
-			],
-		},
-		{
-			key: 'trackWebVitals',
-			title: 'Web Vitals',
-			description: 'Track Core Web Vitals metrics',
-			data: [
-				'Largest Contentful Paint (LCP)',
-				'First Input Delay (FID)',
-				'Cumulative Layout Shift (CLS)',
-				'Interaction to Next Paint (INP)',
-			],
-		},
-	];
-
 	return (
 		<TrackingOptionsGrid
 			description="Enable additional tracking features for deeper insights"
 			onToggleOption={onToggleOption}
-			options={advancedOptionsConfig}
+			options={ADVANCED_TRACKING_OPTIONS}
 			title="Advanced Tracking Features"
 			trackingOptions={trackingOptions}
 		/>
-	);
-}
-
-function TrackingOptionsGrid({
-	title,
-	description,
-	options,
-	trackingOptions,
-	onToggleOption,
-}: {
-	title: string;
-	description: string;
-	options: {
-		key: keyof TrackingOptions;
-		title: string;
-		description: string;
-		data: string[];
-		required?: boolean;
-		inverted?: boolean;
-	}[];
-	trackingOptions: TrackingOptions;
-	onToggleOption: (option: keyof TrackingOptions) => void;
-}) {
-	return (
-		<div className="space-y-2">
-			<div className="space-y-0.5">
-				<h3 className="font-medium text-sm">{title}</h3>
-				<p className="text-muted-foreground text-xs">{description}</p>
-			</div>
-
-			<div className="grid grid-cols-2 gap-2">
-				{options.map((option) => {
-					const { key, ...optionProps } = option;
-					return (
-						<TrackingOptionCard
-							key={key}
-							{...optionProps}
-							enabled={trackingOptions[key] as boolean}
-							inverted={optionProps.inverted ?? false}
-							onToggle={() => onToggleOption(key)}
-							required={optionProps.required ?? false}
-						/>
-					);
-				})}
-			</div>
-		</div>
-	);
-}
-
-function TrackingOptionCard({
-	title,
-	description,
-	data,
-	enabled,
-	onToggle,
-	required = false,
-	inverted = false,
-}: {
-	title: string;
-	description: string;
-	data: string[];
-	enabled: boolean;
-	onToggle: () => void;
-	required?: boolean;
-	inverted?: boolean;
-}) {
-	const isEnabled = inverted ? !enabled : enabled;
-
-	return (
-		<div className="rounded border bg-card p-4 transition-all duration-200 hover:bg-muted/20">
-			<div className="flex items-start justify-between pb-3">
-				<div className="min-w-0 flex-1 space-y-1 pr-3">
-					<div className="font-medium text-sm">{title}</div>
-					<div className="text-muted-foreground text-xs leading-relaxed">
-						{description}
-					</div>
-				</div>
-				<Switch checked={isEnabled} onCheckedChange={onToggle} />
-			</div>
-			{required && !isEnabled && (
-				<div className="mb-3 rounded border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950">
-					<div className="flex items-start gap-2">
-						<WarningCircleIcon
-							className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600 dark:text-red-400"
-							weight="duotone"
-						/>
-						<div>
-							<span className="font-medium text-red-800 text-sm dark:text-red-200">
-								Warning:
-							</span>
-							<p className="mt-1 text-red-700 text-xs dark:text-red-300">
-								Disabling page views will prevent analytics from working. This
-								option is required.
-							</p>
-						</div>
-					</div>
-				</div>
-			)}
-			<div className="border-t pt-3">
-				<div className="text-muted-foreground text-xs">
-					<span className="font-medium">Data collected:</span>
-					<ul className="mt-2 space-y-1">
-						{data.map((item: string) => (
-							<li className="flex items-start gap-2 text-xs" key={item}>
-								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
-									●
-								</span>
-								<span className="leading-relaxed">{item}</span>
-							</li>
-						))}
-					</ul>
-				</div>
-			</div>
-		</div>
 	);
 }
 
@@ -983,9 +484,9 @@ function SamplingRateSection({
 	return (
 		<div className="rounded border bg-card p-4">
 			<div className="mb-3 flex items-center gap-2">
-				<div className="flex h-6 w-6 items-center justify-center rounded bg-blue-100 dark:bg-blue-900">
+				<div className="flex h-6 w-6 items-center justify-center rounded bg-muted">
 					<InfoIcon
-						className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400"
+						className="h-3.5 w-3.5 text-muted-foreground"
 						weight="duotone"
 					/>
 				</div>
@@ -998,7 +499,7 @@ function SamplingRateSection({
 							<Label className="font-medium text-sm" htmlFor="sampling-rate">
 								Data Collection Rate
 							</Label>
-							<span className="font-semibold text-blue-600 text-sm dark:text-blue-400">
+							<span className="font-semibold text-primary text-sm">
 								{Math.round(samplingRate * 100)}%
 							</span>
 						</div>
@@ -1023,10 +524,10 @@ function SamplingRateSection({
 							Sampling rate determines what percentage of your visitors will be
 							tracked. Lower rates reduce costs.
 						</p>
-						<div className="rounded border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
-							<p className="flex items-start gap-2 text-blue-700 text-xs dark:text-blue-300">
+						<div className="rounded border bg-muted/50 p-3">
+							<p className="flex items-start gap-2 text-muted-foreground text-xs">
 								<InfoIcon
-									className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400"
+									className="mt-0.5 h-3.5 w-3.5 flex-shrink-0"
 									weight="duotone"
 								/>
 								<span>
@@ -1054,9 +555,9 @@ function BatchingSection({
 	return (
 		<div className="rounded border bg-card p-4">
 			<div className="mb-3 flex items-center gap-2">
-				<div className="flex h-6 w-6 items-center justify-center rounded bg-green-100 dark:bg-green-900">
+				<div className="flex h-6 w-6 items-center justify-center rounded bg-muted">
 					<CodeIcon
-						className="h-3.5 w-3.5 text-green-600 dark:text-green-400"
+						className="h-3.5 w-3.5 text-muted-foreground"
 						weight="duotone"
 					/>
 				</div>
@@ -1080,7 +581,7 @@ function BatchingSection({
 				</div>
 
 				{trackingOptions.enableBatching && (
-					<div className="space-y-4 border-green-200 border-l-2 pl-6 dark:border-green-800">
+					<div className="space-y-4 border-muted border-l-2 pl-6">
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<div className="space-y-2">
 								<Label className="font-medium text-sm" htmlFor="batch-size">
@@ -1143,8 +644,8 @@ function BatchingSection({
 							</div>
 						</div>
 
-						<div className="rounded border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950">
-							<p className="text-green-700 text-xs leading-relaxed dark:text-green-300">
+						<div className="rounded border bg-muted/50 p-3">
+							<p className="text-muted-foreground text-xs leading-relaxed">
 								<strong>Batching</strong> groups multiple events into single
 								requests, reducing server load and improving performance.
 							</p>
@@ -1168,9 +669,9 @@ function NetworkResilienceSection({
 	return (
 		<div className="rounded border bg-card p-4">
 			<div className="mb-3 flex items-center gap-2">
-				<div className="flex h-6 w-6 items-center justify-center rounded bg-orange-100 dark:bg-orange-900">
+				<div className="flex h-6 w-6 items-center justify-center rounded bg-muted">
 					<WarningCircleIcon
-						className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400"
+						className="h-3.5 w-3.5 text-muted-foreground"
 						weight="duotone"
 					/>
 				</div>
@@ -1194,7 +695,7 @@ function NetworkResilienceSection({
 				</div>
 
 				{trackingOptions.enableRetries && (
-					<div className="space-y-4 border-orange-200 border-l-2 pl-6 dark:border-orange-800">
+					<div className="space-y-4 border-muted border-l-2 pl-6">
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">
 								<Label className="font-medium text-sm" htmlFor="max-retries">
@@ -1257,8 +758,8 @@ function NetworkResilienceSection({
 							</div>
 						</div>
 
-						<div className="rounded border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950">
-							<p className="text-orange-700 text-xs leading-relaxed dark:text-orange-300">
+						<div className="rounded border bg-muted/50 p-3">
+							<p className="text-muted-foreground text-xs leading-relaxed">
 								Retries use exponential backoff with jitter to avoid
 								overwhelming servers.
 							</p>
@@ -1550,51 +1051,41 @@ function ExportTab({
 			</div>
 
 			{/* Export Info */}
-			<div className="rounded border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+			<div className="rounded border bg-muted/50 p-4">
 				<div className="flex items-start gap-3">
-					<div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-blue-100 dark:bg-blue-900">
+					<div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-muted">
 						<InfoIcon
-							className="h-4 w-4 text-blue-600 dark:text-blue-400"
+							className="h-4 w-4 text-muted-foreground"
 							weight="duotone"
 						/>
 					</div>
 					<div className="space-y-3">
-						<h4 className="font-medium text-blue-900 text-sm dark:text-blue-100">
+						<h4 className="font-medium text-sm">
 							What's included in your export?
 						</h4>
 						<ul className="space-y-2">
-							<li className="flex items-start gap-2 text-blue-800 text-sm dark:text-blue-200">
-								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
-									●
-								</span>
+							<li className="flex items-start gap-2 text-sm">
+								<span className="mt-1 text-[8px] text-primary">●</span>
 								<span>Page views and user sessions</span>
 							</li>
-							<li className="flex items-start gap-2 text-blue-800 text-sm dark:text-blue-200">
-								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
-									●
-								</span>
+							<li className="flex items-start gap-2 text-sm">
+								<span className="mt-1 text-[8px] text-primary">●</span>
 								<span>User interactions and events</span>
 							</li>
-							<li className="flex items-start gap-2 text-blue-800 text-sm dark:text-blue-200">
-								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
-									●
-								</span>
+							<li className="flex items-start gap-2 text-sm">
+								<span className="mt-1 text-[8px] text-primary">●</span>
 								<span>Performance metrics and Web Vitals</span>
 							</li>
-							<li className="flex items-start gap-2 text-blue-800 text-sm dark:text-blue-200">
-								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
-									●
-								</span>
+							<li className="flex items-start gap-2 text-sm">
+								<span className="mt-1 text-[8px] text-primary">●</span>
 								<span>Error logs and debugging data</span>
 							</li>
-							<li className="flex items-start gap-2 text-blue-800 text-sm dark:text-blue-200">
-								<span className="mt-1 text-[8px] text-blue-600 dark:text-blue-400">
-									●
-								</span>
+							<li className="flex items-start gap-2 text-sm">
+								<span className="mt-1 text-[8px] text-primary">●</span>
 								<span>Device, browser, and location data</span>
 							</li>
 						</ul>
-						<p className="text-blue-700 text-sm leading-relaxed dark:text-blue-300">
+						<p className="text-muted-foreground text-sm leading-relaxed">
 							Data is exported as a ZIP file containing multiple files organized
 							by data type.
 						</p>

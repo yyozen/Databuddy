@@ -851,6 +851,18 @@ export const dbPermissionLevel = pgEnum('db_permission_level', [
 	'admin',
 ]);
 
+export const flagType = pgEnum('flag_type', [
+	'boolean',
+	'multivariate',
+	'rollout',
+]);
+
+export const flagStatus = pgEnum('flag_status', [
+	'active',
+	'inactive',
+	'archived',
+]);
+
 export const dbConnections = pgTable(
 	'db_connections',
 	{
@@ -891,5 +903,76 @@ export const dbConnections = pgTable(
 			foreignColumns: [organization.id],
 			name: 'db_connections_organization_id_fkey',
 		}).onDelete('cascade'),
+	]
+);
+
+export const flags = pgTable(
+	'flags',
+	{
+		id: text().primaryKey().notNull(),
+		key: text().notNull(),
+		name: text(),
+		description: text(),
+		type: flagType().default('boolean').notNull(),
+		status: flagStatus().default('active').notNull(),
+		defaultValue: jsonb('default_value').default(false),
+		payload: jsonb('payload'),
+		rules: jsonb('rules').default([]),
+		persistAcrossAuth: boolean('persist_across_auth').default(false).notNull(),
+		rolloutPercentage: integer('rollout_percentage').default(0),
+		websiteId: text('website_id'),
+		organizationId: text('organization_id'),
+		userId: text('user_id'),
+		createdBy: text('created_by').notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull(),
+		deletedAt: timestamp('deleted_at'),
+	},
+	(table) => [
+		uniqueIndex('flags_key_website_unique')
+			.on(table.key, table.websiteId)
+			.where(isNotNull(table.websiteId)),
+		uniqueIndex('flags_key_org_unique')
+			.on(table.key, table.organizationId)
+			.where(isNotNull(table.organizationId)),
+		uniqueIndex('flags_key_user_unique')
+			.on(table.key, table.userId)
+			.where(isNotNull(table.userId)),
+		index('flags_website_id_idx').using(
+			'btree',
+			table.websiteId.asc().nullsLast().op('text_ops')
+		),
+		index('flags_created_by_idx').using(
+			'btree',
+			table.createdBy.asc().nullsLast().op('text_ops')
+		),
+		foreignKey({
+			columns: [table.websiteId],
+			foreignColumns: [websites.id],
+			name: 'flags_website_id_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+		foreignKey({
+			columns: [table.organizationId],
+			foreignColumns: [organization.id],
+			name: 'flags_organization_id_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+		foreignKey({
+			columns: [table.userId],
+			foreignColumns: [user.id],
+			name: 'flags_user_id_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('cascade'),
+		foreignKey({
+			columns: [table.createdBy],
+			foreignColumns: [user.id],
+			name: 'flags_created_by_fkey',
+		})
+			.onUpdate('cascade')
+			.onDelete('restrict'),
 	]
 );

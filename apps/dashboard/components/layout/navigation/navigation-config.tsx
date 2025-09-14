@@ -10,6 +10,7 @@ import {
 	CurrencyDollarIcon,
 	DatabaseIcon,
 	EyeIcon,
+	FlagIcon,
 	FunnelIcon,
 	GearIcon,
 	GlobeIcon,
@@ -368,6 +369,12 @@ export const websiteNavigation: NavigationSection[] = [
 				name: 'Goals',
 				icon: TargetIcon,
 				href: '/goals',
+			},
+			{
+				name: 'Feature Flags',
+				icon: FlagIcon,
+				href: '/flags',
+				alpha: true,
 			},
 			{
 				name: 'Databunny AI',

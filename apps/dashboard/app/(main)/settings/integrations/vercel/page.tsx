@@ -3,6 +3,7 @@
 import { authClient } from '@databuddy/auth/client';
 import { RocketLaunchIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import {
 	CreateWebsiteDialog,
@@ -80,13 +81,29 @@ export default function VercelConfigPage() {
 
 			if (result.success) {
 				await utils.vercel.getProjects.invalidate();
+				toast.success(
+					`Successfully integrated ${configs.length} website${configs.length > 1 ? 's' : ''}`
+				);
 			}
 
 			setIsDialogOpen(false);
 			setSelectedDomains([]);
 			setSelectedProject(null);
-		} catch (error) {
-			// Handle error silently or show user-friendly message
+		} catch (error: any) {
+			// Handle specific error cases
+			if (error?.data?.code === 'UNAUTHORIZED') {
+				toast.error(
+					'Missing organization permissions. Please check your Vercel integration settings.'
+				);
+			} else if (error?.data?.code === 'FORBIDDEN') {
+				toast.error('Insufficient permissions to integrate websites.');
+			} else if (error?.data?.code === 'NOT_FOUND') {
+				toast.error('Project not found. It may have been deleted.');
+			} else if (error?.message) {
+				toast.error(error.message);
+			} else {
+				toast.error('Failed to integrate websites. Please try again.');
+			}
 		}
 	};
 

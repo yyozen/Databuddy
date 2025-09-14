@@ -22,7 +22,9 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 	const [isRefreshing, setIsRefreshing] = useAtom(isAnalyticsRefreshingAtom);
 
 	const isAssistantPage =
-		pathname.includes('/assistant') || pathname.includes('/map');
+		pathname.includes('/assistant') ||
+		pathname.includes('/map') ||
+		pathname.includes('/flags');
 
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
