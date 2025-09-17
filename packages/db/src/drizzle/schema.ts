@@ -899,7 +899,7 @@ export const flags = pgTable(
 		description: text(),
 		type: flagType().default('boolean').notNull(),
 		status: flagStatus().default('active').notNull(),
-		defaultValue: jsonb('default_value').default(false),
+		defaultValue: jsonb('default_value').default(false).notNull(),
 		payload: jsonb('payload'),
 		rules: jsonb('rules').default([]),
 		persistAcrossAuth: boolean('persist_across_auth').default(false).notNull(),

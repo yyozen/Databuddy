@@ -9,11 +9,12 @@ import { logger } from './lib/logger';
 import { assistant } from './routes/assistant';
 import { customSQL } from './routes/custom-sql';
 import { exportRoute } from './routes/export';
-import { flagsRoute } from './routes/flags';
 import { health } from './routes/health';
+import { publicApi } from './routes/public';
 import { query } from './routes/query';
 
 const app = new Elysia()
+	.use(publicApi) // Mount public API first, without main CORS
 	.use(
 		cors({
 			credentials: true,
@@ -47,7 +48,6 @@ const app = new Elysia()
 	.use(customSQL)
 	.use(assistant)
 	.use(exportRoute)
-	.use(flagsRoute)
 	.all('/trpc/*', ({ request }) => {
 		return fetchRequestHandler({
 			endpoint: '/trpc',

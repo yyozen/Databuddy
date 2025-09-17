@@ -103,7 +103,7 @@ function FlagsProviderWrapper({ children }: { children: React.ReactNode }) {
 			}
 			debug={isLocalhost}
 			isPending={isPending}
-			skipStorage={isLocalhost}
+			skipStorage={false}
 			user={
 				session?.user
 					? { userId: session.user.id, email: session.user.email }

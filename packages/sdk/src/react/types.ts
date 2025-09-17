@@ -11,8 +11,6 @@ export interface FlagsConfig {
 	/** Client ID for flag evaluation */
 	clientId: string;
 	apiUrl?: string;
-	websiteId?: string;
-	organizationId?: string;
 	user?: {
 		userId?: string;
 		email?: string;
@@ -25,11 +23,14 @@ export interface FlagsConfig {
 	skipStorage?: boolean;
 	/** Whether session is loading */
 	isPending?: boolean;
+	/** Automatically fetch all flags on initialization (default: true) */
+	autoFetch?: boolean;
 }
 
 export interface FlagsContext {
 	isEnabled: (key: string) => boolean;
 	getValue: (key: string, defaultValue?: boolean) => boolean;
+	fetchAllFlags: () => Promise<void>;
 	updateUser: (user: FlagsConfig['user']) => void;
-	refresh: () => Promise<void>;
+	refresh: (forceClear?: boolean) => Promise<void>;
 }
