@@ -101,9 +101,7 @@ function FlagsProviderWrapper({ children }: { children: React.ReactNode }) {
 					? '5ced32e5-0219-4e75-a18a-ad9826f85698'
 					: '3ed1fce1-5a56-4cb6-a977-66864f6d18e3'
 			}
-			debug={isLocalhost}
 			isPending={isPending}
-			skipStorage={false}
 			user={
 				session?.user
 					? { userId: session.user.id, email: session.user.email }
