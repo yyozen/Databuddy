@@ -20,13 +20,17 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "vue": ">=3"
+    "vue": ">=3",
+    "jotai": ">=2.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
       "optional": true
     },
     "vue": {
+      "optional": true
+    },
+    "jotai": {
       "optional": true
     }
   },

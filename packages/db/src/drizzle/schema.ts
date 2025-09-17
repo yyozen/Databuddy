@@ -839,11 +839,7 @@ export const dbPermissionLevel = pgEnum('db_permission_level', [
 	'admin',
 ]);
 
-export const flagType = pgEnum('flag_type', [
-	'boolean',
-	'multivariate',
-	'rollout',
-]);
+export const flagType = pgEnum('flag_type', ['boolean', 'rollout']);
 
 export const flagStatus = pgEnum('flag_status', [
 	'active',

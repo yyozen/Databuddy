@@ -47,7 +47,7 @@ const flagSchema = z.object({
 		),
 	name: z.string().min(1).max(100).optional(),
 	description: z.string().optional(),
-	type: z.enum(['boolean', 'multivariate', 'rollout']).default('boolean'),
+	type: z.enum(['boolean', 'rollout']).default('boolean'),
 	status: z.enum(['active', 'inactive', 'archived']).default('active'),
 	defaultValue: z.any().default(false),
 	payload: z.any().optional(),
@@ -71,7 +71,7 @@ const updateFlagSchema = z.object({
 	id: z.string(),
 	name: z.string().min(1).max(100).optional(),
 	description: z.string().optional(),
-	type: z.enum(['boolean', 'multivariate', 'rollout']).optional(),
+	type: z.enum(['boolean', 'rollout']).optional(),
 	status: z.enum(['active', 'inactive', 'archived']).optional(),
 	defaultValue: z.any().optional(),
 	payload: z.any().optional(),
@@ -96,21 +96,6 @@ const getFlagSchema = z
 		id: z.string(),
 		websiteId: z.string().optional(),
 		organizationId: z.string().optional(),
-	})
-	.refine((data) => data.websiteId || data.organizationId, {
-		message: 'Either websiteId or organizationId must be provided',
-		path: ['websiteId'],
-	});
-
-const evaluateFlagSchema = z
-	.object({
-		key: z.string(),
-		websiteId: z.string().optional(),
-		organizationId: z.string().optional(),
-		userId: z.string().optional(),
-		email: z.string().optional(),
-		properties: z.record(z.string(), z.any()).optional(),
-		context: z.record(z.string(), z.any()).optional(),
 	})
 	.refine((data) => data.websiteId || data.organizationId, {
 		message: 'Either websiteId or organizationId must be provided',
@@ -206,7 +191,18 @@ export const flagsRouter = createTRPCRouter({
 	}),
 
 	getByKey: publicProcedure
-		.input(evaluateFlagSchema)
+		.input(
+			z
+				.object({
+					key: z.string(),
+					websiteId: z.string().optional(),
+					organizationId: z.string().optional(),
+				})
+				.refine((data) => data.websiteId || data.organizationId, {
+					message: 'Either websiteId or organizationId must be provided',
+					path: ['websiteId'],
+				})
+		)
 		.query(({ ctx, input }) => {
 			const scope = input.websiteId
 				? `website:${input.websiteId}`
@@ -486,313 +482,4 @@ export const flagsRouter = createTRPCRouter({
 				});
 			}
 		}),
-
-	evaluate: publicProcedure
-		.input(evaluateFlagSchema)
-		.query(async ({ ctx, input }) => {
-			try {
-				if (input.websiteId) {
-					await authorizeWebsiteAccess(ctx, input.websiteId, 'read');
-				}
-
-				// Get the flag
-				const result = await ctx.db
-					.select()
-					.from(flags)
-					.where(
-						and(
-							eq(flags.key, input.key),
-							input.websiteId
-								? eq(flags.websiteId, input.websiteId)
-								: eq(flags.organizationId, input.organizationId ?? ''),
-							eq(flags.status, 'active'),
-							isNull(flags.deletedAt)
-						)
-					)
-					.limit(1);
-
-				if (result.length === 0) {
-					return {
-						enabled: false,
-						value: false,
-						payload: null,
-						reason: 'FLAG_NOT_FOUND',
-					};
-				}
-
-				const flag = result[0];
-
-				// Simple evaluation logic - can be enhanced later
-				let enabled = false;
-				let value = flag.defaultValue;
-				const payload = flag.payload;
-				let reason = 'DEFAULT_VALUE';
-
-				// Check rollout percentage for rollout type flags
-				if (flag.type === 'rollout' && flag.rolloutPercentage > 0) {
-					// Simple hash-based rollout (can be improved with better distribution)
-					const userId = input.userId || ctx.user?.id || 'anonymous';
-					const hash = hashString(`${flag.key}:${userId}`);
-					const percentage = hash % 100;
-
-					if (percentage < flag.rolloutPercentage) {
-						enabled = true;
-						value = true;
-						reason = 'ROLLOUT_MATCH';
-					} else {
-						reason = 'ROLLOUT_NO_MATCH';
-					}
-				} else if (flag.type === 'boolean') {
-					enabled = Boolean(flag.defaultValue);
-					value = flag.defaultValue;
-					reason = 'BOOLEAN_FLAG';
-				}
-
-				// Check user targeting rules
-				if (flag.rules && Array.isArray(flag.rules) && flag.rules.length > 0) {
-					const userContext = {
-						userId: input.userId || ctx.user?.id,
-						email: input.email,
-						properties: input.properties || {},
-					};
-
-					const ruleResult = evaluateUserRules(
-						flag.rules as UserRule[],
-						userContext
-					);
-					if (ruleResult.matched) {
-						enabled = ruleResult.enabled;
-						value = ruleResult.enabled;
-						reason = 'USER_RULE_MATCH';
-					} else if (ruleResult.hasRules) {
-						// User didn't match any rules, use default behavior
-						enabled = Boolean(flag.defaultValue);
-						value = flag.defaultValue;
-						reason = 'USER_RULE_NO_MATCH';
-					}
-				}
-
-				return {
-					enabled,
-					value,
-					payload,
-					reason,
-					flagId: flag.id,
-					flagType: flag.type,
-				};
-			} catch (error) {
-				if (error instanceof TRPCError) {
-					throw error;
-				}
-
-				logger.error('Failed to evaluate flag', {
-					error: error instanceof Error ? error.message : 'Unknown error',
-					key: input.key,
-					websiteId: input.websiteId,
-					organizationId: input.organizationId,
-					userId: input.userId,
-				});
-
-				// Return safe default on error
-				return {
-					enabled: false,
-					value: false,
-					payload: null,
-					reason: 'EVALUATION_ERROR',
-				};
-			}
-		}),
 });
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
-// Simple hash function for rollout distribution
-function hashString(str: string): number {
-	let hash = 0;
-	for (let i = 0; i < str.length; i++) {
-		const char = str.charCodeAt(i);
-		hash = (hash << 5) - hash + char;
-		hash &= hash; // Convert to 32-bit integer
-	}
-	return Math.abs(hash);
-}
-
-// User targeting rule evaluation
-interface UserContext {
-	userId?: string;
-	email?: string;
-	properties?: Record<string, any>;
-}
-
-interface UserRule {
-	type: 'user_id' | 'email' | 'property' | 'percentage';
-	operator:
-		| 'equals'
-		| 'contains'
-		| 'starts_with'
-		| 'ends_with'
-		| 'in'
-		| 'not_in'
-		| 'exists'
-		| 'not_exists';
-	field?: string; // For property rules
-	value?: any;
-	values?: any[]; // For 'in' and 'not_in' operators
-	enabled: boolean; // What to return if this rule matches
-	// Batch support
-	batch: boolean; // Whether this rule uses batch mode
-	batchValues?: string[]; // For batch user IDs, emails, etc.
-}
-
-interface RuleEvaluationResult {
-	matched: boolean;
-	enabled: boolean;
-	hasRules: boolean;
-}
-
-function evaluateUserRules(
-	rules: UserRule[],
-	userContext: UserContext
-): RuleEvaluationResult {
-	if (!rules || rules.length === 0) {
-		return { matched: false, enabled: false, hasRules: false };
-	}
-
-	// Evaluate rules in order - first match wins
-	for (const rule of rules) {
-		if (evaluateRule(rule, userContext)) {
-			return { matched: true, enabled: rule.enabled, hasRules: true };
-		}
-	}
-
-	return { matched: false, enabled: false, hasRules: true };
-}
-
-function evaluateRule(rule: UserRule, userContext: UserContext): boolean {
-	// Handle batch mode first
-	if (rule.batch && rule.batchValues?.length) {
-		switch (rule.type) {
-			case 'user_id': {
-				return userContext.userId
-					? rule.batchValues.includes(userContext.userId)
-					: false;
-			}
-			case 'email': {
-				return userContext.email
-					? rule.batchValues.includes(userContext.email)
-					: false;
-			}
-			case 'property': {
-				if (!rule.field) {
-					return false;
-				}
-				const propertyValue = userContext.properties?.[rule.field];
-				return propertyValue
-					? rule.batchValues.includes(String(propertyValue))
-					: false;
-			}
-			default: {
-				return false;
-			}
-		}
-	}
-
-	// Regular single-value evaluation
-	switch (rule.type) {
-		case 'user_id': {
-			return evaluateStringRule(userContext.userId, rule);
-		}
-
-		case 'email': {
-			return evaluateStringRule(userContext.email, rule);
-		}
-
-		case 'property': {
-			if (!rule.field) {
-				return false;
-			}
-			const propertyValue = userContext.properties?.[rule.field];
-			return evaluateValueRule(propertyValue, rule);
-		}
-
-		case 'percentage': {
-			if (typeof rule.value !== 'number') {
-				return false;
-			}
-			const userId = userContext.userId || userContext.email || 'anonymous';
-			const hash = hashString(`percentage:${userId}`);
-			const percentage = hash % 100;
-			return percentage < rule.value;
-		}
-
-		default: {
-			return false;
-		}
-	}
-}
-
-function evaluateStringRule(
-	value: string | undefined,
-	rule: UserRule
-): boolean {
-	if (!value) {
-		return false;
-	}
-
-	const { operator, value: ruleValue, values } = rule;
-	const stringValue = String(ruleValue);
-
-	switch (operator) {
-		case 'equals': {
-			return value === ruleValue;
-		}
-		case 'contains': {
-			return value.includes(stringValue);
-		}
-		case 'starts_with': {
-			return value.startsWith(stringValue);
-		}
-		case 'ends_with': {
-			return value.endsWith(stringValue);
-		}
-		case 'in': {
-			return Array.isArray(values) && values.includes(value);
-		}
-		case 'not_in': {
-			return Array.isArray(values) && !values.includes(value);
-		}
-		default: {
-			return false;
-		}
-	}
-}
-
-function evaluateValueRule(value: any, rule: UserRule): boolean {
-	const { operator, value: ruleValue, values } = rule;
-
-	switch (operator) {
-		case 'equals': {
-			return value === ruleValue;
-		}
-		case 'contains': {
-			return String(value).includes(String(ruleValue));
-		}
-		case 'in': {
-			return Array.isArray(values) && values.includes(value);
-		}
-		case 'not_in': {
-			return Array.isArray(values) && !values.includes(value);
-		}
-		case 'exists': {
-			return value !== undefined && value !== null;
-		}
-		case 'not_exists': {
-			return value === undefined || value === null;
-		}
-		default: {
-			return false;
-		}
-	}
-}
