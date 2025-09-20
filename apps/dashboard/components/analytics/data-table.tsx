@@ -1,6 +1,13 @@
-import type { ColumnDef } from '@tanstack/react-table';
+import {
+	type ColumnDef,
+	getCoreRowModel,
+	getFilteredRowModel,
+	getSortedRowModel,
+	type SortingState,
+	useReactTable,
+} from '@tanstack/react-table';
 import type React from 'react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -8,9 +15,7 @@ import { FullScreenModal } from './components/fullscreen-modal';
 import { TableContent } from './components/table-content';
 import { TableTabs } from './components/table-tabs';
 import { TableToolbar } from './components/table-toolbar';
-import { useDataTableTabs } from './hooks/use-data-table-tabs';
 import { useFullScreen } from './hooks/use-fullscreen';
-import { useTableState } from './hooks/use-table-state';
 
 const DEFAULT_MIN_HEIGHT = 200;
 const FULLSCREEN_HEIGHT = 'h-[92vh]';
@@ -101,14 +106,14 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 	onAddFilter,
 	onRowAction,
 }: DataTableProps<TData, TValue>) {
-	const { fullScreen, setFullScreen, hasMounted, modalRef } = useFullScreen();
-	const { activeTab, isTransitioning, handleTabChange, currentTabData } =
-		useDataTableTabs({
-			tabs,
-			onGlobalFilterChange: () => {},
-			onExpandedRowChange: () => {},
-		});
+	const [sorting, setSorting] = useState<SortingState>([]);
+	const [globalFilter, setGlobalFilter] = useState('');
+	const [activeTab, setActiveTab] = useState(tabs?.[0]?.id || '');
+	const [isTransitioning, setIsTransitioning] = useState(false);
 
+	const { fullScreen, setFullScreen, hasMounted, modalRef } = useFullScreen();
+
+	const currentTabData = tabs?.find((tab) => tab.id === activeTab);
 	const tableData = useMemo(
 		() => currentTabData?.data || data || [],
 		[currentTabData?.data, data]
@@ -119,12 +124,39 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 		[currentTabData?.columns, columns]
 	);
 
-	const { table, globalFilter, setGlobalFilter } = useTableState({
+	const table = useReactTable({
 		data: tableData,
-		columns: tableColumns as ColumnDef<TData, unknown>[],
-		showSearch,
-		activeTab,
+		columns: tableColumns,
+		getRowId: (row, index) => {
+			if ((row as any)._uniqueKey) {
+				return (row as any)._uniqueKey;
+			}
+			return activeTab ? `${activeTab}-${index}` : `row-${index}`;
+		},
+		state: {
+			sorting,
+			globalFilter: showSearch ? globalFilter : '',
+		},
+		onSortingChange: setSorting,
+		onGlobalFilterChange: setGlobalFilter,
+		getCoreRowModel: getCoreRowModel(),
+		getFilteredRowModel: getFilteredRowModel(),
+		getSortedRowModel: getSortedRowModel(),
 	});
+
+	const handleTabChange = (tabId: string) => {
+		if (tabId === activeTab) {
+			return;
+		}
+
+		setIsTransitioning(true);
+		setTimeout(() => {
+			setActiveTab(tabId);
+			setGlobalFilter('');
+			setSorting([]);
+			setIsTransitioning(false);
+		}, 150);
+	};
 
 	if (isLoading) {
 		return (
