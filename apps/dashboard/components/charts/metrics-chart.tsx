@@ -1,8 +1,8 @@
 import { ChartLineIcon } from '@phosphor-icons/react';
 import {
 	Area,
-	AreaChart,
 	CartesianGrid,
+	ComposedChart,
 	Legend,
 	ResponsiveContainer,
 	Tooltip,
@@ -36,21 +36,28 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 				<p className="font-semibold text-foreground text-sm">{label}</p>
 			</div>
 			<div className="space-y-2.5">
-				{payload.map((entry: any) => {
-					const metric = METRICS.find((m) => m.key === entry.dataKey);
+				{Object.entries(
+					payload.reduce((groups: any, entry: any) => {
+						const key = entry.dataKey
+							.replace('_historical', '')
+							.replace('_future', '');
+						if (!groups[key] || entry.dataKey.includes('_future')) {
+							groups[key] = entry;
+						}
+						return groups;
+					}, {})
+				).map(([key, entry]: [string, any]) => {
+					const metric = METRICS.find((m) => m.key === key);
 					if (!metric) {
 						return null;
 					}
 
-					const displayValue = metric.formatValue
+					const value = metric.formatValue
 						? metric.formatValue(entry.value, entry.payload)
 						: entry.value.toLocaleString();
 
 					return (
-						<div
-							className="flex items-center justify-between gap-3"
-							key={metric.key}
-						>
+						<div className="flex items-center justify-between gap-3" key={key}>
 							<div className="flex items-center gap-2.5">
 								<div
 									className="h-3 w-3 rounded-full"
@@ -60,9 +67,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 									{metric.label}
 								</span>
 							</div>
-							<span className="font-bold text-foreground text-sm">
-								{displayValue}
-							</span>
+							<span className="font-bold text-foreground text-sm">{value}</span>
 						</div>
 					);
 				})}
@@ -96,27 +101,35 @@ export function MetricsChart({
 	metricsFilter,
 	showLegend = true,
 }: MetricsChartProps) {
-	const chartData = data || [];
+	const rawData = data || [];
 
-	const valueFormatter = (value: number): string => {
-		if (value >= 1_000_000) {
-			return `${(value / 1_000_000).toFixed(1)}M`;
-		}
-		if (value >= 1000) {
-			return `${(value / 1000).toFixed(1)}k`;
-		}
-		return value.toString();
-	};
+	const metrics = metricsFilter
+		? METRICS.filter(metricsFilter)
+		: METRICS.filter((metric) =>
+				[
+					'pageviews',
+					'visitors',
+					'sessions',
+					'bounce_rate',
+					'avg_session_duration',
+				].includes(metric.key)
+			);
 
-	const yAxisConfig = {
-		yAxisId: 'left',
-		axisLine: false,
-		tick: { fontSize: 11, fill: 'var(--muted-foreground)', fontWeight: 500 },
-		tickFormatter: valueFormatter,
-		tickLine: false,
-		width: 45,
-		hide: false,
-	};
+	const chartData = rawData.map((item, index) => {
+		const isFutureOrCurrent = index === rawData.length - 1;
+		const connectsToFuture = index === rawData.length - 2;
+
+		const result = { ...item };
+		for (const metric of metrics) {
+			result[`${metric.key}_historical`] = isFutureOrCurrent
+				? null
+				: item[metric.key];
+			if (isFutureOrCurrent || connectsToFuture) {
+				result[`${metric.key}_future`] = item[metric.key];
+			}
+		}
+		return result;
+	});
 
 	if (isLoading) {
 		return <SkeletonChart className="w-full" height={height} title={title} />;
@@ -161,18 +174,6 @@ export function MetricsChart({
 		);
 	}
 
-	const displayMetrics = metricsFilter
-		? METRICS.filter(metricsFilter)
-		: METRICS.filter((metric) => {
-				return [
-					'pageviews',
-					'visitors',
-					'sessions',
-					'bounce_rate',
-					'avg_session_duration',
-				].includes(metric.key);
-			});
-
 	return (
 		<Card className={cn('w-full overflow-hidden rounded-none p-0', className)}>
 			<CardContent className="p-0">
@@ -181,7 +182,7 @@ export function MetricsChart({
 					style={{ width: '100%', height: height + 20 }}
 				>
 					<ResponsiveContainer height="100%" width="100%">
-						<AreaChart
+						<ComposedChart
 							data={chartData}
 							margin={{
 								top: 30,
@@ -191,7 +192,7 @@ export function MetricsChart({
 							}}
 						>
 							<defs>
-								{displayMetrics.map((metric) => (
+								{metrics.map((metric) => (
 									<linearGradient
 										id={`gradient-${metric.gradient}`}
 										key={metric.key}
@@ -220,34 +221,26 @@ export function MetricsChart({
 								vertical={false}
 							/>
 							<XAxis
-								axisLine={{ stroke: 'var(--border)', strokeOpacity: 0.5 }}
+								axisLine={false}
 								dataKey="date"
-								dy={10}
-								tick={{
-									fontSize: 11,
-									fill: 'var(--muted-foreground)',
-									fontWeight: 500,
-								}}
+								tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
 								tickLine={false}
 							/>
-							<YAxis {...yAxisConfig} />
+							<YAxis
+								axisLine={false}
+								tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+								tickLine={false}
+								width={45}
+							/>
 							<Tooltip
 								content={<CustomTooltip />}
-								cursor={{
-									stroke: 'var(--primary)',
-									strokeWidth: 1,
-									strokeOpacity: 0.5,
-									strokeDasharray: '4 4',
-								}}
-								wrapperStyle={{ outline: 'none' }}
+								cursor={{ stroke: 'var(--primary)', strokeDasharray: '4 4' }}
 							/>
 							{showLegend && (
 								<Legend
 									align="center"
-									formatter={(value) => {
-										const metric = displayMetrics.find(
-											(m) => m.label === value
-										);
+									formatter={(label) => {
+										const metric = metrics.find((m) => m.label === label);
 										const isHidden = metric && hiddenMetrics[metric.key];
 										return (
 											<span
@@ -257,12 +250,12 @@ export function MetricsChart({
 														: 'text-muted-foreground hover:text-foreground'
 												}`}
 											>
-												{value}
+												{label}
 											</span>
 										);
 									}}
 									onClick={(payload: any) => {
-										const metric = displayMetrics.find(
+										const metric = metrics.find(
 											(m) => m.label === payload.value
 										);
 										if (metric && onToggleMetric) {
@@ -270,29 +263,39 @@ export function MetricsChart({
 										}
 									}}
 									verticalAlign="bottom"
+									wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
 								/>
 							)}
-							{displayMetrics.map((metric) => {
-								const hasData = chartData.some(
-									(item) => item[metric.key] != null
-								);
-								const isHidden = hiddenMetrics[metric.key];
-								return (
-									<Area
-										activeDot={{ r: 4, stroke: metric.color, strokeWidth: 2 }}
-										dataKey={metric.key}
-										fill={`url(#gradient-${metric.gradient})`}
-										hide={!hasData || isHidden}
-										key={metric.key}
-										name={metric.label}
-										stroke={metric.color}
-										strokeWidth={2.5}
-										type="monotone"
-										yAxisId={metric.yAxisId}
-									/>
-								);
-							})}
-						</AreaChart>
+							{metrics.map((metric) => (
+								<Area
+									activeDot={{ r: 4, stroke: metric.color, strokeWidth: 2 }}
+									dataKey={`${metric.key}_historical`}
+									fill={`url(#gradient-${metric.gradient})`}
+									hide={hiddenMetrics[metric.key]}
+									key={metric.key}
+									name={metric.label}
+									stroke={metric.color}
+									strokeWidth={2.5}
+									type="monotone"
+								/>
+							))}
+							{metrics.map((metric) => (
+								<Area
+									connectNulls={false}
+									dataKey={`${metric.key}_future`}
+									dot={false}
+									fill={`url(#gradient-${metric.gradient})`}
+									hide={hiddenMetrics[metric.key]}
+									key={`future-${metric.key}`}
+									legendType="none"
+									stroke={metric.color}
+									strokeDasharray="4 4"
+									strokeOpacity={0.8}
+									strokeWidth={2}
+									type="monotone"
+								/>
+							))}
+						</ComposedChart>
 					</ResponsiveContainer>
 				</div>
 			</CardContent>
