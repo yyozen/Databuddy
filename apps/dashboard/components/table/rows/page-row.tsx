@@ -25,7 +25,7 @@ export function createPageColumns(): ColumnDef<PageEntry>[] {
 			accessorKey: 'name',
 			header: 'Page',
 			cell: ({ getValue }: CellContext<PageEntry, any>) => {
-				const name = getValue() as string;
+				const name = (getValue() as string) || '';
 				return (
 					<span className="font-medium text-foreground" title={name}>
 						{name}
