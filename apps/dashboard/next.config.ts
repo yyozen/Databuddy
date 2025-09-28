@@ -21,11 +21,11 @@ const nextConfig: NextConfig = {
 			'localhost',
 			'icons.duckduckgo.com',
 			'flagcdn.com',
+			'multiavatar.com',
 		],
 	},
 
 	output: 'standalone',
-	transpilePackages: ['@t3-oss/env-nextjs', '@t3-oss/env-core'],
 };
 
 export function headers() {
