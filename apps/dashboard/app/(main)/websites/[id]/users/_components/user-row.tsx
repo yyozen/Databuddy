@@ -1,5 +1,6 @@
 'use client';
 
+import { getCountryName } from '@databuddy/shared';
 import { ArrowSquareOutIcon } from '@phosphor-icons/react';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
@@ -93,7 +94,7 @@ export function UserRow({ user, index, websiteId }: UserRowProps) {
 					<CountryFlag country={user.country} size="sm" />
 					<div className="min-w-0">
 						<div className="truncate font-medium text-foreground text-sm">
-							{user.country || 'Unknown'}
+							{getCountryName(user.country) || 'Unknown'}
 						</div>
 						{user.region && user.region !== 'Unknown' && (
 							<div className="truncate text-muted-foreground text-xs">

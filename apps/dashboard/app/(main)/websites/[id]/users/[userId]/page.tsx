@@ -3,6 +3,7 @@
 import { ArrowLeftIcon, SpinnerIcon, UserIcon } from '@phosphor-icons/react';
 import dayjs from 'dayjs';
 import { useParams, useRouter } from 'next/navigation';
+import { FaviconImage } from '@/components/analytics/favicon-image';
 import { BrowserIcon, CountryFlag, OSIcon } from '@/components/icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,45 @@ export default function UserDetailPage() {
 		userId as string,
 		dateRange
 	);
+
+	function getReferrerInfo(referrer?: string) {
+		if (!referrer || referrer === 'direct') {
+			return { name: 'Direct', domain: null } as {
+				name: string;
+				domain: string | null;
+			};
+		}
+		try {
+			const url = new URL(
+				referrer.startsWith('http') ? referrer : `https://${referrer}`
+			);
+			const domain = url.hostname.replace('www.', '');
+			return { name: domain, domain } as {
+				name: string;
+				domain: string | null;
+			};
+		} catch {
+			return { name: referrer, domain: null } as {
+				name: string;
+				domain: string | null;
+			};
+		}
+	}
+
+	const totalEvents =
+		userProfile?.sessions?.reduce(
+			(acc: number, s: any) =>
+				acc + (Array.isArray(s.events) ? s.events.length : 0),
+			0
+		) || 0;
+	const totalPages =
+		userProfile?.sessions?.reduce(
+			(acc: number, s: any) => acc + (Number(s.page_views) || 0),
+			0
+		) || 0;
+	const avgPagesPerSession = userProfile?.total_sessions
+		? totalPages / userProfile.total_sessions
+		: 0;
 
 	const handleBack = () => {
 		router.push(`/websites/${websiteId}/users`);
@@ -187,7 +227,7 @@ export default function UserDetailPage() {
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 				<div className="grid grid-cols-1 gap-0 lg:grid-cols-3">
 					{/* User Overview */}
-					<div className="border-b bg-background lg:border-r lg:border-b-0">
+					<div className="border-b bg-background lg:sticky lg:top-[89px] lg:h-[calc(100vh-89px)] lg:overflow-auto lg:border-r lg:border-b-0">
 						<div className="px-4 py-6">
 							<h2 className="mb-4 font-semibold text-foreground text-lg">
 								User Overview
@@ -242,6 +282,20 @@ export default function UserDetailPage() {
 										</div>
 										<div className="text-muted-foreground text-sm">
 											Pageviews
+										</div>
+									</div>
+									<div className="rounded-lg border bg-muted/20 p-4 text-center">
+										<div className="font-bold text-2xl text-foreground">
+											{totalEvents}
+										</div>
+										<div className="text-muted-foreground text-sm">Events</div>
+									</div>
+									<div className="rounded-lg border bg-muted/20 p-4 text-center">
+										<div className="font-bold text-2xl text-foreground">
+											{avgPagesPerSession.toFixed(1)}
+										</div>
+										<div className="text-muted-foreground text-sm">
+											Pages / Session
 										</div>
 									</div>
 								</div>
@@ -346,6 +400,28 @@ export default function UserDetailPage() {
 													</div>
 												</div>
 											</div>
+
+											{/* Referrer chip */}
+											{(session.referrer || session.referrer_parsed) && (
+												<div className="mb-3 inline-flex items-center gap-2 rounded border bg-background px-2 py-1 text-xs">
+													{(() => {
+														const info = getReferrerInfo(session.referrer);
+														return info.domain ? (
+															<FaviconImage
+																className="flex-shrink-0"
+																domain={info.domain}
+																size={14}
+															/>
+														) : null;
+													})()}
+													<span className="text-muted-foreground">
+														Referrer:
+													</span>
+													<span className="font-medium">
+														{getReferrerInfo(session.referrer).name}
+													</span>
+												</div>
+											)}
 
 											{/* Event Timeline */}
 											{session.events && session.events.length > 0 && (
