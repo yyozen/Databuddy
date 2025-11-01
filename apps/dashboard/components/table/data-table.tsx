@@ -110,15 +110,8 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 	const { fullScreen, setFullScreen, hasMounted, modalRef } = useFullScreen();
 
 	const currentTabData = tabs?.find((tab) => tab.id === activeTab);
-	const tableData = useMemo(
-		() => currentTabData?.data || data || [],
-		[currentTabData?.data, data]
-	);
-	const tableColumns = useMemo(
-		() =>
-			(currentTabData?.columns || columns || []) as ColumnDef<TData, TValue>[],
-		[currentTabData?.columns, columns]
-	);
+	const tableData = currentTabData?.data || data || [];
+	const tableColumns = currentTabData?.columns || columns || [];
 
 	const table = useReactTable({
 		data: tableData,
@@ -269,7 +262,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 						>
 							<FullScreenModal
 								activeTab={activeTab}
-								columns={tableColumns}
+								columns={tableColumns as ColumnDef<TData, unknown>[]}
 								data={tableData}
 								description={description}
 								expandable={expandable}

@@ -9,7 +9,7 @@ import {
 	UsersIcon,
 	WarningIcon,
 } from '@phosphor-icons/react';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { CellContext, ColumnDef } from '@tanstack/react-table';
 import dayjs from 'dayjs';
 import { useAtom } from 'jotai';
 import dynamic from 'next/dynamic';
@@ -26,6 +26,7 @@ import { DataTable } from '@/components/table/data-table';
 import {
 	createMetricColumns,
 	createPageColumns,
+	createPageTimeColumns,
 	createReferrerColumns,
 } from '@/components/table/rows';
 import { useBatchDynamicQuery } from '@/hooks/use-dynamic-query';
@@ -472,7 +473,7 @@ export function WebsiteOverviewTab({
 	}, []);
 
 	const createTimeCell = (info: CellInfo) => {
-		const seconds = info.getValue() as number;
+		const seconds = (info.getValue() as number) ?? 0;
 		return (
 			<span className="font-medium text-foreground">
 				{formatTimeSeconds(seconds)}
@@ -480,96 +481,51 @@ export function WebsiteOverviewTab({
 		);
 	};
 
-	const pageTimeColumns = [
-		{
-			id: 'name',
-			accessorKey: 'name',
-			header: 'Page',
-			cell: (info: CellInfo) => {
-				const name = info.getValue() as string;
-				return (
-					<span className="font-medium text-foreground" title={name}>
-						{name}
-					</span>
-				);
+	const pagesTabs = useMemo(
+		() => [
+			{
+				id: 'top_pages',
+				label: 'Top Pages',
+				data: analytics.top_pages || [],
+				columns: createPageColumns() as ColumnDef<PageRowData, unknown>[],
+				getFilter: (row: PageRowData) => ({
+					field: 'path',
+					value: row.name,
+				}),
 			},
-		},
-		{
-			id: 'median_time_on_page',
-			accessorKey: 'median_time_on_page',
-			header: 'Avg Time',
-			cell: createTimeCell,
-		},
-		{
-			id: 'sessions_with_time',
-			accessorKey: 'sessions_with_time',
-			header: 'Sessions',
-			cell: (info: CellInfo) => (
-				<span className="font-medium text-foreground">
-					{formatNumber(info.getValue() as number)}
-				</span>
-			),
-		},
-		{
-			id: 'visitors',
-			accessorKey: 'visitors',
-			header: 'Visitors',
-			cell: (info: CellInfo) => (
-				<span className="font-medium text-foreground">
-					{formatNumber(info.getValue() as number)}
-				</span>
-			),
-		},
-		{
-			id: 'percentage_of_sessions',
-			accessorKey: 'percentage_of_sessions',
-			header: 'Share',
-			cell: createPercentageCell(),
-		},
-	];
-
-	const pagesTabs = [
-		{
-			id: 'top_pages',
-			label: 'Top Pages',
-			data: analytics.top_pages || [],
-			columns: createPageColumns() as ColumnDef<PageRowData, unknown>[],
-			getFilter: (row: PageRowData) => ({
-				field: 'path',
-				value: row.name,
-			}),
-		},
-		{
-			id: 'entry_pages',
-			label: 'Entry Pages',
-			data: analytics.entry_pages || [],
-			columns: createPageColumns() as ColumnDef<PageRowData, unknown>[],
-			getFilter: (row: PageRowData) => ({
-				field: 'path',
-				value: row.name,
-			}),
-		},
-		{
-			id: 'exit_pages',
-			label: 'Exit Pages',
-			data: analytics.exit_pages || [],
-			columns: createPageColumns() as ColumnDef<PageRowData, unknown>[],
-			getFilter: (row: PageRowData) => ({
-				field: 'path',
-				value: row.name,
-			}),
-		},
-		{
-			id: 'page_time_analysis',
-			label: 'Time Analysis',
-			data: analytics.page_time_analysis || [],
-			columns: pageTimeColumns as ColumnDef<PageRowData, unknown>[],
-			getFilter: (row: PageRowData) => ({
-				field: 'path',
-				value: row.name,
-			}),
-		},
-	];
+			{
+				id: 'entry_pages',
+				label: 'Entry Pages',
+				data: analytics.entry_pages || [],
+				columns: createPageColumns() as ColumnDef<PageRowData, unknown>[],
+				getFilter: (row: PageRowData) => ({
+					field: 'path',
+					value: row.name,
+				}),
+			},
+			{
+				id: 'exit_pages',
+				label: 'Exit Pages',
+				data: analytics.exit_pages || [],
+				columns: createPageColumns() as ColumnDef<PageRowData, unknown>[],
+				getFilter: (row: PageRowData) => ({
+					field: 'path',
+					value: row.name,
+				}),
+			},
+			{
+				id: 'page_time_analysis',
+				label: 'Time Analysis',
+				data: analytics.page_time_analysis || [],
+				columns: createPageTimeColumns(),
+				getFilter: (row: any) => ({
+					field: 'path',
+					value: row.name,
+				}),
+			},
+		],
+		[analytics.top_pages, analytics.entry_pages, analytics.exit_pages, analytics.page_time_analysis]
+	);
 
 	const deviceColumns = [
 		{
@@ -1008,7 +964,7 @@ export function WebsiteOverviewTab({
 					isLoading={isLoading}
 					minHeight={350}
 					onAddFilter={onAddFilter}
-					tabs={pagesTabs}
+					tabs={pagesTabs as any}
 					title="Pages"
 				/>
 			</div>

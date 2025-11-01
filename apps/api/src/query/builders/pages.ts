@@ -391,7 +391,7 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
 			const baseQuery = helpers?.sessionAttributionCTE
 				? `
             SELECT 
-                CASE WHEN trimRight(path(e.path), '/') = '' THEN '/' ELSE trimRight(path(e.path), '/') END as name,
+                decodeURLComponent(CASE WHEN trimRight(path(e.path), '/') = '' THEN '/' ELSE trimRight(path(e.path), '/') END) as name,
                 COUNT(*) as sessions_with_time,
                 COUNT(DISTINCT e.anonymous_id) as visitors,
                 ROUND(quantile(0.5)(e.time_on_page), 2) as median_time_on_page,
@@ -408,11 +408,11 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
                 ${combinedWhereClause}
             GROUP BY name
             HAVING COUNT(*) >= 1
-            ORDER BY median_time_on_page DESC
+            ORDER BY visitors DESC
             LIMIT {limit:Int32} OFFSET {offset:Int32}`
 				: `
             SELECT 
-                CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END as name,
+                decodeURLComponent(CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END) as name,
                 COUNT(*) as sessions_with_time,
                 COUNT(DISTINCT anonymous_id) as visitors,
                 ROUND(quantile(0.5)(time_on_page), 2) as median_time_on_page,
@@ -428,7 +428,7 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
                 ${combinedWhereClause}
             GROUP BY name
             HAVING COUNT(*) >= 1
-            ORDER BY median_time_on_page DESC
+            ORDER BY visitors DESC
             LIMIT {limit:Int32} OFFSET {offset:Int32}`;
 
 			return {

@@ -191,11 +191,13 @@ export function TableContent<TData extends { name: string | number }>({
 
 	const displayData = table.getRowModel().rows;
 	const tableData = displayData.map((row) => row.original);
+	const headerGroups = table.getHeaderGroups();
 
 	const hasPercentageData = tableData.some((row) => {
 		const percentage = getRowPercentage(row as PercentageRow);
 		return percentage > 0;
 	});
+
 
 	if (!displayData.length) {
 		return (
@@ -229,9 +231,9 @@ export function TableContent<TData extends { name: string | number }>({
 			role="tabpanel"
 			style={{ height: minHeight }}
 		>
-			<TableComponent className="w-full table-fixed">
+			<TableComponent className="w-full table-fixed" key={`table-${activeTab}`}>
 				<TableHeader>
-					{table.getHeaderGroups().map((headerGroup) => (
+					{headerGroups.map((headerGroup) => (
 						<TableRow
 							className="sticky top-0 z-10 border-sidebar-border/30 bg-sidebar-accent"
 							key={headerGroup.id}
