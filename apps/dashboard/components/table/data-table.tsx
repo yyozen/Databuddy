@@ -103,7 +103,6 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 	showSearch = true,
 }: DataTableProps<TData, TValue>) {
 	const [activeTab, setActiveTab] = useState(tabs?.[0]?.id || '');
-	const [isTransitioning, setIsTransitioning] = useState(false);
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [globalFilter, setGlobalFilter] = useState('');
 
@@ -116,6 +115,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 	const table = useReactTable({
 		data: tableData,
 		columns: tableColumns,
+		enableSorting: true,
 		getRowId: (row, index) => {
 			if ((row as any)._uniqueKey) {
 				return (row as any)._uniqueKey;
@@ -135,17 +135,10 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 	});
 
 	const handleTabChange = (tabId: string) => {
-		if (tabId === activeTab) {
-			return;
-		}
-
-		setIsTransitioning(true);
+		if (tabId === activeTab) return;
+		setActiveTab(tabId);
 		setSorting([]);
 		setGlobalFilter('');
-		setTimeout(() => {
-			setActiveTab(tabId);
-			setIsTransitioning(false);
-		}, 150);
 	};
 
 	if (isLoading) {
@@ -209,38 +202,20 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 				)}
 
 				<div className="overflow-hidden">
-					<div
-						className={cn(
-							'relative transition-all duration-300 ease-out',
-							isTransitioning && 'scale-[0.98] opacity-40'
-						)}
-					>
-						{isTransitioning && (
-							<div className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
-								<div className="flex items-center gap-2 rounded-lg border border-border/50 bg-background/80 px-3 py-2 shadow-sm">
-									<div className="h-3 w-3 animate-pulse rounded-full bg-primary/60" />
-									<span className="font-medium text-muted-foreground text-xs">
-										Loading...
-									</span>
-								</div>
-							</div>
-						)}
-
-						<TableContent
-							activeTab={activeTab}
-							emptyMessage={emptyMessage}
-							expandable={expandable}
-							getSubRows={getSubRows}
-							minHeight={minHeight}
-							onAddFilter={onAddFilter}
-							onRowAction={onRowAction}
-							onRowClick={onRowClick}
-							renderSubRow={renderSubRow}
-							table={table}
-							tabs={tabs}
-							title={title}
-						/>
-					</div>
+					<TableContent
+						activeTab={activeTab}
+						emptyMessage={emptyMessage}
+						expandable={expandable}
+						getSubRows={getSubRows}
+						minHeight={minHeight}
+						onAddFilter={onAddFilter}
+						onRowAction={onRowAction}
+						onRowClick={onRowClick}
+						renderSubRow={renderSubRow}
+						table={table}
+						tabs={tabs}
+						title={title}
+					/>
 				</div>
 			</div>
 

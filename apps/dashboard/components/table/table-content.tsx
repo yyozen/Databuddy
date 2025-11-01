@@ -239,45 +239,35 @@ export function TableContent<TData extends { name: string | number }>({
 							key={headerGroup.id}
 						>
 							{headerGroup.headers.map((header) => {
-								const canSort = header.column.getCanSort();
 								const sortDirection = header.column.getIsSorted();
 								const sortHandler = header.column.getToggleSortingHandler();
 
 								return (
 									<TableHead
-										aria-label={
-											canSort
-												? getSortAriaLabel(
-														String(header.column.columnDef.header) || header.id,
-														sortDirection
-													)
-												: undefined
-										}
+										aria-label={getSortAriaLabel(
+											String(header.column.columnDef.header) || header.id,
+											sortDirection
+										)}
 										aria-sort={
 											sortDirection === 'asc'
 												? 'ascending'
 												: sortDirection === 'desc'
 													? 'descending'
-													: canSort
-														? 'none'
-														: undefined
+													: 'none'
 										}
 										className={cn(
-											'h-10 bg-sidebar-accent px-2 font-semibold text-sidebar-foreground/70 text-xs uppercase tracking-wide',
-											(header.column.columnDef.meta as any)?.className,
-											canSort
-												? 'group cursor-pointer select-none transition-colors hover:text-sidebar-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-ring focus:ring-offset-2 active:bg-sidebar-accent/80'
-												: 'select-none'
+											'group h-10 cursor-pointer select-none bg-sidebar-accent px-2 font-semibold text-sidebar-foreground/70 text-xs uppercase tracking-wide transition-colors hover:text-sidebar-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-ring focus:ring-offset-2 active:bg-sidebar-accent/80',
+											(header.column.columnDef.meta as any)?.className
 										)}
 										key={header.id}
-										onClick={canSort ? sortHandler : undefined}
+										onClick={sortHandler}
 										onKeyDown={(e) => {
-											if (canSort && (e.key === 'Enter' || e.key === ' ')) {
+											if (e.key === 'Enter' || e.key === ' ') {
 												e.preventDefault();
 												sortHandler?.(e);
 											}
 										}}
-										role={canSort ? 'columnheader button' : 'columnheader'}
+										role="columnheader button"
 										style={{
 											width:
 												header.getSize() !== 150
@@ -286,9 +276,9 @@ export function TableContent<TData extends { name: string | number }>({
 											maxWidth: '300px',
 											minWidth: '80px',
 										}}
-										tabIndex={canSort ? 0 : -1}
+										tabIndex={0}
 									>
-										<div className="flex items-center gap-1.5">
+										<div className="flex items-center gap-1.5 pointer-events-none">
 											<span className="truncate">
 												{header.isPlaceholder
 													? null
@@ -297,28 +287,26 @@ export function TableContent<TData extends { name: string | number }>({
 															header.getContext()
 														)}
 											</span>
-											{canSort && (
-												<div className="flex h-3.5 w-3.5 flex-col items-center justify-center">
-													{sortDirection === 'asc' && (
-														<ArrowUpIcon
-															aria-hidden="true"
-															className="h-3.5 w-3.5 text-sidebar-ring"
-														/>
-													)}
-													{sortDirection === 'desc' && (
-														<ArrowDownIcon
-															aria-hidden="true"
-															className="h-3.5 w-3.5 text-sidebar-ring"
-														/>
-													)}
-													{!sortDirection && (
-														<ArrowsDownUpIcon
-															aria-hidden="true"
-															className="h-3.5 w-3.5 text-sidebar-foreground/40 transition-colors group-hover:text-sidebar-foreground/70"
-														/>
-													)}
-												</div>
-											)}
+											<div className="flex h-3.5 w-3.5 flex-col items-center justify-center">
+												{sortDirection === 'asc' && (
+													<ArrowUpIcon
+														aria-hidden="true"
+														className="h-3.5 w-3.5 text-sidebar-ring"
+													/>
+												)}
+												{sortDirection === 'desc' && (
+													<ArrowDownIcon
+														aria-hidden="true"
+														className="h-3.5 w-3.5 text-sidebar-ring"
+													/>
+												)}
+												{!sortDirection && (
+													<ArrowsDownUpIcon
+														aria-hidden="true"
+														className="h-3.5 w-3.5 text-sidebar-foreground/40 transition-colors group-hover:text-sidebar-foreground/70"
+													/>
+												)}
+											</div>
 										</div>
 									</TableHead>
 								);

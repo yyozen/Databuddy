@@ -82,6 +82,7 @@ export function FullScreenModal<TData extends { name: string | number }>({
 	const table = useReactTable({
 		data: tableData,
 		columns: tableColumns,
+		enableSorting: true,
 		getRowId: (row, index) => {
 			if ((row as any)._uniqueKey) {
 				return (row as any)._uniqueKey;
