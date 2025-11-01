@@ -121,7 +121,7 @@ export const LinksBuilders: Record<string, SimpleQueryConfig> = {
 						COUNT(*) as total_clicks,
 						COUNT(DISTINCT anonymous_id) as unique_users,
 						COUNT(DISTINCT session_id) as unique_sessions,
-						ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage,
+						ROUND((COUNT(DISTINCT anonymous_id) / SUM(COUNT(DISTINCT anonymous_id)) OVER()) * 100, 2) as percentage,
 						MAX(timestamp) as last_clicked
 					FROM enriched_links
 					GROUP BY href, text

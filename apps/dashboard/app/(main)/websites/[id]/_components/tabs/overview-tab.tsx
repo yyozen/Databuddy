@@ -516,10 +516,7 @@ export function WebsiteOverviewTab({
 			{
 				id: 'page_time_analysis',
 				label: 'Time Analysis',
-				data: (analytics.page_time_analysis || []).map((row: any) => ({
-					...row,
-					percentage: row.percentage_of_sessions ?? 0,
-				})),
+				data: analytics.page_time_analysis || [],
 				columns: createPageTimeColumns(),
 				getFilter: (row: any) => ({
 					field: 'path',

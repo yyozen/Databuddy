@@ -8,7 +8,7 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
 			"decodeURLComponent(CASE WHEN trimRight(path(path), '/') = '' THEN '/' ELSE trimRight(path(path), '/') END) as name",
 			'COUNT(*) as pageviews',
 			'COUNT(DISTINCT anonymous_id) as visitors',
-			'ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage',
+			'ROUND((COUNT(DISTINCT anonymous_id) / SUM(COUNT(DISTINCT anonymous_id)) OVER()) * 100, 2) as percentage',
 		],
 		where: ["event_name = 'screen_view'"],
 		groupBy: [
@@ -169,7 +169,7 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
                 entry_page as name,
                 COUNT(*) as pageviews,
                 COUNT(DISTINCT anonymous_id) as visitors,
-                ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage
+                ROUND((COUNT(DISTINCT anonymous_id) / SUM(COUNT(DISTINCT anonymous_id)) OVER()) * 100, 2) as percentage
             FROM session_entry
             WHERE page_rank = 1
             GROUP BY entry_page
@@ -181,7 +181,7 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
                 entry_page as name,
                 COUNT(*) as pageviews,
                 COUNT(DISTINCT anonymous_id) as visitors,
-                ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage
+                ROUND((COUNT(DISTINCT anonymous_id) / SUM(COUNT(DISTINCT anonymous_id)) OVER()) * 100, 2) as percentage
             FROM session_entry
             WHERE page_rank = 1
             GROUP BY entry_page
@@ -298,7 +298,7 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
                 path as name,
                 COUNT(DISTINCT session_id) as pageviews,
                 COUNT(DISTINCT anonymous_id) as visitors,
-                ROUND((COUNT(DISTINCT session_id) / SUM(COUNT(DISTINCT session_id)) OVER()) * 100, 2) as percentage
+                ROUND((COUNT(DISTINCT anonymous_id) / SUM(COUNT(DISTINCT anonymous_id)) OVER()) * 100, 2) as percentage
             FROM exit_pages
             GROUP BY path
             ORDER BY pageviews DESC
@@ -395,7 +395,7 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
                 COUNT(*) as sessions_with_time,
                 COUNT(DISTINCT e.anonymous_id) as visitors,
                 ROUND(quantile(0.5)(e.time_on_page), 2) as median_time_on_page,
-                ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage_of_sessions
+                ROUND((COUNT(DISTINCT e.anonymous_id) / SUM(COUNT(DISTINCT e.anonymous_id)) OVER()) * 100, 2) as percentage
             FROM analytics.events e
             ${helpers.sessionAttributionJoin('e')}
             WHERE e.client_id = {websiteId:String}
@@ -416,7 +416,7 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
                 COUNT(*) as sessions_with_time,
                 COUNT(DISTINCT anonymous_id) as visitors,
                 ROUND(quantile(0.5)(time_on_page), 2) as median_time_on_page,
-                ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage_of_sessions
+                ROUND((COUNT(DISTINCT anonymous_id) / SUM(COUNT(DISTINCT anonymous_id)) OVER()) * 100, 2) as percentage
             FROM analytics.events
             WHERE client_id = {websiteId:String}
                 AND time >= parseDateTimeBestEffort({startDate:String})
@@ -484,10 +484,10 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
 					example: 32.5,
 				},
 				{
-					name: 'percentage_of_sessions',
+					name: 'percentage',
 					type: 'number',
-					label: 'Session %',
-					description: 'Percentage of total sessions with time data',
+					label: 'Share',
+					description: 'Percentage of total visitors',
 					unit: '%',
 					example: 15.8,
 				},
@@ -498,14 +498,14 @@ export const PagesBuilders: Record<string, SimpleQueryConfig> = {
 					sessions_with_time: 245,
 					visitors: 189,
 					median_time_on_page: 32.5,
-					percentage_of_sessions: 15.8,
+					percentage: 15.8,
 				},
 				{
 					name: '/about',
 					sessions_with_time: 156,
 					visitors: 134,
 					median_time_on_page: 54.2,
-					percentage_of_sessions: 10.1,
+					percentage: 10.1,
 				},
 			],
 			default_visualization: 'table',

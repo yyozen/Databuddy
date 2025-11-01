@@ -59,7 +59,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 						MAX(timestamp) as last_occurrence,
 						MIN(timestamp) as first_occurrence,
 						countIf(properties != '{}' AND isValidJSON(properties)) as events_with_properties,
-						ROUND((COUNT(*) / SUM(COUNT(*)) OVER()) * 100, 2) as percentage
+						ROUND((COUNT(DISTINCT anonymous_id) / SUM(COUNT(DISTINCT anonymous_id)) OVER()) * 100, 2) as percentage
 					FROM enriched_events
 					GROUP BY event_name
 					ORDER BY total_events DESC
