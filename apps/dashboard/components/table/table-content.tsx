@@ -177,6 +177,27 @@ export function TableContent<TData extends { name: string | number }>({
 
 	const displayData = table.getRowModel().rows;
 	const headerGroups = table.getHeaderGroups();
+	const activeTabConfig = tabs?.find((tab) => tab.id === activeTab);
+	const isInteractive = !!(onRowClick || onAddFilter || onRowAction);
+
+	const handleRowClick = (row: TData, hasSubRows: boolean, rowId: string) => {
+		if (hasSubRows) {
+			toggleRowExpansion(rowId);
+			return;
+		}
+		if (onRowAction) {
+			onRowAction(row);
+			return;
+		}
+		if (onAddFilter && row.name && activeTabConfig?.getFilter) {
+			const { field, value } = activeTabConfig.getFilter(row);
+			onAddFilter(field, value, title);
+			return;
+		}
+		if (onRowClick) {
+			onRowClick('name', row.name);
+		}
+	};
 
 
 	if (!displayData.length) {
@@ -246,10 +267,8 @@ export function TableContent<TData extends { name: string | number }>({
 				</TableHeader>
 				<TableBody className="overflow-hidden">
 					{displayData.map((row, rowIndex) => {
-						const subRows =
-							expandable && getSubRows ? getSubRows(row.original) : undefined;
-						const hasSubRows = subRows && subRows.length > 0;
-						const isExpanded = expandedRow === row.id;
+						const subRows = expandable && getSubRows ? getSubRows(row.original) : undefined;
+						const hasSubRows = !!subRows?.length;
 						const percentage = getRowPercentage(row.original as PercentageRow);
 						const gradient = percentage > 0 ? getPercentageGradient(percentage) : null;
 
@@ -258,47 +277,22 @@ export function TableContent<TData extends { name: string | number }>({
 								<TableRow
 									className={cn(
 										'relative h-11 border-border/20 pl-3 transition-all duration-300 ease-in-out',
-										((onRowClick && !hasSubRows) || hasSubRows || onAddFilter || onRowAction) &&
-											'cursor-pointer',
-										!gradient &&
-											(rowIndex % 2 === 0 ? 'bg-background/50' : 'bg-muted/10')
+										(isInteractive || hasSubRows) && 'cursor-pointer',
+										!gradient && (rowIndex % 2 === 0 ? 'bg-background/50' : 'bg-muted/10')
 									)}
-									onClick={() => {
-										if (hasSubRows) {
-											toggleRowExpansion(row.id);
-										} else if (onRowAction) {
-											onRowAction(row.original);
-										} else if (onAddFilter && row.original.name) {
-											const activeTabConfig = tabs?.find(
-												(tab) => tab.id === activeTab
-											);
-											const filterFunc = activeTabConfig?.getFilter;
-											if (!filterFunc) {
-												return;
-											}
-
-											const { field, value } = filterFunc(row.original);
-											onAddFilter(field, value, title);
-										} else if (onRowClick) {
-											onRowClick('name', row.original.name);
-										}
-									}}
+									onClick={() => handleRowClick(row.original, hasSubRows, row.id)}
 									onKeyDown={(e) => {
 										if (e.key === 'Enter' || e.key === ' ') {
 											e.preventDefault();
 											e.currentTarget.click();
 										}
 									}}
-									role={
-										((onRowClick && !hasSubRows) || hasSubRows || onAddFilter || onRowAction) ? 'button' : undefined
-									}
+									role={(isInteractive || hasSubRows) ? 'button' : undefined}
 									style={{
 										background: gradient?.background,
 										boxShadow: gradient ? `inset 3px 0 0 0 ${gradient.accentColor}` : undefined,
 									}}
-									tabIndex={
-										((onRowClick && !hasSubRows) || hasSubRows || onAddFilter || onRowAction) ? 0 : -1
-									}
+									tabIndex={(isInteractive || hasSubRows) ? 0 : -1}
 								>
 									{row.getVisibleCells().map((cell, cellIndex) => (
 										<TableCell
@@ -317,9 +311,7 @@ export function TableContent<TData extends { name: string | number }>({
 											<div className="flex items-center gap-2">
 												{cellIndex === 0 && hasSubRows && (
 													<button
-														aria-label={
-															isExpanded ? 'Collapse row' : 'Expand row'
-														}
+														aria-label={expandedRow === row.id ? 'Collapse row' : 'Expand row'}
 														className="flex-shrink-0 rounded p-0.5 transition-colors hover:bg-sidebar-accent/60"
 														onClick={(e) => {
 															e.stopPropagation();
@@ -327,7 +319,7 @@ export function TableContent<TData extends { name: string | number }>({
 														}}
 														type="button"
 													>
-														{isExpanded ? (
+														{expandedRow === row.id ? (
 															<ArrowDownIcon className="h-3.5 w-3.5 text-sidebar-foreground/70" />
 														) : (
 															<ArrowUpIcon className="h-3.5 w-3.5 text-sidebar-foreground/70" />
@@ -348,7 +340,7 @@ export function TableContent<TData extends { name: string | number }>({
 								</TableRow>
 
 								{hasSubRows &&
-									isExpanded &&
+									expandedRow === row.id &&
 									subRows.map((subRow, subIndex) => (
 										<TableRow
 											className="border-sidebar-border/10 bg-sidebar-accent/5 transition-colors hover:bg-sidebar-accent/10"
