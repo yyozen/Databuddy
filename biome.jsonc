@@ -55,7 +55,8 @@
         "useExhaustiveDependencies": "off"
       },
       "nursery": {
-        "noShadow": "off"
+        "noShadow": "off",
+        "useMaxParams": "off"
       },
       "a11y": {
         "noStaticElementInteractions": "off"
