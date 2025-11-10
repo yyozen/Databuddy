@@ -391,7 +391,9 @@ export async function insertTrackEvent(
 export async function insertTrackEventsBatch(
 	events: AnalyticsEvent[]
 ): Promise<void> {
-	if (events.length === 0) return;
+	if (events.length === 0) {
+		return;
+	}
 
 	try {
 		await sendEventBatch("analytics-events", events);
@@ -405,7 +407,9 @@ export async function insertTrackEventsBatch(
 }
 
 export async function insertErrorsBatch(events: ErrorEvent[]): Promise<void> {
-	if (events.length === 0) return;
+	if (events.length === 0) {
+		return;
+	}
 
 	try {
 		await sendEventBatch("analytics-errors", events);
@@ -420,7 +424,9 @@ export async function insertErrorsBatch(events: ErrorEvent[]): Promise<void> {
 export async function insertWebVitalsBatch(
 	events: WebVitalsEvent[]
 ): Promise<void> {
-	if (events.length === 0) return;
+	if (events.length === 0) {
+		return;
+	}
 
 	try {
 		await sendEventBatch("analytics-web-vitals", events);
@@ -435,7 +441,9 @@ export async function insertWebVitalsBatch(
 export async function insertCustomEventsBatch(
 	events: CustomEvent[]
 ): Promise<void> {
-	if (events.length === 0) return;
+	if (events.length === 0) {
+		return;
+	}
 
 	try {
 		await sendEventBatch("analytics-custom-events", events);
@@ -450,7 +458,9 @@ export async function insertCustomEventsBatch(
 export async function insertOutgoingLinksBatch(
 	events: CustomOutgoingLink[]
 ): Promise<void> {
-	if (events.length === 0) return;
+	if (events.length === 0) {
+		return;
+	}
 
 	try {
 		await sendEventBatch("analytics-outgoing-links", events);
