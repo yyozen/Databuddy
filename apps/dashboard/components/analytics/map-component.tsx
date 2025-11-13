@@ -10,7 +10,6 @@ import type { Layer, Map as LeafletMap } from "leaflet";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getCountryPopulation } from "@/lib/data";
 import { type Country, useCountries } from "@/lib/geo";
 import { CountryFlag } from "./icons/CountryFlag";
 
@@ -28,16 +27,7 @@ type TooltipContent = {
 	code: string;
 	count: number;
 	percentage: number;
-	perCapita?: number;
 };
-
-type TooltipPosition = {
-	x: number;
-	y: number;
-};
-
-const roundToTwo = (num: number): number =>
-	Math.round((num + Number.EPSILON) * 100) / 100;
 
 const mapApiToGeoJson = (code: string): string =>
 	code === "TW" ? "CN-TW" : code;
@@ -51,13 +41,11 @@ const mapGeoJsonToApi = (code: string): string => {
 
 export function MapComponent({
 	height,
-	mode = "total",
 	locationData,
 	isLoading: passedIsLoading = false,
 	selectedCountry,
 }: {
 	height: number | string;
-	mode?: "total" | "perCapita";
 	locationData?: LocationData;
 	isLoading?: boolean;
 	selectedCountry?: string | null;
@@ -109,40 +97,18 @@ export function MapComponent({
 	const [tooltipContent, setTooltipContent] = useState<TooltipContent | null>(
 		null
 	);
-	const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({
-		x: 0,
-		y: 0,
-	});
 	const [mapView] = useState<"countries" | "subdivisions">("countries");
 	const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-	const processedCountryData = useMemo(() => {
-		if (!countryData?.data) {
-			return null;
-		}
-
-		return countryData.data.map(
-			(item: { value: string; count: number; percentage: number }) => {
-				const population = getCountryPopulation(item.value);
-				const perCapitaValue = population > 0 ? item.count / population : 0;
-				return {
-					...item,
-					perCapita: perCapitaValue,
-				};
-			}
-		);
-	}, [countryData?.data]);
-
 	const colorScale = useMemo(() => {
-		if (!processedCountryData) {
+		if (!countryData?.data) {
 			return () =>
 				resolvedTheme === "dark" ? "hsl(240 3.7% 15.9%)" : "hsl(210 40% 92%)";
 		}
 
-		const metricToUse = mode === "perCapita" ? "perCapita" : "count";
-		const values = processedCountryData?.map(
-			(d: { count: number; perCapita: number }) => d[metricToUse]
-		) || [0];
+		const values = countryData.data?.map((d: { count: number }) => d.count) || [
+			0,
+		];
 		const maxValue = Math.max(...values);
 		const nonZeroValues = values.filter((v: number) => v > 0);
 		const minValue = nonZeroValues.length > 0 ? Math.min(...nonZeroValues) : 0;
@@ -171,7 +137,7 @@ export function MapComponent({
 			}
 			return `rgba(${baseBlue}, ${0.8 + intensity * 0.2})`;
 		};
-	}, [processedCountryData, mode, resolvedTheme]);
+	}, [countryData?.data, resolvedTheme]);
 
 	const { data: countriesGeoData } = useCountries();
 
@@ -209,20 +175,17 @@ export function MapComponent({
 			const dataKey = feature?.properties?.ISO_A2;
 			// Convert GeoJSON code to API code for data lookup
 			const apiCode = mapGeoJsonToApi(dataKey ?? "");
-			const foundData = processedCountryData?.find(
+			const foundData = countryData?.data?.find(
 				({ value }: { value: string }) => value === apiCode
 			);
 
-			const metricValue =
-				mode === "perCapita"
-					? foundData?.perCapita || 0
-					: foundData?.count || 0;
+			const metricValue = foundData?.count || 0;
 			const isHovered = hoveredId === dataKey?.toString();
 			const hasData = metricValue > 0;
 
 			return { dataKey, foundData, metricValue, isHovered, hasData };
 		},
-		[processedCountryData, mode, hoveredId]
+		[countryData?.data, hoveredId]
 	);
 
 	const getStyleWeights = useCallback(
@@ -292,19 +255,17 @@ export function MapComponent({
 					const name = feature.properties?.ADMIN;
 					// Convert GeoJSON code to API code for data lookup
 					const apiCode = mapGeoJsonToApi(code ?? "");
-					const foundData = processedCountryData?.find(
+					const foundData = countryData?.data?.find(
 						({ value }) => value === apiCode
 					);
 					const count = foundData?.count || 0;
 					const percentage = foundData?.percentage || 0;
-					const perCapita = foundData?.perCapita || 0;
 
 					setTooltipContent({
 						name,
 						code: apiCode, // Use API code for flag display
 						count,
 						percentage,
-						perCapita,
 					});
 				},
 				mouseout: () => {
@@ -313,24 +274,18 @@ export function MapComponent({
 				},
 				click: (e) => {
 					if (mapRef.current) {
-						mapRef.current.flyTo(
+						mapRef.current.setView(
 							e.latlng,
-							Math.min(mapRef.current.getZoom() + 2, 12),
-							{
-								animate: true,
-								duration: 1.2,
-								easeLinearity: 0.5,
-							}
+							Math.min(mapRef.current.getZoom() + 1, 12)
 						);
 					}
 				},
 			});
 		},
-		[processedCountryData]
+		[countryData?.data]
 	);
 
-	const containerRef = useRef<HTMLDivElement>(null);
-	const zoom = 1.5;
+	const zoom = 1.0;
 
 	useEffect(() => {
 		if (mapRef.current) {
@@ -401,27 +356,13 @@ export function MapComponent({
 
 		const centroid = calculateCountryCentroid(countryFeature.geometry);
 		if (centroid) {
-			mapRef.current.flyTo([centroid.lat, centroid.lng], 7, {
-				animate: true,
-				duration: 1.5,
-				easeLinearity: 0.5,
-			});
+			mapRef.current.setView([centroid.lat, centroid.lng], 5);
 		}
 	}, [selectedCountry, countriesGeoData, calculateCountryCentroid]);
 
 	return (
 		<div
-			className="relative cursor-pointer"
-			onMouseMove={(e) => {
-				if (tooltipContent) {
-					setTooltipPosition({
-						x: e.clientX,
-						y: e.clientY,
-					});
-				}
-			}}
-			ref={containerRef}
-			role="tablist"
+			className="relative flex h-full w-full flex-col overflow-hidden rounded border bg-card"
 			style={{ height }}
 		>
 			{passedIsLoading && (
@@ -456,7 +397,7 @@ export function MapComponent({
 						outline: "none",
 						zIndex: "1",
 					}}
-					wheelPxPerZoomLevel={60}
+					wheelPxPerZoomLevel={120}
 					zoom={zoom}
 					zoomControl={false}
 					zoomDelta={0.5}
@@ -465,7 +406,7 @@ export function MapComponent({
 					{mapView === "countries" && countriesGeoData && (
 						<GeoJSON
 							data={countriesGeoData as GeoJsonObject}
-							key={`countries-${mode}-${locationData?.countries?.length || 0}`}
+							key={`countries-${locationData?.countries?.length || 0}`}
 							onEachFeature={handleEachFeature}
 							style={handleStyle}
 						/>
@@ -473,45 +414,56 @@ export function MapComponent({
 				</MapContainer>
 			)}
 
-			{tooltipContent && (
-				<div
-					className="pointer-events-none fixed z-50 rounded border bg-popover p-3 text-popover-foreground text-sm shadow-xl backdrop-blur-sm"
-					style={{
-						left: tooltipPosition.x,
-						top: tooltipPosition.y - 10,
-						transform: "translate(-50%, -100%)",
-						boxShadow:
-							resolvedTheme === "dark"
-								? "0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1)"
-								: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-					}}
-				>
-					<div className="mb-1 flex items-center gap-2 font-medium">
-						{tooltipContent.code && (
-							<CountryFlag country={tooltipContent.code} />
-						)}
-						<span className="text-foreground">{tooltipContent.name}</span>
-					</div>
-					<div className="space-y-1">
+			{!passedIsLoading &&
+				(!locationData?.countries || locationData.countries.length === 0) && (
+					<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/70 text-center text-muted-foreground text-sm">
 						<div>
-							<span className="font-bold text-foreground">
+							<p className="font-semibold text-foreground">No map data yet</p>
+							<p>Visitors will appear as soon as traffic flows in.</p>
+						</div>
+					</div>
+				)}
+
+			<div className="pointer-events-none absolute top-3 left-3 z-20 flex max-w-[240px] flex-col gap-2 rounded border bg-card p-3 text-sm shadow-sm">
+				<div className="flex items-center gap-2 font-semibold text-foreground">
+					{tooltipContent?.code ? (
+						<>
+							<CountryFlag country={tooltipContent.code} />
+							<span>{tooltipContent.name}</span>
+						</>
+					) : (
+						<span>Move over a country</span>
+					)}
+				</div>
+				<div className="text-muted-foreground text-xs">
+					{tooltipContent ? (
+						<>
+							<span className="font-semibold text-foreground">
 								{tooltipContent.count.toLocaleString()}
 							</span>{" "}
-							<span className="text-muted-foreground">
-								({tooltipContent.percentage.toFixed(1)}%) visitors
-							</span>
-						</div>
-						{mode === "perCapita" && (
-							<div className="text-muted-foreground text-sm">
-								<span className="font-bold text-foreground">
-									{roundToTwo(tooltipContent.perCapita ?? 0)}
-								</span>{" "}
-								per million people
-							</div>
-						)}
-					</div>
+							visitors ({tooltipContent.percentage.toFixed(1)}%)
+						</>
+					) : (
+						"Hover to explore visitor share"
+					)}
 				</div>
-			)}
+			</div>
+
+			<div className="pointer-events-none absolute bottom-3 left-3 z-20 flex w-[210px] flex-col gap-2 rounded border bg-card p-3 text-muted-foreground text-xs shadow-sm">
+				<div className="flex items-center justify-between">
+					<span>Lower share</span>
+					<span>Higher share</span>
+				</div>
+				<div
+					className="h-2 rounded-full"
+					style={{
+						background:
+							resolvedTheme === "dark"
+								? "linear-gradient(90deg, rgba(96,165,250,0.4) 0%, rgba(59,130,246,0.95) 100%)"
+								: "linear-gradient(90deg, rgba(147,197,253,0.4) 0%, rgba(37,99,235,0.95) 100%)",
+					}}
+				/>
+			</div>
 		</div>
 	);
 }
