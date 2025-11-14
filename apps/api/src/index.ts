@@ -108,11 +108,11 @@ export default {
 };
 
 process.on("SIGINT", () => {
-	logger.info("SIGINT signal received, shutting down...");
+	logger.info({ message: "SIGINT signal received, shutting down..." });
 	process.exit(0);
 });
 
 process.on("SIGTERM", () => {
-	logger.info("SIGTERM signal received, shutting down...");
+	logger.info({ message: "SIGTERM signal received, shutting down..." });
 	process.exit(0);
 });

@@ -17,7 +17,8 @@ const getCachedApiKeyBySecret = cacheable(
 				),
 			});
 			return key ?? null;
-		} catch {
+		} catch (error) {
+			logger.error({ error }, "Failed to get API key by secret from cache");
 			return null;
 		}
 	},
@@ -36,7 +37,8 @@ const getCachedAccessEntries = cacheable(
 				.select()
 				.from(apikeyAccess)
 				.where(eq(apikeyAccess.apikeyId, keyId));
-		} catch {
+		} catch (error) {
+			logger.error({ error, keyId }, "Failed to get API key access entries from cache");
 			return [] as InferSelectModel<typeof apikeyAccess>[];
 		}
 	},
@@ -67,33 +69,42 @@ export async function getApiKeyFromHeader(
 	}
 	const key = await getCachedApiKeyBySecret(secret);
 	if (!key) {
-		logger.warn("API key authentication failed: invalid key", {
-			userAgent: headers.get("user-agent"),
-			ip: headers.get("x-forwarded-for") || headers.get("x-real-ip"),
-			method: "getApiKeyFromHeader",
-		});
+		logger.warn(
+			{
+				userAgent: headers.get("user-agent"),
+				ip: headers.get("x-forwarded-for") || headers.get("x-real-ip"),
+				method: "getApiKeyFromHeader",
+			},
+			"API key authentication failed: invalid key"
+		);
 		return null;
 	}
 	if (key.expiresAt && new Date(key.expiresAt) <= new Date()) {
-		logger.warn("API key authentication failed: expired key", {
-			apikeyId: key.id,
-			expiresAt: key.expiresAt,
-			userAgent: headers.get("user-agent"),
-			ip: headers.get("x-forwarded-for") || headers.get("x-real-ip"),
-		});
+		logger.warn(
+			{
+				apikeyId: key.id,
+				expiresAt: key.expiresAt,
+				userAgent: headers.get("user-agent"),
+				ip: headers.get("x-forwarded-for") || headers.get("x-real-ip"),
+			},
+			"API key authentication failed: expired key"
+		);
 		return null;
 	}
 
 	// Audit log successful API key usage
-	logger.info("API key used successfully", {
-		apikeyId: key.id,
-		userId: key.userId,
-		organizationId: key.organizationId,
-		scopes: key.scopes,
-		userAgent: headers.get("user-agent"),
-		ip: headers.get("x-forwarded-for") || headers.get("x-real-ip"),
-		keyPrefix: key.prefix,
-	});
+	logger.info(
+		{
+			apikeyId: key.id,
+			userId: key.userId,
+			organizationId: key.organizationId,
+			scopes: key.scopes,
+			userAgent: headers.get("user-agent"),
+			ip: headers.get("x-forwarded-for") || headers.get("x-real-ip"),
+			keyPrefix: key.prefix,
+		},
+		"API key used successfully"
+	);
 
 	return key;
 }
@@ -112,7 +123,6 @@ export async function resolveEffectiveScopesForWebsite(
 	websiteId: string
 ): Promise<Set<ApiScope>> {
 	if (!key) {
-		logger.debug("Cannot resolve scopes for null API key", { websiteId });
 		return new Set();
 	}
 
@@ -133,15 +143,6 @@ export async function resolveEffectiveScopesForWebsite(
 		}
 	}
 
-	// Audit log scope resolution for website access
-	logger.debug("Resolved effective scopes for website", {
-		apikeyId: key.id,
-		websiteId,
-		effectiveScopes: Array.from(effective),
-		globalScopes: key.scopes || [],
-		accessEntriesCount: entries.length,
-	});
-
 	return effective;
 }
 
@@ -151,33 +152,14 @@ export async function hasWebsiteScope(
 	required: ApiScope
 ): Promise<boolean> {
 	if (!key) {
-		logger.debug("Scope check failed: null API key", {
-			websiteId,
-			requiredScope: required,
-		});
 		return false;
 	}
 
 	if ((key.scopes || []).includes(required)) {
-		logger.debug("Scope check passed via global scope", {
-			apikeyId: key.id,
-			websiteId,
-			requiredScope: required,
-			source: "global",
-		});
 		return true;
 	}
 	const effective = await resolveEffectiveScopesForWebsite(key, websiteId);
 	const hasScope = effective.has(required);
-
-	logger.debug("Scope check result", {
-		apikeyId: key.id,
-		websiteId,
-		requiredScope: required,
-		hasScope,
-		source: hasScope ? "effective" : "denied",
-		effectiveScopes: Array.from(effective),
-	});
 
 	return hasScope;
 }

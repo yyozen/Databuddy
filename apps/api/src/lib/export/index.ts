@@ -10,7 +10,7 @@ import {
 } from "./file-generator";
 import type { ExportRequest } from "./types";
 
-export interface ExportResult {
+export type ExportResult = {
 	buffer: Buffer;
 	filename: string;
 	metadata: {
@@ -26,22 +26,28 @@ export async function processExport(
 ): Promise<ExportResult> {
 	const { website_id: websiteId, format = "json" } = request;
 
-	logger.info("Starting data export", {
-		websiteId,
-		startDate: request.start_date,
-		endDate: request.end_date,
-		format,
-	});
+	logger.info(
+		{
+			websiteId,
+			startDate: request.start_date,
+			endDate: request.end_date,
+			format,
+		},
+		"Starting data export"
+	);
 
 	// Fetch data from ClickHouse
 	const data = await fetchExportData(request);
 
-	logger.info("Data export queries completed", {
-		websiteId,
-		eventsCount: data.events.length,
-		errorsCount: data.errors.length,
-		webVitalsCount: data.webVitals.length,
-	});
+	logger.info(
+		{
+			websiteId,
+			eventsCount: data.events.length,
+			errorsCount: data.errors.length,
+			webVitalsCount: data.webVitals.length,
+		},
+		"Data export queries completed"
+	);
 
 	// Generate export files
 	const exportFiles = generateExportFiles(data, format);
@@ -55,12 +61,15 @@ export async function processExport(
 	const totalRecords =
 		data.events.length + data.errors.length + data.webVitals.length;
 
-	logger.info("Data export completed successfully", {
-		websiteId,
-		filename,
-		totalSize: buffer.length,
-		totalRecords,
-	});
+	logger.info(
+		{
+			websiteId,
+			filename,
+			totalSize: buffer.length,
+			totalRecords,
+		},
+		"Data export completed successfully"
+	);
 
 	return {
 		buffer,
