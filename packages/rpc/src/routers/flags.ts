@@ -1,14 +1,74 @@
+import { randomUUID } from "node:crypto";
 import { websitesApi } from "@databuddy/auth";
 import { and, desc, eq, flags, isNull } from "@databuddy/db";
 import { createDrizzleCache, redis } from "@databuddy/redis";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { logger } from "../lib/logger";
+import type { Context } from "../orpc";
 import { protectedProcedure, publicProcedure } from "../orpc";
 import { authorizeWebsiteAccess } from "../utils/auth";
 
 const flagsCache = createDrizzleCache({ redis, namespace: "flags" });
-const CACHE_DURATION = 60; // seconds
+const CACHE_DURATION = 60;
+
+const getScope = (websiteId?: string, organizationId?: string) =>
+	websiteId ? `website:${websiteId}` : `org:${organizationId}`;
+
+const authorizeScope = async (
+	context: Context,
+	websiteId?: string,
+	organizationId?: string,
+	permission: "read" | "update" | "delete" = "read"
+) => {
+	if (websiteId) {
+		await authorizeWebsiteAccess(context, websiteId, permission);
+	} else if (organizationId) {
+		const headersObj: Record<string, string> = {};
+		context.headers.forEach((value, key) => {
+			headersObj[key] = value;
+		});
+		const perm = permission === "read" ? "read" : "create";
+		const { success } = await websitesApi.hasPermission({
+			headers: headersObj,
+			body: { permissions: { website: [perm] } },
+		});
+		if (!success) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Missing organization permissions.",
+			});
+		}
+	}
+};
+
+const getScopeCondition = (
+	websiteId?: string,
+	organizationId?: string,
+	userId?: string
+) => {
+	if (websiteId) {
+		return eq(flags.websiteId, websiteId);
+	}
+	if (organizationId) {
+		return eq(flags.organizationId, organizationId);
+	}
+	if (userId) {
+		return eq(flags.userId, userId);
+	}
+	return eq(flags.organizationId, "");
+};
+
+const invalidateFlagCache = async (
+	id: string,
+	websiteId?: string | null,
+	organizationId?: string | null
+) => {
+	const scope = getScope(websiteId ?? undefined, organizationId ?? undefined);
+	await Promise.all([
+		flagsCache.invalidateByTables(["flags"]),
+		flagsCache.invalidateByKey(`byId:${id}:${scope}`),
+	]);
+};
 
 const userRuleSchema = z.object({
 	type: z.enum(["user_id", "email", "property"]),
@@ -109,9 +169,7 @@ const updateFlagSchema = z.object({
 
 export const flagsRouter = {
 	list: publicProcedure.input(listFlagsSchema).handler(({ context, input }) => {
-		const scope = input.websiteId
-			? `website:${input.websiteId}`
-			: `org:${input.organizationId}`;
+		const scope = getScope(input.websiteId, input.organizationId);
 		const cacheKey = `list:${scope}:${input.status || "all"}`;
 
 		return flagsCache.withCache({
@@ -119,25 +177,11 @@ export const flagsRouter = {
 			ttl: CACHE_DURATION,
 			tables: ["flags"],
 			queryFn: async () => {
-				if (input.websiteId) {
-					await authorizeWebsiteAccess(context, input.websiteId, "read");
-				} else if (input.organizationId) {
-					const { success } = await websitesApi.hasPermission({
-						headers: context.headers,
-						body: { permissions: { website: ["read"] } },
-					});
-					if (!success) {
-						throw new ORPCError("FORBIDDEN", {
-							message: "Missing organization permissions.",
-						});
-					}
-				}
+				await authorizeScope(context, input.websiteId, input.organizationId, "read");
 
 				const conditions = [
 					isNull(flags.deletedAt),
-					input.websiteId
-						? eq(flags.websiteId, input.websiteId)
-						: eq(flags.organizationId, input.organizationId ?? ""),
+					getScopeCondition(input.websiteId, input.organizationId),
 				];
 
 				if (input.status) {
@@ -153,109 +197,153 @@ export const flagsRouter = {
 		});
 	}),
 
-	getById: publicProcedure.input(getFlagSchema).handler(({ context, input }) => {
-		const scope = input.websiteId
-			? `website:${input.websiteId}`
-			: `org:${input.organizationId}`;
-		const cacheKey = `byId:${input.id}:${scope}`;
+	getById: publicProcedure
+		.input(getFlagSchema)
+		.handler(({ context, input }) => {
+			const scope = getScope(input.websiteId, input.organizationId);
+			const cacheKey = `byId:${input.id}:${scope}`;
 
-		return flagsCache.withCache({
-			key: cacheKey,
-			ttl: CACHE_DURATION,
-			tables: ["flags"],
-			queryFn: async () => {
-				if (input.websiteId) {
-					await authorizeWebsiteAccess(context, input.websiteId, "read");
-				}
+			return flagsCache.withCache({
+				key: cacheKey,
+				ttl: CACHE_DURATION,
+				tables: ["flags"],
+				queryFn: async () => {
+					await authorizeScope(context, input.websiteId, input.organizationId, "read");
 
-				const result = await context.db
-					.select()
-					.from(flags)
-					.where(
-						and(
-							eq(flags.id, input.id),
-							input.websiteId
-								? eq(flags.websiteId, input.websiteId)
-								: eq(flags.organizationId, input.organizationId ?? ""),
-							isNull(flags.deletedAt)
+					const result = await context.db
+						.select()
+						.from(flags)
+						.where(
+							and(
+								eq(flags.id, input.id),
+								getScopeCondition(input.websiteId, input.organizationId),
+								isNull(flags.deletedAt)
+							)
 						)
-					)
-					.limit(1);
+						.limit(1);
 
-				if (result.length === 0) {
-					throw new ORPCError("NOT_FOUND", {
-						message: "Flag not found",
-					});
-				}
+					if (result.length === 0) {
+						throw new ORPCError("NOT_FOUND", {
+							message: "Flag not found",
+						});
+					}
 
-				return result[0];
-			},
-		});
-	}),
-
-	getByKey: publicProcedure.input(getFlagByKeySchema).handler(({ context, input }) => {
-		const scope = input.websiteId
-			? `website:${input.websiteId}`
-			: `org:${input.organizationId}`;
-		const cacheKey = `byKey:${input.key}:${scope}`;
-
-		return flagsCache.withCache({
-			key: cacheKey,
-			ttl: CACHE_DURATION,
-			tables: ["flags"],
-			queryFn: async () => {
-				if (input.websiteId) {
-					await authorizeWebsiteAccess(context, input.websiteId, "read");
-				}
-
-				const result = await context.db
-					.select()
-					.from(flags)
-					.where(
-						and(
-							eq(flags.key, input.key),
-							input.websiteId
-								? eq(flags.websiteId, input.websiteId)
-								: eq(flags.organizationId, input.organizationId ?? ""),
-							eq(flags.status, "active"),
-							isNull(flags.deletedAt)
-						)
-					)
-					.limit(1);
-
-				if (result.length === 0) {
-					throw new ORPCError("NOT_FOUND", {
-						message: "Flag not found",
-					});
-				}
-
-				return result[0];
-			},
-		});
-	}),
-
-	create: protectedProcedure.input(createFlagSchema).handler(async ({ context, input }) => {
-		if (input.websiteId) {
-			await authorizeWebsiteAccess(context, input.websiteId, "update");
-		} else if (input.organizationId) {
-			const { success } = await websitesApi.hasPermission({
-				headers: context.headers,
-				body: { permissions: { website: ["create"] } },
+					return result[0];
+				},
 			});
-			if (!success) {
-				throw new ORPCError("FORBIDDEN", {
-					message: "Missing organization permissions.",
-				});
+		}),
+
+	getByKey: publicProcedure
+		.input(getFlagByKeySchema)
+		.handler(({ context, input }) => {
+			const scope = getScope(input.websiteId, input.organizationId);
+			const cacheKey = `byKey:${input.key}:${scope}`;
+
+			return flagsCache.withCache({
+				key: cacheKey,
+				ttl: CACHE_DURATION,
+				tables: ["flags"],
+				queryFn: async () => {
+					await authorizeScope(context, input.websiteId, input.organizationId, "read");
+
+					const result = await context.db
+						.select()
+						.from(flags)
+						.where(
+							and(
+								eq(flags.key, input.key),
+								getScopeCondition(input.websiteId, input.organizationId),
+								eq(flags.status, "active"),
+								isNull(flags.deletedAt)
+							)
+						)
+						.limit(1);
+
+					if (result.length === 0) {
+						throw new ORPCError("NOT_FOUND", {
+							message: "Flag not found",
+						});
+					}
+
+					return result[0];
+				},
+			});
+		}),
+
+	create: protectedProcedure
+		.input(createFlagSchema)
+		.handler(async ({ context, input }) => {
+			await authorizeScope(
+				context,
+				input.websiteId,
+				input.organizationId,
+				"update"
+			);
+
+			const existingFlag = await context.db
+				.select()
+				.from(flags)
+				.where(
+					and(
+						eq(flags.key, input.key),
+						getScopeCondition(
+							input.websiteId,
+							input.organizationId,
+							context.user.id
+						)
+					)
+				)
+				.limit(1);
+
+			if (existingFlag.length > 0) {
+				if (!existingFlag[0].deletedAt) {
+					throw new ORPCError("CONFLICT", {
+						message: "A flag with this key already exists in this scope",
+					});
+				}
+
+				const [restoredFlag] = await context.db
+					.update(flags)
+					.set({
+						name: input.name || existingFlag[0].name,
+						description: input.description ?? existingFlag[0].description,
+						type: input.type,
+						status: input.status,
+						defaultValue: input.defaultValue,
+						payload: input.payload ?? existingFlag[0].payload,
+						rules: input.rules || existingFlag[0].rules || [],
+						persistAcrossAuth:
+							input.persistAcrossAuth ??
+							existingFlag[0].persistAcrossAuth ??
+							false,
+						rolloutPercentage:
+							input.rolloutPercentage || existingFlag[0].rolloutPercentage || 0,
+						deletedAt: null,
+						updatedAt: new Date(),
+					})
+					.where(eq(flags.id, existingFlag[0].id))
+					.returning();
+
+				await flagsCache.invalidateByTables(["flags"]);
+
+				logger.info(
+					{
+						flagId: restoredFlag.id,
+						key: input.key,
+						websiteId: input.websiteId,
+						organizationId: input.organizationId,
+						userId: context.user.id,
+					},
+					"Flag restored from soft-delete"
+				);
+
+				return restoredFlag;
 			}
-		}
 
-		const flagId = crypto.randomUUID();
-
-		try {
 			const [newFlag] = await context.db
 				.insert(flags)
 				.values({
-					id: flagId,
+					id: randomUUID(),
 					key: input.key,
 					name: input.name || null,
 					description: input.description || null,
@@ -287,32 +375,11 @@ export const flagsRouter = {
 			);
 
 			return newFlag;
-		} catch (error) {
-			if (error instanceof Error && error.message.includes("unique")) {
-				throw new ORPCError("CONFLICT", {
-					message: "A flag with this key already exists in this scope",
-				});
-			}
+		}),
 
-			logger.error(
-				{
-					error,
-					key: input.key,
-					websiteId: input.websiteId,
-					organizationId: input.organizationId,
-					userId: context.user.id,
-				},
-				"Failed to create flag"
-			);
-
-			throw new ORPCError("INTERNAL_SERVER_ERROR", {
-				message: "Failed to create flag",
-			});
-		}
-	}),
-
-	update: protectedProcedure.input(updateFlagSchema).handler(async ({ context, input }) => {
-		try {
+	update: protectedProcedure
+		.input(updateFlagSchema)
+		.handler(async ({ context, input }) => {
 			const existingFlag = await context.db
 				.select({
 					websiteId: flags.websiteId,
@@ -353,14 +420,7 @@ export const flagsRouter = {
 				.where(and(eq(flags.id, id), isNull(flags.deletedAt)))
 				.returning();
 
-			// Invalidate caches
-			const scope = flag.websiteId
-				? `website:${flag.websiteId}`
-				: `org:${flag.organizationId}`;
-			await Promise.all([
-				flagsCache.invalidateByTables(["flags"]),
-				flagsCache.invalidateByKey(`byId:${id}:${scope}`),
-			]);
+			await invalidateFlagCache(id, flag.websiteId, flag.organizationId);
 
 			logger.info(
 				{
@@ -373,107 +433,61 @@ export const flagsRouter = {
 			);
 
 			return updatedFlag;
-		} catch (error) {
-			if (error instanceof ORPCError) {
-				throw error;
-			}
-
-			logger.error(
-				{
-					error,
-					flagId: input.id,
-					userId: context.user.id,
-				},
-				"Failed to update flag"
-			);
-
-			throw new ORPCError("INTERNAL_SERVER_ERROR", {
-				message: "Failed to update flag",
-			});
-		}
-	}),
+		}),
 
 	delete: protectedProcedure
 		.input(z.object({ id: z.string() }))
 		.handler(async ({ context, input }) => {
-			try {
-				const existingFlag = await context.db
-					.select({
-						websiteId: flags.websiteId,
-						organizationId: flags.organizationId,
-						userId: flags.userId,
-					})
-					.from(flags)
-					.where(and(eq(flags.id, input.id), isNull(flags.deletedAt)))
-					.limit(1);
+			const existingFlag = await context.db
+				.select({
+					websiteId: flags.websiteId,
+					organizationId: flags.organizationId,
+					userId: flags.userId,
+				})
+				.from(flags)
+				.where(and(eq(flags.id, input.id), isNull(flags.deletedAt)))
+				.limit(1);
 
-				if (existingFlag.length === 0) {
-					throw new ORPCError("NOT_FOUND", {
-						message: "Flag not found",
-					});
-				}
-
-				const flag = existingFlag[0];
-
-				// Authorize access based on scope
-				if (flag.websiteId) {
-					await authorizeWebsiteAccess(context, flag.websiteId, "delete");
-				} else if (
-					flag.userId &&
-					flag.userId !== context.user.id &&
-					context.user.role !== "ADMIN"
-				) {
-					throw new ORPCError("FORBIDDEN", {
-						message: "Not authorized to delete this flag",
-					});
-				}
-
-				// Soft delete
-				await context.db
-					.update(flags)
-					.set({
-						deletedAt: new Date(),
-						status: "archived",
-					})
-					.where(and(eq(flags.id, input.id), isNull(flags.deletedAt)));
-
-				// Invalidate caches
-				const scope = flag.websiteId
-					? `website:${flag.websiteId}`
-					: `org:${flag.organizationId}`;
-				await Promise.all([
-					flagsCache.invalidateByTables(["flags"]),
-					flagsCache.invalidateByKey(`byId:${input.id}:${scope}`),
-				]);
-
-				logger.info(
-					{
-						flagId: input.id,
-						websiteId: flag.websiteId,
-						organizationId: flag.organizationId,
-						userId: context.user.id,
-					},
-					"Flag deleted"
-				);
-
-				return { success: true };
-			} catch (error) {
-				if (error instanceof ORPCError) {
-					throw error;
-				}
-
-				logger.error(
-					{
-						error,
-						flagId: input.id,
-						userId: context.user.id,
-					},
-					"Failed to delete flag"
-				);
-
-				throw new ORPCError("INTERNAL_SERVER_ERROR", {
-					message: "Failed to delete flag",
+			if (existingFlag.length === 0) {
+				throw new ORPCError("NOT_FOUND", {
+					message: "Flag not found",
 				});
 			}
+
+			const flag = existingFlag[0];
+
+			if (flag.websiteId) {
+				await authorizeWebsiteAccess(context, flag.websiteId, "delete");
+			} else if (
+				flag.userId &&
+				flag.userId !== context.user.id &&
+				context.user.role !== "ADMIN"
+			) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "Not authorized to delete this flag",
+				});
+			}
+
+			await context.db
+				.update(flags)
+				.set({
+					deletedAt: new Date(),
+					status: "archived",
+				})
+				.where(and(eq(flags.id, input.id), isNull(flags.deletedAt)));
+
+			await invalidateFlagCache(input.id, flag.websiteId, flag.organizationId);
+
+			logger.info(
+				{
+					flagId: input.id,
+					websiteId: flag.websiteId,
+					organizationId: flag.organizationId,
+					userId: context.user.id,
+				},
+				"Flag deleted"
+			);
+
+			return { success: true };
 		}),
 };
