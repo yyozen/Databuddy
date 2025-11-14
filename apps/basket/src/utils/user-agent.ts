@@ -6,7 +6,7 @@
  */
 
 import { bots } from "@databuddy/shared/lists/bots";
-import { logger } from "@databuddy/shared/utils/discord-webhook";
+import { logger } from "@databuddy/shared/logger";
 import { UAParser } from "ua-parser-js";
 
 export interface UserAgentInfo {

@@ -991,7 +991,6 @@ export function WebsiteOverviewTab({
 				/>
 			</div>
 
-			{/* Custom Events Table */}
 			<CustomEventsSection
 				customEventsData={customEventsData}
 				isLoading={isLoading}

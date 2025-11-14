@@ -1,6 +1,6 @@
 import { and, db, eq, member } from "@databuddy/db";
 import { cacheable } from "@databuddy/redis";
-import { logger } from "@databuddy/shared/utils/discord-webhook";
+import { logger } from "@databuddy/shared/logger";
 
 async function _getOrganizationOwnerId(
 	organizationId: string

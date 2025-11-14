@@ -19,6 +19,7 @@ import {
 	insertWebVitals,
 	insertWebVitalsBatch,
 } from "../lib/event-service";
+import { logger } from "../lib/logger";
 import { checkForBot, validateRequest } from "../lib/request-validation";
 import { getDailySalt, saltAnonymousId } from "../lib/security";
 import {
@@ -431,7 +432,7 @@ const app = new Elysia()
 
 			return { status: "error", message: "Unknown event type" };
 		} catch (error) {
-			console.error("Error processing event:", error);
+			logger.error({ error }, "Error processing event");
 			return { status: "error", message: "Internal server error" };
 		}
 	})
@@ -444,7 +445,7 @@ const app = new Elysia()
 
 		try {
 			if (!Array.isArray(body)) {
-				console.error("Batch endpoint received non-array body");
+				logger.error({ body }, "Batch endpoint received non-array body");
 				return {
 					status: "error",
 					message: "Batch endpoint expects array of events",
@@ -716,7 +717,7 @@ const app = new Elysia()
 				results,
 			};
 		} catch (error) {
-			console.error("Error processing batch event:", error);
+			logger.error({ error }, "Error processing batch event");
 			return { status: "error", message: "Internal server error" };
 		}
 	});

@@ -7,7 +7,7 @@ import {
 	ne,
 	websites,
 } from "@databuddy/db";
-import { logger } from "@databuddy/shared/utils/discord-webhook";
+import { logger } from "@databuddy/shared/logger";
 import { Effect, pipe } from "effect";
 import { nanoid } from "nanoid";
 import { z } from "zod";

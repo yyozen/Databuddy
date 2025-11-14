@@ -27,7 +27,7 @@ function hashEmailId(emailId: string, domain: string): string {
 	return createHash("sha256").update(`${emailId}:${domain}`).digest("hex");
 }
 
-async function insertEmailEvent(emailData: EmailEventInput): Promise<void> {
+function insertEmailEvent(emailData: EmailEventInput): void {
 	const now = Date.now();
 
 	const emailHash = hashEmailId(emailData.email_id, emailData.domain);
@@ -49,12 +49,11 @@ async function insertEmailEvent(emailData: EmailEventInput): Promise<void> {
 		sendEvent("analytics-email-events", emailEvent);
 
 		logger.info({ emailEvent }, "Email event sent to Kafka successfully");
-	} catch (err) {
+	} catch (error) {
 		logger.error(
-			{ error: err as Error, emailEvent },
+			{ error, emailEvent },
 			"Failed to send email event to Kafka"
 		);
-		throw err;
 	}
 }
 
@@ -102,7 +101,7 @@ const app = new Elysia()
 			}
 
 			try {
-				await insertEmailEvent(emailData);
+				insertEmailEvent(emailData);
 				return {
 					status: "success",
 					type: "email",
@@ -154,7 +153,7 @@ const app = new Elysia()
 					}
 
 					try {
-						await insertEmailEvent(emailData);
+						insertEmailEvent(emailData);
 						return {
 							status: "success",
 							type: "email",

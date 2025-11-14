@@ -14,6 +14,7 @@ import {
 	validatePerformanceMetric,
 	validateSessionId,
 } from "../utils/validation";
+import { logger } from "./logger";
 import { sendEvent, sendEventBatch } from "./producer";
 import { checkDuplicate } from "./security";
 
@@ -86,11 +87,11 @@ export async function insertError(
 
 	try {
 		sendEvent("analytics-errors", errorEvent);
-	} catch (err) {
-		console.error("Failed to queue error event", {
-			error: err as Error,
-			eventId,
-		});
+	} catch (error) {
+		logger.error(
+			{ error, eventId },
+			"Failed to queue error event"
+		);
 	}
 }
 
@@ -152,11 +153,11 @@ export async function insertWebVitals(
 
 	try {
 		sendEvent("analytics-web-vitals", webVitalsEvent);
-	} catch (err) {
-		console.error("Failed to queue web vitals event", {
-			error: err as Error,
-			eventId,
-		});
+	} catch (error) {
+		logger.error(
+			{ error, eventId },
+			"Failed to queue web vitals event"
+		);
 		// Don't throw - event is buffered or sent async
 	}
 }
@@ -206,11 +207,11 @@ export async function insertCustomEvent(
 
 	try {
 		sendEvent("analytics-custom-events", customEvent);
-	} catch (err) {
-		console.error("Failed to queue custom event", {
-			error: err as Error,
-			eventId,
-		});
+	} catch (error) {
+		logger.error(
+			{ error, eventId },
+			"Failed to queue custom event"
+		);
 		// Don't throw - event is buffered or sent async
 	}
 }
@@ -258,11 +259,11 @@ export async function insertOutgoingLink(
 
 	try {
 		sendEvent("analytics-outgoing-links", outgoingLinkEvent);
-	} catch (err) {
-		console.error("Failed to queue outgoing link event", {
-			error: err as Error,
-			eventId,
-		});
+	} catch (error) {
+		logger.error(
+			{ error, eventId },
+			"Failed to queue outgoing link event"
+		);
 	}
 }
 
@@ -380,11 +381,11 @@ export async function insertTrackEvent(
 
 	try {
 		sendEvent("analytics-events", trackEvent);
-	} catch (err) {
-		console.error("Failed to queue track event", {
-			error: err as Error,
-			eventId,
-		});
+	} catch (error) {
+		logger.error(
+			{ error, eventId },
+			"Failed to queue track event"
+		);
 	}
 }
 
@@ -397,12 +398,11 @@ export async function insertTrackEventsBatch(
 
 	try {
 		await sendEventBatch("analytics-events", events);
-	} catch (err) {
-		console.error("Failed to queue track events batch", {
-			error: err as Error,
-			count: events.length,
-		});
-		// Don't throw - events are buffered
+	} catch (error) {
+		logger.error(
+			{ error, count: events.length },
+			"Failed to queue track events batch"
+		);
 	}
 }
 
@@ -413,11 +413,11 @@ export async function insertErrorsBatch(events: ErrorEvent[]): Promise<void> {
 
 	try {
 		await sendEventBatch("analytics-errors", events);
-	} catch (err) {
-		console.error("Failed to queue errors batch", {
-			error: err as Error,
-			count: events.length,
-		});
+	} catch (error) {
+		logger.error(
+			{ error, count: events.length },
+			"Failed to queue errors batch"
+		);
 	}
 }
 
@@ -430,11 +430,11 @@ export async function insertWebVitalsBatch(
 
 	try {
 		await sendEventBatch("analytics-web-vitals", events);
-	} catch (err) {
-		console.error("Failed to queue web vitals batch", {
-			error: err as Error,
-			count: events.length,
-		});
+	} catch (error) {
+		logger.error(
+			{ error, count: events.length },
+			"Failed to queue web vitals batch"
+		);
 	}
 }
 
@@ -447,11 +447,11 @@ export async function insertCustomEventsBatch(
 
 	try {
 		await sendEventBatch("analytics-custom-events", events);
-	} catch (err) {
-		console.error("Failed to queue custom events batch", {
-			error: err as Error,
-			count: events.length,
-		});
+	} catch (error) {
+		logger.error(
+			{ error, count: events.length },
+			"Failed to queue custom events batch"
+		);
 	}
 }
 
@@ -464,10 +464,10 @@ export async function insertOutgoingLinksBatch(
 
 	try {
 		await sendEventBatch("analytics-outgoing-links", events);
-	} catch (err) {
-		console.error("Failed to queue outgoing links batch", {
-			error: err as Error,
-			count: events.length,
-		});
+	} catch (error) {
+		logger.error(
+			{ error, count: events.length },
+			"Failed to queue outgoing links batch"
+		);
 	}
 }

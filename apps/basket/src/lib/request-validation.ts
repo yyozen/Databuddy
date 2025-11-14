@@ -8,6 +8,7 @@ import {
 	validatePayloadSize,
 } from "../utils/validation";
 import { logBlockedTraffic } from "./blocked-traffic";
+import { logger } from "./logger";
 
 type ValidationResult = {
 	success: true;
@@ -92,7 +93,7 @@ export async function validateRequest(
 				return { error: { status: "error", message: "Exceeded event limit" } };
 			}
 		} catch (error) {
-			console.error("Autumn check failed, allowing event through:", error);
+			logger.error({ error }, "Autumn check failed, allowing event through");
 		}
 	}
 

@@ -1,11 +1,5 @@
-import pino from "pino";
+import { logger as sharedLogger } from "@databuddy/shared/logger";
 
-export const logger = pino({
-	level: "debug",
-	transport: {
-		target: "pino-pretty",
-		options: {
-			colorize: true,
-		},
-	},
+export const logger = sharedLogger.child({
+	service: "rpc",
 });

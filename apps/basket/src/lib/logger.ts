@@ -1,16 +1,5 @@
-import pino from "pino";
+import { logger as sharedLogger } from "@databuddy/shared/logger";
 
-export const logger = pino({
-	level: process.env.LOG_LEVEL || "info",
-	transport:
-		process.env.NODE_ENV === "development"
-			? {
-					target: "pino-pretty",
-					options: {
-						colorize: true,
-						translateTime: "HH:MM:ss",
-						ignore: "pid,hostname",
-					},
-				}
-			: undefined,
+export const logger = sharedLogger.child({
+	service: "basket",
 });

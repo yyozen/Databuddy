@@ -78,5 +78,5 @@ console.log(`Basket service running on http://localhost:${port}`);
 
 export default {
 	fetch: app.fetch,
-	port: Number.parseInt(port.toString()),
+	port,
 };

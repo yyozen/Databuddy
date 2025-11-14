@@ -3,6 +3,7 @@ import type { BlockedTraffic } from "@databuddy/db";
 import { extractIpFromRequest, getGeo } from "../utils/ip-geo";
 import { parseUserAgent } from "../utils/user-agent";
 import { sanitizeString, VALIDATION_LIMITS } from "../utils/validation";
+import { logger } from "./logger";
 import { sendEvent } from "./producer";
 
 /**
@@ -84,7 +85,7 @@ export async function logBlockedTraffic(
 		};
 
 		sendEvent("analytics-blocked-traffic", blockedEvent);
-	} catch {
-		//
+	} catch (error) {
+		logger.error({ error }, "Failed to log blocked traffic");
 	}
 }

@@ -7,7 +7,7 @@ import {
 	VerificationEmail,
 } from "@databuddy/email";
 import { getRedisCache } from "@databuddy/redis";
-import { logger } from "@databuddy/shared/utils/discord-webhook";
+import { logger } from "@databuddy/shared/logger";
 import { betterAuth } from "better-auth";
 
 import { drizzleAdapter } from "better-auth/adapters/drizzle";

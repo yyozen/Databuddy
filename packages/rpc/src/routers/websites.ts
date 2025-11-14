@@ -1,8 +1,8 @@
 import { websitesApi } from "@databuddy/auth";
 import { chQuery } from "@databuddy/db";
 import { createDrizzleCache, redis } from "@databuddy/redis";
+import { logger } from "@databuddy/shared/logger";
 import type { ProcessedMiniChartData } from "@databuddy/shared/types/website";
-import { logger } from "@databuddy/shared/utils/discord-webhook";
 import {
 	createWebsiteSchema,
 	togglePublicWebsiteSchema,
@@ -510,11 +510,7 @@ export const websitesRouter = {
 		.input(z.object({ websiteId: z.string() }))
 		.handler(async ({ context, input }) => {
 			try {
-				await authorizeWebsiteAccess(
-					context,
-					input.websiteId,
-					"read"
-				);
+				await authorizeWebsiteAccess(context, input.websiteId, "read");
 
 				let hasTrackingEvents = false;
 				try {

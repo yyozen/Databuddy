@@ -83,17 +83,22 @@ const getOwnerId = cacheable(
 // Cache the website lookup and owner lookup
 export const getWebsiteById = cacheable(
 	async (id: string): Promise<WebsiteWithOwner | null> => {
-		const website = await db.query.websites.findFirst({
-			where: eq(websites.id, id),
-		});
+		try {
+			const website = await db.query.websites.findFirst({
+				where: eq(websites.id, id),
+			});
 
-		if (!website) {
+			if (!website) {
+				return null;
+			}
+
+			const ownerId = await getOwnerId(website);
+
+			return { ...website, ownerId };
+		} catch (error) {
+			logger.error({ error, websiteId: id }, "Failed to get website by ID");
 			return null;
 		}
-
-		const ownerId = await getOwnerId(website);
-
-		return { ...website, ownerId };
 	},
 	{
 		expireInSec: 300,
@@ -124,7 +129,10 @@ export function isValidOrigin(
 		return true;
 	}
 	if (!allowedDomain?.trim()) {
-		logger.warn("[isValidOrigin] No allowed domain provided");
+		logger.warn(
+			{ originHeader },
+			"[isValidOrigin] No allowed domain provided"
+		);
 		return false;
 	}
 	try {
@@ -139,9 +147,8 @@ export function isValidOrigin(
 		);
 	} catch (error) {
 		logger.error(
-			new Error(
-				`[isValidOrigin] Validation failed: ${error instanceof Error ? error.message : String(error)}`
-			)
+			{ error, originHeader, allowedDomain },
+			"[isValidOrigin] Validation failed"
 		);
 		return false;
 	}
@@ -176,7 +183,7 @@ export function normalizeDomain(domain: string): string {
 		}
 		return finalDomain;
 	} catch (error) {
-		logger.error({ error }, `Failed to parse domain: ${domain}`);
+		logger.error({ error, domain }, "Failed to parse domain");
 		throw new Error(`Invalid domain format: ${domain}`);
 	}
 }
@@ -297,9 +304,8 @@ export function isValidOriginSecure(
 		);
 	} catch (error) {
 		logger.error(
-			new Error(
-				`[isValidOriginSecure] Validation failed: ${error instanceof Error ? error.message : String(error)}`
-			)
+			{ error, originHeader, allowedDomain },
+			"[isValidOriginSecure] Validation failed"
 		);
 		return false;
 	}
@@ -320,10 +326,15 @@ export function isLocalhost(hostname: string): boolean {
 
 const getWebsiteByIdCached = cacheable(
 	async (id: string): Promise<Website | null> => {
-		const website = await db.query.websites.findFirst({
-			where: eq(websites.id, id),
-		});
-		return website ?? null;
+		try {
+			const website = await db.query.websites.findFirst({
+				where: eq(websites.id, id),
+			});
+			return website ?? null;
+		} catch (error) {
+			logger.error({ error, websiteId: id }, "Failed to get website by ID from cache");
+			return null;
+		}
 	},
 	{
 		expireInSec: 300, // 5 minutes
@@ -347,11 +358,16 @@ const getOwnerIdCached = cacheable(
 export async function getWebsiteByIdV2(
 	id: string
 ): Promise<WebsiteWithOwner | null> {
-	const website = await getWebsiteByIdCached(id);
-	if (!website) {
+	try {
+		const website = await getWebsiteByIdCached(id);
+		if (!website) {
+			return null;
+		}
+
+		const ownerId = await getOwnerIdCached(website);
+		return { ...website, ownerId };
+	} catch (error) {
+		logger.error({ error, websiteId: id }, "Failed to get website by ID V2");
 		return null;
 	}
-
-	const ownerId = await getOwnerIdCached(website);
-	return { ...website, ownerId };
 }
