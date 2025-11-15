@@ -37,12 +37,11 @@ function getKafkaHealth() {
 // import { checkBotId } from "botid/server";
 
 const app = new Elysia()
-	.onError(({ error }) => {
-		logger.error(
-			new Error(
-				`${error instanceof Error ? error.name : "Unknown"}: ${error instanceof Error ? error.message : "Unknown"}`
-			)
-		);
+	.onError(({ error, code }) => {
+		if (code === "NOT_FOUND") {
+			return new Response(null, { status: 404 });
+		}
+		logger.error({ error }, "Error in basket service");
 	})
 	.onBeforeHandle(({ request, set }) => {
 		const origin = request.headers.get("origin");
@@ -58,7 +57,6 @@ const app = new Elysia()
 	})
 	.options("*", () => new Response(null, { status: 204 }))
 	.use(basketRouter)
-	// .use(stripeRouter)
 	.use(emailRouter)
 	.get("/health", () => ({
 		status: "ok",
