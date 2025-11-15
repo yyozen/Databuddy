@@ -5,6 +5,7 @@
     "@biomejs/biome": "^2.3.2",
     "@types/bun": "latest",
     "@typescript/native-preview": "^7.0.0-dev.20251102.1",
+    "@vitest/coverage-v8": "^4.0.9",
     "dotenv-cli": "^10.0.0",
     "turbo": "^2.6.0",
     "typescript": "^5.9.3",
@@ -19,9 +20,9 @@
     "build": "turbo run build",
     "dev": "dotenv -- turbo run dev",
     "start": "turbo run start",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "test:coverage": "bun test --coverage",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
     "lint": "npx ultracite@latest check",
     "format": "npx ultracite@latest fix",
     "check-types": "tsgo --noEmit --project .",
@@ -92,6 +93,7 @@
     "@orpc/tanstack-query": "^1.10.4",
     "pg": "^8.16.3",
     "pg-pool": "^3.10.1",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "vitest": "^4.0.9"
   }
 }
