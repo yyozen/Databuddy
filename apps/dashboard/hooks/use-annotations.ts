@@ -20,10 +20,14 @@ type ListAnnotationsInput = {
 		metrics?: string[];
 		tabId?: string;
 	};
-}
+};
 
 export function useAnnotations(input: ListAnnotationsInput) {
-	const { data: annotations, isLoading, error } = useQuery({
+	const {
+		data: annotations,
+		isLoading,
+		error,
+	} = useQuery({
 		...orpc.annotations.list.queryOptions({ input }),
 		enabled: !!input.websiteId,
 	});

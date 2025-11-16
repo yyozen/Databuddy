@@ -99,7 +99,11 @@ export const assistant = new Elysia({ prefix: "/v1/assistant" })
 						);
 					}
 
-					const updates = await processAssistantRequest(body, user as never, website);
+					const updates = await processAssistantRequest(
+						body,
+						user as never,
+						website
+					);
 					setAttributes({ "assistant.success": true });
 					return createStreamingResponse(updates);
 				} catch (error) {

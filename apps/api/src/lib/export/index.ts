@@ -19,7 +19,7 @@ export type ExportResult = {
 		totalRecords: number;
 		fileSize: number;
 	};
-}
+};
 
 export async function processExport(
 	request: ExportRequest

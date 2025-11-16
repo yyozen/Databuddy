@@ -123,7 +123,9 @@ export const updateWebsiteCache = (
 	updatedWebsite: Website
 ) => {
 	const getByIdKey = getWebsiteByIdKey(updatedWebsite.id);
-	const listKey = getWebsitesListKey(updatedWebsite.organizationId ?? undefined);
+	const listKey = getWebsitesListKey(
+		updatedWebsite.organizationId ?? undefined
+	);
 
 	queryClient.setQueryData<WebsitesListData>(listKey, (old) =>
 		updateWebsiteInList(old, updatedWebsite)

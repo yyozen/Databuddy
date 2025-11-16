@@ -55,8 +55,7 @@ function deserializeEncryptedData(encrypted: string): EncryptedData {
 		const decoded = Buffer.from(encrypted, "base64").toString("utf8");
 		const parsed = JSON.parse(decoded) as EncryptedData;
 
-		const hasRequiredFields =
-			parsed.iv && parsed.data && parsed.tag;
+		const hasRequiredFields = parsed.iv && parsed.data && parsed.tag;
 		if (!hasRequiredFields) {
 			throw new Error("Invalid encrypted data structure");
 		}

@@ -48,19 +48,13 @@ export async function fetchExportData(
 		// Execute queries in parallel with secure parameters
 		const [events, errors, webVitals] = await Promise.all([
 			chQuery<SanitizedEvent>(eventsQuery, queryParams).catch((error) => {
-				logger.error(
-					{ error, websiteId },
-					"Failed to fetch events for export"
-				);
+				logger.error({ error, websiteId }, "Failed to fetch events for export");
 				throw new Error(
 					`Failed to fetch events: ${error instanceof Error ? error.message : String(error)}`
 				);
 			}),
 			chQuery<SanitizedError>(errorsQuery, queryParams).catch((error) => {
-				logger.error(
-					{ error, websiteId },
-					"Failed to fetch errors for export"
-				);
+				logger.error({ error, websiteId }, "Failed to fetch errors for export");
 				throw new Error(
 					`Failed to fetch errors: ${error instanceof Error ? error.message : String(error)}`
 				);

@@ -38,7 +38,10 @@ const getCachedAccessEntries = cacheable(
 				.from(apikeyAccess)
 				.where(eq(apikeyAccess.apikeyId, keyId));
 		} catch (error) {
-			logger.error({ error, keyId }, "Failed to get API key access entries from cache");
+			logger.error(
+				{ error, keyId },
+				"Failed to get API key access entries from cache"
+			);
 			return [] as InferSelectModel<typeof apikeyAccess>[];
 		}
 	},

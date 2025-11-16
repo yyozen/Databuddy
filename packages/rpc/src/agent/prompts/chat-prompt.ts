@@ -1,9 +1,9 @@
 import { getBasePrompt } from "./base-prompt";
 
 export const chatPrompt = (
-    websiteId: string,
-    websiteHostname: string,
-    _model?: string
+	websiteId: string,
+	websiteHostname: string,
+	_model?: string
 ) => `${getBasePrompt(websiteId, websiteHostname, _model)}
 
 <workflow_instructions>
@@ -190,4 +190,3 @@ Your goal is to provide a comprehensive, insightful, and actionable answer in a 
     {"thinking_steps": ["..."], "response_type": "...", "sql": "...", "chart_type": "...", "text_response": "...", "metric_value": "...", "metric_label": "..."}
 </response_format>
 `;
-

@@ -119,7 +119,9 @@ export function AnalyticsToolbar({
 	);
 
 	return (
-		<div className={`flex h-22 flex-col border-b bg-background ${isDisabled ? "opacity-50 pointer-events-none" : ""}`}>
+		<div
+			className={`flex h-22 flex-col border-b bg-background ${isDisabled ? "pointer-events-none opacity-50" : ""}`}
+		>
 			<div className="flex h-12 items-center justify-between border-border border-b pr-4">
 				<div className="flex h-full items-center">
 					<Button

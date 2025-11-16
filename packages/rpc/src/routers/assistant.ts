@@ -141,9 +141,9 @@ export const assistantRouter = {
 				.where(
 					input.websiteId
 						? and(
-							eq(assistantConversations.userId, context.user.id),
-							eq(assistantConversations.websiteId, input.websiteId)
-						)
+								eq(assistantConversations.userId, context.user.id),
+								eq(assistantConversations.websiteId, input.websiteId)
+							)
 						: eq(assistantConversations.userId, context.user.id)
 				)
 				.orderBy(desc(assistantConversations.updatedAt))

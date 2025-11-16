@@ -23,7 +23,6 @@ async function _logBlockedTrafficAsync(
 				VALIDATION_LIMITS.STRING_MAX_LENGTH
 			) || "";
 
-
 		const [geo, ua] = await Promise.all([
 			getGeo(ip),
 			parseUserAgent(userAgent),

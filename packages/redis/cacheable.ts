@@ -14,7 +14,7 @@ type CacheOptions = {
 	staleWhileRevalidate?: boolean;
 	staleTime?: number;
 	maxRetries?: number;
-}
+};
 
 const defaultSerialize = (data: unknown): string => JSON.stringify(data);
 const defaultDeserialize = (data: string): unknown =>

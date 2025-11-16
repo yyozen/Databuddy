@@ -50,10 +50,7 @@ function insertEmailEvent(emailData: EmailEventInput): void {
 
 		logger.info({ emailEvent }, "Email event sent to Kafka successfully");
 	} catch (error) {
-		logger.error(
-			{ error, emailEvent },
-			"Failed to send email event to Kafka"
-		);
+		logger.error({ error, emailEvent }, "Failed to send email event to Kafka");
 	}
 }
 

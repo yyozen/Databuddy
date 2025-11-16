@@ -24,7 +24,7 @@ type QueryParams = {
 	endDate?: string;
 	website_id?: string;
 	timezone?: string;
-}
+};
 
 async function checkAuth(request: Request): Promise<Response | null> {
 	const apiKeyPresent = isApiKeyPresent(request.headers);
@@ -99,9 +99,9 @@ async function getAccessibleWebsites(request: Request) {
 				? eq(websites.organizationId, apiKey.organizationId)
 				: apiKey.userId
 					? and(
-						eq(websites.userId, apiKey.userId),
-						isNull(websites.organizationId)
-					)
+							eq(websites.userId, apiKey.userId),
+							isNull(websites.organizationId)
+						)
 					: eq(websites.id, ""); // No matches if no user/org
 
 			return db
@@ -142,7 +142,9 @@ export const query = new Elysia({ prefix: "/v1/query" })
 				const websites = await getAccessibleWebsites(request);
 				setAttributes({
 					"websites.count": websites.length,
-					"auth.method": isApiKeyPresent(request.headers) ? "api_key" : "session",
+					"auth.method": isApiKeyPresent(request.headers)
+						? "api_key"
+						: "session",
 				});
 				return {
 					success: true,
@@ -150,12 +152,14 @@ export const query = new Elysia({ prefix: "/v1/query" })
 					total: websites.length,
 				};
 			} catch (error) {
-				setAttributes({ "error": true });
+				setAttributes({ error: true });
 				return new Response(
 					JSON.stringify({
 						success: false,
 						error:
-							error instanceof Error ? error.message : "Failed to fetch websites",
+							error instanceof Error
+								? error.message
+								: "Failed to fetch websites",
 					}),
 					{ status: 500, headers: { "Content-Type": "application/json" } }
 				);
@@ -315,7 +319,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 						...result,
 					};
 				} catch (error) {
-					setAttributes({ "error": true });
+					setAttributes({ error: true });
 					return {
 						success: false,
 						error: error instanceof Error ? error.message : "Query failed",
@@ -406,12 +410,12 @@ async function executeDynamicQuery(
 		parameterInput:
 			| string
 			| {
-				name: string;
-				start_date?: string;
-				end_date?: string;
-				granularity?: string;
-				id?: string;
-			},
+					name: string;
+					start_date?: string;
+					end_date?: string;
+					granularity?: string;
+					id?: string;
+			  },
 		dynamicRequest: DynamicQueryRequestType,
 		params: QueryParams,
 		siteId: string | undefined,

@@ -239,7 +239,11 @@ export class EventProducer {
 
 						for (const { event, retries, timestamp } of items) {
 							const age = Date.now() - timestamp;
-							if (retries < this.config.maxRetries && age < 300_000 && this.buffer.length < this.config.bufferHardMax) {
+							if (
+								retries < this.config.maxRetries &&
+								age < 300_000 &&
+								this.buffer.length < this.config.bufferHardMax
+							) {
 								this.buffer.push({
 									table,
 									event,

@@ -47,7 +47,7 @@ export function parseUserAgent(userAgent: string): {
 	try {
 		const parser = new UAParser(userAgent);
 		const result = parser.getResult();
-		
+
 		return {
 			browserName: result.browser.name || undefined,
 			browserVersion: result.browser.version || undefined,

@@ -88,9 +88,7 @@ function isValidIp(ip: string): boolean {
 	return Boolean(ip && (ipv4Regex.test(ip) || ipv6Regex.test(ip)));
 }
 
-function lookupGeoLocation(
-	ip: string
-): Promise<{
+function lookupGeoLocation(ip: string): Promise<{
 	country: string | undefined;
 	region: string | undefined;
 	city: string | undefined;

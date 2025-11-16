@@ -1,7 +1,7 @@
+import { openrouter } from "@databuddy/shared/utils/openrouter";
 import { type ModelMessage, smoothStream, stepCountIs, streamText } from "ai";
 import { chatPrompt } from "./prompts/chat-prompt";
 import { tools } from "./tools";
-import { openrouter } from "@databuddy/shared/utils/openrouter";
 
 export const modes = ["chat", "agent", "agent_max"] as const;
 export type Mode = (typeof modes)[number];

@@ -1,3 +1,4 @@
+import { openrouter } from "@databuddy/shared/utils/openrouter";
 import { generateObject } from "ai";
 import type { z } from "zod";
 import {
@@ -5,7 +6,6 @@ import {
 	comprehensiveSystemPrompt,
 } from "../prompts/agent";
 import type { AssistantSession } from "./assistant-session";
-import { openrouter } from "@databuddy/shared/utils/openrouter";
 
 const AI_MODEL = "google/gemini-2.5-flash-lite-preview-06-17";
 

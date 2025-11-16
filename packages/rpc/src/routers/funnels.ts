@@ -212,7 +212,11 @@ export const funnelsRouter = {
 			if (existingFunnel.length === 0) {
 				throw new ORPCError("NOT_FOUND", { message: "Funnel not found" });
 			}
-			await authorizeWebsiteAccess(context, existingFunnel[0].websiteId, "update");
+			await authorizeWebsiteAccess(
+				context,
+				existingFunnel[0].websiteId,
+				"update"
+			);
 
 			try {
 				const { id, ...updates } = input;
@@ -266,7 +270,11 @@ export const funnelsRouter = {
 			if (existingFunnel.length === 0) {
 				throw new ORPCError("NOT_FOUND", { message: "Funnel not found" });
 			}
-			await authorizeWebsiteAccess(context, existingFunnel[0].websiteId, "delete");
+			await authorizeWebsiteAccess(
+				context,
+				existingFunnel[0].websiteId,
+				"delete"
+			);
 
 			try {
 				await context.db
