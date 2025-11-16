@@ -24,11 +24,11 @@ async function _logBlockedTrafficAsync(
 			) || "";
 
 
-		const [geo, ua, now] = await Promise.all([
+		const [geo, ua] = await Promise.all([
 			getGeo(ip),
 			parseUserAgent(userAgent),
-			Date.now(),
 		]);
+		const now = Date.now();
 		const { anonymizedIP, country, region, city } = geo;
 		const { browserName, browserVersion, osName, osVersion, deviceType } = ua;
 

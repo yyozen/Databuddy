@@ -19,35 +19,35 @@ export function initTracing(): void {
         return;
     }
 
+    const exporter = new OTLPTraceExporter({
+        url: "https://api.axiom.co/v1/traces",
+        headers: {
+            Authorization: `Bearer ${process.env.AXIOM_TOKEN}`,
+            "X-Axiom-Dataset": process.env.AXIOM_DATASET ?? "basket",
+        },
+    });
+
     sdk = new NodeSDK({
         resource: resourceFromAttributes({
             [ATTR_SERVICE_NAME]: "basket",
             [ATTR_SERVICE_VERSION]: pkg.version,
         }),
-        traceExporter: new OTLPTraceExporter({
-            url: "https://api.axiom.co/v1/traces",
-            headers: {
-                Authorization: `Bearer ${process.env.AXIOM_TOKEN}`,
-                "X-Axiom-Dataset": process.env.AXIOM_DATASET ?? "basket",
-            },
+        spanProcessor: new BatchSpanProcessor(exporter, {
+            scheduledDelayMillis: 1000,
+            exportTimeoutMillis: 30_000,
+            maxExportBatchSize: 512,
+            maxQueueSize: 2048,
         }),
-        spanProcessor: new BatchSpanProcessor(
-            new OTLPTraceExporter({
-                url: "https://api.axiom.co/v1/traces",
-                headers: {
-                    Authorization: `Bearer ${process.env.AXIOM_TOKEN}`,
-                    "X-Axiom-Dataset": process.env.AXIOM_DATASET ?? "basket",
-                },
-            }),
-            {
-                scheduledDelayMillis: 1000,
-                exportTimeoutMillis: 30_000,
-                maxExportBatchSize: 512,
-            }
-        ),
     });
 
     sdk.start();
+}
+
+export async function shutdownTracing(): Promise<void> {
+    if (sdk) {
+        await sdk.shutdown();
+        sdk = null;
+    }
 }
 
 /**
