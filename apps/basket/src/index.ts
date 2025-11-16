@@ -1,13 +1,17 @@
 import "./polyfills/compression";
 
-import { opentelemetry } from "@elysiajs/opentelemetry";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
-import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-node";
 import { Elysia } from "elysia";
 import { logger } from "./lib/logger";
 import { getProducerStats } from "./lib/producer";
+import {
+	endRequestSpan,
+	initTracing,
+	startRequestSpan,
+} from "./lib/tracing";
 import basketRouter from "./routes/basket";
 import emailRouter from "./routes/email";
+
+initTracing();
 
 function getKafkaHealth() {
 	const stats = getProducerStats();
@@ -37,27 +41,9 @@ function getKafkaHealth() {
 }
 
 const app = new Elysia()
-	.use(
-		opentelemetry({
-			serviceName: "basket",
-			spanProcessors: [
-				new BatchSpanProcessor(
-					new OTLPTraceExporter({
-						url: "https://api.axiom.co/v1/traces",
-						headers: {
-							Authorization: `Bearer ${process.env.AXIOM_TOKEN}`,
-							"X-Axiom-Dataset": process.env.AXIOM_DATASET ?? "basket",
-						},
-					})
-				),
-			],
-		})
-	)
-	.onError(function handleError({ error, code }) {
-		if (code === "NOT_FOUND") {
-			return new Response(null, { status: 404 });
-		}
-		logger.error({ error }, "Error in basket service");
+	.state("tracing", {
+		span: null as ReturnType<typeof startRequestSpan> | null,
+		startTime: 0,
 	})
 	.onBeforeHandle(function handleCors({ request, set }) {
 		const origin = request.headers.get("origin");
@@ -70,6 +56,34 @@ const app = new Elysia()
 				"Content-Type, Authorization, X-Requested-With, databuddy-client-id, databuddy-sdk-name, databuddy-sdk-version";
 			set.headers["Access-Control-Allow-Credentials"] = "true";
 		}
+	})
+	.onBeforeHandle(function startTrace({ request, path, store }) {
+		const method = request.method;
+		const startTime = Date.now();
+		const span = startRequestSpan(method, request.url, path);
+
+		// Store span and start time in Elysia store
+		store.tracing = {
+			span,
+			startTime,
+		};
+	})
+	.onAfterHandle(function endTrace({ response, store }) {
+		if (store.tracing?.span && store.tracing.startTime) {
+			const statusCode = response instanceof Response ? response.status : 200;
+			endRequestSpan(store.tracing.span, statusCode, store.tracing.startTime);
+		}
+	})
+	.onError(function handleError({ error, code, store }) {
+		if (store.tracing?.span && store.tracing.startTime) {
+			const statusCode = code === "NOT_FOUND" ? 404 : 500;
+			endRequestSpan(store.tracing.span, statusCode, store.tracing.startTime);
+		}
+
+		if (code === "NOT_FOUND") {
+			return new Response(null, { status: 404 });
+		}
+		logger.error({ error }, "Error in basket service");
 	})
 	.options("*", () => new Response(null, { status: 204 }))
 	.use(basketRouter)

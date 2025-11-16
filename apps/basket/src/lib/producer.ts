@@ -1,9 +1,9 @@
 import type { ClickHouseClient } from "@clickhouse/client";
 import { clickHouse, TABLE_NAMES } from "@databuddy/db";
-import { record, setAttributes } from "@elysiajs/opentelemetry";
 import { Semaphore } from "async-mutex";
 import { CompressionTypes, Kafka, type Producer } from "kafkajs";
 import { logger } from "./logger";
+import { record, setAttributes } from "./tracing";
 
 type BufferedEvent = {
 	table: string;
@@ -176,7 +176,10 @@ export class EventProducer {
 			this.lastRetry = Date.now();
 			this.stats.errors += 1;
 			this.stats.lastErrorTime = Date.now();
-			logger.error({ error }, "Redpanda connection failed, using ClickHouse fallback");
+			logger.error(
+				{ error },
+				"Redpanda connection failed, using ClickHouse fallback"
+			);
 			if (this.dependencies.onError) {
 				this.dependencies.onError(new Error(String(error)));
 			}
@@ -247,7 +250,7 @@ export class EventProducer {
 								logger.error(
 									{ error },
 									`Dropped event (retries: ${retries}, age: ${age}ms)`,
-									{ table, eventId: (event as { event_id?: string }).event_id },
+									{ table, eventId: (event as { event_id?: string }).event_id }
 								);
 							}
 						}
@@ -259,7 +262,10 @@ export class EventProducer {
 
 			const failures = results.filter((r) => r.status === "rejected");
 			if (failures.length > 0) {
-				logger.error({ failures: failures.length }, "Table flush operations failed");
+				logger.error(
+					{ failures: failures.length },
+					"Table flush operations failed"
+				);
 			}
 		} catch (error) {
 			this.stats.errors += 1;
@@ -300,7 +306,10 @@ export class EventProducer {
 
 		if (this.buffer.length >= this.config.bufferHardMax) {
 			this.stats.dropped += 1;
-			logger.error({ bufferLength: this.buffer.length }, "Buffer overflow, dropping event");
+			logger.error(
+				{ bufferLength: this.buffer.length },
+				"Buffer overflow, dropping event"
+			);
 			return;
 		}
 
@@ -363,7 +372,10 @@ export class EventProducer {
 						return;
 					} catch (error) {
 						this.stats.failed += 1;
-						logger.error({ error }, "Redpanda send failed, buffering to ClickHouse");
+						logger.error(
+							{ error },
+							"Redpanda send failed, buffering to ClickHouse"
+						);
 						this.failed = true;
 						setAttributes({
 							"kafka.send_failed": true,
@@ -457,7 +469,10 @@ export class EventProducer {
 						return;
 					} catch (error) {
 						this.stats.failed += events.length;
-						logger.error({ error }, "Redpanda batch failed, buffering to ClickHouse");
+						logger.error(
+							{ error },
+							"Redpanda batch failed, buffering to ClickHouse"
+						);
 						this.failed = true;
 						setAttributes({
 							"kafka.send_failed": true,
@@ -506,11 +521,7 @@ export class EventProducer {
 		await this.flush();
 
 		let finalFlushAttempts = 0;
-		while (
-			this.buffer.length > 0 &&
-			finalFlushAttempts < 3 &&
-			!this.flushing
-		) {
+		while (this.buffer.length > 0 && finalFlushAttempts < 3 && !this.flushing) {
 			finalFlushAttempts += 1;
 			await this.flush();
 			await new Promise((r) => setTimeout(r, 1000));
@@ -602,11 +613,15 @@ export const disconnectProducer = async (): Promise<void> => {
 export const getProducerStats = () => getDefaultProducer().getStats();
 
 process.on("SIGTERM", async () => {
-	await disconnectProducer().catch((error) => logger.error({ error }, "SIGTERM error"));
+	await disconnectProducer().catch((error) =>
+		logger.error({ error }, "SIGTERM error")
+	);
 	process.exit(0);
 });
 
 process.on("SIGINT", async () => {
-	await disconnectProducer().catch((error) => logger.error({ error }, "SIGINT error"));
+	await disconnectProducer().catch((error) =>
+		logger.error({ error }, "SIGINT error")
+	);
 	process.exit(0);
 });

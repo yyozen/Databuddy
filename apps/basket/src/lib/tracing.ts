@@ -1,0 +1,116 @@
+import { type Span, SpanStatusCode, trace } from "@opentelemetry/api";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-node";
+
+let sdk: NodeSDK | null = null;
+
+/**
+ * Initialize OpenTelemetry
+ */
+export function initTracing(): void {
+    if (sdk) {
+        return;
+    }
+
+    sdk = new NodeSDK({
+        traceExporter: new OTLPTraceExporter({
+            url: "https://api.axiom.co/v1/traces",
+            headers: {
+                Authorization: `Bearer ${process.env.AXIOM_TOKEN}`,
+                "X-Axiom-Dataset": process.env.AXIOM_DATASET ?? "basket",
+            },
+        }),
+        spanProcessor: new BatchSpanProcessor(
+            new OTLPTraceExporter({
+                url: "https://api.axiom.co/v1/traces",
+                headers: {
+                    Authorization: `Bearer ${process.env.AXIOM_TOKEN}`,
+                    "X-Axiom-Dataset": process.env.AXIOM_DATASET ?? "basket",
+                },
+            }),
+            {
+                scheduledDelayMillis: 1000,
+                exportTimeoutMillis: 30_000,
+                maxExportBatchSize: 512,
+            }
+        ),
+    });
+
+    sdk.start();
+}
+
+/**
+ * Get tracer
+ */
+function getTracer() {
+    return trace.getTracer("basket");
+}
+
+/**
+ * Create a span - replaces @elysiajs/opentelemetry record
+ */
+export function record<T>(
+    name: string,
+    fn: () => Promise<T> | T
+): Promise<T> {
+    const tracer = getTracer();
+    return tracer.startActiveSpan(name, async (span) => {
+        try {
+            const result = await fn();
+            span.setStatus({ code: SpanStatusCode.OK });
+            return result;
+        } catch (error) {
+            span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: error instanceof Error ? error.message : String(error),
+            });
+            span.recordException(error instanceof Error ? error : new Error(String(error)));
+            throw error;
+        } finally {
+            span.end();
+        }
+    });
+}
+
+/**
+ * Set attributes on active span - replaces @elysiajs/opentelemetry setAttributes
+ */
+export function setAttributes(
+    attributes: Record<string, string | number | boolean>
+): void {
+    const span = trace.getActiveSpan();
+    if (span) {
+        for (const [key, value] of Object.entries(attributes)) {
+            span.setAttribute(key, value);
+        }
+    }
+}
+
+/**
+ * Start HTTP request span
+ */
+export function startRequestSpan(method: string, path: string, route?: string): Span {
+    const tracer = getTracer();
+    return tracer.startSpan(`${method} ${route ?? path}`, {
+        kind: 1, // SERVER
+        attributes: {
+            "http.method": method,
+            "http.route": route ?? path,
+            "http.target": path,
+        },
+    });
+}
+
+/**
+ * End HTTP request span
+ */
+export function endRequestSpan(span: Span, statusCode: number, startTime: number): void {
+    span.setAttribute("http.status_code", statusCode);
+    span.setAttribute("http.response.duration_ms", Date.now() - startTime);
+    span.setStatus({
+        code: statusCode >= 400 ? SpanStatusCode.ERROR : SpanStatusCode.OK,
+        message: statusCode >= 400 ? `HTTP ${statusCode}` : undefined,
+    });
+    span.end();
+}

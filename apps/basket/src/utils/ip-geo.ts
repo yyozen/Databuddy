@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 import { cacheable } from "@databuddy/redis";
-import { record, setAttributes } from "@elysiajs/opentelemetry";
 import type { City } from "@maxmind/geoip2-node";
 import {
 	AddressNotFoundError,
@@ -8,6 +7,7 @@ import {
 	Reader,
 } from "@maxmind/geoip2-node";
 import { logger } from "../lib/logger";
+import { record, setAttributes } from "../lib/tracing";
 
 interface GeoIPReader extends Reader {
 	city(ip: string): City;
@@ -86,7 +86,13 @@ function isValidIp(ip: string): boolean {
 	return Boolean(ip && (ipv4Regex.test(ip) || ipv6Regex.test(ip)));
 }
 
-function lookupGeoLocation(ip: string): Promise<{ country: string | undefined; region: string | undefined; city: string | undefined }> {
+function lookupGeoLocation(
+	ip: string
+): Promise<{
+	country: string | undefined;
+	region: string | undefined;
+	city: string | undefined;
+}> {
 	return record("lookupGeoLocation", async () => {
 		if (!(reader || isLoading || loadError)) {
 			try {
@@ -125,7 +131,10 @@ function lookupGeoLocation(ip: string): Promise<{ country: string | undefined; r
 
 			return result;
 		} catch (error) {
-			if (error instanceof AddressNotFoundError || error instanceof BadMethodCallError) {
+			if (
+				error instanceof AddressNotFoundError ||
+				error instanceof BadMethodCallError
+			) {
 				setAttributes({
 					"geo.address_not_found": true,
 				});

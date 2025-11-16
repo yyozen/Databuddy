@@ -7,8 +7,8 @@
 
 import { and, db, eq, member, websites } from "@databuddy/db";
 import { cacheable } from "@databuddy/redis";
-import { record, setAttributes } from "@elysiajs/opentelemetry";
 import { logger } from "../lib/logger";
+import { record, setAttributes } from "../lib/tracing";
 
 type Website = typeof websites.$inferSelect;
 
@@ -130,10 +130,7 @@ export function isValidOrigin(
 		return true;
 	}
 	if (!allowedDomain?.trim()) {
-		logger.warn(
-			{ originHeader },
-			"[isValidOrigin] No allowed domain provided"
-		);
+		logger.warn({ originHeader }, "[isValidOrigin] No allowed domain provided");
 		return false;
 	}
 	try {
@@ -339,7 +336,10 @@ const getWebsiteByIdWithOwnerCached = cacheable(
 			const ownerId = await _resolveOwnerId(website);
 			return { ...website, ownerId };
 		} catch (error) {
-			logger.error({ error, websiteId: id }, "Failed to get website by ID from cache");
+			logger.error(
+				{ error, websiteId: id },
+				"Failed to get website by ID from cache"
+			);
 			return null;
 		}
 	},
@@ -351,9 +351,7 @@ const getWebsiteByIdWithOwnerCached = cacheable(
 	}
 );
 
-export function getWebsiteByIdV2(
-	id: string
-): Promise<WebsiteWithOwner | null> {
+export function getWebsiteByIdV2(id: string): Promise<WebsiteWithOwner | null> {
 	return record("getWebsiteByIdV2", async () => {
 		setAttributes({
 			"website.id": id,

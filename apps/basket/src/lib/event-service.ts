@@ -6,7 +6,6 @@ import type {
 	ErrorEvent,
 	WebVitalsEvent,
 } from "@databuddy/db";
-import { record, setAttributes } from "@elysiajs/opentelemetry";
 import { getGeo } from "../utils/ip-geo";
 import { parseUserAgent } from "../utils/user-agent";
 import {
@@ -18,6 +17,7 @@ import {
 import { logger } from "./logger";
 import { sendEvent, sendEventBatch } from "./producer";
 import { checkDuplicate, getDailySalt, saltAnonymousId } from "./security";
+import { record, setAttributes } from "./tracing";
 
 /**
  * Insert an error event into the database
@@ -70,7 +70,8 @@ export function insertError(
 				VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 			),
 			session_id: validateSessionId(payload.sessionId),
-			timestamp: typeof payload.timestamp === "number" ? payload.timestamp : now,
+			timestamp:
+				typeof payload.timestamp === "number" ? payload.timestamp : now,
 			path: sanitizeString(payload.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
 			message: sanitizeString(
 				payload.message,
@@ -108,10 +109,7 @@ export function insertError(
 		try {
 			sendEvent("analytics-errors", errorEvent);
 		} catch (error) {
-			logger.error(
-				{ error, eventId },
-				"Failed to queue error event"
-			);
+			logger.error({ error, eventId }, "Failed to queue error event");
 		}
 	});
 }
@@ -175,10 +173,7 @@ export async function insertWebVitals(
 	try {
 		sendEvent("analytics-web-vitals", webVitalsEvent);
 	} catch (error) {
-		logger.error(
-			{ error, eventId },
-			"Failed to queue web vitals event"
-		);
+		logger.error({ error, eventId }, "Failed to queue web vitals event");
 		// Don't throw - event is buffered or sent async
 	}
 }
@@ -229,10 +224,7 @@ export async function insertCustomEvent(
 	try {
 		sendEvent("analytics-custom-events", customEvent);
 	} catch (error) {
-		logger.error(
-			{ error, eventId },
-			"Failed to queue custom event"
-		);
+		logger.error({ error, eventId }, "Failed to queue custom event");
 		// Don't throw - event is buffered or sent async
 	}
 }
@@ -281,10 +273,7 @@ export async function insertOutgoingLink(
 	try {
 		sendEvent("analytics-outgoing-links", outgoingLinkEvent);
 	} catch (error) {
-		logger.error(
-			{ error, eventId },
-			"Failed to queue outgoing link event"
-		);
+		logger.error({ error, eventId }, "Failed to queue outgoing link event");
 	}
 }
 
@@ -370,7 +359,10 @@ export function insertTrackEvent(
 			),
 			url: sanitizeString(trackData.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
 			path: sanitizeString(trackData.path, VALIDATION_LIMITS.STRING_MAX_LENGTH),
-			title: sanitizeString(trackData.title, VALIDATION_LIMITS.STRING_MAX_LENGTH),
+			title: sanitizeString(
+				trackData.title,
+				VALIDATION_LIMITS.STRING_MAX_LENGTH
+			),
 
 			ip: anonymizedIP || "",
 			user_agent: "",
@@ -412,7 +404,9 @@ export function insertTrackEvent(
 			connection_time: validatePerformanceMetric(trackData.connection_time),
 			render_time: validatePerformanceMetric(trackData.render_time),
 			redirect_time: validatePerformanceMetric(trackData.redirect_time),
-			domain_lookup_time: validatePerformanceMetric(trackData.domain_lookup_time),
+			domain_lookup_time: validatePerformanceMetric(
+				trackData.domain_lookup_time
+			),
 
 			properties: trackData.properties
 				? JSON.stringify(trackData.properties)
@@ -431,10 +425,7 @@ export function insertTrackEvent(
 		try {
 			sendEvent("analytics-events", trackEvent);
 		} catch (error) {
-			logger.error(
-				{ error, eventId },
-				"Failed to queue track event"
-			);
+			logger.error({ error, eventId }, "Failed to queue track event");
 		}
 	});
 }
@@ -485,9 +476,7 @@ export function insertErrorsBatch(events: ErrorEvent[]): Promise<void> {
 	});
 }
 
-export function insertWebVitalsBatch(
-	events: WebVitalsEvent[]
-): Promise<void> {
+export function insertWebVitalsBatch(events: WebVitalsEvent[]): Promise<void> {
 	return record("insertWebVitalsBatch", async () => {
 		if (events.length === 0) {
 			return;
@@ -509,9 +498,7 @@ export function insertWebVitalsBatch(
 	});
 }
 
-export function insertCustomEventsBatch(
-	events: CustomEvent[]
-): Promise<void> {
+export function insertCustomEventsBatch(events: CustomEvent[]): Promise<void> {
 	return record("insertCustomEventsBatch", async () => {
 		if (events.length === 0) {
 			return;

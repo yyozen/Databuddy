@@ -1,5 +1,4 @@
 import { cacheable } from "@databuddy/redis";
-import { record, setAttributes } from "@elysiajs/opentelemetry";
 import { Autumn as autumn } from "autumn-js";
 import { getWebsiteByIdV2, isValidOrigin } from "../hooks/auth";
 import { extractIpFromRequest } from "../utils/ip-geo";
@@ -11,6 +10,7 @@ import {
 } from "../utils/validation";
 import { logBlockedTraffic } from "./blocked-traffic";
 import { logger } from "./logger";
+import { record, setAttributes } from "./tracing";
 
 type ValidationResult = {
 	success: boolean;
@@ -139,8 +139,8 @@ export function validateRequest(
 				}
 
 				setAttributes({
-					"autumn.allowed": data?.allowed,
-					"autumn.overage_allowed": data?.overage_allowed,
+					"autumn.allowed": data?.allowed ?? false,
+					"autumn.overage_allowed": data?.overage_allowed ?? false,
 				});
 			} catch (error) {
 				logger.error({ error }, "Autumn check failed, allowing event through");
