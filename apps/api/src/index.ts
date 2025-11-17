@@ -61,7 +61,6 @@ const app = new Elysia()
 		const method = request.method;
 		const startTime = Date.now();
 
-		// Extract route from path (e.g., "/rpc/websites.list" -> "websites.list")
 		const route = path.startsWith("/rpc/") ? path.slice(5) : path;
 		const { span, activeContext } = startRequestSpan(
 			method,
@@ -69,7 +68,6 @@ const app = new Elysia()
 			route
 		);
 
-		// Store span, context, and start time in Elysia store
 		store.tracing = {
 			span,
 			activeContext,
@@ -130,7 +128,6 @@ const app = new Elysia()
 
 				return response ?? new Response("Not Found", { status: 404 });
 			} catch (error) {
-				// Record ORPC errors in OpenTelemetry
 				if (error instanceof ORPCError) {
 					recordORPCError({
 						code: error.code,

@@ -13,8 +13,6 @@ export const createRPCContext = async (opts: { headers: Headers }) => {
 		headers: opts.headers,
 	});
 
-	console.log("createRPCContext", session);
-	console.log("createRPCContext", opts.headers);
 	return {
 		db,
 		auth,
