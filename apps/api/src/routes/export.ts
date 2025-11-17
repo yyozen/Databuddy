@@ -1,7 +1,7 @@
 import { auth, websitesApi } from "@databuddy/auth";
 import { db, eq, websites } from "@databuddy/db";
 import { cacheable } from "@databuddy/redis";
-import { record, setAttributes } from "@elysiajs/opentelemetry";
+import { record, setAttributes } from "../lib/tracing";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { Elysia, t } from "elysia";
@@ -100,8 +100,8 @@ export const exportRoute = new Elysia({ prefix: "/v1/export" }).post(
 				"export.request_id": requestId,
 				"export.website_id": websiteId || "missing",
 				"export.format": format,
-				"export.start_date": body.start_date,
-				"export.end_date": body.end_date,
+				"export.start_date": body.start_date || "missing",
+				"export.end_date": body.end_date || "missing",
 			});
 
 			try {

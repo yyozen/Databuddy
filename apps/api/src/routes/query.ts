@@ -1,7 +1,7 @@
 import { auth } from "@databuddy/auth";
 import { and, apikeyAccess, db, eq, isNull, websites } from "@databuddy/db";
 import { filterOptions } from "@databuddy/shared/lists/filters";
-import { record, setAttributes } from "@elysiajs/opentelemetry";
+import { record, setAttributes } from "../lib/tracing";
 import { Elysia, t } from "elysia";
 import { getApiKeyFromHeader, isApiKeyPresent } from "../lib/api-key";
 import { getCachedWebsiteDomain, getWebsiteDomain } from "../lib/website-utils";
@@ -99,9 +99,9 @@ async function getAccessibleWebsites(request: Request) {
 				? eq(websites.organizationId, apiKey.organizationId)
 				: apiKey.userId
 					? and(
-							eq(websites.userId, apiKey.userId),
-							isNull(websites.organizationId)
-						)
+						eq(websites.userId, apiKey.userId),
+						isNull(websites.organizationId)
+					)
 					: eq(websites.id, ""); // No matches if no user/org
 
 			return db
@@ -261,7 +261,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 				setAttributes({
 					"query.is_batch": isBatch,
 					"query.count": isBatch ? body.length : 1,
-					"query.website_id": queryParams.website_id || "unknown",
+					"query.website_id": queryParams.website_id || "missing",
 					"query.timezone": timezone,
 				});
 
@@ -410,12 +410,12 @@ async function executeDynamicQuery(
 		parameterInput:
 			| string
 			| {
-					name: string;
-					start_date?: string;
-					end_date?: string;
-					granularity?: string;
-					id?: string;
-			  },
+				name: string;
+				start_date?: string;
+				end_date?: string;
+				granularity?: string;
+				id?: string;
+			},
 		dynamicRequest: DynamicQueryRequestType,
 		params: QueryParams,
 		siteId: string | undefined,
