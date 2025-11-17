@@ -2,16 +2,36 @@ import "./polyfills/compression";
 
 import { Elysia } from "elysia";
 import { logger } from "./lib/logger";
-import { getProducerStats } from "./lib/producer";
+import { disconnectProducer, getProducerStats } from "./lib/producer";
 import {
 	endRequestSpan,
 	initTracing,
+	shutdownTracing,
 	startRequestSpan,
 } from "./lib/tracing";
 import basketRouter from "./routes/basket";
 import emailRouter from "./routes/email";
+import { closeGeoIPReader } from "./utils/ip-geo";
 
 initTracing();
+
+process.on("SIGTERM", async () => {
+	logger.info("SIGTERM received, shutting down gracefully...");
+	await Promise.all([disconnectProducer(), shutdownTracing()]).catch((error) =>
+		logger.error({ error }, "Shutdown error")
+	);
+	closeGeoIPReader();
+	process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+	logger.info("SIGINT received, shutting down gracefully...");
+	await Promise.all([disconnectProducer(), shutdownTracing()]).catch((error) =>
+		logger.error({ error }, "Shutdown error")
+	);
+	closeGeoIPReader();
+	process.exit(0);
+});
 
 function getKafkaHealth() {
 	const stats = getProducerStats();
@@ -62,15 +82,15 @@ const app = new Elysia()
 		const startTime = Date.now();
 		const span = startRequestSpan(method, request.url, path);
 
-		// Store span and start time in Elysia store
 		store.tracing = {
 			span,
 			startTime,
 		};
 	})
-	.onAfterHandle(function endTrace({ response, store }) {
+	.onAfterHandle(function endTrace({ responseValue, store }) {
 		if (store.tracing?.span && store.tracing.startTime) {
-			const statusCode = response instanceof Response ? response.status : 200;
+			const statusCode =
+				responseValue instanceof Response ? responseValue.status : 200;
 			endRequestSpan(store.tracing.span, statusCode, store.tracing.startTime);
 		}
 	})
@@ -99,7 +119,7 @@ const app = new Elysia()
 
 const port = process.env.PORT || 4000;
 
-console.log(`Starting basket service on port ${port}`);
+logger.info(`Starting basket service on port ${port}`);
 
 export default {
 	fetch: app.fetch,

@@ -193,7 +193,8 @@ export class EventProducer {
 		}
 
 		this.flushing = true;
-		const items = this.buffer.splice(0);
+		const batchSize = Math.min(this.buffer.length, this.config.bufferMax);
+		const items = this.buffer.splice(0, batchSize);
 
 		try {
 			const grouped = items.reduce(
@@ -238,7 +239,11 @@ export class EventProducer {
 
 						for (const { event, retries, timestamp } of items) {
 							const age = Date.now() - timestamp;
-							if (retries < this.config.maxRetries && age < 300_000) {
+							if (
+								retries < this.config.maxRetries &&
+								age < 300_000 &&
+								this.buffer.length < this.config.bufferHardMax
+							) {
 								this.buffer.push({
 									table,
 									event,
@@ -249,7 +254,7 @@ export class EventProducer {
 								this.stats.dropped += 1;
 								logger.error(
 									{ error },
-									`Dropped event (retries: ${retries}, age: ${age}ms)`,
+									`Dropped event (retries: ${retries}, age: ${age}ms, buffer: ${this.buffer.length})`,
 									{ table, eventId: (event as { event_id?: string }).event_id }
 								);
 							}
@@ -611,17 +616,3 @@ export const disconnectProducer = async (): Promise<void> => {
 };
 
 export const getProducerStats = () => getDefaultProducer().getStats();
-
-process.on("SIGTERM", async () => {
-	await disconnectProducer().catch((error) =>
-		logger.error({ error }, "SIGTERM error")
-	);
-	process.exit(0);
-});
-
-process.on("SIGINT", async () => {
-	await disconnectProducer().catch((error) =>
-		logger.error({ error }, "SIGINT error")
-	);
-	process.exit(0);
-});

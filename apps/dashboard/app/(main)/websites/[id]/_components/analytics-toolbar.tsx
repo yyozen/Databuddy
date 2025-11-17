@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
+import clsx from "clsx";
 import dayjs from "dayjs";
 import { useAtom } from "jotai";
 import { useCallback, useMemo } from "react";
@@ -11,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { useDateFilters } from "@/hooks/use-date-filters";
 import { addDynamicFilterAtom } from "@/stores/jotai/filterAtoms";
 import { AddFilterForm } from "./utils/add-filters";
-import clsx from "clsx";
 
 const MAX_HOURLY_DAYS = 7;
 
@@ -120,8 +120,10 @@ export function AnalyticsToolbar({
 	);
 
 	return (
-		<div className={`flex h-fit flex-col border-b bg-background ${isDisabled ? "opacity-50 pointer-events-none" : ""}`}>
-			<div className="flex h-12 items-center border-b justify-between pr-4">
+		<div
+			className={`flex h-fit flex-col border-b bg-background ${isDisabled ? "pointer-events-none opacity-50" : ""}`}
+		>
+			<div className="flex h-12 items-center justify-between border-b pr-4">
 				<div className="flex h-full items-center">
 					<Button
 						className={clsx(getGranularityButtonClass("daily"), "border-r")}
@@ -176,20 +178,24 @@ export function AnalyticsToolbar({
 					return (
 						<div className="flex h-full items-center" key={range.label}>
 							<Button
-								className={clsx("h-10 w-12 cursor-pointer  border-r touch-manipulation whitespace-nowrap rounded-none px-0 font-medium text-xs",
-									isActive ? "bg-accent hover:bg-accent text-accent-foreground" : "hover:bg-accent!")}
-							disabled={isDisabled}
-							onClick={() => handleQuickRangeSelect(range)}
-							title={range.fullLabel}
-							variant={isActive ? "secondary" : "ghost"}
-						>
-							{range.label}
-						</Button>
-					</div>
-				);
-			})}
+								className={clsx(
+									"h-10 w-12 cursor-pointer touch-manipulation whitespace-nowrap rounded-none border-r px-0 font-medium text-xs",
+									isActive
+										? "bg-accent text-accent-foreground hover:bg-accent"
+										: "hover:bg-accent!"
+								)}
+								disabled={isDisabled}
+								onClick={() => handleQuickRangeSelect(range)}
+								title={range.fullLabel}
+								variant={isActive ? "secondary" : "ghost"}
+							>
+								{range.label}
+							</Button>
+						</div>
+					);
+				})}
 
-				<div className="pl-1 h-full flex items-center">
+				<div className="flex h-full items-center pl-1">
 					<DateRangePicker
 						className="w-auto"
 						disabled={isDisabled}

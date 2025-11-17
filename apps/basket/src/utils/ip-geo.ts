@@ -19,6 +19,7 @@ let reader: GeoIPReader | null = null;
 let isLoading = false;
 let loadPromise: Promise<void> | null = null;
 let loadError: Error | null = null;
+let dbBuffer: Buffer | null = null;
 
 async function loadDatabaseFromCdn(): Promise<Buffer> {
 	try {
@@ -61,12 +62,13 @@ function loadDatabase() {
 	isLoading = true;
 	loadPromise = (async () => {
 		try {
-			const dbBuffer = await loadDatabaseFromCdn();
+			dbBuffer = await loadDatabaseFromCdn();
 			reader = Reader.openBuffer(dbBuffer) as GeoIPReader;
 		} catch (error) {
 			logger.error({ error }, "Failed to load GeoIP database");
 			loadError = error as Error;
 			reader = null;
+			dbBuffer = null;
 		} finally {
 			isLoading = false;
 		}
@@ -86,9 +88,7 @@ function isValidIp(ip: string): boolean {
 	return Boolean(ip && (ipv4Regex.test(ip) || ipv6Regex.test(ip)));
 }
 
-function lookupGeoLocation(
-	ip: string
-): Promise<{
+function lookupGeoLocation(ip: string): Promise<{
 	country: string | undefined;
 	region: string | undefined;
 	city: string | undefined;
@@ -205,4 +205,16 @@ export function extractIpFromRequest(request: Request): string {
 	}
 
 	return "";
+}
+
+export function closeGeoIPReader(): void {
+	if (reader) {
+		reader = null;
+	}
+	if (dbBuffer) {
+		dbBuffer = null;
+	}
+	loadPromise = null;
+	loadError = null;
+	isLoading = false;
 }

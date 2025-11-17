@@ -40,7 +40,9 @@ export const getDailySalt = cacheable(
 
 export function saltAnonymousId(anonymousId: string, salt: string): string {
 	try {
-		return createHash("sha256").update(anonymousId + salt).digest("hex");
+		return createHash("sha256")
+			.update(anonymousId + salt)
+			.digest("hex");
 	} catch (error) {
 		logger.error({ error, anonymousId }, "Failed to salt anonymous ID");
 		return createHash("sha256").update(anonymousId).digest("hex");
@@ -58,7 +60,10 @@ export async function checkDuplicate(
 		const result = await redis.set(key, "1", "EX", ttl, "NX");
 		return result === null;
 	} catch (error) {
-		logger.error({ error, eventId, eventType }, "Failed to check duplicate event in Redis");
+		logger.error(
+			{ error, eventId, eventType },
+			"Failed to check duplicate event in Redis"
+		);
 		return false;
 	}
 }

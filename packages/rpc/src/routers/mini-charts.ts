@@ -26,7 +26,7 @@ type MiniChartRow = {
 	websiteId: string;
 	date: string;
 	value: number;
-}
+};
 
 const normalizeWebsiteIds = (ids: string[]): string[] => {
 	// Deduplicate, copy, and sort for stable cache keys and efficient queries

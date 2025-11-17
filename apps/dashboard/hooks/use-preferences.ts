@@ -13,7 +13,7 @@ type UserPreferences = {
 	timezone: string;
 	dateFormat: string;
 	timeFormat: string;
-}
+};
 
 const defaultPreferences: UserPreferences = {
 	timezone: "auto",
@@ -22,7 +22,12 @@ const defaultPreferences: UserPreferences = {
 };
 
 export function usePreferences() {
-	const { data: preferences, isLoading: loading, error, refetch } = useQuery({
+	const {
+		data: preferences,
+		isLoading: loading,
+		error,
+		refetch,
+	} = useQuery({
 		...orpc.preferences.getUserPreferences.queryOptions(),
 	});
 

@@ -2,9 +2,11 @@ import { getRedisCache } from "./redis";
 
 const logger = console;
 
+const activeRevalidations = new Map<string, Promise<void>>();
+
 const stringifyRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*Z$/;
 
-interface CacheOptions {
+type CacheOptions = {
 	expireInSec: number;
 	prefix?: string;
 	serialize?: (data: unknown) => string;
@@ -12,7 +14,7 @@ interface CacheOptions {
 	staleWhileRevalidate?: boolean;
 	staleTime?: number;
 	maxRetries?: number;
-}
+};
 
 const defaultSerialize = (data: unknown): string => JSON.stringify(data);
 const defaultDeserialize = (data: string): unknown =>
@@ -47,9 +49,9 @@ export async function getCache<T>(
 
 				if (staleWhileRevalidate) {
 					const ttl = await redis.ttl(key);
-					if (ttl < staleTime) {
+					if (ttl < staleTime && !activeRevalidations.has(key)) {
 						// Return stale data and revalidate in background
-						fn()
+						const revalidationPromise = fn()
 							.then(async (freshData: T) => {
 								if (freshData !== undefined && freshData !== null) {
 									const redis = getRedisCache();
@@ -61,7 +63,11 @@ export async function getCache<T>(
 									`Background revalidation failed for key ${key}:`,
 									error
 								);
+							})
+							.finally(() => {
+								activeRevalidations.delete(key);
 							});
+						activeRevalidations.set(key, revalidationPromise);
 					}
 				}
 
@@ -74,7 +80,7 @@ export async function getCache<T>(
 			}
 			return data;
 		} catch (error: unknown) {
-			retries++;
+			retries += 1;
 			if (retries === maxRetries) {
 				logger.error(
 					`Cache error for key ${key} after ${maxRetries} retries:`,
@@ -157,9 +163,9 @@ export function cacheable<T extends (...args: any) => any>(
 
 					if (staleWhileRevalidate) {
 						const ttl = await redis.ttl(key);
-						if (ttl < staleTime) {
+						if (ttl < staleTime && !activeRevalidations.has(key)) {
 							// Return stale data and revalidate in background
-							fn(...args)
+							const revalidationPromise = fn(...args)
 								.then(async (freshData: Awaited<ReturnType<T>>) => {
 									if (freshData !== undefined && freshData !== null) {
 										const redis = getRedisCache();
@@ -171,7 +177,11 @@ export function cacheable<T extends (...args: any) => any>(
 										`Background revalidation failed for function ${fn.name}:`,
 										error
 									);
+								})
+								.finally(() => {
+									activeRevalidations.delete(key);
 								});
+							activeRevalidations.set(key, revalidationPromise);
 						}
 					}
 
@@ -184,7 +194,7 @@ export function cacheable<T extends (...args: any) => any>(
 				}
 				return result;
 			} catch (error: unknown) {
-				retries++;
+				retries += 1;
 				if (retries === maxRetries) {
 					logger.error(
 						`Cache error for function ${fn.name} after ${maxRetries} retries:`,

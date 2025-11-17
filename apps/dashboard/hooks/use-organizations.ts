@@ -134,7 +134,9 @@ export function useOrganizations() {
 			toast.success("Logo uploaded successfully");
 		},
 		onError: (error) => {
-			toast.error(error instanceof Error ? error.message : "Failed to upload logo");
+			toast.error(
+				error instanceof Error ? error.message : "Failed to upload logo"
+			);
 		},
 	});
 
@@ -144,7 +146,9 @@ export function useOrganizations() {
 			toast.success("Logo deleted successfully");
 		},
 		onError: (error) => {
-			toast.error(error instanceof Error ? error.message : "Failed to delete logo");
+			toast.error(
+				error instanceof Error ? error.message : "Failed to delete logo"
+			);
 		},
 	});
 

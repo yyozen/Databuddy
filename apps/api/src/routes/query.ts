@@ -1,7 +1,7 @@
 import { auth } from "@databuddy/auth";
 import { and, apikeyAccess, db, eq, isNull, websites } from "@databuddy/db";
 import { filterOptions } from "@databuddy/shared/lists/filters";
-import { record, setAttributes } from "@elysiajs/opentelemetry";
+import { record, setAttributes } from "../lib/tracing";
 import { Elysia, t } from "elysia";
 import { getApiKeyFromHeader, isApiKeyPresent } from "../lib/api-key";
 import { getCachedWebsiteDomain, getWebsiteDomain } from "../lib/website-utils";
@@ -24,7 +24,7 @@ type QueryParams = {
 	endDate?: string;
 	website_id?: string;
 	timezone?: string;
-}
+};
 
 async function checkAuth(request: Request): Promise<Response | null> {
 	const apiKeyPresent = isApiKeyPresent(request.headers);
@@ -142,7 +142,9 @@ export const query = new Elysia({ prefix: "/v1/query" })
 				const websites = await getAccessibleWebsites(request);
 				setAttributes({
 					"websites.count": websites.length,
-					"auth.method": isApiKeyPresent(request.headers) ? "api_key" : "session",
+					"auth.method": isApiKeyPresent(request.headers)
+						? "api_key"
+						: "session",
 				});
 				return {
 					success: true,
@@ -150,12 +152,14 @@ export const query = new Elysia({ prefix: "/v1/query" })
 					total: websites.length,
 				};
 			} catch (error) {
-				setAttributes({ "error": true });
+				setAttributes({ error: true });
 				return new Response(
 					JSON.stringify({
 						success: false,
 						error:
-							error instanceof Error ? error.message : "Failed to fetch websites",
+							error instanceof Error
+								? error.message
+								: "Failed to fetch websites",
 					}),
 					{ status: 500, headers: { "Content-Type": "application/json" } }
 				);
@@ -257,7 +261,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 				setAttributes({
 					"query.is_batch": isBatch,
 					"query.count": isBatch ? body.length : 1,
-					"query.website_id": queryParams.website_id || "unknown",
+					"query.website_id": queryParams.website_id || "missing",
 					"query.timezone": timezone,
 				});
 
@@ -315,7 +319,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 						...result,
 					};
 				} catch (error) {
-					setAttributes({ "error": true });
+					setAttributes({ error: true });
 					return {
 						success: false,
 						error: error instanceof Error ? error.message : "Query failed",

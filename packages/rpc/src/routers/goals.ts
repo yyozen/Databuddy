@@ -24,7 +24,6 @@ const getDefaultDateRange = () => {
 	return { startDate, endDate };
 };
 
-
 export const goalsRouter = {
 	list: publicProcedure
 		.input(z.object({ websiteId: z.string() }))
@@ -135,7 +134,11 @@ export const goalsRouter = {
 			if (existingGoal.length === 0) {
 				throw new ORPCError("NOT_FOUND", { message: "Goal not found" });
 			}
-			await authorizeWebsiteAccess(context, existingGoal[0].websiteId, "update");
+			await authorizeWebsiteAccess(
+				context,
+				existingGoal[0].websiteId,
+				"update"
+			);
 			const { id, ...updates } = input;
 			const [updatedGoal] = await context.db
 				.update(goals)
@@ -167,7 +170,11 @@ export const goalsRouter = {
 			if (existingGoal.length === 0) {
 				throw new ORPCError("NOT_FOUND", { message: "Goal not found" });
 			}
-			await authorizeWebsiteAccess(context, existingGoal[0].websiteId, "delete");
+			await authorizeWebsiteAccess(
+				context,
+				existingGoal[0].websiteId,
+				"delete"
+			);
 			await context.db
 				.update(goals)
 				.set({
@@ -348,22 +355,22 @@ export const goalsRouter = {
 					const analyticsResults: Record<
 						string,
 						| {
-							overall_conversion_rate: number;
-							total_users_entered: number;
-							total_users_completed: number;
-							avg_completion_time: number;
-							avg_completion_time_formatted: string;
-							steps_analytics: Array<{
-								step_number: number;
-								step_name: string;
-								users: number;
-								total_users: number;
-								conversion_rate: number;
-								dropoffs: number;
-								dropoff_rate: number;
-								avg_time_to_complete: number;
-							}>;
-						}
+								overall_conversion_rate: number;
+								total_users_entered: number;
+								total_users_completed: number;
+								avg_completion_time: number;
+								avg_completion_time_formatted: string;
+								steps_analytics: Array<{
+									step_number: number;
+									step_name: string;
+									users: number;
+									total_users: number;
+									conversion_rate: number;
+									dropoffs: number;
+									dropoff_rate: number;
+									avg_time_to_complete: number;
+								}>;
+						  }
 						| { error: string }
 					> = {};
 					for (const { id, result } of analyticsResultsArray) {

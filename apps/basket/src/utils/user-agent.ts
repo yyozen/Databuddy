@@ -58,10 +58,7 @@ export function parseUserAgent(userAgent: string): {
 			deviceModel: result.device.model || undefined,
 		};
 	} catch (error) {
-		logger.error(
-			{ error, userAgent },
-			"Failed to parse user agent"
-		);
+		logger.error({ error, userAgent }, "Failed to parse user agent");
 		return {
 			browserName: undefined,
 			browserVersion: undefined,

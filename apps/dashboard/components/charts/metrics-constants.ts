@@ -168,7 +168,7 @@ export type MetricConfig = {
 	icon: React.ComponentType<{ className?: string }>;
 	formatValue?: (value: number, row: ChartDataRow) => string;
 	category?: "analytics" | "performance" | "core_web_vitals";
-}
+};
 
 // Utility functions
 export const formatPerformanceTime = (value: number): string => {

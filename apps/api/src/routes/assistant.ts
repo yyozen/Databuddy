@@ -1,9 +1,9 @@
 import { auth, websitesApi } from "@databuddy/auth";
 import type { StreamingUpdate } from "@databuddy/shared/types/assistant";
-import { record, setAttributes } from "@elysiajs/opentelemetry";
 import { Elysia } from "elysia";
 import { processAssistantRequest } from "../agent/processor";
 import { createStreamingResponse } from "../agent/utils/stream-utils";
+import { record, setAttributes } from "../lib/tracing";
 import { validateWebsite } from "../lib/website-utils";
 import { AssistantRequestSchema } from "../schemas";
 
@@ -99,7 +99,11 @@ export const assistant = new Elysia({ prefix: "/v1/assistant" })
 						);
 					}
 
-					const updates = await processAssistantRequest(body, user as never, website);
+					const updates = await processAssistantRequest(
+						body,
+						user as never,
+						website
+					);
 					setAttributes({ "assistant.success": true });
 					return createStreamingResponse(updates);
 				} catch (error) {

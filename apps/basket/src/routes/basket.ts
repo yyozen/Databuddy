@@ -309,7 +309,13 @@ const app = new Elysia()
 			if (eventType === "track") {
 				const [botError, parseResult] = await Promise.all([
 					checkForBot(request, body, query, clientId, userAgent),
-					validateEventSchema(analyticsEventSchema, body, request, query, clientId),
+					validateEventSchema(
+						analyticsEventSchema,
+						body,
+						request,
+						query,
+						clientId
+					),
 				]);
 
 				if (botError) {
@@ -353,7 +359,13 @@ const app = new Elysia()
 			if (eventType === "web_vitals") {
 				const [botError, parseResult] = await Promise.all([
 					checkForBot(request, body, query, clientId, userAgent),
-					validateEventSchema(webVitalsEventSchema, body, request, query, clientId),
+					validateEventSchema(
+						webVitalsEventSchema,
+						body,
+						request,
+						query,
+						clientId
+					),
 				]);
 
 				if (botError) {
@@ -391,7 +403,13 @@ const app = new Elysia()
 			if (eventType === "outgoing_link") {
 				const [botError, parseResult] = await Promise.all([
 					checkForBot(request, body, query, clientId, userAgent),
-					validateEventSchema(outgoingLinkSchema, body, request, query, clientId),
+					validateEventSchema(
+						outgoingLinkSchema,
+						body,
+						request,
+						query,
+						clientId
+					),
 				]);
 
 				if (botError) {

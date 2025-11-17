@@ -202,9 +202,15 @@ function buildSlackBlocks(data: AmbassadorFormData, ip: string): unknown[] {
 	return blocks;
 }
 
-async function sendToSlack(data: AmbassadorFormData, ip: string): Promise<void> {
+async function sendToSlack(
+	data: AmbassadorFormData,
+	ip: string
+): Promise<void> {
 	if (!SLACK_WEBHOOK_URL) {
-		logger.warn({}, "SLACK_WEBHOOK_URL not configured, skipping Slack notification");
+		logger.warn(
+			{},
+			"SLACK_WEBHOOK_URL not configured, skipping Slack notification"
+		);
 		return;
 	}
 
@@ -226,7 +232,9 @@ async function sendToSlack(data: AmbassadorFormData, ip: string): Promise<void> 
 			clearTimeout(timeoutId);
 
 			if (!response.ok) {
-				const responseText = await response.text().catch(() => "Unable to read response");
+				const responseText = await response
+					.text()
+					.catch(() => "Unable to read response");
 				logger.error(
 					{
 						status: response.status,
@@ -268,7 +276,8 @@ export async function POST(request: NextRequest) {
 				{
 					ip: clientIP,
 					userAgent,
-					error: jsonError instanceof Error ? jsonError.message : String(jsonError),
+					error:
+						jsonError instanceof Error ? jsonError.message : String(jsonError),
 				},
 				"Invalid JSON in request body"
 			);

@@ -7,7 +7,7 @@ type FormattedNumberProps = {
 	id?: string;
 	value: number;
 	className?: string;
-}
+};
 
 export const FormattedNumber: React.FC<FormattedNumberProps> = ({
 	id,

@@ -1,5 +1,8 @@
-import { type Span, SpanStatusCode, trace } from "@opentelemetry/api";
+import { createORPCInstrumentation } from "@databuddy/rpc";
+import { context, type Span, SpanStatusCode, trace } from "@opentelemetry/api";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
+import { PgInstrumentation } from "@opentelemetry/instrumentation-pg";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-node";
@@ -23,13 +26,13 @@ export function initTracing(): void {
 		url: "https://api.axiom.co/v1/traces",
 		headers: {
 			Authorization: `Bearer ${process.env.AXIOM_TOKEN}`,
-			"X-Axiom-Dataset": process.env.AXIOM_DATASET ?? "basket",
+			"X-Axiom-Dataset": process.env.AXIOM_DATASET ?? "api",
 		},
 	});
 
 	sdk = new NodeSDK({
 		resource: resourceFromAttributes({
-			[ATTR_SERVICE_NAME]: "basket",
+			[ATTR_SERVICE_NAME]: "api",
 			[ATTR_SERVICE_VERSION]: pkg.version,
 		}),
 		spanProcessor: new BatchSpanProcessor(exporter, {
@@ -38,6 +41,16 @@ export function initTracing(): void {
 			maxExportBatchSize: 512,
 			maxQueueSize: 2048,
 		}),
+		instrumentations: [
+			new HttpInstrumentation({
+				ignoreIncomingRequestHook: (req: { url?: string }) => {
+					// Don't trace health checks
+					return req.url?.includes("/health") ?? false;
+				},
+			}),
+			new PgInstrumentation(),
+			createORPCInstrumentation(),
+		],
 	});
 
 	sdk.start();
@@ -54,7 +67,7 @@ export async function shutdownTracing(): Promise<void> {
  * Get tracer
  */
 function getTracer() {
-	return trace.getTracer("basket");
+	return trace.getTracer("api");
 }
 
 /**
@@ -62,7 +75,7 @@ function getTracer() {
  */
 export function record<T>(name: string, fn: () => Promise<T> | T): Promise<T> {
 	const tracer = getTracer();
-	return tracer.startActiveSpan(name, async (span) => {
+	return tracer.startActiveSpan(name, async (span: Span) => {
 		try {
 			const result = await fn();
 			span.setStatus({ code: SpanStatusCode.OK });
@@ -97,15 +110,16 @@ export function setAttributes(
 }
 
 /**
- * Start HTTP request span
+ * Start HTTP request span and set it as active
+ * Returns both the span and the context with the span set as active
  */
 export function startRequestSpan(
 	method: string,
 	path: string,
 	route?: string
-): Span {
+): { span: Span; activeContext: ReturnType<typeof context.active> } {
 	const tracer = getTracer();
-	return tracer.startSpan(`${method} ${route ?? path}`, {
+	const span = tracer.startSpan(`${method} ${route ?? path}`, {
 		kind: 1, // SERVER
 		attributes: {
 			"http.method": method,
@@ -113,6 +127,11 @@ export function startRequestSpan(
 			"http.target": path,
 		},
 	});
+
+	// Create context with this span as active
+	const activeContext = trace.setSpan(context.active(), span);
+
+	return { span, activeContext };
 }
 
 /**

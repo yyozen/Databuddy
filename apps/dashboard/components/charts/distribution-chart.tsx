@@ -172,7 +172,7 @@ export function DistributionChart({
 					<CardDescription className="text-xs">{description}</CardDescription>
 				)}
 			</CardHeader>
-			<CardContent className="px-0 pt-0 pb-4">	
+			<CardContent className="px-0 pt-0 pb-4">
 				<div style={{ width: "100%", height: height - 50 }}>
 					<ResponsiveContainer height="100%" width="100%">
 						<PieChart>
