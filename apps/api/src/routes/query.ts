@@ -1,9 +1,9 @@
 import { auth } from "@databuddy/auth";
 import { and, apikeyAccess, db, eq, isNull, websites } from "@databuddy/db";
 import { filterOptions } from "@databuddy/shared/lists/filters";
-import { record, setAttributes } from "../lib/tracing";
 import { Elysia, t } from "elysia";
 import { getApiKeyFromHeader, isApiKeyPresent } from "../lib/api-key";
+import { record, setAttributes } from "../lib/tracing";
 import { getCachedWebsiteDomain, getWebsiteDomain } from "../lib/website-utils";
 import { compileQuery, executeQuery } from "../query";
 import { QueryBuilders } from "../query/builders";
@@ -335,185 +335,208 @@ export const query = new Elysia({ prefix: "/v1/query" })
 		}
 	);
 
-async function executeDynamicQuery(
+function executeDynamicQuery(
 	request: DynamicQueryRequestType,
 	queryParams: QueryParams,
 	domainCache?: Record<string, string | null>
 ) {
-	const startDate = queryParams.start_date || queryParams.startDate;
-	const endDate = queryParams.end_date || queryParams.endDate;
-	const websiteId = queryParams.website_id;
+	return record("query.execute_dynamic", async () => {
+		const startDate = queryParams.start_date || queryParams.startDate;
+		const endDate = queryParams.end_date || queryParams.endDate;
+		const websiteId = queryParams.website_id;
 
-	const websiteDomain = websiteId
-		? (domainCache?.[websiteId] ?? (await getWebsiteDomain(websiteId)))
-		: null;
+		setAttributes({
+			"query.id": request.id || "anonymous",
+			"query.website_id": websiteId || "unknown",
+			"query.parameters": JSON.stringify(
+				request.parameters.map((p) => (typeof p === "string" ? p : p.name))
+			),
+			"query.granularity": request.granularity || "day",
+			"query.time_range.start": startDate || "unknown",
+			"query.time_range.end": endDate || "unknown",
+			"query.filters.count": request.filters?.length || 0,
+		});
 
-	const MAX_HOURLY_DAYS = 7;
-	const MS_PER_DAY = 1000 * 60 * 60 * 24;
+		const websiteDomain = websiteId
+			? (domainCache?.[websiteId] ?? (await getWebsiteDomain(websiteId)))
+			: null;
 
-	const validateHourlyDateRange = (start: string, end: string) => {
-		const rangeDays = Math.ceil(
-			(new Date(end).getTime() - new Date(start).getTime()) / MS_PER_DAY
-		);
+		const MAX_HOURLY_DAYS = 7;
+		const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-		if (rangeDays > MAX_HOURLY_DAYS) {
-			throw new Error(
-				`Hourly granularity only supports ranges up to ${MAX_HOURLY_DAYS} days. Use daily granularity for longer periods.`
+		const validateHourlyDateRange = (start: string, end: string) => {
+			const rangeDays = Math.ceil(
+				(new Date(end).getTime() - new Date(start).getTime()) / MS_PER_DAY
 			);
-		}
-	};
 
-	const getTimeUnit = (
-		granularity?: string,
-		startDate?: string,
-		endDate?: string
-	): "hour" | "day" => {
-		const isHourly = ["hourly", "hour"].includes(granularity || "");
-
-		if (isHourly) {
-			if (startDate && endDate) {
-				validateHourlyDateRange(startDate, endDate);
+			if (rangeDays > MAX_HOURLY_DAYS) {
+				throw new Error(
+					`Hourly granularity only supports ranges up to ${MAX_HOURLY_DAYS} days. Use daily granularity for longer periods.`
+				);
 			}
-			return "hour";
+		};
+
+		const getTimeUnit = (
+			granularity?: string,
+			startDate?: string,
+			endDate?: string
+		): "hour" | "day" => {
+			const isHourly = ["hourly", "hour"].includes(granularity || "");
+
+			if (isHourly) {
+				if (startDate && endDate) {
+					validateHourlyDateRange(startDate, endDate);
+				}
+				return "hour";
+			}
+
+			return "day";
+		};
+
+		function validateParameterRequest(
+			parameter: string,
+			siteId: string | undefined,
+			start: string | undefined,
+			end: string | undefined
+		):
+			| { success: true; siteId: string; start: string; end: string }
+			| { success: false; error: string } {
+			if (!QueryBuilders[parameter]) {
+				return {
+					success: false,
+					error: `Unknown query type: ${parameter}`,
+				};
+			}
+
+			if (!(siteId && start && end)) {
+				return {
+					success: false,
+					error:
+						"Missing required parameters: website_id, start_date, or end_date",
+				};
+			}
+
+			return { success: true, siteId, start, end };
 		}
 
-		return "day";
-	};
+		async function processParameter(
+			parameterInput:
+				| string
+				| {
+					name: string;
+					start_date?: string;
+					end_date?: string;
+					granularity?: string;
+					id?: string;
+				},
+			dynamicRequest: DynamicQueryRequestType,
+			params: QueryParams,
+			siteId: string | undefined,
+			defaultStart: string | undefined,
+			defaultEnd: string | undefined,
+			domain: string | null
+		) {
+			const isObject = typeof parameterInput === "object";
+			const parameterName = isObject ? parameterInput.name : parameterInput;
+			const customId =
+				isObject && parameterInput.id ? parameterInput.id : parameterName;
+			const paramStart =
+				isObject && parameterInput.start_date
+					? parameterInput.start_date
+					: defaultStart;
+			const paramEnd =
+				isObject && parameterInput.end_date
+					? parameterInput.end_date
+					: defaultEnd;
+			const paramGranularity =
+				isObject && parameterInput.granularity
+					? parameterInput.granularity
+					: dynamicRequest.granularity;
 
-	function validateParameterRequest(
-		parameter: string,
-		siteId: string | undefined,
-		start: string | undefined,
-		end: string | undefined
-	):
-		| { success: true; siteId: string; start: string; end: string }
-		| { success: false; error: string } {
-		if (!QueryBuilders[parameter]) {
-			return {
-				success: false,
-				error: `Unknown query type: ${parameter}`,
-			};
+			const validation = validateParameterRequest(
+				parameterName,
+				siteId,
+				paramStart,
+				paramEnd
+			);
+			if (!validation.success) {
+				return {
+					parameter: customId,
+					success: false,
+					error: validation.error,
+					data: [],
+				};
+			}
+
+			try {
+				const queryRequest = {
+					projectId: validation.siteId,
+					type: parameterName,
+					from: validation.start,
+					to: validation.end,
+					timeUnit: getTimeUnit(
+						paramGranularity,
+						validation.start,
+						validation.end
+					),
+					filters: dynamicRequest.filters || [],
+					limit: dynamicRequest.limit || 100,
+					offset: dynamicRequest.page
+						? (dynamicRequest.page - 1) * (dynamicRequest.limit || 100)
+						: 0,
+					timezone: params.timezone,
+				};
+
+				const data = await record("query.execute_metric", () => {
+					setAttributes({
+						"query.metric": parameterName,
+						"query.metric.site_id": validation.siteId,
+						"query.metric.custom_id": customId,
+						"query.metric.time_range.start": validation.start,
+						"query.metric.time_range.end": validation.end,
+					});
+					return executeQuery(queryRequest, domain, params.timezone);
+				});
+
+				return {
+					parameter: customId,
+					success: true,
+					data: data || [],
+				};
+			} catch (error) {
+				return {
+					parameter: customId,
+					success: false,
+					error: error instanceof Error ? error.message : "Query failed",
+					data: [],
+				};
+			}
 		}
 
-		if (!(siteId && start && end)) {
-			return {
-				success: false,
-				error:
-					"Missing required parameters: website_id, start_date, or end_date",
-			};
-		}
-
-		return { success: true, siteId, start, end };
-	}
-
-	async function processParameter(
-		parameterInput:
-			| string
-			| {
-				name: string;
-				start_date?: string;
-				end_date?: string;
-				granularity?: string;
-				id?: string;
-			},
-		dynamicRequest: DynamicQueryRequestType,
-		params: QueryParams,
-		siteId: string | undefined,
-		defaultStart: string | undefined,
-		defaultEnd: string | undefined,
-		domain: string | null
-	) {
-		const isObject = typeof parameterInput === "object";
-		const parameterName = isObject ? parameterInput.name : parameterInput;
-		const customId =
-			isObject && parameterInput.id ? parameterInput.id : parameterName;
-		const paramStart =
-			isObject && parameterInput.start_date
-				? parameterInput.start_date
-				: defaultStart;
-		const paramEnd =
-			isObject && parameterInput.end_date
-				? parameterInput.end_date
-				: defaultEnd;
-		const paramGranularity =
-			isObject && parameterInput.granularity
-				? parameterInput.granularity
-				: dynamicRequest.granularity;
-
-		const validation = validateParameterRequest(
-			parameterName,
-			siteId,
-			paramStart,
-			paramEnd
-		);
-		if (!validation.success) {
-			return {
-				parameter: customId,
-				success: false,
-				error: validation.error,
-				data: [],
-			};
-		}
-
-		try {
-			const queryRequest = {
-				projectId: validation.siteId,
-				type: parameterName,
-				from: validation.start,
-				to: validation.end,
-				timeUnit: getTimeUnit(
-					paramGranularity,
-					validation.start,
-					validation.end
-				),
-				filters: dynamicRequest.filters || [],
-				limit: dynamicRequest.limit || 100,
-				offset: dynamicRequest.page
-					? (dynamicRequest.page - 1) * (dynamicRequest.limit || 100)
-					: 0,
-				timezone: params.timezone,
-			};
-
-			const data = await executeQuery(queryRequest, domain, params.timezone);
-
-			return {
-				parameter: customId,
-				success: true,
-				data: data || [],
-			};
-		} catch (error) {
-			return {
-				parameter: customId,
-				success: false,
-				error: error instanceof Error ? error.message : "Query failed",
-				data: [],
-			};
-		}
-	}
-
-	const parameterResults = await Promise.all(
-		request.parameters.map((param) =>
-			processParameter(
-				param,
-				request,
-				queryParams,
-				websiteId,
-				startDate,
-				endDate,
-				websiteDomain
+		const parameterResults = await Promise.all(
+			request.parameters.map((param) =>
+				processParameter(
+					param,
+					request,
+					queryParams,
+					websiteId,
+					startDate,
+					endDate,
+					websiteDomain
+				)
 			)
-		)
-	);
+		);
 
-	return {
-		queryId: request.id,
-		data: parameterResults,
-		meta: {
-			parameters: request.parameters,
-			total_parameters: request.parameters.length,
-			page: request.page || 1,
-			limit: request.limit || 100,
-			filters_applied: request.filters?.length || 0,
-		},
-	};
+		return {
+			queryId: request.id,
+			data: parameterResults,
+			meta: {
+				parameters: request.parameters,
+				total_parameters: request.parameters.length,
+				page: request.page || 1,
+				limit: request.limit || 100,
+				filters_applied: request.filters?.length || 0,
+			},
+		};
+	});
 }
