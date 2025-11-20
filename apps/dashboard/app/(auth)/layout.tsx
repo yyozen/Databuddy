@@ -32,7 +32,7 @@ export default async function AuthLayout({
 				</div>
 				<Link className="relative z-10" href="https://www.databuddy.cc">
 					<Button
-						className="px-0! text-white/50 hover:text-white/80"
+						className="px-0! text-white/50 hover:bg-transparent hover:text-white/80"
 						variant="ghost"
 					>
 						<CaretLeftIcon className="size-4 transition-transform duration-200 group-hover:translate-x-[-4px]" />

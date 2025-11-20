@@ -176,8 +176,8 @@ function LoginPage() {
 							</p>
 							<Separator className="flex-1 opacity-70" />
 						</div>
-						<form className="space-y-4" onSubmit={handleEmailPasswordLogin}>
-							<div className="relative space-y-2">
+						<form className="space-y-5" onSubmit={handleEmailPasswordLogin}>
+							<div className="relative space-y-3">
 								<Label className="font-medium text-foreground" htmlFor="email">
 									Email<span className="text-primary">*</span>
 								</Label>
@@ -200,7 +200,7 @@ function LoginPage() {
 									</Badge>
 								)}
 							</div>
-							<div className="space-y-2">
+							<div className="space-y-3">
 								<div className="flex items-center justify-between">
 									<Label
 										className="font-medium text-foreground"
