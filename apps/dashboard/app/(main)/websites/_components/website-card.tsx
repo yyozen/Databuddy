@@ -3,7 +3,6 @@ import type {
 	Website,
 } from "@databuddy/shared/types/website";
 import {
-	ArrowRightIcon,
 	EyeIcon,
 	MinusIcon,
 	TrendDownIcon,
@@ -30,7 +29,7 @@ type WebsiteCardProps = {
 
 function TrendStat({
 	trend,
-	className = "flex items-center gap-1 font-medium text-xs sm:text-sm",
+	className = "flex items-center gap-1 font-medium text-xs",
 }: {
 	trend: ProcessedMiniChartData["trend"] | undefined;
 	className?: string;
@@ -117,7 +116,7 @@ export const WebsiteCard = memo(
 			href={`/websites/${website.id}`}
 		>
 			<Card className="flex h-full select-none flex-col gap-0 overflow-hidden bg-background p-0 transition-all duration-300 ease-in-out group-hover:border-primary/60 group-hover:shadow-primary/5 group-hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none">
-				<CardContent className="dotted-bg border-b bg-accent-brighter/50 p-4">
+				<CardHeader className="dotted-bg border-b bg-accent-brighter/80 px-0 pt-4">
 					{isLoadingChart ? (
 						<div className="space-y-2">
 							<div className="flex justify-between">
@@ -153,8 +152,8 @@ export const WebsiteCard = memo(
 							Failed to load
 						</div>
 					)}
-				</CardContent>
-				<CardHeader className="p-4">
+				</CardHeader>
+				<CardContent className="gap-0 p-4">
 					<div className="flex flex-wrap items-center gap-5">
 						<div className="flex min-w-0 flex-1 items-center justify-between">
 							<div>
@@ -166,23 +165,19 @@ export const WebsiteCard = memo(
 										altText={`${website.name} favicon`}
 										className="shrink-0"
 										domain={website.domain}
-										size={16}
+										size={12}
 									/>
-									<span className="truncate text-muted text-xs sm:text-sm">
+									<span className="truncate text-muted text-xs">
 										{website.domain}
 									</span>
 								</CardDescription>
 							</div>
-							<ArrowRightIcon
-								aria-hidden="true"
-								className="h-4 w-4 shrink-0 text-muted-foreground transition-all duration-200 group-hover:translate-x-1 group-hover:text-primary"
-							/>
 						</div>
 						{chartData && (
 							<div className="flex w-full items-center justify-between">
-								<span className="flex items-center gap-1 font-medium text-muted text-xs sm:text-sm">
+								<span className="flex items-center gap-1 font-medium text-muted text-xs">
 									<EyeIcon
-										className="h-4 w-4 shrink-0 text-muted"
+										className="size-3 shrink-0 text-muted"
 										weight="duotone"
 									/>
 									{formatNumber(chartData.totalViews)} views
@@ -191,7 +186,7 @@ export const WebsiteCard = memo(
 							</div>
 						)}
 					</div>
-				</CardHeader>
+				</CardContent>
 			</Card>
 		</Link>
 	)

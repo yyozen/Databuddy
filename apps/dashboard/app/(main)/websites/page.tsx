@@ -141,10 +141,11 @@ export default function WebsitesPage() {
 			>
 				{/* Website count indicator */}
 				{!isLoading && websites && websites.length > 0 && (
-					<NoticeBanner className="mb-6" icon={<GlobeIcon />}>
-						Tracking <span className="font-medium">{websites.length} </span>
-						website{websites.length !== 1 ? "s" : ""}
-					</NoticeBanner>
+					<NoticeBanner
+						className="mb-6"
+						icon={<GlobeIcon />}
+						title={`Tracking ${websites.length} website${websites.length !== 1 ? "s" : ""}`}
+					/>
 				)}
 
 				{/* Show loading state */}

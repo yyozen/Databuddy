@@ -14,13 +14,21 @@ export function ThemeToggle({ className }: ThemeTogglerProps) {
 	const currentTheme = theme ?? "system";
 
 	const switchTheme = () => {
-		if (currentTheme === "system") {
-			setTheme("light");
-		} else if (currentTheme === "light") {
-			setTheme("dark");
-		} else {
-			setTheme("system");
+		const nextTheme =
+			currentTheme === "system"
+				? "light"
+				: currentTheme === "light"
+					? "dark"
+					: "system";
+
+		if (!("startViewTransition" in document)) {
+			setTheme(nextTheme);
+			return;
 		}
+
+		document.startViewTransition(() => {
+			setTheme(nextTheme);
+		});
 	};
 
 	return (

@@ -172,7 +172,7 @@ export function OrganizationSelector() {
 			<div className="flex h-12 w-full items-center bg-sidebar-accent px-3 py-3">
 				<div className="flex w-full items-center justify-between">
 					<div className="flex items-center gap-3">
-						<div className="rounded-lg border bg-sidebar/80 p-1.5 ring-1">
+						<div className="rounded-lg border bg-sidebar/80 p-1.5">
 							<Skeleton className="h-5 w-5 rounded" />
 						</div>
 						<div className="flex min-w-0 flex-1 flex-col items-start">

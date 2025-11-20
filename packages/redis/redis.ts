@@ -89,7 +89,7 @@ let redisInstance: ExtendedRedis | null = null;
 // Create singleton Redis instance
 export function getRedisCache(): ExtendedRedis {
 	if (!redisInstance) {
-		const redisUrl = process.env.REDIS_URL;
+		const redisUrl = "redis://localhost:6379";
 		if (!redisUrl) {
 			logger.error("REDIS_URL environment variable is not set");
 			throw new Error("REDIS_URL environment variable is required");
@@ -118,7 +118,7 @@ export const redis = getRedisCache();
 let rawRedis: Redis | null = null;
 export const getRawRedis = () => {
 	if (!rawRedis) {
-		rawRedis = new Redis(process.env.REDIS_URL as string);
+		rawRedis = new Redis("redis://localhost:6379");
 	}
 	return rawRedis;
 };

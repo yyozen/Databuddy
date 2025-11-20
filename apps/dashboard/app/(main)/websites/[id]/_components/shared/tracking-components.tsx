@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	ArrowClockwiseIcon,
 	CheckIcon,
 	ClipboardIcon,
 	InfoIcon,
@@ -12,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { NoticeBanner } from "../../../_components/notice-banner";
 import type {
 	CodeBlockProps,
 	TrackingOptionCardProps,
@@ -100,7 +101,7 @@ export function CodeBlock({
 			)}
 			<div className="relative">
 				<div
-					className="[&_pre]:!bg-transparent [&_code]:!bg-transparent [&_*]:!font-mono overflow-hidden rounded border bg-muted p-6 text-sm leading-relaxed"
+					className="[&_pre]:!bg-transparent [&_code]:!bg-transparent [&_*]:!font-mono overflow-hidden rounded border bg-accent-brighter p-6 text-sm leading-relaxed"
 					dangerouslySetInnerHTML={{ __html: highlightedCode }}
 					style={{
 						fontSize: "14px",
@@ -288,50 +289,38 @@ export function TrackingOptionsGrid({
  */
 export function TrackingStatusCard({
 	isSetup,
-	integrationType,
 	onRefresh,
 }: {
 	isSetup: boolean;
-	integrationType?: string;
 	onRefresh: () => void;
 }) {
 	return (
-		<Card>
-			<div className="flex items-center justify-between p-4">
-				<div className="flex items-center gap-3">
-					<div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-						{isSetup ? (
-							<CheckIcon className="h-4 w-4" weight="duotone" />
-						) : (
-							<WarningCircleIcon className="h-4 w-4" weight="duotone" />
-						)}
-					</div>
-					<div className="flex flex-col gap-0.5">
-						<span className="font-medium text-sm">
-							{isSetup ? "Tracking Active" : "Tracking Not Setup"}
-						</span>
-						<span className="text-muted-foreground text-xs">
-							{isSetup
-								? "Data is being collected successfully"
-								: "Install the tracking script to start collecting data"}
-						</span>
-					</div>
-				</div>
-				<Button
-					aria-label="Refresh tracking status"
-					className="h-7 w-7"
-					onClick={onRefresh}
-					size="icon"
-					variant="ghost"
-				>
-					{isSetup ? (
-						<CheckIcon className="h-3.5 w-3.5" weight="fill" />
-					) : (
-						<WarningCircleIcon className="h-3.5 w-3.5" weight="fill" />
-					)}
-				</Button>
-			</div>
-		</Card>
+		<NoticeBanner
+			className="w-full"
+			icon={
+				isSetup ? (
+					<CheckIcon className="size-4" weight="duotone" />
+				) : (
+					<WarningCircleIcon className="size-4" weight="duotone" />
+				)
+			}
+			subtitle={
+				isSetup
+					? "Data is being collected successfully"
+					: "Install the tracking script to start collecting data"
+			}
+			title={isSetup ? "Tracking Active" : "Tracking Not Setup"}
+		>
+			<Button
+				className="w-full lg:w-fit"
+				onClick={onRefresh}
+				size="sm"
+				variant="secondary"
+			>
+				<ArrowClockwiseIcon className="size-3.5" weight="bold" />
+				Refresh
+			</Button>
+		</NoticeBanner>
 	);
 }
 
@@ -346,10 +335,10 @@ export function InfoSection({
 	children: React.ReactNode;
 }) {
 	return (
-		<Card>
+		<Card className="gap-0">
 			<CardHeader className="pb-2">
 				<CardTitle className="flex items-center gap-2 text-base">
-					<div className="flex h-6 w-6 items-center justify-center rounded bg-muted">
+					<div className="flex size-8 items-center justify-center rounded bg-accent-brighter">
 						<InfoIcon className="h-4 w-4" weight="duotone" />
 					</div>
 					{title}
