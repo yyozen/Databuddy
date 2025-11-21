@@ -25,13 +25,11 @@ test.describe("General Tracking", () => {
         expect(tracker.clientId).toBe("test-client-id");
     });
 
-    test("initializes via data- attributes (classic script)", async ({ page }) => {
+    test("initializes via data- attributes", async ({ page }) => {
         await page.goto("/");
-        // We inject a script tag manually to simulate classic script usage with data attributes
         await page.evaluate(() => {
             const script = document.createElement('script');
             script.src = "/dist/databuddy.js";
-            script.type = "module";
             script.setAttribute("data-client-id", "data-attr-client");
             script.setAttribute("data-ignore-bot-detection", "true");
             document.body.appendChild(script);
@@ -44,14 +42,11 @@ test.describe("General Tracking", () => {
         expect(tracker.ignoreBotDetection).toBe(true);
     });
 
-    test("initializes via query parameters (classic script)", async ({ page }) => {
+    test("initializes via query parameters", async ({ page }) => {
         await page.goto("/");
-        // We inject a script tag manually to simulate classic script usage with query params
         await page.evaluate(() => {
             const script = document.createElement('script');
             script.src = "/dist/databuddy.js?clientId=query-param-client&ignoreBotDetection=true";
-            // Since build outputs ESM, we need to treat it as a module
-            script.type = "module";
             document.body.appendChild(script);
         });
 
@@ -76,7 +71,6 @@ test.describe("General Tracking", () => {
         await page.evaluate(() => {
             (window as any).databuddyConfig = { clientId: "test-client-id", ignoreBotDetection: true };
         });
-        // Ensure module type
         await page.addScriptTag({ url: "/dist/databuddy.js" });
 
         const request = await requestPromise;
@@ -92,7 +86,6 @@ test.describe("General Tracking", () => {
         await page.evaluate(() => {
             (window as any).databuddyConfig = { clientId: "test-client-id", ignoreBotDetection: true };
         });
-        // Ensure module type
         await page.addScriptTag({ url: "/dist/databuddy.js" });
 
         await expect.poll(async () => await page.evaluate(() => !!(window as any).db)).toBeTruthy();
@@ -131,7 +124,6 @@ test.describe("General Tracking", () => {
         await page.evaluate(() => {
             (window as any).databuddyConfig = { clientId: "test-client-id" }; // ignoreBotDetection defaults to false
         });
-        // Ensure module type
         await page.addScriptTag({ url: "/dist/databuddy.js" });
 
         // Wait a bit to ensure no request is fired

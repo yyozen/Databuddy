@@ -46,7 +46,7 @@ export function getTrackerConfig(): TrackerOptions {
     let script = document.currentScript as HTMLScriptElement;
 
     if (!script) {
-        // Fallback for module scripts where document.currentScript is null
+        // Fallback for scripts where document.currentScript is null
         const scripts = document.getElementsByTagName('script');
         for (let i = 0; i < scripts.length; i++) {
             const src = scripts[i].src;

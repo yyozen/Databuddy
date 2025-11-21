@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "description": "Databuddy Analytics Tracker Scripts",
   "type": "module",
-  "module": "dist/databuddy.js",
   "scripts": {
     "build": "bun build.ts",
     "deploy": "bun deploy.ts",
