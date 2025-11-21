@@ -166,7 +166,7 @@ export class Databuddy extends BaseTracker {
             ...this.getBaseContext(),
             ...props,
         };
-        this.send({ type: "track", payload });
+        this.send(payload);
     }
 }
 

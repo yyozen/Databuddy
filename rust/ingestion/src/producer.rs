@@ -1,5 +1,6 @@
+use log::error;
 use rdkafka::config::ClientConfig;
-use rdkafka::producer::{FutureProducer, FutureRecord, Producer}; 
+use rdkafka::producer::{FutureProducer, FutureRecord, Producer};
 use rdkafka::util::Timeout;
 use std::env;
 use std::time::Duration;
@@ -35,23 +36,29 @@ impl KafkaProducer {
     }
 
     pub async fn send(&self, topic: &str, key: &str, payload: &str) -> Result<(), String> {
-        let record = FutureRecord::to(topic)
-            .payload(payload)
-            .key(key);
+        let record = FutureRecord::to(topic).payload(payload).key(key);
 
-        match self.producer.send(record, Timeout::After(Duration::from_secs(5))).await {
+        match self
+            .producer
+            .send(record, Timeout::After(Duration::from_secs(5)))
+            .await
+        {
             Ok(_) => Ok(()),
             Err((e, _)) => Err(format!("Kafka send error: {:?}", e)),
         }
     }
 
     pub fn check_health(&self) -> bool {
-        match self.producer.client().fetch_metadata(None, Duration::from_secs(2)) {
+        match self
+            .producer
+            .client()
+            .fetch_metadata(None, Duration::from_secs(2))
+        {
             Ok(_) => true,
             Err(e) => {
-                println!("Health check failed: {:?}", e);
+                error!("Health check failed: {:?}", e);
                 false
-            },
+            }
         }
     }
 }

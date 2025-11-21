@@ -10,8 +10,8 @@ export class BaseTracker {
     api: HttpClient;
 
     // State
-    anonymousId: string | null = null;
-    sessionId: string | null = null;
+    anonymousId?: string;
+    sessionId?: string;
     sessionStartTime = 0;
     lastActivityTime: number = Date.now();
 
@@ -253,13 +253,13 @@ export class BaseTracker {
     protected getConnectionInfo() {
         const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         if (!connection) {
-            return { connection_type: null, rtt: null, downlink: null };
+            return {};
         }
 
         return {
-            connection_type: connection.effectiveType || connection.type || null,
-            rtt: connection.rtt || null,
-            downlink: connection.downlink || null,
+            connection_type: connection.effectiveType || connection.type || undefined,
+            rtt: connection.rtt || undefined,
+            downlink: connection.downlink || undefined,
         };
     }
 
@@ -269,11 +269,11 @@ export class BaseTracker {
         }
         const urlParams = new URLSearchParams(window.location.search);
         return {
-            utm_source: urlParams.get("utm_source"),
-            utm_medium: urlParams.get("utm_medium"),
-            utm_campaign: urlParams.get("utm_campaign"),
-            utm_term: urlParams.get("utm_term"),
-            utm_content: urlParams.get("utm_content"),
+            utm_source: urlParams.get("utm_source") || undefined,
+            utm_medium: urlParams.get("utm_medium") || undefined,
+            utm_campaign: urlParams.get("utm_campaign") || undefined,
+            utm_term: urlParams.get("utm_term") || undefined,
+            utm_content: urlParams.get("utm_content") || undefined,
         };
     }
 
@@ -285,27 +285,27 @@ export class BaseTracker {
         const utmParams = this.getUtmParams();
         const connectionInfo = this.getConnectionInfo();
 
-        let width: number | null = window.innerWidth;
-        let height: number | null = window.innerHeight;
+        let width: number | undefined = window.innerWidth;
+        let height: number | undefined = window.innerHeight;
         if (width < 240 || width > 10_000 || height < 240 || height > 10_000) {
-            width = null;
-            height = null;
+            width = undefined;
+            height = undefined;
         }
-        const viewport_size = width && height ? `${width}x${height}` : null;
+        const viewport_size = width && height ? `${width}x${height}` : undefined;
 
-        let screenWidth: number | null = window.screen.width;
-        let screenHeight: number | null = window.screen.height;
+        let screenWidth: number | undefined = window.screen.width;
+        let screenHeight: number | undefined = window.screen.height;
         if (
             screenWidth < 240 ||
             screenWidth > 10_000 ||
             screenHeight < 240 ||
             screenHeight > 10_000
         ) {
-            screenWidth = null;
-            screenHeight = null;
+            screenWidth = undefined;
+            screenHeight = undefined;
         }
         const screen_resolution =
-            screenWidth && screenHeight ? `${screenWidth}x${screenHeight}` : null;
+            screenWidth && screenHeight ? `${screenWidth}x${screenHeight}` : undefined;
 
         const maskedPathname = this.getMaskedPath();
         const path =
@@ -314,7 +314,7 @@ export class BaseTracker {
             window.location.search +
             window.location.hash;
 
-        let timezone: string | null = null;
+        let timezone: string | undefined;
         try {
             timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         } catch { }
@@ -335,24 +335,22 @@ export class BaseTracker {
     }
 
     send(event: any): Promise<any> {
-        const eventData =
-            event.type === "track" && event.payload ? event.payload : event;
 
         if (this.shouldSkipTracking()) {
             return Promise.resolve();
         }
-        if (this.options.filter && !this.options.filter(eventData)) {
-            logger.log("Event filtered", eventData);
+        if (this.options.filter && !this.options.filter(event)) {
+            logger.log("Event filtered", event);
             return Promise.resolve();
         }
 
         if (this.options.enableBatching && !event.isForceSend) {
-            logger.log("Queueing event for batch", eventData);
-            return this.addToBatch(eventData);
+            logger.log("Queueing event for batch", event);
+            return this.addToBatch(event);
         }
 
-        logger.log("Sending event", eventData);
-        return this.api.fetch("/", eventData, { keepalive: true });
+        logger.log("Sending event", event);
+        return this.api.fetch("/", event, { keepalive: true });
     }
 
     addToBatch(event: any): Promise<void> {
@@ -396,7 +394,7 @@ export class BaseTracker {
         } catch (_error) {
             logger.error("Batch failed, retrying individually", _error);
             for (const evt of batchEvents) {
-                this.send({ type: "track", payload: evt, isForceSend: true });
+                this.send({ ...evt, isForceSend: true });
             }
             return null;
         }
@@ -425,8 +423,7 @@ export class BaseTracker {
             return null;
         }
         try {
-            const eventData =
-                event.type === "track" && event.payload ? event.payload : event;
+            const eventData = event;
             if (this.shouldSkipTracking()) {
                 return null;
             }

@@ -40,40 +40,36 @@ export type TrackerOptions = {
 export type EventContext = {
     path: string;
     title: string;
-    referrer: string | null;
-    screen_resolution: string | null;
-    viewport_size: string | null;
-    timezone: string | null;
+    referrer?: string;
+    screen_resolution?: string;
+    viewport_size?: string;
+    timezone?: string;
     language: string;
-    connection_type: string | null;
-    rtt: number | null;
-    downlink: number | null;
-    utm_source?: string | null;
-    utm_medium?: string | null;
-    utm_campaign?: string | null;
-    utm_term?: string | null;
-    utm_content?: string | null;
+    connection_type?: string;
+    rtt?: number;
+    downlink?: number;
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_term?: string;
+    utm_content?: string;
     dbid?: string;
 }
 
 export type BaseEvent = {
     eventId: string;
     name?: string;
-    anonymousId: string | null;
-    sessionId: string | null;
+    anonymousId?: string;
+    sessionId?: string;
     sessionStartTime?: number;
     timestamp: number;
     type?: string;
-    payload?: any;
+    [key: string]: any;
 }
 
-export interface TrackEvent extends BaseEvent {
-    type: 'track';
-    payload: {
-        name: string;
-        [key: string]: any;
-    };
-}
+export type TrackEvent = BaseEvent & {
+    name: string;
+};
 
 export type DatabuddyGlobal = {
     track: (name: string, props?: any) => void;
