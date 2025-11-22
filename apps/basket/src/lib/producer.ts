@@ -255,7 +255,8 @@ export class EventProducer {
 								captureError(error, {
 									message: `Dropped event (retries: ${retries}, age: ${age}ms, buffer: ${this.buffer.length})`,
 									table,
-									eventId: (event as { event_id?: string }).event_id || "unknown",
+									eventId:
+										(event as { event_id?: string }).event_id || "unknown",
 								});
 							}
 						}
@@ -541,7 +542,9 @@ export class EventProducer {
 			try {
 				await this.producer.disconnect();
 			} catch (error) {
-				captureError(error, { message: "Error disconnecting Redpanda producer" });
+				captureError(error, {
+					message: "Error disconnecting Redpanda producer",
+				});
 			} finally {
 				this.connected = false;
 			}

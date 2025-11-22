@@ -30,10 +30,7 @@ const defaultDeserialize = (data: string): unknown =>
 		return value;
 	});
 
-function withTimeout<T>(
-	promise: Promise<T>,
-	timeoutMs: number
-): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 	return Promise.race([
 		promise,
 		new Promise<T>((_, reject) =>
@@ -213,8 +210,8 @@ export function cacheable<T extends (...args: any) => any>(
 		...args: Parameters<T>
 	): Promise<Awaited<ReturnType<T>>> => {
 		const key = getKey(...args);
-		const timeout = typeof options === "number" ? 50 : options.timeout ?? 50;
-		const retries = typeof options === "number" ? 1 : options.maxRetries ?? 1;
+		const timeout = typeof options === "number" ? 50 : (options.timeout ?? 50);
+		const retries = typeof options === "number" ? 1 : (options.maxRetries ?? 1);
 
 		if (shouldSkipRedis()) {
 			return fn(...args);

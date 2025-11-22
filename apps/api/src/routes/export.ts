@@ -1,12 +1,12 @@
 import { auth, websitesApi } from "@databuddy/auth";
 import { db, eq, websites } from "@databuddy/db";
 import { cacheable } from "@databuddy/redis";
-import { record, setAttributes } from "../lib/tracing";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { Elysia, t } from "elysia";
 import { type ExportRequest, processExport } from "../lib/export";
 import { logger } from "../lib/logger";
+import { record, setAttributes } from "../lib/tracing";
 
 dayjs.extend(utc);
 
