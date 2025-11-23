@@ -258,9 +258,16 @@ export function Sidebar() {
 						/>
 
 						<nav aria-label="Main navigation" className="flex flex-col">
-							{navigation.map((section) => (
+							{navigation.map((section, idx) => (
 								<NavigationSection
 									accordionStates={accordionStates}
+									className={
+										idx === navigation.length - 1
+											? "border-t"
+											: idx === 0
+												? "border-t-0 border-b"
+												: "border-0"
+									}
 									currentWebsiteId={currentWebsiteId}
 									icon={section.icon}
 									items={section.items}

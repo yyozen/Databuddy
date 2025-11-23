@@ -122,19 +122,15 @@ export function OrganizationsList({
 							className={cn(
 								"group relative cursor-pointer overflow-hidden transition-all duration-200",
 								isActive
-									? "border-primary/30 bg-primary/5 shadow-sm"
-									: "hover:border-border/60 hover:bg-muted/30",
-								isProcessing && "pointer-events-none opacity-70"
+									? "cursor-default bg-sidebar-accent"
+									: isProcessing && "pointer-events-none opacity-70"
 							)}
 							key={org.id}
 							onClick={() => handleCardClick(org.id)}
 						>
 							{isActive && (
 								<div className="absolute top-3 right-3">
-									<Badge
-										className="border-accent bg-accent/50 text-primary text-xs"
-										variant="secondary"
-									>
+									<Badge variant="secondary">
 										<CheckIcon className="mr-1 h-3 w-3" size={12} />
 										Active
 									</Badge>
@@ -147,21 +143,26 @@ export function OrganizationsList({
 								</div>
 							)}
 
-							<CardContent className="p-4">
+							<CardContent>
 								<div className="space-y-3">
 									{/* Organization Info */}
 									<div className="flex items-start gap-3">
-										<Avatar className="h-10 w-10 shrink-0 border border-border/30">
+										<Avatar className="size-9 shrink-0">
 											<AvatarImage alt={org.name} src={org.logo || undefined} />
-											<AvatarFallback className="bg-accent font-medium text-xs">
+											<AvatarFallback
+												className={cn(
+													"font-medium text-xs",
+													isActive ? "bg-secondary-brightest" : "bg-accent"
+												)}
+											>
 												{getOrganizationInitials(org.name)}
 											</AvatarFallback>
 										</Avatar>
 										<div className="min-w-0 flex-1">
-											<h3 className="truncate font-semibold text-sm">
+											<h3 className="mb-2 truncate font-semibold text-base">
 												{org.name}
 											</h3>
-											<p className="truncate text-muted-foreground text-xs">
+											<p className="truncate text-muted-foreground text-sm">
 												@{org.slug}
 											</p>
 											<div className="mt-0.5 flex items-center gap-1">
@@ -169,7 +170,7 @@ export function OrganizationsList({
 													className="h-3 w-3 text-muted-foreground"
 													size={12}
 												/>
-												<span className="text-muted-foreground text-xs">
+												<span className="text-muted-foreground text-sm">
 													Created {dayjs(org.createdAt).fromNow()}
 												</span>
 											</div>
