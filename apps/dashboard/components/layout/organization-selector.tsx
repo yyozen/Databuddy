@@ -269,10 +269,7 @@ export function OrganizationSelector() {
 										</span>
 									</div>
 									{activeOrganization?.id === org.id && (
-										<CheckIcon
-											className="h-4 w-4 not-dark:text-primary"
-											weight="duotone"
-										/>
+										<CheckIcon className="h-4 w-4 text-accent-foreground" />
 									)}
 								</DropdownMenuItem>
 							))}

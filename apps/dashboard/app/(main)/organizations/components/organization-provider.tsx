@@ -167,28 +167,23 @@ export function OrganizationProvider({
 	if (requiresOrg && !activeOrganization) {
 		return (
 			<div className="flex h-full flex-col">
-				<div className="border-b bg-linear-to-r from-background via-background to-muted/20">
-					<div className="flex h-24 items-center px-4 sm:px-6">
-						<PageHeader
-							description={description}
-							icon={<Icon />}
-							title={title}
-						/>
-						{actionButton && (
+				<PageHeader
+					description={description}
+					icon={<Icon />}
+					right={
+						actionButton && (
 							<Button
 								className="w-full rounded text-xs sm:w-auto sm:text-sm"
 								onClick={actionButton.action}
 								size="sm"
 							>
-								<actionButton.icon
-									className="mr-2 h-3 w-3 sm:h-4 sm:w-4"
-									size={12}
-								/>
+								<actionButton.icon className="size-4" />
 								{actionButton.text}
 							</Button>
-						)}
-					</div>
-				</div>
+						)
+					}
+					title={title}
+				/>
 
 				<main className="flex flex-1 items-center justify-center p-4 sm:p-6">
 					<div className="w-full max-w-md rounded-lg border bg-card p-6 text-center sm:p-8">
@@ -209,10 +204,7 @@ export function OrganizationProvider({
 								onClick={() => setShowCreateDialog(true)}
 								size="default"
 							>
-								<BuildingsIcon
-									className="mr-2 h-4 w-4 sm:h-5 sm:w-5"
-									size={16}
-								/>
+								<BuildingsIcon className="size-4" />
 								Create organization
 							</Button>
 						</div>
@@ -224,24 +216,23 @@ export function OrganizationProvider({
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="h-22 border-b bg-linear-to-r from-background via-background to-muted/20">
-				<div className="flex flex-col justify-between gap-2.5 p-3 sm:flex-row sm:items-center sm:gap-0 sm:px-5 sm:py-4">
-					<PageHeader description={description} icon={<Icon />} title={title} />
-					{actionButton && (
+			<PageHeader
+				description={description}
+				icon={<Icon />}
+				right={
+					actionButton && (
 						<Button
 							className="w-full rounded text-xs sm:w-auto sm:text-sm"
 							onClick={actionButton.action}
 							size="sm"
 						>
-							<actionButton.icon
-								className="mr-2 h-3 w-3 sm:h-4 sm:w-4"
-								size={12}
-							/>
+							<actionButton.icon className="size-4" />
 							{actionButton.text}
 						</Button>
-					)}
-				</div>
-			</div>
+					)
+				}
+				title={title}
+			/>
 
 			<main className="flex-1 overflow-y-auto">{children}</main>
 

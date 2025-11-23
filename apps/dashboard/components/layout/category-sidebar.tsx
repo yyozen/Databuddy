@@ -91,7 +91,8 @@ export function CategorySidebar({
 						/>
 					</Link>
 				</div>
-				{categories.map((category) => {
+
+				{categories.map((category, index) => {
 					const Icon = category.icon;
 					const isActive = activeCategory === category.id;
 
@@ -100,10 +101,16 @@ export function CategorySidebar({
 							<TooltipTrigger asChild>
 								<button
 									className={cn(
-										"flex cursor-pointer items-center justify-center px-3 py-2.5 hover:bg-accent",
+										index === 0
+											? "box-content border-t-0 border-b"
+											: index === categories.length - 1
+												? "box-content border-b-0"
+												: "box-content border-b",
+										"flex h-10 items-center justify-center border-transparent px-3 transition-colors duration-200",
 										"focus:outline-none",
-										isActive &&
-											"bg-sidebar-accent text-sidebar-accent-foreground"
+										isActive
+											? "cursor-default bg-accent text-sidebar-accent-foreground hover:bg-accent"
+											: "cursor-pointer hover:bg-sidebar-accent"
 									)}
 									onClick={() => onCategoryChangeAction?.(category.id)}
 									type="button"
