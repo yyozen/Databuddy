@@ -116,4 +116,4 @@ function Tab({ children }: TabProps) {
 	return <>{children}</>;
 }
 
-export { Tabs, Tab, TabsList, TabsTrigger };
+export { Tabs, Tab, TabsList, TabsTrigger, TabsContent };
