@@ -1,5 +1,14 @@
 import { websitesApi } from "@databuddy/auth";
-import { chQuery } from "@databuddy/db";
+import {
+	and,
+	chQuery,
+	eq,
+	inArray,
+	isNull,
+	member,
+	or,
+	websites,
+} from "@databuddy/db";
 import { createDrizzleCache, redis } from "@databuddy/redis";
 import { logger } from "@databuddy/shared/logger";
 import type { ProcessedMiniChartData } from "@databuddy/shared/types/website";
@@ -176,6 +185,43 @@ export const websitesRouter = {
 			});
 		}),
 
+	listAll: protectedProcedure.handler(({ context }) => {
+		const listAllCacheKey = `listAll:${context.user.id}`;
+		return websiteCache.withCache({
+			key: listAllCacheKey,
+			ttl: CACHE_DURATION,
+			tables: ["websites"],
+			queryFn: async () => {
+				// 1. Get user's organization memberships
+				const userMemberships = await context.db.query.member.findMany({
+					where: eq(member.userId, context.user.id),
+					columns: { organizationId: true },
+				});
+				const orgIds = userMemberships.map((m) => m.organizationId);
+
+				// 2. Build filter: (userId = me AND orgId is null) OR (orgId IN myOrgs)
+				const personalSites = and(
+					eq(websites.userId, context.user.id),
+					isNull(websites.organizationId)
+				);
+
+				const orgSites =
+					orgIds.length > 0
+						? inArray(websites.organizationId, orgIds)
+						: undefined;
+
+				const whereClause = orgSites
+					? or(personalSites, orgSites)
+					: personalSites;
+
+				return context.db.query.websites.findMany({
+					where: whereClause,
+					orderBy: (table, { desc }) => [desc(table.createdAt)],
+				});
+			},
+		});
+	}),
+
 	listWithCharts: protectedProcedure
 		.input(z.object({ organizationId: z.string().optional() }).default({}))
 		.handler(({ context, input }) => {
@@ -202,16 +248,16 @@ export const websitesRouter = {
 						input.organizationId
 					);
 
-					const websitesList = await context.db.query.websites.findMany({
+					const websites = await context.db.query.websites.findMany({
 						where: whereClause,
 						orderBy: (table, { desc }) => [desc(table.createdAt)],
 					});
 
-					const websiteIds = websitesList.map((site) => site.id);
+					const websiteIds = websites.map((site) => site.id);
 					const chartData = await fetchChartData(websiteIds);
 
 					return {
-						websites: websitesList,
+						websites,
 						chartData,
 					};
 				},
@@ -320,10 +366,13 @@ export const websitesRouter = {
 			}
 
 			if (changes.length > 0) {
-				logger.info({
-					websiteId: updatedWebsite.id,
-					userId: context.user.id,
-				}, `Website Updated: ${changes.join(", ")}`);
+				logger.info(
+					{
+						websiteId: updatedWebsite.id,
+						userId: context.user.id,
+					},
+					`Website Updated: ${changes.join(", ")}`
+				);
 			}
 
 			return updatedWebsite;
@@ -336,11 +385,9 @@ export const websitesRouter = {
 
 			let updatedWebsite: Website;
 			try {
-				updatedWebsite = await new WebsiteService(context.db).toggleWebsitePublic(
-					input.id,
-					input.isPublic,
-					context.user.id
-				);
+				updatedWebsite = await new WebsiteService(
+					context.db
+				).toggleWebsitePublic(input.id, input.isPublic, context.user.id);
 			} catch (error) {
 				if (error instanceof WebsiteNotFoundError) {
 					throw new ORPCError("NOT_FOUND", { message: error.message });
@@ -355,7 +402,7 @@ export const websitesRouter = {
 					websiteId: input.id,
 					isPublic: input.isPublic,
 					userId: context.user.id,
-					event: "Website Privacy Updated"
+					event: "Website Privacy Updated",
 				},
 				`${website.domain} is now ${input.isPublic ? "public" : "private"}`
 			);
@@ -389,7 +436,7 @@ export const websitesRouter = {
 					websiteName: websiteToDelete.name,
 					domain: websiteToDelete.domain,
 					userId: context.user.id,
-					event: "Website Deleted"
+					event: "Website Deleted",
 				},
 				`Website "${websiteToDelete.name}" with domain "${websiteToDelete.domain}" was deleted`
 			);
@@ -453,7 +500,9 @@ export const websitesRouter = {
 			}
 
 			try {
-				return await new WebsiteService(context.db).transferWebsiteToOrganization(
+				return await new WebsiteService(
+					context.db
+				).transferWebsiteToOrganization(
 					input.websiteId,
 					input.targetOrganizationId,
 					context.user.id

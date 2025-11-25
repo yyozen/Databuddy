@@ -1,44 +1,38 @@
+import { useQuery } from "@tanstack/react-query";
 import type { Customer, CustomerProduct } from "autumn-js";
 import { useCustomer, usePricingTable } from "autumn-js/react";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import AttachDialog from "@/components/autumn/attach-dialog";
-
-export type FeatureUsage = {
-	id: string;
-	name: string;
-	used: number;
-	limit: number;
-	balance: number;
-	unlimited: boolean;
-	nextReset: string | null;
-	interval: string | null;
-};
+import { useOrganizations } from "@/hooks/use-organizations";
+import { orpc } from "@/lib/orpc";
+import {
+	calculateFeatureUsage,
+	type FeatureUsage,
+} from "../utils/feature-usage";
 
 export type Usage = {
 	features: FeatureUsage[];
 };
 
 export type { Customer, CustomerInvoice as Invoice } from "autumn-js";
+export type { CustomerWithPaymentMethod } from "../types/billing";
+
+export type CancelTarget = {
+	id: string;
+	name: string;
+	currentPeriodEnd?: number;
+};
 
 export function useBilling(refetch?: () => void) {
 	const { attach, cancel, check, track, openBillingPortal } = useCustomer();
 	const [isLoading, setIsLoading] = useState(false);
-	const [showNoPaymentDialog, setShowNoPaymentDialog] = useState(false);
-	const [showCancelDialog, setShowCancelDialog] = useState(false);
-	const [cancellingPlan, setCancellingPlan] = useState<{
-		id: string;
-		name: string;
-		currentPeriodEnd?: number;
-	} | null>(null);
-	const [_isActionLoading, setIsActionLoading] = useState(false);
+	const [cancelTarget, setCancelTarget] = useState<CancelTarget | null>(null);
 
 	const handleUpgrade = async (planId: string) => {
-		setIsActionLoading(true);
-
 		try {
-			const _result = await attach({
+			await attach({
 				productId: planId,
 				dialog: AttachDialog,
 				successUrl: `${window.location.origin}/billing`,
@@ -49,8 +43,6 @@ export function useBilling(refetch?: () => void) {
 					? error.message
 					: "An unexpected error occurred.";
 			toast.error(message);
-		} finally {
-			setIsActionLoading(false);
 		}
 	};
 
@@ -85,16 +77,19 @@ export function useBilling(refetch?: () => void) {
 		planName: string,
 		currentPeriodEnd?: number
 	) => {
-		setCancellingPlan({ id: planId, name: planName, currentPeriodEnd });
-		setShowCancelDialog(true);
+		setCancelTarget({ id: planId, name: planName, currentPeriodEnd });
 	};
 
 	const handleCancelConfirm = async (immediate: boolean) => {
-		if (!cancellingPlan) {
+		if (!cancelTarget) {
 			return;
 		}
-		await handleCancel(cancellingPlan.id, immediate);
-		setCancellingPlan(null);
+		await handleCancel(cancelTarget.id, immediate);
+		setCancelTarget(null);
+	};
+
+	const handleCancelDialogClose = () => {
+		setCancelTarget(null);
 	};
 
 	const handleManageBilling = async () => {
@@ -128,36 +123,10 @@ export function useBilling(refetch?: () => void) {
 
 	const getFeatureUsage = (featureId: string, customer?: Customer) => {
 		const feature = customer?.features?.[featureId];
-		if (!feature) return null;
-
-		const includedUsage = feature.included_usage ?? 0;
-		const balance = feature.balance ?? 0;
-		const reportedUsage = feature.usage ?? 0;
-
-		const isUnlimited =
-			feature.unlimited ||
-			!Number.isFinite(balance) ||
-			balance === Number.POSITIVE_INFINITY ||
-			balance === Number.NEGATIVE_INFINITY;
-
-		const actualUsed = isUnlimited
-			? 0
-			: reportedUsage > 0
-				? reportedUsage
-				: Math.max(0, includedUsage - balance);
-
-		return {
-			id: feature.id,
-			name: feature.name,
-			used: actualUsed,
-			limit: isUnlimited ? Number.POSITIVE_INFINITY : includedUsage,
-			balance,
-			unlimited: isUnlimited,
-			nextReset: feature.next_reset_at
-				? dayjs(feature.next_reset_at).format("MMM D, YYYY")
-				: null,
-			interval: feature.interval ?? null,
-		};
+		if (!feature) {
+			return null;
+		}
+		return calculateFeatureUsage(feature);
 	};
 
 	return {
@@ -166,14 +135,12 @@ export function useBilling(refetch?: () => void) {
 		onCancel: handleCancel,
 		onCancelClick: handleCancelClick,
 		onCancelConfirm: handleCancelConfirm,
+		onCancelDialogClose: handleCancelDialogClose,
 		onManageBilling: handleManageBilling,
 		check,
 		track,
-		showNoPaymentDialog,
-		setShowNoPaymentDialog,
-		showCancelDialog,
-		setShowCancelDialog,
-		cancellingPlan,
+		showCancelDialog: !!cancelTarget,
+		cancelTarget,
 		getSubscriptionStatus,
 		getSubscriptionStatusDetails,
 		getFeatureUsage,
@@ -181,13 +148,14 @@ export function useBilling(refetch?: () => void) {
 }
 
 export function useBillingData() {
+	const { activeOrganization, isLoading: isOrgLoading } = useOrganizations();
 	const {
 		customer,
 		isLoading: isCustomerLoading,
 		error: customerError,
 		refetch: refetchCustomer,
 	} = useCustomer({
-		expand: ["invoices"],
+		expand: ["invoices", "payment_method"],
 	});
 
 	const {
@@ -195,6 +163,31 @@ export function useBillingData() {
 		isLoading: isPricingLoading,
 		refetch: refetchPricing,
 	} = usePricingTable();
+
+	const activeProduct = useMemo(
+		() =>
+			customer?.products?.find(
+				(p) =>
+					p.status === "active" ||
+					(p.canceled_at && dayjs(p.current_period_end).isAfter(dayjs()))
+			),
+		[customer?.products]
+	);
+
+	const { data: realUsage } = useQuery({
+		...orpc.billing.getUsage.queryOptions({
+			input: {
+				startDate: activeProduct?.current_period_start
+					? dayjs(activeProduct.current_period_start).toISOString()
+					: undefined,
+				endDate: activeProduct?.current_period_end
+					? dayjs(activeProduct.current_period_end).toISOString()
+					: undefined,
+				organizationId: activeOrganization?.id ?? null,
+			},
+		}),
+		enabled: !!customer && !isOrgLoading,
+	});
 
 	const isLoading = isCustomerLoading || isPricingLoading;
 
@@ -208,35 +201,18 @@ export function useBillingData() {
 	const usage: Usage = {
 		features: customer?.features
 			? Object.values(customer.features).map((feature) => {
-					const includedUsage = feature.included_usage ?? 0;
-					const balance = feature.balance ?? 0;
-					const reportedUsage = feature.usage ?? 0;
+				const calculated = calculateFeatureUsage(feature);
+				const isNegative = (feature.usage ?? 0) < 0;
 
-					const isUnlimited =
-						feature.unlimited ||
-						!Number.isFinite(balance) ||
-						balance === Number.POSITIVE_INFINITY ||
-						balance === Number.NEGATIVE_INFINITY;
-
-					const actualUsed = isUnlimited
-						? 0
-						: reportedUsage > 0
-							? reportedUsage
-							: Math.max(0, includedUsage - balance);
-
-					return {
-						id: feature.id,
-						name: feature.name,
-						used: actualUsed,
-						limit: isUnlimited ? Number.POSITIVE_INFINITY : includedUsage,
-						balance,
-						unlimited: isUnlimited,
-						nextReset: feature.next_reset_at
-							? dayjs(feature.next_reset_at).format("MMM D, YYYY")
-							: null,
-						interval: feature.interval ?? null,
-					};
-				})
+				if (
+					(isNegative || calculated.hasExtraCredits) &&
+					feature.name.toLowerCase().includes("event") &&
+					realUsage
+				) {
+					calculated.used = realUsage.totalEvents;
+				}
+				return calculated;
+			})
 			: [],
 	};
 

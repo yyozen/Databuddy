@@ -99,9 +99,9 @@ async function getAccessibleWebsites(request: Request) {
 				? eq(websites.organizationId, apiKey.organizationId)
 				: apiKey.userId
 					? and(
-						eq(websites.userId, apiKey.userId),
-						isNull(websites.organizationId)
-					)
+							eq(websites.userId, apiKey.userId),
+							isNull(websites.organizationId)
+						)
 					: eq(websites.id, ""); // No matches if no user/org
 
 			return db
@@ -423,12 +423,12 @@ function executeDynamicQuery(
 			parameterInput:
 				| string
 				| {
-					name: string;
-					start_date?: string;
-					end_date?: string;
-					granularity?: string;
-					id?: string;
-				},
+						name: string;
+						start_date?: string;
+						end_date?: string;
+						granularity?: string;
+						id?: string;
+				  },
 			dynamicRequest: DynamicQueryRequestType,
 			params: QueryParams,
 			siteId: string | undefined,
