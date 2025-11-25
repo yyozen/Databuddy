@@ -1,7 +1,7 @@
 FROM docker.redpanda.com/redpandadata/console:latest
 
 # Copy console configuration
-COPY console-config.yml /tmp/console-config.yml
+COPY ./console-config.yml /tmp/console-config.yml
 
 # Expose console port
 EXPOSE 8080
