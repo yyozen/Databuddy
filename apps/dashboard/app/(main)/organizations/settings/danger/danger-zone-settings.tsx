@@ -114,7 +114,7 @@ export function DangerZoneSettings({
 											? "Delete Organization"
 											: "Leave Organization"}
 								</h3>
-								<p className="text-destructive/80 text-sm">
+								<p className="text-muted text-sm">
 									{isOwner === null
 										? "Checking permissions..."
 										: isOwner

@@ -160,6 +160,7 @@ export function DataTable<TData extends { name: string | number }, TValue>({
 			>
 				{/* Toolbar */}
 				<TableToolbar
+					borderBottom={!tabs}
 					description={description}
 					onFullScreenToggle={() => setFullScreen(true)}
 					title={title}

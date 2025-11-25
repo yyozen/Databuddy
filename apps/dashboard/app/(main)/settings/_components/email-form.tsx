@@ -79,9 +79,9 @@ export function EmailForm() {
 				<CardContent>
 					<div className="flex flex-col-reverse items-center justify-between gap-2 lg:flex-row">
 						<div className="flex items-center gap-3">
-							<div className="flex size-10 items-center justify-center rounded-full border border-secondary-brightest bg-secondary-brighter">
+							<div className="flex size-10 items-center justify-center rounded-full bg-accent-foreground">
 								<EnvelopeSimpleIcon
-									className="size-5 text-accent-foreground"
+									className="size-5 text-accent"
 									size={20}
 									weight="duotone"
 								/>

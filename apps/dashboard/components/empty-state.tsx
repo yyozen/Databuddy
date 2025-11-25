@@ -61,9 +61,9 @@ export const EmptyState = memo(function EmptyState({
 			case "md":
 				return "px-8 py-14";
 			case "lg":
-				return "px-8 py-16";
+				return "px-8";
 			default:
-				return "px-8 py-16";
+				return "px-8";
 		}
 	};
 
@@ -72,7 +72,7 @@ export const EmptyState = memo(function EmptyState({
 			return (
 				<div
 					aria-hidden="true"
-					className="mb-2 flex size-12 items-center justify-center rounded-full bg-accent-foreground"
+					className="mb-2 flex size-12 items-center justify-center rounded-2xl bg-accent-foreground"
 					role="img"
 				>
 					{cloneElement(icon, {
@@ -124,8 +124,9 @@ export const EmptyState = memo(function EmptyState({
 			variant === "default" &&
 				"rounded-xl border-2 border-dashed bg-gradient-to-br from-background to-muted/10",
 			variant === "simple" && "rounded border-dashed bg-muted/10",
-			variant === "minimal" && "rounded border-none bg-transparent shadow-none",
-			"safe-area-inset-4 sm:safe-area-inset-6 lg:safe-area-inset-8 h-full",
+			variant === "minimal" &&
+				"flex flex-1 rounded border-none bg-transparent shadow-none",
+			"safe-area-inset-4 sm:safe-area-inset-6 lg:safe-area-inset-8",
 			className
 		);
 
@@ -240,7 +241,7 @@ export function FeatureEmptyState({
 	actionLabel,
 	onAction,
 }: {
-	icon: ReactNode;
+	icon: ReactElement<IconProps>;
 	title: string;
 	description: string;
 	actionLabel: string;

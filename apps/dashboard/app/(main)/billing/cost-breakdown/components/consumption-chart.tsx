@@ -134,22 +134,13 @@ export function ConsumptionChart({
 	if (!usageData || chartData.length === 0) {
 		return (
 			<div className="flex h-full flex-col border-b">
-				<div className="border-b bg-muted/20 px-6 py-4">
-					<div className="flex items-center gap-2">
-						<ChartBarIcon className="h-5 w-5" weight="duotone" />
-						<h2 className="font-semibold text-lg">Consumption Breakdown</h2>
-					</div>
-				</div>
 				<div className="flex flex-1 items-center justify-center px-6 py-6">
 					<div className="text-center">
 						<CalendarIcon
-							className="mx-auto mb-4 h-12 w-12 text-muted-foreground"
+							className="mx-auto mb-2 size-8 text-muted-foreground"
 							weight="duotone"
 						/>
-						<h3 className="font-semibold text-lg">No Data Available</h3>
-						<p className="text-muted-foreground">
-							No usage data found for the selected period
-						</p>
+						<h3 className="font-semibold text-base">No Data Available</h3>
 					</div>
 				</div>
 			</div>

@@ -14,6 +14,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { TableEmptyState } from "./table-empty-state";
 
 const PERCENTAGE_THRESHOLDS = {
 	HIGH: 50,
@@ -197,22 +198,11 @@ export function TableContent<TData extends { name: string | number }>({
 
 	if (!displayData.length) {
 		return (
-			<div
-				className="flex flex-col items-center justify-center py-8 text-center sm:py-16"
-				style={{ minHeight }}
-			>
-				<div className="mb-4">
-					<div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-2xl bg-accent-foreground">
-						<DatabaseIcon className="size-6 text-accent" />
-					</div>
-				</div>
-				<h4 className="mb-1 not-last:font-medium text-base text-foreground">
-					{emptyMessage}
-				</h4>
-				<p className="mb-4 max-w-sm text-muted-foreground text-sm">
-					Data will appear here when available and ready to display.
-				</p>
-			</div>
+			<TableEmptyState
+				description="Data will appear here when available and ready to display."
+				icon={<DatabaseIcon className="size-6 text-accent" />}
+				title={emptyMessage}
+			/>
 		);
 	}
 
@@ -276,7 +266,7 @@ export function TableContent<TData extends { name: string | number }>({
 							<Fragment key={row.id}>
 								<TableRow
 									className={cn(
-										"relative h-11 border border-border bg-accent-brighter/30! pl-3 transition-all duration-300 ease-in-out",
+										"relative h-11 border border-border border-r-0 bg-accent-brighter/30! pl-3 transition-all duration-300 ease-in-out",
 										(isInteractive || hasSubRows) && "cursor-pointer",
 										!gradient &&
 											(rowIndex % 2 === 0 ? "bg-accent/50" : "bg-accent/10")

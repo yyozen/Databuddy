@@ -145,7 +145,7 @@ const MiniChart = memo(
 												year: data.length > 30 ? "numeric" : undefined,
 											})}
 										</p>
-										<p className="font-semibold text-primary">
+										<p className="font-semibold text-accent-foreground">
 											{formatChartValue
 												? formatChartValue(payload[0].value)
 												: formatMetricNumber(payload[0].value)}
@@ -226,7 +226,7 @@ export function StatCard({
 			<Card
 				className={cn(
 					"group overflow-hidden pt-0",
-					"border-border/50",
+					"border",
 					"bg-card",
 					className
 				)}

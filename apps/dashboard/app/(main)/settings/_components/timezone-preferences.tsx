@@ -200,9 +200,9 @@ export function TimezonePreferences() {
 				<CardContent>
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
-							<div className="flex size-10 items-center justify-center rounded-full border border-secondary-brightest bg-secondary-brighter">
+							<div className="flex size-10 items-center justify-center rounded-full bg-accent-foreground">
 								<ClockIcon
-									className="size-5 text-accent-foreground"
+									className="size-5 text-accent"
 									size={16}
 									weight="duotone"
 								/>

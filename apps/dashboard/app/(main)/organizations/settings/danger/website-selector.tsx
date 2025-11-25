@@ -18,7 +18,7 @@ function WebsiteCard({
 		<button
 			className={cn(
 				"flex w-full items-center gap-2 rounded border bg-secondary-brightest p-2 text-left transition-all duration-200",
-				selected ? "border-primary" : "border-border"
+				selected ? "border-primary" : "border-muted/30"
 			)}
 			onClick={onClick}
 			type="button"
@@ -28,7 +28,7 @@ function WebsiteCard({
 				className="shrink-0 rounded"
 				domain={website.domain}
 				fallbackIcon={
-					<div className="flex size-6 shrink-0 items-center justify-center rounded bg-accent">
+					<div className="flex size-6 shrink-0 items-center justify-center rounded border border-muted/30 bg-accent-foreground/20">
 						<GlobeIcon className="size-3 text-accent-foreground" size={12} />
 					</div>
 				}

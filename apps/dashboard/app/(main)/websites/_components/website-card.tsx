@@ -153,7 +153,7 @@ export const WebsiteCard = memo(
 					<div className="flex flex-wrap items-center gap-5">
 						<div className="flex min-w-0 flex-1 items-center justify-between">
 							<div>
-								<CardTitle className="truncate font-bold text-base leading-tight sm:text-base">
+								<CardTitle className="truncate font-medium text-base leading-tight sm:text-base">
 									{website.name}
 								</CardTitle>
 								<CardDescription className="flex items-center gap-1 pt-0.5">

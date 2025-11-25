@@ -237,7 +237,7 @@ export default function FunnelsPage() {
 	}
 
 	return (
-		<div className="space-y-4 p-6" ref={pageRef}>
+		<div className="relative flex h-full flex-col space-y-4" ref={pageRef}>
 			<WebsitePageHeader
 				createActionLabel="Create Funnel"
 				description="Track user journeys and optimize conversion drop-off points"

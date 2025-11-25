@@ -236,7 +236,7 @@
   --destructive-brighter: oklch(0.52 0.18 25);
   --destructive-foreground: oklch(1 0 0);
 
-  --border:  oklch(23% 0.006 286.033);
+  --border:  oklch(26% 0.006 286.033);
   --input: oklch(27.4% 0.006 286.033);
   --ring: oklch(42% 0.013 285.805);
 

@@ -197,7 +197,7 @@ export default function GoalsPage() {
 	}
 
 	return (
-		<div className="space-y-4 p-6" ref={pageRef}>
+		<div className="relative flex h-full flex-col space-y-4" ref={pageRef}>
 			<WebsitePageHeader
 				createActionLabel="Create Goal"
 				description="Track key conversions and measure success"

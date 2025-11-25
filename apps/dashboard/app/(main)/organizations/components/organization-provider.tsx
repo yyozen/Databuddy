@@ -16,6 +16,7 @@ import {
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { PageHeader } from "@/app/(main)/websites/_components/page-header";
+import { EmptyState } from "@/components/empty-state";
 import { CreateOrganizationDialog } from "@/components/organizations/create-organization-dialog";
 import { InviteMemberDialog } from "@/components/organizations/invite-member-dialog";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ export function OrganizationProvider({
 		text: string;
 		icon: React.ComponentType<IconProps>;
 		action: () => void;
+		disabled?: boolean;
 	};
 
 	type PageInfo = {
@@ -68,6 +70,7 @@ export function OrganizationProvider({
 				actionButton: {
 					text: "Invite Member",
 					icon: UserPlusIcon,
+					disabled: !activeOrganization,
 					action: () => setShowInviteMemberDialog(true),
 				},
 			};
@@ -80,6 +83,7 @@ export function OrganizationProvider({
 				requiresOrg: true,
 				actionButton: {
 					text: "Send Invitation",
+					disabled: !activeOrganization,
 					icon: UserPlusIcon,
 					action: () => setShowInviteMemberDialog(true),
 				},
@@ -140,7 +144,7 @@ export function OrganizationProvider({
 	if (isLoading) {
 		return (
 			<div className="flex h-full flex-col">
-				<div className="border-b bg-linear-to-r from-background via-background to-muted/20">
+				<div className="border-b">
 					<div className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center sm:gap-0 sm:px-6 sm:py-6">
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center gap-3 sm:gap-4">
@@ -174,6 +178,7 @@ export function OrganizationProvider({
 						actionButton && (
 							<Button
 								className="w-full rounded text-xs sm:w-auto sm:text-sm"
+								disabled={actionButton.disabled}
 								onClick={actionButton.action}
 								size="sm"
 							>
@@ -185,31 +190,21 @@ export function OrganizationProvider({
 					title={title}
 				/>
 
-				<main className="flex flex-1 items-center justify-center p-4 sm:p-6">
-					<div className="w-full max-w-md rounded-lg border bg-card p-6 text-center sm:p-8">
-						<Icon
-							className="mx-auto mb-3 h-10 w-10 text-muted-foreground sm:mb-4 sm:h-12 sm:w-12"
-							size={40}
-							weight="duotone"
-						/>
-						<h3 className="font-semibold text-base sm:text-lg">
-							Select an Organization
-						</h3>
-						<p className="text-muted-foreground text-xs sm:text-sm">
-							This feature requires an active organization.
-						</p>
-						<div className="mt-4 sm:mt-6">
-							<Button
-								className="rounded text-xs sm:text-sm"
-								onClick={() => setShowCreateDialog(true)}
-								size="default"
-							>
-								<BuildingsIcon className="size-4" />
-								Create organization
-							</Button>
-						</div>
-					</div>
-				</main>
+				<CreateOrganizationDialog
+					isOpen={showCreateDialog}
+					onClose={() => setShowCreateDialog(false)}
+				/>
+
+				<EmptyState
+					action={{
+						label: "Create Organization",
+						onClick: () => setShowCreateDialog(true),
+					}}
+					description="This feature requires an active organization."
+					icon={<BuildingsIcon size={16} weight="duotone" />}
+					title="No organization selected"
+					variant="minimal"
+				/>
 			</div>
 		);
 	}
@@ -223,6 +218,7 @@ export function OrganizationProvider({
 					actionButton && (
 						<Button
 							className="w-full rounded text-xs sm:w-auto sm:text-sm"
+							disabled={actionButton.disabled}
 							onClick={actionButton.action}
 							size="sm"
 						>

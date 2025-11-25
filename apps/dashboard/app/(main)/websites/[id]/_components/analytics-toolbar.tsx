@@ -153,10 +153,10 @@ export function AnalyticsToolbar({
 					{!isDisabled && <LiveUserIndicator websiteId={websiteId} />}
 					<Button
 						aria-label="Refresh data"
-						className="h-8 w-8"
+						className="size-8"
 						disabled={isRefreshing || isDisabled}
 						onClick={onRefresh}
-						variant="outline"
+						variant="secondary"
 					>
 						<ArrowClockwiseIcon
 							aria-hidden="true"

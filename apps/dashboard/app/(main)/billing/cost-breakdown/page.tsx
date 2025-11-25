@@ -69,19 +69,15 @@ export default function CostBreakdownPage() {
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="border-b bg-linear-to-r from-background to-muted/20 px-6 py-6">
-				<PageHeader
-					badgeClassName="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-					badgeContent="Experimental"
-					badgeVariant="secondary"
-					description="Detailed analytics usage breakdown and consumption patterns"
-					icon={<ChartLineUpIcon />}
-					title="Cost Breakdown"
-				/>
-			</div>
+			<PageHeader
+				badgeContent="Experimental"
+				description="Detailed analytics usage breakdown and consumption patterns"
+				icon={<ChartLineUpIcon weight="regular" />}
+				title="Cost Breakdown"
+			/>
 
 			<div className="flex min-h-0 flex-1 flex-col">
-				<div className="flex-[3]">
+				<div className="flex-3">
 					<Suspense fallback={<Skeleton className="h-full w-full" />}>
 						<ConsumptionChart
 							isLoading={isLoading}
@@ -91,7 +87,7 @@ export default function CostBreakdownPage() {
 						/>
 					</Suspense>
 				</div>
-				<div className="flex-[2]">
+				<div className="flex-2">
 					<Suspense fallback={<Skeleton className="h-full w-full" />}>
 						<UsageBreakdownTable
 							isLoading={isLoading}

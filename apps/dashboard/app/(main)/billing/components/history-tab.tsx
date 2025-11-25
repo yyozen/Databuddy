@@ -228,23 +228,12 @@ export const HistoryTab = memo(function HistoryTabComponent({
 				</div>
 				<Button
 					aria-label="Manage billing settings"
-					className="w-full sm:w-auto"
 					onClick={onManageBilling}
 					size="sm"
 					type="button"
-					variant="outline"
 				>
-					<CreditCardIcon
-						className="mr-2 not-dark:text-primary"
-						size={16}
-						weight="duotone"
-					/>
+					<CreditCardIcon size={16} weight="duotone" />
 					Manage Billing
-					<ArrowSquareOutIcon
-						className="ml-2 not-dark:text-primary"
-						size={12}
-						weight="duotone"
-					/>
 				</Button>
 			</div>
 
@@ -263,14 +252,14 @@ export const HistoryTab = memo(function HistoryTabComponent({
 					) : (
 						<Card>
 							<CardContent className="flex flex-col items-center justify-center py-12">
-								<div className="mb-4 flex h-12 w-12 items-center justify-center rounded border bg-muted">
+								<div className="mb-3 flex size-10 items-center justify-center rounded-2xl bg-accent-foreground">
 									<FileTextIcon
-										className="not-dark:text-primary text-muted-foreground"
+										className="text-accent"
 										size={24}
 										weight="duotone"
 									/>
 								</div>
-								<h3 className="mb-2 font-semibold text-lg">No Invoices Yet</h3>
+								<h3 className="font-semibold text-lg">No Invoices Yet</h3>
 								<p className="text-center text-muted-foreground text-sm">
 									Your invoices will appear here once you start using paid
 									features.
@@ -287,14 +276,14 @@ export const HistoryTab = memo(function HistoryTabComponent({
 					) : (
 						<Card>
 							<CardContent className="flex flex-col items-center justify-center py-12">
-								<div className="mb-4 flex h-12 w-12 items-center justify-center rounded border bg-muted">
+								<div className="mb-3 flex size-10 items-center justify-center rounded-2xl bg-accent-foreground">
 									<CalendarIcon
-										className="not-dark:text-primary text-muted-foreground"
+										className="text-accent"
 										size={24}
 										weight="duotone"
 									/>
 								</div>
-								<h3 className="mb-2 font-semibold text-lg">No History</h3>
+								<h3 className="font-semibold text-lg">No History</h3>
 								<p className="text-center text-muted-foreground text-sm">
 									Your subscription history will appear here.
 								</p>

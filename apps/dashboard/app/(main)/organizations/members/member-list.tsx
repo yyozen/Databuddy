@@ -127,7 +127,7 @@ export function MemberList({
 				<div className="space-y-2">
 					{members.map((member) => (
 						<div
-							className="flex items-center justify-between rounded border bg-accent-brighter p-3"
+							className="flex items-center justify-between rounded border bg-card p-3"
 							key={member.id}
 						>
 							<div className="flex items-center gap-3">

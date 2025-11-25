@@ -99,7 +99,7 @@ export function UsageBreakdownTable({
 						className="mx-auto mb-2 h-8 w-8 text-muted-foreground"
 						weight="duotone"
 					/>
-					<p className="text-muted-foreground">No usage data available</p>
+					<h3 className="font-semibold text-base">No Data Available</h3>
 				</div>
 			</div>
 		);

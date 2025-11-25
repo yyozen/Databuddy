@@ -122,7 +122,7 @@ export function UsersList({ websiteId }: UsersListProps) {
 				id: "index",
 				header: "#",
 				cell: ({ row }) => (
-					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 font-semibold text-primary text-sm">
+					<div className="flex size-8 items-center justify-center rounded-lg bg-accent font-medium text-accent-foreground text-sm">
 						{row.index + 1}
 					</div>
 				),
@@ -196,7 +196,7 @@ export function UsersList({ websiteId }: UsersListProps) {
 				header: "Sessions",
 				accessorKey: "total_sessions",
 				cell: ({ row }) => (
-					<div className="text-center">
+					<div>
 						<div className="font-semibold text-foreground text-lg">
 							{row.original.total_sessions}
 						</div>
@@ -210,7 +210,7 @@ export function UsersList({ websiteId }: UsersListProps) {
 				header: "Pages",
 				accessorKey: "total_pageviews",
 				cell: ({ row }) => (
-					<div className="text-center">
+					<div>
 						<div className="font-semibold text-foreground text-lg">
 							{row.original.total_pageviews}
 						</div>
@@ -225,14 +225,12 @@ export function UsersList({ websiteId }: UsersListProps) {
 				cell: ({ row }) => {
 					const isReturning = row.original.total_sessions > 1;
 					return (
-						<div className="flex justify-center">
-							<Badge
-								className="px-2 py-1 font-semibold text-xs"
-								variant={isReturning ? "default" : "secondary"}
-							>
-								{isReturning ? "Return" : "New"}
-							</Badge>
-						</div>
+						<Badge
+							className="w-16"
+							variant={isReturning ? "default" : "secondary"}
+						>
+							{isReturning ? "Return" : "New"}
+						</Badge>
 					);
 				},
 				size: 100,
@@ -371,7 +369,10 @@ export function UsersList({ websiteId }: UsersListProps) {
 					<Table>
 						<TableHeader className="sticky top-0 z-10 bg-accent backdrop-blur-sm">
 							{table.getHeaderGroups().map((headerGroup) => (
-								<TableRow className="shadow-[0_0_0_0.5px_var(--border)] bg-accent" key={headerGroup.id}>
+								<TableRow
+									className="bg-accent shadow-[0_0_0_0.5px_var(--border)]"
+									key={headerGroup.id}
+								>
 									{headerGroup.headers.map((header) => (
 										<TableHead
 											className="h-[39px]"
