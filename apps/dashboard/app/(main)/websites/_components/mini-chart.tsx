@@ -63,10 +63,8 @@ const MiniChart = memo(({ data, id, days = 7 }: MiniChartProps) => (
 					content={({ active, payload, label }) =>
 						active && payload?.[0] && typeof payload[0].value === "number" ? (
 							<div className="rounded border bg-background p-2 text-xs shadow-md">
-								<p className="font-medium">
-									{dayjs(label as string).format("MMM D")}
-								</p>
-								<p className="text-primary">
+								<p>{dayjs(label as string).format("MMM D")}</p>
+								<p className="font-medium text-accent-foreground">
 									{formatNumber(payload[0].value)} views
 								</p>
 							</div>

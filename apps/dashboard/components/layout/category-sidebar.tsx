@@ -92,48 +92,50 @@ export function CategorySidebar({
 					</Link>
 				</div>
 
-				<div className="border-b">
-					{categories.map((category, idx) => {
-						const Icon = category.icon;
-						const isActive = activeCategory === category.id;
-
-						return (
-							<Tooltip delayDuration={500} key={category.id}>
-								<TooltipTrigger asChild>
-									<button
-										className={cn(
-											"relative flex h-10 w-full items-center justify-center transition-colors duration-200 hover:bg-accent",
-											"focus:outline-none"
-										)}
-										onClick={() => onCategoryChangeAction?.(category.id)}
-										type="button"
-									>
-										{isActive && (
-											<div
-												className={cn(
-													"absolute top-0 left-0 z-[-1] h-full w-full border-accent border-b bg-accent",
-													idx === 0 ? "box-border" : "box-content"
-												)}
-											/>
-										)}
-										<Icon
+				{categories.map((category, idx) => {
+					const Icon = category.icon;
+					const isActive = activeCategory === category.id;
+					const isLast = idx === categories.length - 1;
+					return (
+						<Tooltip delayDuration={500} key={category.id}>
+							<TooltipTrigger asChild>
+								<button
+									className={cn(
+										isActive && !isLast && "border-accent",
+										"relative flex h-10 w-full items-center justify-center transition-colors duration-200 hover:bg-accent",
+										"focus:outline-none",
+										isLast
+											? "box-content border-border border-b"
+											: "box-content border-transparent"
+									)}
+									onClick={() => onCategoryChangeAction?.(category.id)}
+									type="button"
+								>
+									{isActive && (
+										<div
 											className={cn(
-												"h-5 w-5 transition-colors",
-												isActive
-													? "text-sidebar-ring"
-													: "text-sidebar-primary-foreground/70"
+												"absolute top-0 left-0 z-[-1] box-border h-full w-full border-b bg-accent",
+												idx === 0 ? "border-accent" : "border-transparent"
 											)}
-											weight={isActive ? "fill" : "duotone"}
 										/>
-									</button>
-								</TooltipTrigger>
-								<TooltipContent side="right" sideOffset={8}>
-									{category.name}
-								</TooltipContent>
-							</Tooltip>
-						);
-					})}
-				</div>
+									)}
+									<Icon
+										className={cn(
+											"h-5 w-5 transition-colors",
+											isActive
+												? "text-sidebar-ring"
+												: "text-sidebar-primary-foreground/70"
+										)}
+										weight={isActive ? "fill" : "duotone"}
+									/>
+								</button>
+							</TooltipTrigger>
+							<TooltipContent side="right" sideOffset={8}>
+								{category.name}
+							</TooltipContent>
+						</Tooltip>
+					);
+				})}
 
 				<div className="flex-1" />
 

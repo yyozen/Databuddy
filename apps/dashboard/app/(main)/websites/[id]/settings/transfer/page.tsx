@@ -33,6 +33,7 @@ import {
 import { type Organization, useOrganizations } from "@/hooks/use-organizations";
 import { useWebsiteTransferToOrg } from "@/hooks/use-website-transfer-to-org";
 import { useWebsite } from "@/hooks/use-websites";
+import { NoticeBanner } from "../../../_components/notice-banner";
 
 function TransferPageContent() {
 	const params = useParams();
@@ -153,47 +154,39 @@ function TransferPageContent() {
 				{/* Transfer Overview */}
 				<section className="border-b px-4 py-5 sm:px-6">
 					<div className="space-y-4">
-						<div>
-							<Label className="mb-3 block font-medium text-sm">
-								Transfer Overview
-							</Label>
-							<div className="flex items-center gap-3">
-								{/* Current Organization */}
-								<div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border bg-muted/50 p-3">
-									<BuildingsIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
-									<div className="min-w-0 flex-1">
-										<p className="mb-0.5 text-muted-foreground text-xs">From</p>
-										<p className="truncate font-medium text-sm">
-											{currentOrg?.name || "Personal"}
-										</p>
-									</div>
+						<div className="flex items-center gap-3">
+							{/* Current Organization */}
+							<div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border bg-secondary p-3">
+								<BuildingsIcon className="size-5 shrink-0 text-muted-foreground" />
+								<div className="min-w-0 flex-1">
+									<p className="mb-0.5 text-muted-foreground text-xs">From</p>
+									<p className="truncate font-medium text-sm">
+										{currentOrg?.name || "Personal"}
+									</p>
 								</div>
+							</div>
 
-								{/* Arrow */}
-								<ArrowRightIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
+							{/* Arrow */}
+							<ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
 
-								{/* Target Organization */}
-								<div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border bg-muted/50 p-3">
-									<BuildingsIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
-									<div className="min-w-0 flex-1">
-										<p className="mb-0.5 text-muted-foreground text-xs">To</p>
-										<p className="truncate font-medium text-sm">
-											{selectedOrg?.name || "Select organization"}
-										</p>
-									</div>
+							{/* Target Organization */}
+							<div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border bg-secondary p-3">
+								<BuildingsIcon className="size-5 shrink-0 text-muted-foreground" />
+								<div className="min-w-0 flex-1">
+									<p className="mb-0.5 text-muted-foreground text-xs">To</p>
+									<p className="truncate font-medium text-sm">
+										{selectedOrg?.name || "Select organization"}
+									</p>
 								</div>
 							</div>
 						</div>
 
 						{/* Info Alert */}
-						<Alert className="border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-200">
-							<InfoIcon className="h-4 w-4" />
-							<AlertDescription className="text-xs">
-								This will transfer ownership and all associated data to the
-								selected organization. Members of the new organization will gain
-								access.
-							</AlertDescription>
-						</Alert>
+						<NoticeBanner
+							description="This will transfer ownership and all associated data to the selected organization. Members of the new organization will gain access."
+							icon={<InfoIcon />}
+							title="Transfer Overview"
+						/>
 					</div>
 				</section>
 
@@ -349,7 +342,7 @@ function TransferPageContent() {
 								{/* Arrow */}
 								<div className="flex shrink-0 items-center justify-center">
 									<ArrowRightIcon
-										className="h-5 w-5 text-muted-foreground"
+										className="size-4 text-muted-foreground"
 										weight="bold"
 									/>
 								</div>
@@ -378,15 +371,11 @@ function TransferPageContent() {
 						</div>
 
 						{/* Warning */}
-						<Alert className="border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950/20 dark:text-orange-200">
-							<WarningIcon className="h-4 w-4" weight="duotone" />
-							<AlertDescription className="text-xs leading-relaxed">
-								This will immediately transfer all ownership, data, settings,
-								and analytics to{" "}
-								<strong className="font-semibold">{selectedOrg?.name}</strong>.
-								Members of that organization will gain full access.
-							</AlertDescription>
-						</Alert>
+						<NoticeBanner
+							description="This will immediately transfer all ownership, data, settings, and analytics to the selected organization. Members of that organization will gain full access."
+							icon={<WarningIcon />}
+							title="Important"
+						/>
 					</div>
 
 					<DialogFooter className="gap-3">

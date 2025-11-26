@@ -14,6 +14,7 @@ import { useAtom } from "jotai";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/app/(main)/websites/_components/page-header";
+import { EmptyState } from "@/components/empty-state";
 import { BrowserIcon, CountryFlag, OSIcon } from "@/components/icon";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -342,13 +343,12 @@ export function UsersList({ websiteId }: UsersListProps) {
 					title="Users"
 				/>
 
-				<div className="flex min-h-0 flex-1 flex-col items-center justify-center py-24 text-center text-muted-foreground">
-					<UsersIcon className="mb-4 h-12 w-12 opacity-50" />
-					<p className="mb-2 font-medium text-lg">No users found</p>
-					<p className="text-sm">
-						Users will appear here once visitors browse your website
-					</p>
-				</div>
+				<EmptyState
+					description="Users will appear here once visitors browse your website"
+					icon={<UsersIcon />}
+					title="No users found"
+					variant="minimal"
+				/>
 			</div>
 		);
 	}

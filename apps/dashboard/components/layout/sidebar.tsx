@@ -261,15 +261,15 @@ export function Sidebar() {
 							{navigation.map((section, idx) => (
 								<NavigationSection
 									accordionStates={accordionStates}
-									className={
+									className={cn(
 										navigation.length > 1 && idx === navigation.length - 1
 											? "border-t"
 											: idx === 0 && navigation.length < 2
-												? "border-b"
+												? "box-content border-b"
 												: idx !== 0 && navigation.length > 1
 													? "border-t"
 													: "border-transparent"
-									}
+									)}
 									currentWebsiteId={currentWebsiteId}
 									icon={section.icon}
 									items={section.items}

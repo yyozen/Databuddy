@@ -14,9 +14,9 @@ export function WebsiteHeader({
 	showBackButton = true,
 }: WebsiteHeaderProps) {
 	return (
-		<div className="border-b bg-sidebar-accent">
+		<div className="box-border bg-sidebar-accent">
 			{/* Website info - aligned with logo section */}
-			<div className="flex h-12 items-center border-b bg-linear-to-r from-sidebar-accent to-sidebar-accent/80 px-3">
+			<div className="box-border flex h-12 items-center border-b px-3">
 				<div className="flex w-full items-center gap-3">
 					<div className="rounded-lg bg-sidebar/80 p-1.5 shadow-sm ring-1 ring-sidebar-border/50">
 						<FaviconImage
@@ -55,7 +55,7 @@ export function WebsiteHeader({
 			{/* Back navigation - aligned with category buttons */}
 			{showBackButton && (
 				<button
-					className="group flex h-10 w-full cursor-pointer items-center justify-start px-3 transition-colors hover:bg-accent"
+					className="group box-border flex h-10 w-full cursor-pointer items-center justify-start border-b px-3 transition-colors hover:bg-accent"
 					type="button"
 				>
 					<Link className="flex items-center gap-2" href="/websites">

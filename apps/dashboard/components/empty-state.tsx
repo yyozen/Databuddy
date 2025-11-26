@@ -72,7 +72,7 @@ export const EmptyState = memo(function EmptyState({
 			return (
 				<div
 					aria-hidden="true"
-					className="mb-2 flex size-12 items-center justify-center rounded-2xl bg-accent-foreground"
+					className="flex size-12 items-center justify-center rounded-2xl bg-accent-foreground"
 					role="img"
 				>
 					{cloneElement(icon, {
@@ -161,23 +161,23 @@ export const EmptyState = memo(function EmptyState({
 								{title}
 							</h1>
 						) : (
-							<h2
+							<div
 								className={cn(
-									"font-semibold text-foreground",
-									variant === "minimal" ? "text-lg" : "text-2xl lg:text-3xl"
+									"text-muted-foreground leading-relaxed",
+									variant === "minimal" ? "text-sm" : "text-base lg:text-lg"
 								)}
 							>
-								{title}
-							</h2>
+								<h2
+									className={cn(
+										"mt-5 font-medium text-foreground",
+										variant === "minimal" ? "text-lg" : "text-2xl lg:text-3xl"
+									)}
+								>
+									{title}
+								</h2>
+								<p>{description}</p>
+							</div>
 						)}
-						<div
-							className={cn(
-								"text-muted-foreground leading-relaxed",
-								variant === "minimal" ? "text-sm" : "text-base lg:text-lg"
-							)}
-						>
-							{description}
-						</div>
 						{(action || secondaryAction) && (
 							<div
 								className={cn(

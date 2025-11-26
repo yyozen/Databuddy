@@ -125,7 +125,7 @@ export const NavigationSection = memo(function NavigationSectionComponent({
 			<button
 				className={clsx(
 					className,
-					"flex h-10 items-center gap-3 px-3 py-2.5 text-left font-medium text-sidebar-foreground text-sm transition-colors focus:outline-none",
+					"flex h-10 items-center gap-3 px-3 text-left font-medium text-sidebar-foreground text-sm transition-colors focus:outline-none",
 					isExpanded
 						? "border-b-0 bg-sidebar-accent-brighter"
 						: "hover:bg-sidebar-accent-brighter"

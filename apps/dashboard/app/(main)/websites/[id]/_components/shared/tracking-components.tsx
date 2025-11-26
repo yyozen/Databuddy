@@ -202,11 +202,14 @@ export function TrackingOptionCard({
 	const isEnabled = inverted ? !enabled : enabled;
 
 	return (
-		<div className="rounded border bg-card p-4 transition-all duration-200 hover:bg-accent-brighter">
+		<div
+			className="cursor-pointer rounded border bg-card p-4 transition-all duration-200 hover:bg-accent-brighter"
+			onClick={onToggle}
+		>
 			<div className="flex items-start justify-between pb-3">
 				<div className="min-w-0 flex-1 space-y-1 pr-3">
-					<div className="font-medium text-sm">{title}</div>
-					<div className="text-muted-foreground text-xs leading-relaxed">
+					<div className="text-left font-medium text-sm">{title}</div>
+					<div className="text-left text-muted-foreground text-xs leading-relaxed">
 						{description}
 					</div>
 				</div>
@@ -232,12 +235,14 @@ export function TrackingOptionCard({
 				</div>
 			)}
 			<div className="border-t pt-3">
-				<div className="text-muted-foreground text-xs">
+				<div className="text-left text-muted-foreground text-xs">
 					<span className="font-medium">Data collected:</span>
 					<ul className="mt-2 space-y-1">
 						{data.map((item: string) => (
 							<li className="flex items-start gap-2 text-xs" key={item}>
-								<span className="mt-1 text-[8px] text-primary">●</span>
+								<span className="mt-1 text-[8px] text-accent-foreground">
+									●
+								</span>
 								<span className="leading-relaxed">{item}</span>
 							</li>
 						))}
