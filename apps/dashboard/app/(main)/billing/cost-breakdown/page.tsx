@@ -5,67 +5,71 @@ import { useQuery } from "@tanstack/react-query";
 import { Suspense, useMemo, useState } from "react";
 import { PageHeader } from "@/app/(main)/websites/_components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useOrganizations } from "@/hooks/use-organizations";
 import { orpc } from "@/lib/orpc";
 import { ConsumptionChart } from "./components/consumption-chart";
 import { UsageBreakdownTable } from "./components/usage-breakdown-table";
+import type { OverageInfo } from "./utils/billing-utils";
 
-const getDefaultDateRange = () => {
-	const endDate = new Date().toISOString().split("T")[0];
-	const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-		.toISOString()
-		.split("T")[0];
-	return { startDate, endDate };
-};
+function getDefaultDateRange() {
+	const end = new Date();
+	const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+	return {
+		startDate: start.toISOString().split("T")[0],
+		endDate: end.toISOString().split("T")[0],
+	};
+}
+
+function calculateOverageInfo(
+	balance: number,
+	includedUsage: number,
+	unlimited: boolean
+): OverageInfo {
+	// Balance < 0 = overage
+	// Balance >= 0 = remaining events
+	if (unlimited || balance >= 0) {
+		return {
+			hasOverage: false,
+			overageEvents: 0,
+			includedEvents: includedUsage,
+		};
+	}
+	return {
+		hasOverage: true,
+		overageEvents: Math.abs(balance),
+		includedEvents: includedUsage,
+	};
+}
 
 export default function CostBreakdownPage() {
-	const [dateRange, setDateRange] = useState(() => getDefaultDateRange());
-	const { activeOrganization, isLoading: isLoadingOrganizations } =
-		useOrganizations();
+	const [dateRange, setDateRange] = useState(getDefaultDateRange);
+	const { activeOrganization, isLoading: isOrgLoading } =
+		useOrganizationsContext();
 
-	const usageQueryInput = useMemo(
-		() => ({
-			startDate: dateRange.startDate,
-			endDate: dateRange.endDate,
-			organizationId: activeOrganization?.id || null,
+	const { data: usageData, isLoading: isUsageLoading } = useQuery({
+		...orpc.billing.getUsage.queryOptions({
+			input: {
+				startDate: dateRange.startDate,
+				endDate: dateRange.endDate,
+				organizationId: activeOrganization?.id || null,
+			},
 		}),
-		[dateRange, activeOrganization?.id]
-	);
-
-	const { data: usageData, isLoading: isLoadingUsage } = useQuery({
-		...orpc.billing.getUsage.queryOptions({ input: usageQueryInput }),
-		enabled: !isLoadingOrganizations,
+		enabled: !isOrgLoading,
 	});
 
-	const { data: organizationUsage } = useQuery({
+	const { data: orgUsage } = useQuery({
 		...orpc.organizations.getUsage.queryOptions(),
 	});
 
-	const isLoading = isLoadingUsage;
-
-	const handleDateRangeChange = (startDate: string, endDate: string) => {
-		setDateRange({ startDate, endDate });
-	};
-
 	const overageInfo = useMemo(() => {
-		if (!(organizationUsage && usageData)) {
+		if (!orgUsage) {
 			return null;
 		}
-
-		const includedUsage = organizationUsage.includedUsage || 0;
-		const totalEvents = usageData.totalEvents;
-
-		if (organizationUsage.unlimited || totalEvents <= includedUsage) {
-			return {
-				hasOverage: false,
-				overageEvents: 0,
-				includedEvents: totalEvents,
-			};
-		}
-
-		const overageEvents = totalEvents - includedUsage;
-		return { hasOverage: true, overageEvents, includedEvents: includedUsage };
-	}, [organizationUsage, usageData]);
+		return calculateOverageInfo(
+			orgUsage.balance ?? 0,
+			orgUsage.includedUsage ?? 0,
+			orgUsage.unlimited
+		);
+	}, [orgUsage]);
 
 	return (
 		<div className="flex h-full flex-col">
@@ -80,8 +84,10 @@ export default function CostBreakdownPage() {
 				<div className="flex-3">
 					<Suspense fallback={<Skeleton className="h-full w-full" />}>
 						<ConsumptionChart
-							isLoading={isLoading}
-							onDateRangeChange={handleDateRangeChange}
+							isLoading={isUsageLoading}
+							onDateRangeChange={(start, end) =>
+								setDateRange({ startDate: start, endDate: end })
+							}
 							overageInfo={overageInfo}
 							usageData={usageData}
 						/>
@@ -90,13 +96,13 @@ export default function CostBreakdownPage() {
 				<div className="flex-2">
 					<Suspense fallback={<Skeleton className="h-full w-full" />}>
 						<UsageBreakdownTable
-							isLoading={isLoading}
+							isLoading={isUsageLoading}
 							overageInfo={overageInfo}
 							usageData={usageData}
 						/>
 					</Suspense>
 				</div>
 			</div>
-		</div>
+		</main>
 	);
 }

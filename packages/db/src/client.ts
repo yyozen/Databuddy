@@ -4,7 +4,6 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import * as relations from "./drizzle/relations";
 import * as schema from "./drizzle/schema";
 
-// Combine schema and relations
 const fullSchema = { ...schema, ...relations };
 
 const databaseUrl = "postgres://databuddy:databuddy_dev_password@localhost:5432/databuddy";

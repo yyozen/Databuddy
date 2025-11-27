@@ -29,12 +29,12 @@ const EVENT_TYPE_COLORS = {
 	outgoing_link: METRIC_COLORS.bounce_rate.primary, // amber
 } as const;
 
-interface ConsumptionChartProps {
+type ConsumptionChartProps = {
 	usageData?: UsageResponse;
 	isLoading: boolean;
 	onDateRangeChange: (startDate: string, endDate: string) => void;
 	overageInfo: OverageInfo | null;
-}
+};
 
 export function ConsumptionChart({
 	usageData,
@@ -118,14 +118,14 @@ export function ConsumptionChart({
 	if (isLoading) {
 		return (
 			<div className="flex h-full flex-col border-b">
-				<div className="border-b bg-muted/20 px-6 py-4">
+				<div className="border-b px-5 py-4">
 					<div className="flex items-center justify-between">
 						<Skeleton className="h-6 w-48" />
 						<Skeleton className="h-8 w-32" />
 					</div>
 				</div>
-				<div className="flex-1 px-6 py-6">
-					<Skeleton className="h-full" />
+				<div className="p-5">
+					<Skeleton className="h-[350px] w-full" />
 				</div>
 			</div>
 		);
@@ -159,11 +159,11 @@ export function ConsumptionChart({
 
 	return (
 		<div className="flex h-full flex-col border-b">
-			<div className="border-b bg-muted/20 px-6 py-4">
+			<div className="border-b px-5 py-4">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<ChartBarIcon className="h-5 w-5" weight="duotone" />
-						<h2 className="font-semibold text-lg">Consumption Breakdown</h2>
+						<h2 className="font-semibold">Consumption Breakdown</h2>
 					</div>
 					<div className="flex items-center gap-2">
 						<DateRangePicker
@@ -204,8 +204,8 @@ export function ConsumptionChart({
 					</div>
 				</div>
 			</div>
-			<div className="flex-1 px-6 py-6">
-				<div className="h-full">
+			<div className="flex-1 p-5">
+				<div className="h-[350px]">
 					<ResponsiveContainer height="100%" width="100%">
 						<BarChart
 							data={chartData}
@@ -309,9 +309,11 @@ export function ConsumptionChart({
 																		<div className="font-bold text-foreground text-sm group-hover:text-primary">
 																			{eventCount.toLocaleString()}
 																		</div>
-																		<div className="text-muted-foreground text-xs">
-																			${overageCost.toFixed(6)}
-																		</div>
+																		{overageCost > 0 && (
+																			<div className="text-muted-foreground text-xs">
+																				${overageCost.toFixed(2)}
+																			</div>
+																		)}
 																	</div>
 																</div>
 															);

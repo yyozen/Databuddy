@@ -3,14 +3,11 @@
 import {
 	BuildingsIcon,
 	CalendarIcon,
-	ChartPieIcon,
 	GearIcon,
 	GlobeSimpleIcon,
 	type IconProps,
 	KeyIcon,
-	PlusIcon,
 	UserIcon,
-	UserPlusIcon,
 	WarningIcon,
 } from "@phosphor-icons/react";
 import { usePathname } from "next/navigation";
@@ -51,14 +48,9 @@ export function OrganizationProvider({
 	const getPageInfo = (): PageInfo => {
 		if (pathname === "/organizations") {
 			return {
-				title: "Overview",
-				description: "High-level metrics and status for your organization",
-				icon: ChartPieIcon,
-				actionButton: {
-					text: "New Organization",
-					icon: PlusIcon,
-					action: () => setShowCreateDialog(true),
-				},
+				title: "Organizations",
+				description: "Manage your organizations and team collaboration",
+				icon: BuildingsIcon,
 			};
 		}
 		if (pathname === "/organizations/members") {
@@ -67,12 +59,6 @@ export function OrganizationProvider({
 				description: "Manage team members and their roles",
 				icon: UserIcon,
 				requiresOrg: true,
-				actionButton: {
-					text: "Invite Member",
-					icon: UserPlusIcon,
-					disabled: !activeOrganization,
-					action: () => setShowInviteMemberDialog(true),
-				},
 			};
 		}
 		if (pathname === "/organizations/invitations") {
@@ -81,12 +67,6 @@ export function OrganizationProvider({
 				description: "View and manage pending team invitations",
 				icon: CalendarIcon,
 				requiresOrg: true,
-				actionButton: {
-					text: "Send Invitation",
-					disabled: !activeOrganization,
-					icon: UserPlusIcon,
-					action: () => setShowInviteMemberDialog(true),
-				},
 			};
 		}
 		if (pathname === "/organizations/settings") {
@@ -125,11 +105,6 @@ export function OrganizationProvider({
 			title: "Organizations",
 			description: "Manage your organizations and team collaboration",
 			icon: BuildingsIcon,
-			actionButton: {
-				text: "New Organization",
-				icon: PlusIcon,
-				action: () => setShowCreateDialog(true),
-			},
 		};
 	};
 

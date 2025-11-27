@@ -1,141 +1,203 @@
 "use client";
 
-import { GlobeIcon } from "@phosphor-icons/react";
+import {
+	ArrowClockwiseIcon,
+	BookOpenIcon,
+	CaretRightIcon,
+	GlobeIcon,
+	PlusIcon,
+} from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState } from "react";
 import { FaviconImage } from "@/components/analytics/favicon-image";
-import { EmptyState } from "@/components/empty-state";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { WebsiteDialog } from "@/components/website-dialog";
 import type { Organization } from "@/hooks/use-organizations";
+import type { Website } from "@/hooks/use-websites";
 import { orpc } from "@/lib/orpc";
 
-type WebsiteSettingsProps = {
+interface WebsiteSettingsProps {
 	organization: Organization;
-};
+}
 
-function WebsiteLoadingSkeleton() {
+function SkeletonRow() {
 	return (
-		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-			{[1, 2, 3].map((num) => (
-				<Card
-					className="group relative overflow-hidden"
-					key={`website-skeleton-${num}`}
-				>
-					<CardContent className="p-4">
-						<div className="space-y-3">
-							<div className="flex items-start gap-3">
-								<Skeleton className="h-10 w-10 shrink-0 rounded-full" />
-								<div className="min-w-0 flex-1 space-y-1.5">
-									<Skeleton className="h-3 w-32" />
-									<Skeleton className="h-3 w-24" />
-								</div>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-			))}
+		<div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-4">
+			<Skeleton className="h-10 w-10 rounded" />
+			<div className="space-y-2">
+				<Skeleton className="h-4 w-32" />
+				<Skeleton className="h-3 w-48" />
+			</div>
+			<Skeleton className="h-4 w-4" />
 		</div>
 	);
 }
 
+function WebsitesSkeleton() {
+	return (
+		<div className="h-full lg:grid lg:grid-cols-[1fr_18rem]">
+			<div className="divide-y border-b lg:border-r lg:border-b-0">
+				<SkeletonRow />
+				<SkeletonRow />
+				<SkeletonRow />
+			</div>
+			<div className="space-y-4 bg-muted/30 p-5">
+				<Skeleton className="h-10 w-full" />
+				<Skeleton className="h-18 w-full rounded" />
+				<Skeleton className="h-10 w-full" />
+			</div>
+		</div>
+	);
+}
+
+function EmptyState() {
+	return (
+		<div className="flex h-full flex-col items-center justify-center p-8 text-center">
+			<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+				<GlobeIcon className="text-primary" size={28} weight="duotone" />
+			</div>
+			<h3 className="mb-1 font-semibold text-lg">No websites yet</h3>
+			<p className="mb-6 max-w-sm text-muted-foreground text-sm">
+				Add your first website to start tracking analytics and performance
+			</p>
+			<Button asChild>
+				<Link href="/websites">
+					<PlusIcon className="mr-2" size={16} />
+					Add Website
+				</Link>
+			</Button>
+		</div>
+	);
+}
+
+function ErrorState({ onRetry }: { onRetry: () => void }) {
+	return (
+		<div className="flex h-full flex-col items-center justify-center p-8 text-center">
+			<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+				<GlobeIcon className="text-destructive" size={28} weight="duotone" />
+			</div>
+			<h3 className="mb-1 font-semibold text-lg">Failed to load</h3>
+			<p className="mb-6 max-w-sm text-muted-foreground text-sm">
+				Something went wrong while loading your websites
+			</p>
+			<Button onClick={onRetry} variant="outline">
+				<ArrowClockwiseIcon className="mr-2" size={16} />
+				Try again
+			</Button>
+		</div>
+	);
+}
+
+interface WebsiteRowProps {
+	website: Website;
+}
+
+function WebsiteRow({ website }: WebsiteRowProps) {
+	return (
+		<Link
+			className="group grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/50"
+			href={`/websites/${website.id}`}
+		>
+			<FaviconImage
+				altText={`${website.name} favicon`}
+				className="h-10 w-10 transition-colors"
+				domain={website.domain}
+				fallbackIcon={
+					<div className="flex h-10 w-10 items-center justify-center rounded border bg-background transition-colors group-hover:border-primary/30 group-hover:bg-primary/5">
+						<GlobeIcon
+							className="text-muted-foreground transition-colors group-hover:text-primary"
+							size={18}
+							weight="duotone"
+						/>
+					</div>
+				}
+				size={40}
+			/>
+			<div className="min-w-0">
+				<p className="truncate font-medium">{website.name}</p>
+				<p className="truncate text-muted-foreground text-sm">
+					{website.domain}
+				</p>
+			</div>
+			<CaretRightIcon
+				className="text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary"
+				size={16}
+				weight="bold"
+			/>
+		</Link>
+	);
+}
+
 export function WebsiteSettings({ organization }: WebsiteSettingsProps) {
-	const { data: websites, isLoading: isLoadingWebsites } = useQuery({
+	const { data, isLoading, isError, refetch } = useQuery({
 		...orpc.websites.list.queryOptions({
 			input: { organizationId: organization.id },
 		}),
+		refetchOnMount: true,
+		staleTime: 0,
 	});
-	const [dialogOpen, setDialogOpen] = useState(false);
+
+	const websites = data ?? [];
+
+	if (isLoading) return <WebsitesSkeleton />;
+	if (isError) return <ErrorState onRetry={refetch} />;
+	if (websites.length === 0) return <EmptyState />;
 
 	return (
-		<div className="h-full p-4 sm:p-6">
-			<WebsiteDialog onOpenChange={setDialogOpen} open={dialogOpen} />
-			<div className="h-full space-y-4 sm:space-y-6">
-				{/* Website count indicator */}
-				{!isLoadingWebsites && websites && websites.length > 0 && (
-					<div className="flex items-center gap-2 rounded-lg border border-muted bg-muted/30 px-3 py-2 text-muted-foreground text-sm">
-						<GlobeIcon
-							aria-hidden="true"
-							className="h-4 w-4 shrink-0"
-							size={16}
-							weight="duotone"
-						/>
-						<span>
-							Managing{" "}
-							<span className="font-medium text-foreground">
-								{websites.length}
-							</span>{" "}
-							website{websites.length !== 1 ? "s" : ""}
-						</span>
-					</div>
-				)}
-
-				{/* Loading state */}
-				{isLoadingWebsites && <WebsiteLoadingSkeleton />}
-
-				{/* Empty state */}
-				{!isLoadingWebsites && websites && websites.length === 0 && (
-					<EmptyState
-						action={{
-							label: "Create Your First Website",
-							onClick: () => setDialogOpen(true),
-						}}
-						description="Start tracking your website analytics by adding your first website. Get insights into visitors, pageviews, and performance."
-						icon={<GlobeIcon weight="duotone" />}
-						title="No websites yet"
-						variant="minimal"
-					/>
-				)}
-
-				{/* Website grid */}
-				{!isLoadingWebsites && websites && websites.length > 0 && (
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{websites.map((website) => (
-							<Link
-								aria-label={`View ${website.name} settings`}
-								className="group block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-								href={`/websites/${website.id}`}
-								key={website.id}
-							>
-								<Card className="group relative cursor-pointer overflow-hidden transition-all duration-200 hover:border-border/60 hover:bg-muted/30">
-									<CardContent className="p-4">
-										<div className="space-y-3">
-											{/* Website Info */}
-											<div className="flex items-start gap-3">
-												<FaviconImage
-													altText={`${website.name} favicon`}
-													className="h-10 w-10 shrink-0 rounded border border-border/30"
-													domain={website.domain}
-													fallbackIcon={
-														<div className="flex h-10 w-10 items-center justify-center rounded border border-border/30 bg-accent">
-															<GlobeIcon
-																className="h-5 w-5 text-muted-foreground"
-																size={20}
-																weight="duotone"
-															/>
-														</div>
-													}
-													size={40}
-												/>
-												<div className="min-w-0 flex-1">
-													<h3 className="truncate font-semibold text-sm">
-														{website.name}
-													</h3>
-													<p className="truncate text-muted-foreground text-xs">
-														{website.domain}
-													</p>
-												</div>
-											</div>
-										</div>
-									</CardContent>
-								</Card>
-							</Link>
-						))}
-					</div>
-				)}
+		<div className="h-full lg:grid lg:grid-cols-[1fr_18rem]">
+			{/* Websites List */}
+			<div className="flex flex-col border-b lg:border-r lg:border-b-0">
+				<div className="flex-1 divide-y overflow-y-auto">
+					{websites.map((website) => (
+						<WebsiteRow key={website.id} website={website} />
+					))}
+				</div>
 			</div>
+
+			{/* Sidebar */}
+			<aside className="flex flex-col gap-4 bg-muted/30 p-5">
+				{/* Add Website Button */}
+				<Button asChild className="w-full">
+					<Link href="/websites">
+						<PlusIcon className="mr-2" size={16} />
+						Add New Website
+					</Link>
+				</Button>
+
+				{/* Stats Card */}
+				<div className="flex items-center gap-3 rounded border bg-background p-4">
+					<div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10">
+						<GlobeIcon className="text-primary" size={20} weight="duotone" />
+					</div>
+					<div>
+						<p className="font-semibold tabular-nums">{websites.length}</p>
+						<p className="text-muted-foreground text-sm">
+							Website{websites.length !== 1 ? "s" : ""}
+						</p>
+					</div>
+				</div>
+
+				{/* Docs Link */}
+				<Button asChild className="w-full justify-start" variant="outline">
+					<a
+						href="https://www.databuddy.cc/docs/getting-started"
+						rel="noopener noreferrer"
+						target="_blank"
+					>
+						<BookOpenIcon className="mr-2" size={16} />
+						Documentation
+					</a>
+				</Button>
+
+				{/* Tip */}
+				<div className="mt-auto rounded border border-dashed bg-background/50 p-4">
+					<p className="mb-2 font-medium text-sm">Quick tip</p>
+					<p className="text-muted-foreground text-xs leading-relaxed">
+						Click on a website to view its settings, manage tracking scripts,
+						and configure analytics.
+					</p>
+				</div>
+			</aside>
 		</div>
 	);
 }
