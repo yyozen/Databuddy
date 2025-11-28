@@ -2,7 +2,9 @@ import defaultMdxComponents from "fumadocs-ui/mdx";
 import { DocsBody, DocsPage, DocsTitle } from "fumadocs-ui/page";
 import { notFound } from "next/navigation";
 import { DocsFooter } from "@/components/docs-footer";
-import { source } from "@/lib/source";
+import { Feedback } from "@/components/feedback";
+import { onRateDocs } from "@/lib/feedback-action";
+import { getPageImage, source } from "@/lib/source";
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -37,6 +39,7 @@ export default async function Page(props: {
 			<DocsBody>
 				<MDX components={defaultMdxComponents} />
 			</DocsBody>
+			<Feedback onRateAction={onRateDocs} />
 		</DocsPage>
 	);
 }
@@ -59,6 +62,7 @@ export async function generateMetadata(props: {
 	const description =
 		page.data.description ||
 		`Learn about ${page.data.title} in Databuddy's privacy-first analytics platform. Complete guides and API documentation.`;
+	const ogImage = `https://www.databuddy.cc${getPageImage(page).url}`;
 
 	const baseKeywords = [
 		page.data.title.toLowerCase(),
@@ -117,7 +121,7 @@ export async function generateMetadata(props: {
 			locale: "en_US",
 			images: [
 				{
-					url: "https://www.databuddy.cc/og-image.png",
+					url: ogImage,
 					width: 1200,
 					height: 630,
 					alt: `${page.data.title} - Databuddy Documentation`,
@@ -128,7 +132,7 @@ export async function generateMetadata(props: {
 			card: "summary_large_image",
 			title,
 			description,
-			images: ["https://www.databuddy.cc/og-image.png"],
+			images: [ogImage],
 			creator: "@databuddyps",
 			site: "@databuddyps",
 		},
