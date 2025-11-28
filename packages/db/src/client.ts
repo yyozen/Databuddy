@@ -6,7 +6,7 @@ import * as schema from "./drizzle/schema";
 
 const fullSchema = { ...schema, ...relations };
 
-const databaseUrl = "postgres://databuddy:databuddy_dev_password@localhost:5432/databuddy";
+const databaseUrl = process.env.DATABASE_URL as string;
 
 if (!databaseUrl) {
 	throw new Error("DATABASE_URL is not set");
