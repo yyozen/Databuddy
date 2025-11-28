@@ -1,7 +1,6 @@
 services:
   console:
     image: docker.redpanda.com/redpandadata/console:latest
-    container_name: redpanda-console
     restart: unless-stopped
     ports:
       - "8080:8080"
