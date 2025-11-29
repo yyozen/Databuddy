@@ -21,36 +21,33 @@ import { WebsiteCard } from "./_components/website-card";
 
 function LoadingSkeleton() {
 	return (
-		<div className="grid select-none gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-			{[1, 2, 3, 4, 5, 6].map((num) => (
-				<Card
-					className="animate-pulse overflow-hidden"
-					key={`website-skeleton-${num}`}
-				>
-					<CardHeader className="pb-2">
-						<div className="flex items-center justify-between">
-							<div className="flex-1 space-y-2">
-								<Skeleton className="h-4 w-32 rounded" />
-								<div className="flex items-center gap-1">
-									<Skeleton className="h-3 w-3 rounded" />
-									<Skeleton className="h-3 w-24 rounded" />
+		<>
+			<Skeleton className="mb-6 h-[38px] w-full rounded" />
+			<div className="grid select-none gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+				{[1, 2, 3, 4, 5, 6].map((num) => (
+					<Card
+						className="h-[189px] animate-pulse overflow-hidden pt-0"
+						key={`website-skeleton-${num}`}
+					>
+						<CardHeader className="dotted-bg gap-0! border-b bg-accent-brighter/80 px-3 pt-4 pb-0!">
+							<Skeleton className="mx-auto h-12 w-full rounded sm:h-16" />
+						</CardHeader>
+						<CardContent className="pb-4">
+							<div className="flex flex-col gap-4">
+								<div className="flex flex-col gap-1.5">
+									<Skeleton className="h-3 w-20 shrink-0" />
+									<Skeleton className="h-3 w-32 rounded" />
+								</div>
+								<div className="flex items-center justify-between pt-1">
+									<Skeleton className="h-4 w-20 rounded" />
+									<Skeleton className="h-4 w-12 rounded" />
 								</div>
 							</div>
-							<Skeleton className="h-4 w-4 rounded" />
-						</div>
-					</CardHeader>
-					<CardContent className="pt-0 pb-3">
-						<div className="space-y-2">
-							<div className="flex justify-between">
-								<Skeleton className="h-3 w-12 rounded" />
-								<Skeleton className="h-3 w-8 rounded" />
-							</div>
-							<Skeleton className="h-12 w-full rounded" />
-						</div>
-					</CardContent>
-				</Card>
-			))}
-		</div>
+						</CardContent>
+					</Card>
+				))}
+			</div>
+		</>
 	);
 }
 

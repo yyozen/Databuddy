@@ -29,7 +29,7 @@ const formatNumber = (num: number) => {
 
 const MiniChart = memo(({ data, id, days = 7 }: MiniChartProps) => (
 	<div className="chart-container rounded">
-		<ResponsiveContainer height={days > 14 ? 56 : 50} width="100%">
+		<ResponsiveContainer height={64} width="100%">
 			<AreaChart
 				aria-label={`Mini chart showing views for the last ${days} days`}
 				data={data}

@@ -116,15 +116,15 @@ export const WebsiteCard = memo(
 			href={`/websites/${website.id}`}
 		>
 			<Card className="flex h-full select-none flex-col gap-0 overflow-hidden bg-background p-0 transition-all duration-300 ease-in-out group-hover:border-primary/60 group-hover:shadow-primary/5 group-hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none">
-				<CardHeader className="dotted-bg border-b bg-accent-brighter/80 px-0 pt-4">
+				<CardHeader className="dotted-bg gap-0! border-b bg-accent-brighter/80 px-0 pt-4 pb-0!">
 					{isLoadingChart ? (
 						<div className="px-3">
 							<Skeleton className="mx-auto h-12 w-full rounded sm:h-16" />
 						</div>
 					) : chartData ? (
 						chartData.data.length > 0 ? (
-							<div className="space-y-2">
-								<div className="transition-colors duration-300 [--chart-color:theme(colors.primary.DEFAULT)] motion-reduce:transition-none group-hover:[--chart-color:theme(colors.primary.600)]">
+							<div className="h-16 space-y-2">
+								<div className="h-full transition-colors duration-300 [--chart-color:theme(colors.primary.DEFAULT)] motion-reduce:transition-none group-hover:[--chart-color:theme(colors.primary.600)]">
 									<Suspense
 										fallback={
 											<Skeleton className="h-12 w-full rounded sm:h-16" />

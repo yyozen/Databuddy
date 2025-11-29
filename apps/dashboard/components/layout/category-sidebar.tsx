@@ -102,8 +102,9 @@ export function CategorySidebar({
 								<button
 									className={cn(
 										isActive && !isLast && "border-accent",
-										"relative flex h-10 w-full items-center justify-center transition-colors duration-200 hover:bg-accent",
+										"relative flex h-10 w-full items-center justify-center transition-colors duration-200",
 										"focus:outline-none",
+										!isActive && "hover:bg-accent",
 										isLast
 											? "box-content border-border border-b"
 											: "box-content border-transparent"
@@ -114,8 +115,7 @@ export function CategorySidebar({
 									{isActive && (
 										<div
 											className={cn(
-												"absolute top-0 left-0 z-[-1] box-border h-full w-full border-b bg-accent",
-												idx === 0 ? "border-accent" : "border-transparent"
+												"absolute top-0 left-0 z-[-1] box-border h-full w-full bg-sidebar-accent-brighter"
 											)}
 										/>
 									)}

@@ -106,21 +106,9 @@ const MiniChart = memo(
 					>
 						<defs>
 							<linearGradient id={`gradient-${id}`} x1="0" x2="0" y1="0" y2="1">
-								<stop
-									offset="0%"
-									stopColor="var(--accent-foreground)"
-									stopOpacity={0.8}
-								/>
-								<stop
-									offset="50%"
-									stopColor="var(--accent-foreground)"
-									stopOpacity={0.3}
-								/>
-								<stop
-									offset="100%"
-									stopColor="var(--accent-foreground)"
-									stopOpacity={0.05}
-								/>
+								<stop offset="0%" stopColor="#2E27F5" stopOpacity={0.8} />
+								<stop offset="50%" stopColor="#2E27F5" stopOpacity={0.3} />
+								<stop offset="100%" stopColor="#2E27F5" stopOpacity={0.05} />
 							</linearGradient>
 							<filter id={`glow-${id}`}>
 								<feGaussianBlur result="coloredBlur" stdDeviation="2" />
@@ -154,7 +142,7 @@ const MiniChart = memo(
 								) : null
 							}
 							cursor={{
-								stroke: "var(--accent-foreground)",
+								stroke: "#2E27F5",
 								strokeWidth: 1,
 								strokeOpacity: 0.3,
 							}}
@@ -162,7 +150,7 @@ const MiniChart = memo(
 						<Area
 							activeDot={{
 								r: 3,
-								fill: "var(--accent-foreground)",
+								fill: "#2E27F5",
 								stroke: "var(--background)",
 								strokeWidth: 2,
 								filter: `url(#glow-${id})`,
@@ -170,7 +158,7 @@ const MiniChart = memo(
 							dataKey="value"
 							dot={false}
 							fill={`url(#gradient-${id})`}
-							stroke="var(--accent-foreground)"
+							stroke="#2E27F5"
 							strokeWidth={2}
 							type="monotone"
 						/>

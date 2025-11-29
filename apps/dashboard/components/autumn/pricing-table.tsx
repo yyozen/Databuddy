@@ -155,7 +155,7 @@ export default function PricingTable({
 								"rounded px-4 py-1.5 font-medium text-sm transition",
 								isAnnual
 									? "text-muted-foreground hover:text-foreground"
-									: "bg-background shadow-sm"
+									: "bg-background"
 							)}
 							onClick={() => setIsAnnual(false)}
 							type="button"
@@ -166,7 +166,7 @@ export default function PricingTable({
 							className={cn(
 								"rounded px-4 py-1.5 font-medium text-sm transition",
 								isAnnual
-									? "bg-background shadow-sm"
+									? "bg-background"
 									: "text-muted-foreground hover:text-foreground"
 							)}
 							onClick={() => setIsAnnual(true)}
@@ -267,8 +267,8 @@ function PricingCard({
 	return (
 		<div
 			className={cn(
-				"relative flex flex-col rounded border bg-background transition-shadow hover:shadow-md",
-				isRecommended && "border-primary shadow-md",
+				"relative flex flex-col rounded border bg-card",
+				isRecommended && "border-primary",
 				isSelected && "border-primary ring-2 ring-primary/20",
 				className
 			)}
@@ -282,8 +282,8 @@ function PricingCard({
 			)}
 
 			<div className="flex items-center gap-3 p-5 pb-4">
-				<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded border bg-muted/50">
-					<Icon className="text-primary" size={20} weight="duotone" />
+				<div className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-accent">
+					<Icon className="text-accent-foreground" size={16} weight="duotone" />
 				</div>
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
@@ -305,18 +305,13 @@ function PricingCard({
 			</div>
 
 			{/* Price */}
-			<div className="border-y bg-muted/30 px-5 py-4">
+			<div className="dotted-bg border-y bg-accent px-5 py-4">
 				{product.id === "hobby" ? (
 					<div className="flex items-baseline gap-2">
 						<span className="text-muted-foreground line-through">$9.99</span>
 						<span className="font-semibold text-2xl text-green-600">$2.00</span>
 						<span className="text-muted-foreground text-sm">/month</span>
-						<Badge
-							className="ml-2 bg-green-600/10 text-green-600"
-							variant="secondary"
-						>
-							Limited time
-						</Badge>
+						<Badge variant="secondary">Limited time</Badge>
 					</div>
 				) : (
 					<div className="flex items-baseline gap-1">
@@ -339,7 +334,7 @@ function PricingCard({
 						Everything from {product.display.everything_from}, plus:
 					</p>
 				)}
-				<div className="space-y-2.5">
+				<div className="space-y-3">
 					{featureItems.map((item) => (
 						<FeatureItem item={item} key={item.display?.primary_text} />
 					))}
@@ -378,7 +373,7 @@ function FeatureItem({ item }: { item: ProductItem }) {
 	return (
 		<div className="flex items-start gap-2 text-sm">
 			<CheckIcon
-				className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+				className="mt-0.5 h-4 w-4 shrink-0 text-accent-foreground"
 				weight="bold"
 			/>
 			<div className="flex flex-col">
@@ -430,7 +425,7 @@ function PricingCardButton({
 			className={cn("w-full", className)}
 			disabled={loading || disabled}
 			onClick={handleClick}
-			variant={recommended ? "default" : "outline"}
+			variant={recommended ? "default" : "secondary"}
 		>
 			{loading ? (
 				<CircleNotchIcon className="h-4 w-4 animate-spin" />

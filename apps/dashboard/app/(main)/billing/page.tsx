@@ -107,9 +107,10 @@ export default function BillingPage() {
 				/>
 
 				{/* Main Content */}
-				<div className="relative flex shrink-0 flex-col items-center justify-center">
+				<div className="shrink-0 lg:h-full lg:min-h-0 lg:overflow-y-auto">
 					{usageStats.length === 0 ? (
 						<EmptyState
+							className="h-full"
 							description="Start using features to see your consumption stats here"
 							icon={<TrendUpIcon />}
 							title="No usage data yet"

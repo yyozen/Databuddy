@@ -132,11 +132,25 @@ const InvoiceRow = memo(function InvoiceRowComponent({
 					<div
 						className={cn(
 							"flex h-10 w-10 shrink-0 items-center justify-center rounded border",
-							status.bgClass
+							status.variant === "green"
+								? "border-green-600 bg-green-100 dark:border-green-800 dark:bg-green-900/30"
+								: status.variant === "amber"
+									? "border-amber-600 bg-amber-100 dark:border-amber-800 dark:bg-amber-900/30"
+									: status.variant === "destructive"
+										? "border-destructive bg-destructive-100 dark:border-destructive-800 dark:bg-destructive-900/30"
+										: "border-muted-foreground bg-muted dark:border-muted-foreground dark:bg-muted/30"
 						)}
 					>
 						<status.icon
-							className={status.iconClass}
+							className={cn(
+								status.variant === "green"
+									? "text-green-600 dark:text-green-600"
+									: status.variant === "amber"
+										? "text-amber-600 dark:text-amber-400"
+										: status.variant === "destructive"
+											? "text-destructive dark:text-destructive-400"
+											: "text-muted-foreground dark:text-muted-foreground/80"
+							)}
 							size={18}
 							weight="duotone"
 						/>
@@ -146,9 +160,7 @@ const InvoiceRow = memo(function InvoiceRowComponent({
 							<span className="font-medium">
 								Invoice #{invoice.stripe_id.slice(-8)}
 							</span>
-							<Badge className={status.badgeClass} variant="secondary">
-								{status.label}
-							</Badge>
+							<Badge variant={status.variant}>{status.label}</Badge>
 						</div>
 						<div className="flex items-center gap-2 text-muted-foreground text-sm">
 							<span>{formattedDate}</span>
@@ -164,9 +176,9 @@ const InvoiceRow = memo(function InvoiceRowComponent({
 						className="shrink-0"
 						onClick={() => window.open(invoice.hosted_invoice_url, "_blank")}
 						size="sm"
-						variant="ghost"
+						variant="secondary"
 					>
-						<FileTextIcon className="mr-2" size={14} weight="duotone" />
+						<FileTextIcon size={14} weight="duotone" />
 						View
 					</Button>
 				)}
@@ -331,34 +343,22 @@ function getInvoiceStatus(status: string) {
 			return {
 				label: "Paid",
 				icon: CheckCircleIcon,
-				bgClass: "bg-emerald-500/10",
-				iconClass: "text-emerald-500",
-				badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+				variant: "green" as const,
 			};
 		case "open":
 		case "pending":
-			return {
-				label: "Pending",
-				icon: ClockIcon,
-				bgClass: "bg-amber-500/10",
-				iconClass: "text-amber-500",
-				badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-			};
+			return { label: "Pending", icon: ClockIcon, variant: "amber" as const };
 		case "failed":
 			return {
 				label: "Failed",
 				icon: XCircleIcon,
-				bgClass: "bg-destructive/10",
-				iconClass: "text-destructive",
-				badgeClass: "bg-destructive/10 text-destructive",
+				variant: "destructive" as const,
 			};
 		default:
 			return {
 				label: status,
 				icon: FileTextIcon,
-				bgClass: "bg-muted",
-				iconClass: "text-muted-foreground",
-				badgeClass: "",
+				variant: "secondary" as const,
 			};
 	}
 }

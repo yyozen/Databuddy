@@ -45,7 +45,7 @@ const BentoCard = ({
 }) => (
 	<motion.div
 		className={cn(
-			"group relative overflow-hidden rounded-xl border border-border bg-card backdrop-blur-xl transition-colors duration-500 hover:border-muted-foreground/30",
+			"group relative overflow-hidden border border-border bg-card backdrop-blur-xl transition-colors duration-500 hover:border-muted-foreground/30",
 			className
 		)}
 		initial={{ opacity: 0, y: 20 }}
@@ -55,7 +55,7 @@ const BentoCard = ({
 	>
 		<CardHeader className={cn("relative z-20 px-6 py-4", headerClassName)}>
 			<div className="flex items-center gap-3">
-				<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary ring-1 ring-border transition-all duration-300 group-hover:bg-accent group-hover:ring-muted-foreground/30">
+				<div className="flex h-8 w-8 items-center justify-center bg-secondary/40 ring-1 ring-border transition-all duration-300 group-hover:bg-accent group-hover:ring-muted-foreground/30">
 					<Icon
 						className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground"
 						weight="duotone"
@@ -84,6 +84,7 @@ const FunnelsFeature = () => {
 		{
 			value: 100,
 			name: "Page View",
+
 			fill: "var(--primary)",
 			stroke: "var(--primary)",
 		},
@@ -123,10 +124,7 @@ const FunnelsFeature = () => {
 						Conversion Rate
 					</div>
 				</div>
-				<Badge
-					className="h-6 border-border bg-secondary px-2.5 font-mono text-muted-foreground text-xs"
-					variant="outline"
-				>
+				<Badge className="h-6 border-border bg-secondary/50 px-2.5 font-mono text-muted-foreground text-xs">
 					+2.4%
 				</Badge>
 			</div>
@@ -370,7 +368,7 @@ const SessionsFeature = () => {
 					{sessions.map((session) => (
 						<motion.div
 							animate={{ opacity: 1, y: 0 }}
-							className="group flex items-center justify-between rounded-lg border border-border/50 bg-secondary/50 p-2 text-sm transition-colors hover:border-muted-foreground/20 hover:bg-accent/50"
+							className="group flex items-center justify-between border border-border/50 bg-secondary/20 p-2 text-sm transition-colors hover:border-muted-foreground/20 hover:bg-accent/50"
 							exit={{ y: -60 }}
 							initial={{ opacity: 0, y: 60 }}
 							key={session.id}
@@ -409,7 +407,7 @@ const SessionsFeature = () => {
 
 const ErrorTrackingFeature = () => (
 	<div className="flex h-full flex-1 flex-col">
-		<div className="relative overflow-hidden rounded-lg border border-border bg-secondary/50 p-4 transition-all hover:border-muted-foreground/20 hover:bg-accent/50">
+		<div className="relative overflow-hidden border border-border bg-secondary/20 p-4 transition-all hover:border-muted-foreground/20 hover:bg-accent/50">
 			<div className="flex items-start gap-3">
 				<div className="rounded-md bg-destructive/10 p-2">
 					<motion.div
@@ -427,12 +425,10 @@ const ErrorTrackingFeature = () => (
 						<p className="truncate font-medium font-mono text-secondary-foreground text-xs">
 							TypeError: undefined is not a function
 						</p>
-						<Badge
-							className="h-5 border-destructive/30 bg-destructive/10 px-1.5 font-mono text-[10px] text-destructive"
-							variant="outline"
-						>
+						<Badge variant="destructive">
 							<motion.span
 								animate={{ opacity: [1, 0.5, 1] }}
+								className="font-mono text-[10px] text-red-100"
 								transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
 							>
 								CRITICAL
@@ -484,7 +480,7 @@ const FeatureFlagsFeature = () => {
 		>
 			{flags.map((flag, i) => (
 				<div
-					className="group flex items-center justify-between rounded-lg border border-border/50 bg-secondary/50 p-3 transition-all hover:border-muted-foreground/20 hover:bg-accent/50"
+					className="group flex items-center justify-between border border-border/50 bg-secondary/20 p-3 transition-all hover:border-muted-foreground/20 hover:bg-accent/50"
 					key={i}
 				>
 					<div className="flex min-w-0 flex-1 items-center gap-3">
@@ -575,7 +571,7 @@ const WebVitalsFeature = () => {
 				<motion.div
 					animate={{ opacity: 1, y: 0 }}
 					className={cn(
-						"angled-rectangle-gradient flex h-full flex-col items-center justify-between gap-2 rounded-t-lg border border-border border-b-0 p-3 transition-all hover:border-muted-foreground/20 hover:bg-accent/50"
+						"angled-rectangle-gradient flex h-full flex-col items-center justify-between gap-2 border border-border border-b-0 p-3 transition-all hover:border-muted-foreground/20 hover:bg-accent/50"
 					)}
 					initial={{ opacity: 0, y: 20 }}
 					key={m.label}
@@ -715,7 +711,7 @@ const CustomEventsFeature = () => {
 					{events.map((event) => (
 						<motion.div
 							animate={{ opacity: 1, y: 0 }}
-							className="group flex items-center justify-between rounded-md border border-border/50 bg-secondary/50 p-2 text-xs transition-colors hover:border-muted-foreground/20 hover:bg-accent/50"
+							className="group flex items-center justify-between border border-border/50 bg-secondary/20 p-2 text-xs transition-colors hover:border-muted-foreground/20 hover:bg-accent/50"
 							exit={{ y: -60 }}
 							initial={{ opacity: 0, y: 60 }}
 							key={event.id}
@@ -733,12 +729,7 @@ const CustomEventsFeature = () => {
 									{event.name}
 								</span>
 							</div>
-							<Badge
-								className="border-0 bg-background/40 font-mono text-[10px] text-muted-foreground transition-colors group-hover:bg-accent group-hover:text-secondary-foreground"
-								variant="secondary"
-							>
-								{event.count}
-							</Badge>
+							<Badge variant="gray">{event.count}</Badge>
 						</motion.div>
 					))}
 				</AnimatePresence>
