@@ -4,9 +4,9 @@ import type { LocationData } from "@databuddy/shared/types/website";
 import { GlobeIcon } from "@phosphor-icons/react";
 import { useAtom } from "jotai";
 import dynamic from "next/dynamic";
-import Image from "next/image";
 import { useParams } from "next/navigation";
 import { Suspense, useCallback, useMemo, useState } from "react";
+import { CountryFlag } from "@/components/analytics/icons/CountryFlag";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDateFilters } from "@/hooks/use-date-filters";
@@ -79,15 +79,10 @@ function CountryRow({
 			}}
 			type="button"
 		>
-			<div className="relative h-4 w-5 shrink-0 overflow-hidden border border-border/20 shadow-sm">
-				<Image
-					alt={`${country.country} flag`}
-					className="object-cover"
-					fill
-					sizes="32p"
-					src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${country.country_code?.toUpperCase() || country.country.toUpperCase()}.svg`}
-				/>
-			</div>
+			<CountryFlag
+				country={country.country_code?.toUpperCase() || country.country.toUpperCase()}
+				size={16}
+			/>
 			<div className="min-w-0 flex-1">
 				<div className="flex items-center justify-between">
 					<div className="truncate font-medium text-xs">{country.country}</div>

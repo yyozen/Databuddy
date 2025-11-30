@@ -1,29 +1,25 @@
 "use client";
 
-import { useMemo } from "react";
+import "flag-icons/css/flag-icons.min.css";
 
 type CountryFlagProps = {
 	country: string;
 	size?: number;
+	squared?: boolean;
 };
 
-export function CountryFlag({ country, size = 18 }: CountryFlagProps) {
+export function CountryFlag({ country, size = 18, squared = false }: CountryFlagProps) {
 	const countryCode = country.toLowerCase();
 
-	const imageUrl = useMemo(
-		() =>
-			`https://purecatamphetamine.github.io/country-flag-icons/3x2/${countryCode.toUpperCase()}.svg`,
-		[countryCode]
-	);
-
 	return (
-		<img
-			alt={`${country} flag`}
-			className="inline-block rounded-sm object-cover"
-			height={size * 0.75}
-			src={imageUrl}
-			style={{ aspectRatio: "4/3" }}
-			width={size}
+		<span
+			aria-label={`${country} flag`}
+			className={`fi fi-${countryCode}${squared ? " fis" : ""}`}
+			style={{
+				fontSize: size,
+				lineHeight: 1,
+				borderRadius: 2,
+			}}
 		/>
 	);
 }
