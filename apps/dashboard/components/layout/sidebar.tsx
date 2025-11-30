@@ -23,7 +23,6 @@ import {
 	getDefaultCategory,
 } from "./navigation/navigation-config";
 import { NavigationSection } from "./navigation/navigation-section";
-import { SandboxHeader } from "./navigation/sandbox-header";
 import type { NavigationSection as NavigationSectionType } from "./navigation/types";
 import { WebsiteHeader } from "./navigation/website-header";
 import { OrganizationSelector } from "./organization-selector";
@@ -46,7 +45,6 @@ export function Sidebar() {
 	const previousFocusRef = useRef<HTMLElement | null>(null);
 
 	const isDemo = pathname.startsWith("/demo");
-	const isSandbox = pathname.startsWith("/sandbox");
 	const isWebsite = pathname.startsWith("/websites/");
 
 	const websiteId = useMemo(
@@ -111,9 +109,6 @@ export function Sidebar() {
 				<WebsiteHeader showBackButton={!isDemo} website={currentWebsite} />
 			);
 			currentId = websiteId;
-		} else if (isSandbox) {
-			headerComponent = <SandboxHeader />;
-			currentId = "sandbox";
 		} else {
 			headerComponent = <OrganizationSelector />;
 			currentId = undefined;
@@ -129,7 +124,6 @@ export function Sidebar() {
 		selectedCategory,
 		isWebsite,
 		isDemo,
-		isSandbox,
 		websiteId,
 		currentWebsite,
 		websites,
