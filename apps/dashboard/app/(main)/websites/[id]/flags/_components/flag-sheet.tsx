@@ -230,8 +230,8 @@ export function FlagSheet({
 					<div className="flex items-center gap-3">
 						<div className="flex h-11 w-11 items-center justify-center rounded border bg-secondary-brighter">
 							<FlagIcon
-								weight="fill"
 								className="size-6 text-accent-foreground"
+								weight="fill"
 							/>
 						</div>
 						<div>
@@ -484,7 +484,7 @@ export function FlagSheet({
 															</div>
 														</div>
 													</FormControl>
-													<FormDescription className="text-muted-foreground text-xs mx-auto">
+													<FormDescription className="mx-auto text-muted-foreground text-xs">
 														Percentage of users who will see this flag enabled.
 														0% = disabled, 100% = fully enabled.
 													</FormDescription>
