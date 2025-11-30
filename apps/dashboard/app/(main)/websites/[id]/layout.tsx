@@ -1,11 +1,15 @@
 "use client";
 
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
+import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { toast } from "sonner";
 import NotFound from "@/app/not-found";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTrackingSetup } from "@/hooks/use-tracking-setup";
 import { useWebsite } from "@/hooks/use-websites";
 import { isAnalyticsRefreshingAtom } from "@/stores/jotai/filterAtoms";
@@ -26,37 +30,19 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 	const { isLoading: isWebsiteLoading } = useWebsite(id as string);
 	const [isRefreshing, setIsRefreshing] = useAtom(isAnalyticsRefreshingAtom);
 	const toolbarRef = useRef<HTMLDivElement>(null);
-	const [toolbarHeight, setToolbarHeight] = useState(88);
 
-	const isAssistantPage =
-		pathname.includes("/assistant") ||
-		pathname.includes("/map") ||
-		pathname.includes("/flags") ||
-		pathname.includes("/databunny") ||
-		pathname.includes("/settings") ||
-		pathname.includes("/users");
+	const noToolbarPages = [
+		"/assistant",
+		"/map",
+		"/flags",
+		"/databunny",
+		"/settings",
+		"/users",
+	];
 
-	useLayoutEffect(() => {
-		const element = toolbarRef.current;
-		if (!element || isAssistantPage) {
-			setToolbarHeight(0);
-			return;
-		}
-
-		const updateHeight = () => {
-			const height = element.getBoundingClientRect().height;
-			setToolbarHeight(height);
-		};
-
-		updateHeight();
-
-		const resizeObserver = new ResizeObserver(updateHeight);
-		resizeObserver.observe(element);
-
-		return () => {
-			resizeObserver.disconnect();
-		};
-	}, [isAssistantPage]);
+	const isAssistantPage = noToolbarPages.some((page) =>
+		pathname.includes(page)
+	);
 
 	if (!id) {
 		return <NotFound />;
@@ -107,9 +93,42 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 			)}
 
 			<div
-				className={`${isAssistantPage ? "min-h-0 flex-1" : "min-h-0 flex-1 overflow-y-auto"}`}
+				className={`${isAssistantPage ? "min-h-0 flex-1" : "min-h-0 flex-1 overflow-y-auto overscroll-contain"}`}
 			>
-				{children}
+				{!isAssistantPage && isTrackingSetupLoading ? (
+					<div className="space-y-4 p-4">
+						<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+							{[1, 2].map((num) => (
+								<div
+									className="rounded border border-sidebar-border bg-sidebar p-4"
+									key={`skeleton-${num}`}
+								>
+									<Skeleton className="h-80 w-full" />
+								</div>
+							))}
+						</div>
+					</div>
+				) : !isAssistantPage && isTrackingSetup === false ? (
+					<div className="flex h-full items-center justify-center p-6">
+						<div className="max-w-md space-y-4 text-center">
+							<div className="mx-auto flex size-12 items-center justify-center rounded-full bg-muted">
+								<WarningCircleIcon className="size-6 text-muted-foreground" />
+							</div>
+							<h3 className="font-semibold text-lg">Tracking Not Setup</h3>
+							<p className="text-muted-foreground text-sm">
+								Install the tracking script to start collecting analytics data
+								for this website.
+							</p>
+							<Button asChild>
+								<Link href={`/websites/${websiteId}/settings`}>
+									Setup Tracking
+								</Link>
+							</Button>
+						</div>
+					</div>
+				) : (
+					children
+				)}
 			</div>
 		</div>
 	);
