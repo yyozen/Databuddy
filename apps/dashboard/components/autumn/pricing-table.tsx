@@ -90,7 +90,6 @@ export default function PricingTable({
 	selectedPlan?: string | null;
 }) {
 	const { attach } = useCustomer();
-	const [isAnnual, setIsAnnual] = useState(false);
 	const { products, isLoading, error, refetch } = usePricingTable({
 		productDetails,
 	});
@@ -124,60 +123,20 @@ export default function PricingTable({
 		);
 	}
 
-	const intervals = Array.from(
-		new Set(products?.map((p) => p.properties?.interval_group).filter(Boolean))
-	);
-	const multiInterval = intervals.length > 1;
-
 	const intervalFilter = (product: Product) => {
 		if (!product.properties?.interval_group) {
 			return true;
-		}
-		if (multiInterval) {
-			return isAnnual
-				? product.properties.interval_group === "year"
-				: product.properties.interval_group === "month";
 		}
 		return true;
 	};
 
 	const filteredProducts =
-		products?.filter((p) => p.id !== "free" && intervalFilter(p)) ?? [];
+		products?.filter(
+			(p) => p.id !== "free" && p.id !== "verification_fee" && intervalFilter(p)
+		) ?? [];
 
 	return (
 		<div>
-			{/* Header */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				{multiInterval && (
-					<div className="flex shrink-0 rounded border bg-muted p-1">
-						<button
-							className={cn(
-								"rounded px-4 py-1.5 font-medium text-sm transition",
-								isAnnual
-									? "text-muted-foreground hover:text-foreground"
-									: "bg-background"
-							)}
-							onClick={() => setIsAnnual(false)}
-							type="button"
-						>
-							Monthly
-						</button>
-						<button
-							className={cn(
-								"rounded px-4 py-1.5 font-medium text-sm transition",
-								isAnnual
-									? "bg-background"
-									: "text-muted-foreground hover:text-foreground"
-							)}
-							onClick={() => setIsAnnual(true)}
-							type="button"
-						>
-							Annual
-						</button>
-					</div>
-				)}
-			</div>
-
 			{/* Cards Grid */}
 			<PricingTableContext.Provider
 				value={{ products: products ?? [], selectedPlan }}
@@ -189,7 +148,7 @@ export default function PricingTable({
 								disabled:
 									plan.scenario === "active" || plan.scenario === "scheduled",
 								onClick: async () => {
-									await attach({ productId: plan.id, dialog: AttachDialog });
+									await attach({ productIds: [plan.id], dialog: AttachDialog });
 								},
 							}}
 							isSelected={selectedPlan === plan.id}
