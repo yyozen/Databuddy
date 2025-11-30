@@ -164,7 +164,7 @@ export function RetentionContent({ websiteId }: RetentionContentProps) {
 				<CardContent className="p-3 sm:p-4">
 					<div className="flex flex-col items-center justify-center space-y-5">
 						<div className="flex flex-col items-center gap-6 xl:flex-row">
-							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-secondary sm:h-10 sm:w-10">
+							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded border bg-secondary sm:h-10 sm:w-10">
 								<Icon className="h-4 w-4 text-accent-foreground sm:h-5 sm:w-5" />
 							</div>
 							<div className="flex flex-col items-center xl:items-start">
@@ -189,7 +189,7 @@ export function RetentionContent({ websiteId }: RetentionContentProps) {
 
 	return (
 		<div className="flex h-full min-h-0 flex-col gap-4">
-			<div className="shrink-0 space-y-3">
+				<div className="shrink-0 space-y-3">
 				<div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 md:hidden">
 					{isLoading
 						? [...new Array(4)].map((_, i) => (
@@ -199,7 +199,7 @@ export function RetentionContent({ websiteId }: RetentionContentProps) {
 								>
 									<CardContent className="p-4">
 										<div className="flex items-center gap-3">
-											<Skeleton className="h-10 w-10 rounded-lg" />
+											<Skeleton className="h-10 w-10 rounded" />
 											<div className="space-y-2">
 												<Skeleton className="h-3 w-24 rounded" />
 												<Skeleton className="h-6 w-16 rounded" />
@@ -216,7 +216,7 @@ export function RetentionContent({ websiteId }: RetentionContentProps) {
 								<Card key={`skeleton-desktop-${i}`}>
 									<CardContent className="p-4">
 										<div className="flex items-center gap-3">
-											<Skeleton className="h-10 w-10 rounded-lg" />
+											<Skeleton className="h-10 w-10 rounded" />
 											<div className="flex-1 space-y-2">
 												<Skeleton className="h-3 w-24 rounded" />
 												<Skeleton className="h-6 w-16 rounded" />

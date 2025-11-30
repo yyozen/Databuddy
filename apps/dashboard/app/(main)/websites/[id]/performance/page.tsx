@@ -23,7 +23,7 @@ const PerformanceContent = dynamic(
 		})),
 	{
 		loading: () => (
-			<div className="space-y-6">
+			<div className="space-y-4">
 				<div>
 					<Skeleton className="mb-2 h-6 w-48" />
 					<Skeleton className="h-4 w-64" />
@@ -31,7 +31,7 @@ const PerformanceContent = dynamic(
 				<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 					{[1, 2].map((num) => (
 						<div
-							className="rounded border border-sidebar-border bg-sidebar p-4"
+							className="rounded border bg-sidebar p-4"
 							key={`skeleton-${num}`}
 						>
 							<Skeleton className="h-80 w-full" />
@@ -65,7 +65,7 @@ export default function PerformancePage() {
 
 	if (isTrackingSetupLoading) {
 		return (
-			<div className="space-y-4 p-6">
+			<div className="space-y-4 p-4">
 				<Skeleton className="h-10 w-64" />
 				<Skeleton className="h-96 w-full" />
 			</div>
@@ -74,8 +74,8 @@ export default function PerformancePage() {
 
 	if (isTrackingSetup === false) {
 		return (
-			<div className="p-6">
-				<div className="rounded border border-sidebar-border bg-sidebar p-8 text-center">
+			<div className="p-4">
+				<div className="rounded border bg-sidebar p-8 text-center">
 					<p className="text-muted-foreground">
 						Please set up tracking to view performance data.
 					</p>
@@ -85,7 +85,7 @@ export default function PerformancePage() {
 	}
 
 	return (
-		<div className="p-6">
+		<div className="p-4">
 			<ErrorBoundary>
 				<PerformanceContent
 					addFilter={addFilter}

@@ -787,9 +787,9 @@ export function WebsiteOverviewTab({
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-4">
 			<EventLimitIndicator />
-			<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+			<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
 				{[
 					{
 						id: "pageviews-chart",
@@ -889,7 +889,7 @@ export function WebsiteOverviewTab({
 			</div>
 
 			{/* Chart */}
-			<div className="rounded border bg-card">
+			<div className="rounded border bg-sidebar">
 				<div className="flex flex-col items-start justify-between gap-3 border-b px-4 py-3 sm:flex-row">
 					<div>
 						<h2 className="font-semibold text-lg text-sidebar-foreground tracking-tight">
