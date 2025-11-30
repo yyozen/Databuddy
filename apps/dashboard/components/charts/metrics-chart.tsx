@@ -315,7 +315,7 @@ export function MetricsChart({
 		>
 			{/* Annotations Panel */}
 			{annotations.length > 0 && (
-				<div className="flex items-center justify-between border-b bg-accent/30 px-4 py-2">
+				<div className="flex items-center justify-between border-b bg-accent px-4 py-2">
 					<div className="flex items-center gap-3">
 						<span className="text-muted-foreground text-sm">
 							{annotations.length} annotation
@@ -425,12 +425,12 @@ export function MetricsChart({
 							<XAxis
 								axisLine={false}
 								dataKey="date"
-								tick={{ fontSize: 11, fill: "oklch(0.4 0.01 240)" }}
+								tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
 								tickLine={false}
 							/>
 							<YAxis
 								axisLine={false}
-								tick={{ fontSize: 11, fill: "oklch(0.4 0.01 240)" }}
+								tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
 								tickLine={false}
 								width={45}
 							/>
@@ -545,7 +545,7 @@ export function MetricsChart({
 											<span
 												className={`cursor-pointer text-xs ${
 													isHidden
-														? "text-muted-foreground/50 line-through"
+														? "text-muted line-through opacity-50"
 														: "text-muted-foreground hover:text-foreground"
 												}`}
 											>

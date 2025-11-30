@@ -127,7 +127,7 @@ const MiniChart = memo(
 		if (!hasData) {
 			return (
 				<div className="flex h-24 items-center justify-center pt-2">
-					<span className="text-[10px] text-muted-foreground/60">No data</span>
+					<span className="text-[10px] text-muted opacity-60">No data</span>
 				</div>
 			);
 		}
@@ -135,7 +135,7 @@ const MiniChart = memo(
 		if (!hasVariation) {
 			return (
 				<div className="flex h-24 items-center pt-2">
-					<div className="h-px w-full bg-primary/30" />
+					<div className="h-px w-full bg-primary opacity-30" />
 				</div>
 			);
 		}
@@ -235,7 +235,7 @@ export function StatCard({
 				id={id}
 			>
 				{showChart && (
-					<div className="dotted-bg bg-accent/30 pt-2">
+					<div className="dotted-bg bg-accent pt-2">
 						<Skeleton className="h-24 w-full" />
 					</div>
 				)}
@@ -261,13 +261,13 @@ export function StatCard({
 	const cardContent = (
 		<Card
 			className={cn(
-				"group gap-0 overflow-hidden border bg-card py-0 transition-colors hover:border-primary/50",
+				"group gap-0 overflow-hidden border bg-card py-0 transition-colors hover:border-primary",
 				className
 			)}
 			id={id}
 		>
 			{hasValidChartData && (
-				<div className="dotted-bg bg-accent/30 pt-2">
+				<div className="dotted-bg bg-accent pt-2">
 					<MiniChart
 						data={chartData}
 						formatChartValue={formatChartValue}
@@ -319,7 +319,7 @@ export function StatCard({
 						<div className="grid grid-cols-2 gap-3">
 							<div>
 								<p className="mb-0.5 text-muted-foreground text-xs">Previous</p>
-								<p className="text-[10px] text-muted-foreground/70">
+								<p className="text-[10px] text-muted">
 									{dayjs(trend.previousPeriod.start).format("MMM D")} –{" "}
 									{dayjs(trend.previousPeriod.end).format("MMM D")}
 								</p>
@@ -329,7 +329,7 @@ export function StatCard({
 							</div>
 							<div>
 								<p className="mb-0.5 text-muted-foreground text-xs">Current</p>
-								<p className="text-[10px] text-muted-foreground/70">
+								<p className="text-[10px] text-muted">
 									{dayjs(trend.currentPeriod.start).format("MMM D")} –{" "}
 									{dayjs(trend.currentPeriod.end).format("MMM D")}
 								</p>
