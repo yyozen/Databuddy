@@ -3,12 +3,8 @@
 import {
 	DeviceMobileIcon,
 	DeviceTabletIcon,
-	GlobeIcon,
-	InfoIcon,
 	LaptopIcon,
 	MonitorIcon,
-	WifiHighIcon,
-	WifiLowIcon,
 } from "@phosphor-icons/react";
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
@@ -20,7 +16,6 @@ import { BrowserIcon } from "@/components/icon";
 import { DataTable } from "@/components/table/data-table";
 import {
 	createGeoColumns,
-	createIconTextColumns,
 	createLanguageColumns,
 	createTimezoneColumns,
 } from "@/components/table/rows";
@@ -67,38 +62,6 @@ const formatNumber = (value: number | null | undefined): string => {
 	}).format(value);
 };
 
-const getConnectionIcon = (connection: string): React.ReactNode => {
-	const connectionLower = connection.toLowerCase();
-	if (!connection || connection === "Unknown") {
-		return <InfoIcon className="size-5 text-muted-foreground" />;
-	}
-	if (connectionLower.includes("wifi")) {
-		return <WifiHighIcon className="size-5 text-green-500" />;
-	}
-	if (connectionLower.includes("4g")) {
-		return <DeviceMobileIcon className="size-5 text-foreground" />;
-	}
-	if (connectionLower.includes("5g")) {
-		return <DeviceMobileIcon className="size-5 text-purple-500" />;
-	}
-	if (connectionLower.includes("3g")) {
-		return <DeviceMobileIcon className="size-5 text-yellow-500" />;
-	}
-	if (connectionLower.includes("2g")) {
-		return <DeviceMobileIcon className="size-5 text-orange-500" />;
-	}
-	if (connectionLower.includes("ethernet")) {
-		return <LaptopIcon className="size-5 text-foreground" />;
-	}
-	if (connectionLower.includes("cellular")) {
-		return <DeviceMobileIcon className="size-5 text-foreground" />;
-	}
-	if (connectionLower.includes("offline")) {
-		return <WifiLowIcon className="size-5 text-red-500" />;
-	}
-	return <GlobeIcon className="size-5 text-primary" />;
-};
-
 export function WebsiteAudienceTab({
 	websiteId,
 	dateRange,
@@ -115,18 +78,17 @@ export function WebsiteAudienceTab({
 				limit: 100,
 				filters,
 			},
-			{
-				id: "device-data",
-				parameters: [
-					"browser_name",
-					"browser_versions",
-					"os_name",
-					"screen_resolution",
-					"connection_type",
-				],
-				limit: 50,
-				filters,
-			},
+		{
+			id: "device-data",
+			parameters: [
+				"browser_name",
+				"browser_versions",
+				"os_name",
+				"screen_resolution",
+			],
+			limit: 50,
+			filters,
+		},
 		],
 		[filters]
 	);
@@ -254,11 +216,6 @@ export function WebsiteAudienceTab({
 		[]
 	);
 
-	const connectionColumns = createIconTextColumns({
-		header: "Connection Type",
-		getIcon: getConnectionIcon,
-	});
-
 	const countryColumns = createGeoColumns({ type: "country" });
 
 	const timezoneColumns = createTimezoneColumns();
@@ -345,7 +302,7 @@ export function WebsiteAudienceTab({
 
 	return (
 		<div className="space-y-4">
-			<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+			<div className="flex">
 				<DataTable
 					columns={browserColumns}
 					data={processedBrowserData}
@@ -353,7 +310,7 @@ export function WebsiteAudienceTab({
 					expandable={true}
 					getSubRows={(row: any) => row.versions}
 					isLoading={isLoading}
-					minHeight={350}
+					minHeight={400}
 					onAddFilter={(field: string, value: string) =>
 						addFilter({ field, operator: "eq" as const, value })
 					}
@@ -422,30 +379,6 @@ export function WebsiteAudienceTab({
 						},
 					]}
 					title="Browser Versions"
-				/>
-
-				<DataTable
-					columns={connectionColumns}
-					data={deviceData.connection_type || []}
-					description="Visitors by network connection"
-					isLoading={isLoading}
-					minHeight={350}
-					onAddFilter={(field: string, value: string) =>
-						addFilter({ field, operator: "eq" as const, value })
-					}
-					tabs={[
-						{
-							id: "connections",
-							label: "Connection Types",
-							data: deviceData.connection_type || [],
-							columns: connectionColumns,
-							getFilter: (row: any) => ({
-								field: "connection_type",
-								value: row.name,
-							}),
-						},
-					]}
-					title="Connection Types"
 				/>
 			</div>
 
