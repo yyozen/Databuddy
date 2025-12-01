@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/elastic-slider";
 import {
 	Form,
 	FormControl,
@@ -19,6 +18,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { LineSlider } from "@/components/ui/line-slider";
 import {
 	Select,
 	SelectContent,
@@ -223,7 +223,7 @@ export function FlagSheet({
 	return (
 		<Sheet onOpenChange={onCloseAction} open={isOpen}>
 			<SheetContent
-				className="w-full overflow-y-auto p-4 sm:w-[90vw] sm:max-w-[800px] md:w-[70vw] lg:w-[60vw]"
+				className="w-full overflow-y-auto p-4 sm:w-[90vw] sm:max-w-[800px] md:w-[70vw] lg:w-[30vw]"
 				side="right"
 			>
 				<SheetHeader>
@@ -452,28 +452,35 @@ export function FlagSheet({
 										name="rolloutPercentage"
 										render={({ field }) => {
 											const currentValue = Number(field.value) || 0;
-
 											return (
 												<FormItem>
-													<FormLabel>Rollout Percentage</FormLabel>
+													<FormLabel>
+														Rollout Percentage:{" "}
+														<span className="text-muted-foreground text-xs tabular-nums">
+															{currentValue}%
+														</span>
+													</FormLabel>
 													<FormControl>
 														<div className="space-y-4">
-															<Slider
+															<LineSlider
 																max={100}
 																min={0}
 																onValueChange={field.onChange}
-																step={5}
 																value={currentValue}
 															/>
 															<div className="flex flex-wrap justify-center gap-2">
 																{[0, 25, 50, 75, 100].map((preset) => (
 																	<button
 																		aria-label={`Set rollout to ${preset}% ${preset === 0 ? "(disabled)" : preset === 100 ? "(enabled)" : ""}`}
-																		className={`rounded border px-3 py-2 text-sm transition-colors ${
-																			currentValue === preset
-																				? "border-primary bg-primary text-primary-foreground"
-																				: "border-border hover:border-primary/50"
-																		}`}
+																		className={cn(
+																			"flex-1 rounded border px-3 py-2 text-sm transition-colors",
+																			{
+																				"border-primary bg-primary text-primary-foreground":
+																					currentValue === preset,
+																				"border-border hover:border-primary/50":
+																					currentValue !== preset,
+																			}
+																		)}
 																		key={preset}
 																		onClick={() => field.onChange(preset)}
 																		type="button"
