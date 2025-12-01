@@ -23,6 +23,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { getOperatorLabel } from "@/hooks/use-filters";
 
 const formSchema = z.object({
 	name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
@@ -32,18 +33,6 @@ type FormData = z.infer<typeof formSchema>;
 
 function getFieldLabel(field: string): string {
 	return filterOptions.find((o) => o.value === field)?.label ?? field;
-}
-
-const operatorLabels: Record<string, string> = {
-	eq: "is",
-	ne: "is not",
-	contains: "contains",
-	starts_with: "starts with",
-	like: "like",
-};
-
-function getOperatorLabel(operator: string): string {
-	return operatorLabels[operator] ?? operator;
 }
 
 type EditingFilter = {

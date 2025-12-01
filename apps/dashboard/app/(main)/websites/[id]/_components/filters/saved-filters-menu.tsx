@@ -18,6 +18,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getOperatorLabel } from "@/hooks/use-filters";
 import type { SavedFilter } from "@/hooks/use-saved-filters";
 
 interface SavedFiltersMenuProps {
@@ -31,20 +32,8 @@ interface SavedFiltersMenuProps {
 	currentFilters: DynamicQueryFilter[];
 }
 
-const operatorLabels: Record<string, string> = {
-	eq: "is",
-	ne: "is not",
-	contains: "contains",
-	starts_with: "starts with",
-	like: "like",
-};
-
 function getFieldLabel(field: string): string {
 	return filterOptions.find((o) => o.value === field)?.label ?? field;
-}
-
-function getOperatorLabel(operator: string): string {
-	return operatorLabels[operator] ?? operator;
 }
 
 function filtersMatch(a: DynamicQueryFilter[], b: DynamicQueryFilter[]): boolean {

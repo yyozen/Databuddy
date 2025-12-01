@@ -95,7 +95,7 @@ function WebsiteDetailsPage() {
 	if (isLoading || isTrackingSetupLoading || isTrackingSetup === null) {
 		return (
 			<div className="p-4">
-				<LoadingSkeleton />
+				<TabLoadingSkeleton />
 			</div>
 		);
 	}

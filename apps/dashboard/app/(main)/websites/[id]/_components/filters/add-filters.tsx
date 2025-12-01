@@ -56,7 +56,7 @@ type FilterOption = (typeof filterOptions)[number];
 
 const filterFormSchema = z.object({
 	field: z.string().min(1, "Please select a field"),
-	operator: z.enum(["eq", "ne", "contains", "starts_with"]),
+	operator: z.enum(["eq", "ne", "contains", "not_contains", "starts_with"]),
 	value: z.string().min(1, "Value is required"),
 });
 

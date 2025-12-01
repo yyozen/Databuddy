@@ -7,6 +7,7 @@ import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { getOperatorLabel } from "@/hooks/use-filters";
 import { useSavedFilters } from "@/hooks/use-saved-filters";
 import {
 	dynamicQueryFiltersAtom,
@@ -16,24 +17,6 @@ import { DeleteAllDialog } from "./delete-all-dialog";
 import { DeleteFilterDialog } from "./delete-filter-dialog";
 import { SaveFilterDialog } from "./save-filter-dialog";
 import { SavedFiltersMenu } from "./saved-filters-menu";
-
-const operatorLabels: Record<string, string> = {
-	eq: "is",
-	ne: "is not",
-	contains: "contains",
-	starts_with: "starts with",
-	like: "like",
-	in: "in",
-	not_in: "not in",
-	gt: ">",
-	gte: "≥",
-	lt: "<",
-	lte: "≤",
-};
-
-function getOperatorLabel(operator: string): string {
-	return operatorLabels[operator] ?? operator;
-}
 
 function getFieldLabel(field: string): string {
 	return filterOptions.find((o) => o.value === field)?.label ?? field;
