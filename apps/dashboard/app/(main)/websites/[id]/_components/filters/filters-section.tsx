@@ -181,7 +181,7 @@ export function FiltersSection() {
 	if (filters.length === 0) return null;
 
 	return (
-		<div className="border-b bg-background">
+		<div className="border-b bg-background angled-rectangle-gradient">
 			{editing && (
 				<div className="flex items-center justify-between gap-3 border-b bg-secondary/50 px-4 py-2">
 					<div className="flex items-center gap-2">

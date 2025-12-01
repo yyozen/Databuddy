@@ -11,7 +11,6 @@ import { useTrackingSetup } from "@/hooks/use-tracking-setup";
 import { useWebsite } from "@/hooks/use-websites";
 import { isAnalyticsRefreshingAtom } from "@/stores/jotai/filterAtoms";
 import { AnalyticsToolbar } from "./_components/analytics-toolbar";
-import { FiltersSection } from "./_components/filters-section";
 import { WebsiteTrackingSetupTab } from "./_components/tabs/tracking-setup-tab";
 
 type WebsiteLayoutProps = {
@@ -86,7 +85,6 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 						onRefresh={handleRefresh}
 						websiteId={websiteId}
 					/>
-					{isTrackingSetup && <FiltersSection />}
 				</div>
 			)}
 
