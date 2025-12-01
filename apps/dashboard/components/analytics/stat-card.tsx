@@ -242,8 +242,8 @@ export function StatCard({
 				id={id}
 			>
 				{showChart && (
-					<div className="dotted-bg bg-accent pt-2">
-						<Skeleton className="h-24 w-full" />
+					<div className="dotted-bg bg-accent pt-0">
+						<Skeleton className="h-26 w-full" />
 					</div>
 				)}
 				<div className="flex items-center gap-2.5 border-t px-2.5 py-2.5">
