@@ -22,7 +22,7 @@ import { GoalsList } from "./_components/goals-list";
 
 function GoalsListSkeleton() {
 	return (
-		<div className="border-border border-t">
+		<div>
 			{[1, 2, 3].map((i) => (
 				<GoalItemSkeleton key={i} />
 			))}

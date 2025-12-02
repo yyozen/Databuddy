@@ -39,7 +39,7 @@ const EditFunnelDialog = dynamic(
 
 function FunnelsListSkeleton() {
 	return (
-		<div className="border">
+		<div>
 			{[1, 2, 3].map((i) => (
 				<FunnelItemSkeleton key={i} />
 			))}
