@@ -102,7 +102,7 @@ export function CategorySidebar({
 								<button
 									className={cn(
 										isActive && !isLast && "border-accent",
-										"relative flex h-10 w-full items-center justify-center transition-colors duration-200",
+										"relative flex h-10 w-full items-center justify-center",
 										"focus:outline-none",
 										!isActive && "hover:bg-sidebar-accent-brighter",
 										isLast
@@ -121,7 +121,7 @@ export function CategorySidebar({
 									)}
 									<Icon
 										className={cn(
-											"h-5 w-5 transition-colors",
+											"h-5 w-5",
 											isActive
 												? "text-sidebar-ring"
 												: "text-sidebar-primary-foreground/70"
@@ -154,7 +154,7 @@ export function CategorySidebar({
 
 					<div className="flex justify-center">
 						<Button
-							className="flex h-8 w-8 items-center justify-center transition-colors"
+							className="flex h-8 w-8 items-center justify-center"
 							onClick={() => setHelpOpen(true)}
 							suppressHydrationWarning
 							type="button"
