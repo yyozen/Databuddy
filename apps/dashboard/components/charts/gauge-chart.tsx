@@ -1,17 +1,8 @@
 "use client";
 
-import { memo } from "react";
-import {
-	Label,
-	PolarGrid,
-	PolarRadiusAxis,
-	RadialBar,
-	RadialBarChart,
-} from "recharts";
-import {
-	type ChartConfig,
-	ChartContainer,
-} from "@/components/ui/chart";
+import { motion, useMotionValueEvent, useSpring } from "motion/react";
+import { memo, useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 type GaugeRating = "good" | "needs-improvement" | "poor";
 
@@ -28,13 +19,18 @@ type GaugeChartProps = {
 	formatValue?: (value: number) => string;
 	/** Optional unit to display below the value */
 	unit?: string;
+	/** Number of tick marks */
+	tickCount?: number;
+	/** Starting angle in degrees (-90 = top, 0 = right, 90 = bottom) */
+	startAngle?: number;
+	/** Sweep angle in degrees (360 = full circle) */
+	sweepAngle?: number;
 };
 
-// Direct hex colors that match the theme
 const RATING_COLORS: Record<GaugeRating, string> = {
-	good: "#10b981", // emerald-500
-	"needs-improvement": "#f59e0b", // amber-500
-	poor: "#ef4444", // red-500
+	good: "#10b981",
+	"needs-improvement": "#f59e0b",
+	poor: "#ef4444",
 };
 
 export const GaugeChart = memo(function GaugeChart({
@@ -44,102 +40,121 @@ export const GaugeChart = memo(function GaugeChart({
 	size = 120,
 	formatValue,
 	unit,
+	tickCount = 36,
+	startAngle = -90,
+	sweepAngle = 360,
 }: GaugeChartProps) {
-	// Calculate the end angle based on progress (0-360 degrees)
-	const progress = Math.max(0, Math.min(value / max, 1));
-	const endAngle = progress * 360;
+	const springValue = useSpring(value / max, {
+		stiffness: 300,
+		damping: 30,
+		bounce: 0,
+	});
+
+	const [displayProgress, setDisplayProgress] = useState(value / max);
+
+	useEffect(() => {
+		springValue.set(Math.max(0, Math.min(value / max, 1)));
+	}, [value, max, springValue]);
+
+	useMotionValueEvent(springValue, "change", (latest) => {
+		setDisplayProgress(latest);
+	});
 
 	const displayValue = formatValue
 		? formatValue(value)
 		: Math.round(value).toString();
 
-	const fillColor = RATING_COLORS[rating];
+	const activeColor = RATING_COLORS[rating];
 
-	const chartData = [
-		{
-			name: "value",
-			value: value,
-			fill: fillColor,
-		},
-	];
+	const padding = 8;
+	const cx = size / 2;
+	const cy = size / 2;
+	const radius = size / 2 - padding;
+	const tickLength = size * 0.12;
+	const tickWidth = Math.max(2, size * 0.025);
 
-	const chartConfig = {
-		value: {
-			label: "Value",
-			color: fillColor,
-		},
-	} satisfies ChartConfig;
+	const activeTicks = Math.floor(displayProgress * tickCount);
 
-	// Scale radii based on size
-	const outerRadius = Math.round(size * 0.45);
-	const innerRadius = Math.round(size * 0.33);
-	const polarRadius1 = Math.round(innerRadius + (outerRadius - innerRadius) * 0.7);
-	const polarRadius2 = Math.round(innerRadius + (outerRadius - innerRadius) * 0.3);
+	// Dynamic font sizing
+	const innerRadius = radius - tickLength - 4;
+	const maxTextWidth = innerRadius * 1.4;
+	const charCount = displayValue.length + (unit ? unit.length * 0.6 : 0);
+	const baseFontSize = size * 0.22;
+	const scaledFontSize = Math.min(
+		baseFontSize,
+		maxTextWidth / (charCount * 0.55)
+	);
+	const valueFontSize = Math.round(Math.max(12, scaledFontSize));
+	const unitFontSize = Math.round(valueFontSize * 0.5);
 
 	return (
-		<ChartContainer
-			className="mx-auto aspect-square"
-			config={chartConfig}
-			style={{ height: size, width: size }}
+		<div
+			className="relative flex items-center justify-center"
+			style={{ width: size, height: size }}
 		>
-			<RadialBarChart
-				data={chartData}
-				endAngle={endAngle}
-				innerRadius={innerRadius}
-				outerRadius={outerRadius}
-				startAngle={0}
+			<svg
+				aria-hidden="true"
+				className="absolute inset-0"
+				height={size}
+				viewBox={`0 0 ${size} ${size}`}
+				width={size}
 			>
-				<PolarGrid
-					className="first:fill-muted last:fill-background"
-					gridType="circle"
-					polarRadius={[polarRadius1, polarRadius2]}
-					radialLines={false}
-					stroke="none"
-				/>
-				<RadialBar
-					background
-					cornerRadius={10}
-					dataKey="value"
-				/>
-				<PolarRadiusAxis axisLine={false} tick={false} tickLine={false}>
-					<Label
-						content={({ viewBox }) => {
-							if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-								return (
-									<text
-										dominantBaseline="middle"
-										textAnchor="middle"
-										x={viewBox.cx}
-										y={viewBox.cy}
-									>
-										<tspan
-											fill="var(--foreground)"
-											fontSize="18"
-											fontWeight="600"
-											x={viewBox.cx}
-											y={unit ? (viewBox.cy ?? 0) - 6 : viewBox.cy}
-										>
-											{displayValue}
-										</tspan>
-										{unit && (
-											<tspan
-												fill="var(--muted-foreground)"
-												fontSize="10"
-												x={viewBox.cx}
-												y={(viewBox.cy ?? 0) + 10}
-											>
-												{unit}
-											</tspan>
-										)}
-									</text>
-								);
-							}
-							return null;
-						}}
-					/>
-				</PolarRadiusAxis>
-			</RadialBarChart>
-		</ChartContainer>
+				{Array.from({ length: tickCount }).map((_, i) => {
+					const t = tickCount > 1 ? i / (tickCount - 1) : 0;
+					const angle = startAngle + t * sweepAngle;
+					const angleRad = (angle * Math.PI) / 180;
+
+					const x1 = cx + (radius - tickLength) * Math.cos(angleRad);
+					const y1 = cy + (radius - tickLength) * Math.sin(angleRad);
+					const x2 = cx + radius * Math.cos(angleRad);
+					const y2 = cy + radius * Math.sin(angleRad);
+
+					const isActive = i < activeTicks;
+
+					return (
+						<motion.line
+							animate={{
+								stroke: isActive ? activeColor : "hsl(var(--muted))",
+								strokeOpacity: isActive ? 1 : 0.35,
+							}}
+							initial={false}
+							key={i}
+							strokeLinecap="round"
+							strokeWidth={tickWidth}
+							transition={{
+								type: "spring",
+								stiffness: 300,
+								damping: 30,
+							}}
+							x1={x1}
+							x2={x2}
+							y1={y1}
+							y2={y2}
+						/>
+					);
+				})}
+			</svg>
+			<div
+				className={cn(
+					"relative z-10 flex items-baseline justify-center gap-0.5"
+				)}
+			>
+				<span
+					className="font-semibold text-foreground tabular-nums tracking-tight"
+					style={{ fontSize: valueFontSize, lineHeight: 1 }}
+				>
+					{displayValue}
+				</span>
+				{unit ? (
+					<span
+						className="text-muted-foreground"
+						style={{ fontSize: unitFontSize, lineHeight: 1 }}
+					>
+						{unit}
+					</span>
+				) : null}
+			</div>
+		</div>
 	);
 });
 

@@ -37,7 +37,7 @@ const getOrganizationInitials = (name: string) =>
 		.slice(0, 2);
 
 const MENU_ITEM_BASE_CLASSES =
-	"flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition-colors text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground";
+	"flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground";
 const MENU_ITEM_ACTIVE_CLASSES =
 	"bg-sidebar-accent font-medium text-sidebar-accent-foreground";
 
@@ -76,7 +76,7 @@ function OrganizationSelectorTrigger({
 	return (
 		<div
 			className={cn(
-				"flex h-12 w-full items-center border-b bg-sidebar-accent px-3 py-3 transition-colors",
+				"flex h-12 w-full items-center border-b bg-sidebar-accent px-3 py-3",
 				"hover:bg-sidebar-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50",
 				isSettingActiveOrganization && "cursor-not-allowed opacity-70",
 				isOpen && "bg-sidebar-accent/60"
@@ -223,7 +223,7 @@ export function OrganizationSelector() {
 				>
 					<DropdownMenuItem
 						className={cn(
-							"flex cursor-pointer items-center gap-3 border-b px-4 py-2.5 text-sm transition-colors",
+							"flex cursor-pointer items-center gap-3 border-b px-4 py-2.5 text-sm",
 							"text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
 							!activeOrganization &&
 								"bg-sidebar-accent font-medium text-sidebar-accent-foreground"

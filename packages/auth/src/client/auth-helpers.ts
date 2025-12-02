@@ -2,7 +2,7 @@
 
 import { authClient, signIn, signOut, signUp } from "./auth-client";
 
-interface TwoFactorResponse {
+type TwoFactorResponse = {
 	data?: {
 		totpURI?: string;
 		backupCodes?: string[];

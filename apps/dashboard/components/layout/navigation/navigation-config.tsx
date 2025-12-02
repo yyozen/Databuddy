@@ -1,6 +1,7 @@
 import {
 	ActivityIcon,
 	ArrowSquareOutIcon,
+	BellIcon,
 	BookOpenIcon,
 	BugIcon,
 	BuildingsIcon,
@@ -22,6 +23,7 @@ import {
 	KeyIcon,
 	MapPinIcon,
 	PlayIcon,
+	PlugIcon,
 	PlusIcon,
 	ReceiptIcon,
 	RepeatIcon,
@@ -120,11 +122,22 @@ export const createWebsitesNavigation = (
 	);
 
 export const personalNavigation: NavigationSection[] = [
-	createNavSection("Personal Settings", UserGearIcon, [
-		createNavItem("Profile", IdentificationCardIcon, "/settings?tab=profile"),
-		createNavItem("Account", GearIcon, "/settings?tab=account"),
-		createNavItem("Security", ShieldCheckIcon, "/settings?tab=security"),
-		createNavItem("API Keys", KeyIcon, "/settings?tab=api-keys"),
+	createNavSection("Personal", UserGearIcon, [
+		createNavItem("Account", IdentificationCardIcon, "/settings/account"),
+		createNavItem("Appearance", EyeIcon, "/settings/appearance"),
+		createNavItem("Privacy & Data", ShieldCheckIcon, "/settings/privacy"),
+	]),
+	createNavSection("Preferences", GearIcon, [
+		createNavItem("Analytics Behavior", ChartLineUpIcon, "/settings/analytics"),
+		createNavItem("Feature Access", FlagIcon, "/settings/features"),
+		createNavItem("Integrations", PlugIcon, "/settings/integrations", {
+			disabled: true,
+			tag: "soon",
+		}),
+		createNavItem("Notifications", BellIcon, "/settings/notifications", {
+			disabled: true,
+			tag: "soon",
+		}),
 	]),
 ];
 
