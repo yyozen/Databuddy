@@ -384,7 +384,11 @@ function convertToProto<T extends Record<string, unknown>>(
 			if (value != null) {
 				const field = key.toLowerCase().replace(/[^a-z0-9_]/g, "_");
 				if (typeof value === "string") {
-					content += `  ${field}: "${value.replace(/"/g, '\\"').replace(/\n/g, "\\n")}"\n`;
+					const escaped = value
+						.replace(/\\/g, "\\\\")
+						.replace(/"/g, '\\"')
+						.replace(/\n/g, "\\n");
+					content += `  ${field}: "${escaped}"\n`;
 				} else {
 					content += `  ${field}: ${value}\n`;
 				}
