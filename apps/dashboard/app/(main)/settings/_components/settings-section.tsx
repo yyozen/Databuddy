@@ -1,3 +1,5 @@
+import { CircleNotchIcon } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type SettingsSectionProps = {
@@ -74,5 +76,49 @@ export function ComingSoon({ title, description, icon }: ComingSoonProps) {
 				{description}
 			</p>
 		</div>
+	);
+}
+
+type UnsavedChangesFooterProps = {
+	hasChanges: boolean;
+	isSaving: boolean;
+	onSave: () => void;
+	onDiscard?: () => void;
+	saveLabel?: string;
+	message?: string;
+};
+
+export function UnsavedChangesFooter({
+	hasChanges,
+	isSaving,
+	onSave,
+	onDiscard,
+	saveLabel = "Save Changes",
+	message = "You have unsaved changes",
+}: UnsavedChangesFooterProps) {
+	if (!(hasChanges || isSaving)) {
+		return null;
+	}
+
+	return (
+		<section className="angled-rectangle-gradient sticky bottom-0 z-10 mt-auto flex items-center justify-between gap-3 border-t bg-secondary px-5 py-4">
+			<p className="text-muted-foreground text-sm">{message}</p>
+			<div className="flex items-center gap-2">
+				{onDiscard && (
+					<Button
+						disabled={isSaving}
+						onClick={onDiscard}
+						size="sm"
+						variant="ghost"
+					>
+						Discard
+					</Button>
+				)}
+				<Button disabled={isSaving} onClick={onSave} size="sm">
+					{isSaving && <CircleNotchIcon className="mr-2 size-4 animate-spin" />}
+					{saveLabel}
+				</Button>
+			</div>
+		</section>
 	);
 }

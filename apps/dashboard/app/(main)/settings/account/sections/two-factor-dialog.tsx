@@ -53,7 +53,6 @@ type TwoFactorDialogProps = {
 const MIN_PASSWORD_LENGTH = 8;
 const TOTP_SECRET_REGEX = /secret=([A-Z2-7]+)/i;
 
-/** Extracts the TOTP secret from a otpauth:// URI */
 function extractSecretFromTotpUri(uri: string): string {
 	const match = uri.match(TOTP_SECRET_REGEX);
 	return match?.[1] ?? "";
