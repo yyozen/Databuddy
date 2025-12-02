@@ -171,6 +171,7 @@ export const NavigationSection = memo(function NavigationSectionComponent({
 										<div key={item.name}>
 											<NavigationItem
 												alpha={item.alpha}
+												badge={item.badge}
 												currentWebsiteId={currentWebsiteId}
 												disabled={item.disabled}
 												domain={item.domain}
@@ -182,6 +183,7 @@ export const NavigationSection = memo(function NavigationSectionComponent({
 												name={item.name}
 												production={item.production}
 												sectionName={title}
+												tag={item.tag}
 											/>
 										</div>
 									);

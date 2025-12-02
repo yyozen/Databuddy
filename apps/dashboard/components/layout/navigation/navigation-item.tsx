@@ -20,6 +20,7 @@ export function NavigationItem({
 	icon: Icon,
 	href,
 	alpha,
+	tag,
 	isActive,
 	isRootLevel,
 	isExternal,
@@ -120,6 +121,11 @@ export function NavigationItem({
 				{alpha && (
 					<span className="font-mono text-sidebar-foreground/50 text-xs">
 						ALPHA
+					</span>
+				)}
+				{tag && (
+					<span className="font-mono text-sidebar-foreground/50 text-xs uppercase">
+						{tag}
 					</span>
 				)}
 				{badge && (

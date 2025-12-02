@@ -17,6 +17,7 @@ import {
 	GearIcon,
 	GlobeIcon,
 	GlobeSimpleIcon,
+	HeartbeatIcon,
 	IdentificationCardIcon,
 	KeyIcon,
 	MapPinIcon,
@@ -196,8 +197,13 @@ export const websiteNavigation: NavigationSection[] = [
 		createNavItem("Audience", UsersThreeIcon, "/audience", {
 			rootLevel: false,
 		}),
+		createNavItem("Web Vitals", HeartbeatIcon, "/vitals", {
+			rootLevel: false,
+			alpha: true,
+		}),
 		createNavItem("Performance", ActivityIcon, "/performance", {
 			rootLevel: false,
+			tag: "deprecated",
 		}),
 		createNavItem("Geographic", MapPinIcon, "/map", { rootLevel: false }),
 		createNavItem("Error Tracking", BugIcon, "/errors", { rootLevel: false }),
