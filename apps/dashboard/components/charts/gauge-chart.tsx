@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useSpring, useTransform } from "motion/react";
-import { memo, useMemo } from "react";
+import { motion, useMotionValueEvent, useSpring } from "motion/react";
+import { memo, useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 type GaugeRating = "good" | "needs-improvement" | "poor";
 
@@ -20,81 +21,17 @@ type GaugeChartProps = {
 	unit?: string;
 	/** Number of tick marks */
 	tickCount?: number;
-	/** Starting angle in degrees (0 = top, 90 = right) */
+	/** Starting angle in degrees (-90 = top, 0 = right, 90 = bottom) */
 	startAngle?: number;
-	/** Sweep angle in degrees */
+	/** Sweep angle in degrees (360 = full circle) */
 	sweepAngle?: number;
 };
 
-const RATING_COLORS: Record<GaugeRating, { base: string; glow: string }> = {
-	good: { base: "#10b981", glow: "rgba(16, 185, 129, 0.4)" },
-	"needs-improvement": { base: "#f59e0b", glow: "rgba(245, 158, 11, 0.4)" },
-	poor: { base: "#ef4444", glow: "rgba(239, 68, 68, 0.4)" },
+const RATING_COLORS: Record<GaugeRating, string> = {
+	good: "#10b981",
+	"needs-improvement": "#f59e0b",
+	poor: "#ef4444",
 };
-
-const INACTIVE_COLOR = "hsl(var(--muted))";
-
-type TickProps = {
-	index: number;
-	tickCount: number;
-	cx: number;
-	cy: number;
-	radius: number;
-	tickLength: number;
-	tickWidth: number;
-	startAngle: number;
-	sweepAngle: number;
-	activeColor: string;
-	glowColor: string;
-	progress: ReturnType<typeof useSpring>;
-};
-
-const Tick = memo(function Tick({
-	index,
-	tickCount,
-	cx,
-	cy,
-	radius,
-	tickLength,
-	tickWidth,
-	startAngle,
-	sweepAngle,
-	activeColor,
-	glowColor,
-	progress,
-}: TickProps) {
-	const t = tickCount > 1 ? index / (tickCount - 1) : 0;
-	const angle = startAngle + t * sweepAngle;
-	const angleRad = (angle * Math.PI) / 180;
-
-	const x1 = cx + (radius - tickLength) * Math.cos(angleRad);
-	const y1 = cy + (radius - tickLength) * Math.sin(angleRad);
-	const x2 = cx + radius * Math.cos(angleRad);
-	const y2 = cy + radius * Math.sin(angleRad);
-
-	const threshold = index / tickCount;
-	const stroke = useTransform(progress, (p) =>
-		p > threshold ? activeColor : INACTIVE_COLOR
-	);
-	const strokeOpacity = useTransform(progress, (p) =>
-		p > threshold ? 1 : 0.35
-	);
-	const filter = useTransform(progress, (p) =>
-		p > threshold ? `drop-shadow(0 0 3px ${glowColor})` : "none"
-	);
-
-	return (
-		<motion.line
-			strokeLinecap="round"
-			strokeWidth={tickWidth}
-			style={{ stroke, strokeOpacity, filter }}
-			x1={x1}
-			x2={x2}
-			y1={y1}
-			y2={y2}
-		/>
-	);
-});
 
 export const GaugeChart = memo(function GaugeChart({
 	value,
@@ -104,17 +41,30 @@ export const GaugeChart = memo(function GaugeChart({
 	formatValue,
 	unit,
 	tickCount = 36,
-	startAngle = -135,
-	sweepAngle = 270,
+	startAngle = -90,
+	sweepAngle = 360,
 }: GaugeChartProps) {
-	const targetProgress = Math.max(0, Math.min(value / max, 1));
-	const progress = useSpring(targetProgress, { stiffness: 120, damping: 20 });
+	const springValue = useSpring(value / max, {
+		stiffness: 300,
+		damping: 30,
+		bounce: 0,
+	});
+
+	const [displayProgress, setDisplayProgress] = useState(value / max);
+
+	useEffect(() => {
+		springValue.set(Math.max(0, Math.min(value / max, 1)));
+	}, [value, max, springValue]);
+
+	useMotionValueEvent(springValue, "change", (latest) => {
+		setDisplayProgress(latest);
+	});
 
 	const displayValue = formatValue
 		? formatValue(value)
 		: Math.round(value).toString();
 
-	const colors = RATING_COLORS[rating];
+	const activeColor = RATING_COLORS[rating];
 
 	const padding = 8;
 	const cx = size / 2;
@@ -123,11 +73,9 @@ export const GaugeChart = memo(function GaugeChart({
 	const tickLength = size * 0.12;
 	const tickWidth = Math.max(2, size * 0.025);
 
-	const tickIndices = useMemo(
-		() => Array.from({ length: tickCount }, (_, i) => i),
-		[tickCount]
-	);
+	const activeTicks = Math.floor(displayProgress * tickCount);
 
+	// Dynamic font sizing
 	const innerRadius = radius - tickLength - 4;
 	const maxTextWidth = innerRadius * 1.4;
 	const charCount = displayValue.length + (unit ? unit.length * 0.6 : 0);
@@ -151,25 +99,46 @@ export const GaugeChart = memo(function GaugeChart({
 				viewBox={`0 0 ${size} ${size}`}
 				width={size}
 			>
-				{tickIndices.map((i) => (
-					<Tick
-						activeColor={colors.base}
-						cx={cx}
-						cy={cy}
-						glowColor={colors.glow}
-						index={i}
-						key={i}
-						progress={progress}
-						radius={radius}
-						startAngle={startAngle}
-						sweepAngle={sweepAngle}
-						tickCount={tickCount}
-						tickLength={tickLength}
-						tickWidth={tickWidth}
-					/>
-				))}
+				{Array.from({ length: tickCount }).map((_, i) => {
+					const t = tickCount > 1 ? i / (tickCount - 1) : 0;
+					const angle = startAngle + t * sweepAngle;
+					const angleRad = (angle * Math.PI) / 180;
+
+					const x1 = cx + (radius - tickLength) * Math.cos(angleRad);
+					const y1 = cy + (radius - tickLength) * Math.sin(angleRad);
+					const x2 = cx + radius * Math.cos(angleRad);
+					const y2 = cy + radius * Math.sin(angleRad);
+
+					const isActive = i < activeTicks;
+
+					return (
+						<motion.line
+							animate={{
+								stroke: isActive ? activeColor : "hsl(var(--muted))",
+								strokeOpacity: isActive ? 1 : 0.35,
+							}}
+							initial={false}
+							key={i}
+							strokeLinecap="round"
+							strokeWidth={tickWidth}
+							transition={{
+								type: "spring",
+								stiffness: 300,
+								damping: 30,
+							}}
+							x1={x1}
+							x2={x2}
+							y1={y1}
+							y2={y2}
+						/>
+					);
+				})}
 			</svg>
-			<div className="relative z-10 flex items-baseline justify-center gap-0.5">
+			<div
+				className={cn(
+					"relative z-10 flex items-baseline justify-center gap-0.5"
+				)}
+			>
 				<span
 					className="font-semibold text-foreground tabular-nums tracking-tight"
 					style={{ fontSize: valueFontSize, lineHeight: 1 }}
