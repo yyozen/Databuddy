@@ -506,7 +506,7 @@ const FeatureFlagsFeature = () => {
 					</div>
 					<Switch
 						checked={flag.enabled}
-						className="shrink-0 transition-all duration-300 data-[state=checked]:bg-primary"
+						className="min-h-0! min-w-0!"
 						disabled
 					/>
 				</div>
