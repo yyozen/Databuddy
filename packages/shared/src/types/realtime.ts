@@ -21,7 +21,7 @@ export interface EventsByDateData {
 	unique_visitors: number;
 	sessions: number;
 	bounce_rate: number;
-	avg_session_duration: number;
+	median_session_duration: number;
 	revenue_by_currency: any;
 	revenue_by_card_brand: any;
 
