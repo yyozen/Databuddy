@@ -173,7 +173,7 @@ export const RAW_PLANS: RawPlan[] = [
 					type: "single_use",
 					display: { singular: "event", plural: "events" },
 				},
-				included_usage: 500_000,
+				included_usage: 1_000_000,
 				interval: "month",
 				tiers: [
 					{ to: 2_000_000, amount: 0.000_035 },
