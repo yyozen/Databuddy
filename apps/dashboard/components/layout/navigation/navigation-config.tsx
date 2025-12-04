@@ -13,7 +13,6 @@ import {
 	CurrencyDollarIcon,
 	EyeIcon,
 	FileArrowDownIcon,
-	FingerprintIcon,
 	FlagIcon,
 	FunnelIcon,
 	GearIcon,
@@ -199,11 +198,11 @@ export const organizationNavigation: NavigationSection[] = [
 			"/organizations/settings/websites"
 		),
 		createNavItem("API Keys", KeyIcon, "/organizations/settings/api-keys"),
-		createNavItem(
-			"Single Sign-On",
-			FingerprintIcon,
-			"/organizations/settings/sso"
-		),
+		// createNavItem(
+		// 	"Single Sign-On",
+		// 	FingerprintIcon,
+		// 	"/organizations/settings/sso"
+		// ),
 		createNavItem("Danger Zone", WarningIcon, "/organizations/settings/danger"),
 	]),
 ];
