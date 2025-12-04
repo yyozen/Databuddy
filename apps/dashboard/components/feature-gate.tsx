@@ -1,6 +1,13 @@
 "use client";
 
-import { LockIcon, RocketLaunchIcon } from "@phosphor-icons/react";
+import {
+	ArrowRightIcon,
+	CrownIcon,
+	LockSimpleIcon,
+	RocketLaunchIcon,
+	SparkleIcon,
+	StarIcon,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
@@ -8,13 +15,18 @@ import {
 	type GatedFeatureId,
 } from "@/components/providers/billing-provider";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { FEATURE_METADATA, PLAN_IDS } from "@/types/features";
 
-const PLAN_NAMES: Record<string, string> = {
-	[PLAN_IDS.FREE]: "Free",
-	[PLAN_IDS.HOBBY]: "Hobby",
-	[PLAN_IDS.PRO]: "Pro",
-	[PLAN_IDS.SCALE]: "Scale",
+const PLAN_CONFIG: Record<
+	string,
+	{ name: string; icon: typeof StarIcon; color: string }
+> = {
+	[PLAN_IDS.FREE]: { name: "Free", icon: SparkleIcon, color: "text-muted-foreground" },
+	[PLAN_IDS.HOBBY]: { name: "Hobby", icon: RocketLaunchIcon, color: "text-success" },
+	[PLAN_IDS.PRO]: { name: "Pro", icon: StarIcon, color: "text-primary" },
+	[PLAN_IDS.SCALE]: { name: "Scale", icon: CrownIcon, color: "text-amber-500" },
 };
 
 interface FeatureGateProps {
@@ -22,14 +34,9 @@ interface FeatureGateProps {
 	children: ReactNode;
 	title?: string;
 	description?: string;
-	/** Block rendering while checking access (default: false, shows content optimistically) */
 	blockWhileLoading?: boolean;
 }
 
-/**
- * Wraps content requiring a specific feature.
- * Shows upgrade prompt when feature is unavailable.
- */
 export function FeatureGate({
 	feature,
 	children,
@@ -37,10 +44,8 @@ export function FeatureGate({
 	description,
 	blockWhileLoading = false,
 }: FeatureGateProps) {
-	const { isFeatureEnabled, currentPlanId, isFree, isLoading } =
-		useBillingContext();
+	const { isFeatureEnabled, currentPlanId, isLoading } = useBillingContext();
 
-	// Optimistic: show content while loading
 	if (isLoading && !blockWhileLoading) {
 		return <>{children}</>;
 	}
@@ -50,67 +55,81 @@ export function FeatureGate({
 	}
 
 	const metadata = FEATURE_METADATA[feature];
-	const planName = metadata?.minPlan ? PLAN_NAMES[metadata.minPlan] : "a paid";
+	const requiredPlan = metadata?.minPlan ?? PLAN_IDS.HOBBY;
+	const planConfig = PLAN_CONFIG[requiredPlan] ?? PLAN_CONFIG[PLAN_IDS.HOBBY];
+	const currentConfig = PLAN_CONFIG[currentPlanId ?? PLAN_IDS.FREE] ?? PLAN_CONFIG[PLAN_IDS.FREE];
+	const PlanIcon = planConfig.icon;
+	const CurrentIcon = currentConfig.icon;
 
 	return (
-		<div className="flex h-full min-h-[400px] flex-col items-center justify-center p-8">
-			<div className="flex max-w-md flex-col items-center text-center">
-				<div className="mb-6 flex size-16 items-center justify-center rounded-full bg-secondary">
-					<LockIcon
-						className="size-8 text-muted-foreground"
-						weight="duotone"
-					/>
-				</div>
+		<div className="flex h-full min-h-[400px] items-center justify-center p-4">
+			<Card className="w-full max-w-md overflow-hidden pt-0">
+				<CardHeader className="dotted-bg flex flex-col items-center gap-4 border-b bg-accent py-8">
+					<div className="flex size-14 items-center justify-center rounded border bg-card">
+						<LockSimpleIcon
+							className="size-7 text-muted-foreground"
+							weight="duotone"
+						/>
+					</div>
+					<div className="text-center">
+						<h2 className="font-semibold text-lg tracking-tight">
+							{title ?? `Unlock ${metadata?.name ?? "this feature"}`}
+						</h2>
+						<p className="mt-1 text-muted-foreground text-sm">
+							{description ?? metadata?.description ?? "Upgrade to access this feature."}
+						</p>
+					</div>
+				</CardHeader>
 
-				<h2 className="mb-2 font-semibold text-xl">
-					{title ??
-						`${metadata?.name ?? "This feature"} requires ${planName} plan`}
-				</h2>
+				<CardContent className="space-y-4 p-4">
+					{/* Required plan */}
+					<div className="flex items-center justify-between rounded border bg-accent/50 px-3 py-2.5">
+						<span className="text-muted-foreground text-sm">Required plan</span>
+						<div className="flex items-center gap-1.5">
+							<PlanIcon className={cn("size-4", planConfig.color)} weight="duotone" />
+							<span className={cn("font-semibold text-sm", planConfig.color)}>
+								{planConfig.name}
+							</span>
+						</div>
+					</div>
 
-				<p className="mb-6 text-muted-foreground">
-					{description ??
-						metadata?.description ??
-						"Upgrade your plan to access this feature."}
-				</p>
+					{/* Current plan */}
+					<div className="flex items-center justify-between rounded border px-3 py-2.5">
+						<span className="text-muted-foreground text-sm">Your plan</span>
+						<div className="flex items-center gap-1.5">
+							<CurrentIcon className={cn("size-4", currentConfig.color)} weight="duotone" />
+							<span className="font-medium text-foreground text-sm">
+								{currentConfig.name}
+							</span>
+						</div>
+					</div>
 
-				<div className="flex flex-col gap-3 sm:flex-row">
-					<Button asChild>
+					{/* CTA */}
+					<Button asChild className="group w-full gap-2" size="lg">
 						<Link href="/billing/plans">
-							<RocketLaunchIcon className="mr-2 size-4" weight="duotone" />
-							Upgrade to {planName}
+							<RocketLaunchIcon className="size-5" weight="duotone" />
+							Upgrade to {planConfig.name}
+							<ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" />
 						</Link>
 					</Button>
-					<Button asChild variant="outline">
-						<Link href="/billing">View Current Plan</Link>
-					</Button>
-				</div>
-
-				{isFree && (
-					<p className="mt-6 text-muted-foreground text-sm">
-						You&apos;re on the{" "}
-						<span className="font-medium">
-							{PLAN_NAMES[currentPlanId ?? PLAN_IDS.FREE]}
-						</span>{" "}
-						plan
-					</p>
-				)}
-			</div>
+				</CardContent>
+			</Card>
 		</div>
 	);
 }
 
 export function useFeatureGate(feature: GatedFeatureId) {
-	const { isFeatureEnabled, getGatedFeatureAccess, isLoading } =
-		useBillingContext();
+	const { isFeatureEnabled, getGatedFeatureAccess, isLoading } = useBillingContext();
 
 	const access = getGatedFeatureAccess(feature);
 	const metadata = FEATURE_METADATA[feature];
+	const planConfig = metadata?.minPlan ? PLAN_CONFIG[metadata.minPlan] : null;
 
 	return {
 		isEnabled: isFeatureEnabled(feature),
 		isLoading,
 		...access,
-		planName: metadata?.minPlan ? PLAN_NAMES[metadata.minPlan] : null,
+		planName: planConfig?.name ?? null,
 		featureName: metadata?.name ?? feature,
 	};
 }

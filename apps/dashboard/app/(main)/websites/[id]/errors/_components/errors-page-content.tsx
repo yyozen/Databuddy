@@ -13,6 +13,7 @@ import { ErrorSummaryStats } from "./error-summary-stats";
 import { ErrorTrendsChart } from "./error-trends-chart";
 import { RecentErrorsTable } from "./recent-errors-table";
 import { TopErrorCard } from "./top-error-card";
+import { FeatureGate } from "@/components/feature-gate";	
 import type {
 	ErrorByPage,
 	ErrorChartData,
@@ -21,6 +22,7 @@ import type {
 	ProcessedChartData,
 	RecentError,
 } from "./types";
+import { GATED_FEATURES } from "@/components/providers/billing-provider";
 
 interface ErrorsPageContentProps {
 	params: Promise<{ id: string }>;
@@ -104,6 +106,7 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 	}
 
 	return (
+		<FeatureGate feature={GATED_FEATURES.ERROR_TRACKING}>
 		<div className="space-y-4 p-4">
 			{isLoading ? (
 				<ErrorsLoadingSkeleton />
@@ -132,9 +135,10 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 							errors_by_page: errorsByPage,
 						}}
 					/>
-				</div>
-			)}
-		</div>
+					</div>
+				)}
+			</div>
+		</FeatureGate>
 	);
 };
 
