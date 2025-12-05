@@ -272,11 +272,12 @@ export const websiteNavigation: NavigationSection[] = [
 			rootLevel: false,
 			gatedFeature: GATED_FEATURES.FEATURE_FLAGS,
 		}),
-		createNavItem("AI Agent", RobotIcon, "/agent", {
-			alpha: true,
-			rootLevel: false,
-			gatedFeature: GATED_FEATURES.AI_AGENT,
-		}),
+		// createNavItem("AI Agent", RobotIcon, "/agent", {
+		// 	alpha: true,
+		// 	rootLevel: false,
+		// 	tag: "WIP",
+		// 	gatedFeature: GATED_FEATURES.AI_AGENT,
+		// }),
 	]),
 ];
 
