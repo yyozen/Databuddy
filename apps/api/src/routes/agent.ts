@@ -127,10 +127,10 @@ export const agent = new Elysia({ prefix: "/v1/agent" })
 
                     const message = toUIMessage(body.message);
 
-                    // Update context with chatId for memory retrieval
                     const contextWithChatId = {
                         ...appContext,
                         chatId,
+                        requestHeaders: request.headers,
                     };
 
                     return triageAgent.toUIMessageStream({

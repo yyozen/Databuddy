@@ -9,6 +9,7 @@ export interface AppContext {
 	timezone: string;
 	currentDateTime: string;
 	chatId: string;
+	requestHeaders?: Headers;
 	[key: string]: unknown;
 }
 

@@ -1,7 +1,8 @@
 import { models } from "../config";
 import { buildTriageInstructions } from "../prompts";
-import { analyticsAgent } from "./analytics";
 import { createAgent } from "./factory";
+import { analyticsAgent } from "./analytics";
+import { funnelsAgent } from "./funnels";
 
 /**
  * Triage agent that routes user requests to the appropriate specialist.
@@ -18,7 +19,7 @@ export const triageAgent = createAgent({
 		},
 	},
 	instructions: buildTriageInstructions,
-	handoffs: [analyticsAgent],
+	handoffs: [analyticsAgent, funnelsAgent],
 	maxTurns: 1,
 });
 
