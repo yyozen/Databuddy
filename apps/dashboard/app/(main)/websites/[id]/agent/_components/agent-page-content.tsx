@@ -66,6 +66,8 @@ export function AgentPageContent({
 	);
 }
 
+const DEBUG_PREFIX = "[AGENT-PAGE-CONTENT]";
+
 function AgentPageContentInner({
 	websiteId: _websiteId,
 }: {
@@ -74,6 +76,13 @@ function AgentPageContentInner({
 	const setInputValue = useSetAtom(agentInputAtom);
 	const [showCanvas, setShowCanvas] = useAtom(agentCanvasOpenAtom);
 	const { messages, isLoading, hasError } = useAgentChat();
+
+	console.log(`${DEBUG_PREFIX} Render:`, {
+		messagesCount: messages.length,
+		isLoading,
+		hasError,
+		messages: messages.map(m => ({ id: m.id, role: m.role, textLength: m.parts?.find(p => p.type === "text")?.text?.length || 0 }))
+	});
 
 	const hasMessages = messages.length > 0;
 

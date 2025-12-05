@@ -9,22 +9,35 @@ type Props = {
 	params: Promise<{ id: string; chatId: string }>;
 };
 
+const DEBUG_PREFIX = "[AGENT-PAGE]";
+
 export default async function AgentPage(props: Props) {
 	const { id, chatId } = await props.params;
+
+	console.log(`${DEBUG_PREFIX} Server component render:`, { id, chatId });
 
 	const rpcClient = await getServerRPCClient();
 	const chat = await rpcClient.agent.getMessages({ chatId, websiteId: id });
 
+	const initialMessages = (chat?.messages ?? []) as UIMessage[];
+
+	console.log(`${DEBUG_PREFIX} Fetched messages:`, {
+		chatId,
+		websiteId: id,
+		messagesCount: initialMessages.length,
+		messages: initialMessages.map(m => ({ id: m.id, role: m.role, textLength: m.parts?.find(p => p.type === "text")?.text?.length || 0 }))
+	});
+
 	return (
 		// <FeatureGate feature={GATED_FEATURES.AI_AGENT}>
 			<ChatProvider
-				initialMessages={(chat?.messages ?? []) as UIMessage[]}
+				initialMessages={initialMessages}
 				key={`${id}-${chatId}`}
 			>
 				<AgentPageClient 
 					chatId={chatId} 
 					websiteId={id}
-					initialMessages={(chat?.messages ?? []) as UIMessage[]}
+					initialMessages={initialMessages}
 				/>
 			</ChatProvider>
 		// </FeatureGate>

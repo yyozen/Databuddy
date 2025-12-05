@@ -1,10 +1,11 @@
 "use client";
 
-import { PaperclipIcon, RobotIcon } from "@phosphor-icons/react";
+import { PaperclipIcon, RobotIcon, WarningIcon } from "@phosphor-icons/react";
 import type { UIMessage } from "ai";
 import Image from "next/image";
 import { Message, MessageAvatar, MessageContent } from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
+import { ToolOutput } from "@/components/ai-elements/tool";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -32,12 +33,34 @@ function extractFileParts(parts: UIMessage["parts"]) {
 	return parts.filter((part) => part.type === "file");
 }
 
+function extractToolParts(parts: UIMessage["parts"]) {
+	return parts.filter((part) => part.type?.startsWith("tool")) as Array<{
+		type: string;
+		toolCallId?: string;
+		toolName?: string;
+		output?: unknown;
+		errorText?: string;
+	}>;
+}
+
+const DEBUG_PREFIX = "[AGENT-MESSAGES]";
+
 export function AgentMessages({
 	messages,
 	isStreaming = false,
 	hasError = false,
 }: AgentMessagesProps) {
-	if (messages.length === 0) return null;
+	console.log(`${DEBUG_PREFIX} Render:`, {
+		messagesCount: messages.length,
+		isStreaming,
+		hasError,
+		messages: messages.map(m => ({ id: m.id, role: m.role, textLength: m.parts?.find(p => p.type === "text")?.text?.length || 0 }))
+	});
+
+	if (messages.length === 0) {
+		console.log(`${DEBUG_PREFIX} No messages to render`);
+		return null;
+	}
 
 	return (
 		<>
@@ -46,11 +69,59 @@ export function AgentMessages({
 				const isAssistant = message.role === "assistant";
 				const textContent = getTextContent(message);
 				const fileParts = extractFileParts(message.parts);
+				const toolParts = extractToolParts(message.parts);
+				const hasToolErrors = toolParts.some((tool) => tool.errorText);
 				const showError = isLastMessage && hasError && isAssistant;
 				const isMessageFinished = !isLastMessage || !isStreaming;
 
 				return (
 					<div key={message.id} className="group">
+						{/* Render tool parts (including errors) */}
+						{toolParts.length > 0 && (
+							<Message from={message.role}>
+								<MessageContent className="max-w-[80%]">
+									<div className="space-y-2">
+										{toolParts.map((toolPart) => (
+											<div key={toolPart.toolCallId}>
+												{toolPart.errorText && (
+													<div className="rounded border border-destructive/20 bg-destructive/5 p-3">
+														<div className="flex items-start gap-2">
+															<WarningIcon
+																className="size-4 shrink-0 text-destructive mt-0.5"
+																weight="fill"
+															/>
+															<div className="flex-1 min-w-0">
+																<p className="font-medium text-destructive text-sm mb-1">
+																	Tool Error: {toolPart.toolName}
+																</p>
+																<p className="text-destructive/80 text-xs">
+																	{toolPart.errorText}
+																</p>
+															</div>
+														</div>
+													</div>
+												)}
+												{!toolPart.errorText && toolPart.output !== undefined && (
+													<ToolOutput
+														output={
+															typeof toolPart.output === "string" ||
+															typeof toolPart.output === "object"
+																? (toolPart.output as string | Record<string, unknown>)
+																: String(toolPart.output)
+														}
+														errorText={toolPart.errorText}
+													/>
+												)}
+											</div>
+										))}
+									</div>
+								</MessageContent>
+								{message.role === "assistant" && (
+									<AgentMessageAvatar hasError={hasToolErrors} />
+								)}
+							</Message>
+						)}
+
 						{/* Render file attachments */}
 						{fileParts.length > 0 && (
 							<Message from={message.role}>

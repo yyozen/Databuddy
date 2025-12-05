@@ -40,9 +40,36 @@ async function callRPCProcedure(
             throw new Error(`Procedure ${routerName}.${method} not found`);
         }
 
-        const result = await (procedure as {
-            handler: (args: { context: typeof rpcContext; input: unknown }) => unknown;
-        }).handler({
+        // ORPC procedures can be called directly as functions
+        // They accept { context, input } as parameters
+        const procedureFn = procedure as unknown as (args: {
+            context: typeof rpcContext;
+            input: unknown;
+        }) => Promise<unknown>;
+
+        if (typeof procedureFn !== "function") {
+            // Fallback: try accessing .handler if it exists
+            const procedureWithHandler = procedure as {
+                handler?: (args: {
+                    context: typeof rpcContext;
+                    input: unknown;
+                }) => Promise<unknown>;
+            };
+
+            if (procedureWithHandler.handler) {
+                const result = await procedureWithHandler.handler({
+                    context: rpcContext,
+                    input,
+                });
+                return result;
+            }
+
+            throw new Error(
+                `Procedure ${routerName}.${method} is not callable. Expected a function or object with handler method.`
+            );
+        }
+
+        const result = await procedureFn({
             context: rpcContext,
             input,
         });
