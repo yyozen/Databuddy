@@ -277,32 +277,33 @@ function calculateStatus(
 	last: Heartbeat | null,
 	maxRetries: number
 ): { status: number; retries: number; streak: number } {
-	const { UP, DOWN, PENDING } = MonitorStatus;
+	const { UP, DOWN } = MonitorStatus;
+	// const { UP, DOWN, PENDING } = MonitorStatus;
 
 	// first time checking this site
 	if (!last) {
-		if (!isUp && maxRetries > 0) {
-			return { status: PENDING, retries: 1, streak: 0 };
-		}
+		// if (!isUp && maxRetries > 0) {
+		// 	return { status: PENDING, retries: 1, streak: 0 };
+		// }
 		return { status: isUp ? UP : DOWN, retries: 0, streak: isUp ? 0 : 1 };
 	}
 
 	// site was up, now it's down
 	if (last.status === UP && !isUp) {
-		if (maxRetries > 0 && last.retries < maxRetries) {
-			return {
-				status: PENDING,
-				retries: last.retries + 1,
-				streak: last.streak,
-			};
-		}
+		// if (maxRetries > 0 && last.retries < maxRetries) {
+		// 	return {
+		// 		status: PENDING,
+		// 		retries: last.retries + 1,
+		// 		streak: last.streak,
+		// 	};
+		// }
 		return { status: DOWN, retries: 0, streak: last.streak + 1 };
 	}
 
 	// still pending, still down
-	if (last.status === PENDING && !isUp && last.retries < maxRetries) {
-		return { status: PENDING, retries: last.retries + 1, streak: last.streak };
-	}
+	// if (last.status === PENDING && !isUp && last.retries < maxRetries) {
+	// 	return { status: PENDING, retries: last.retries + 1, streak: last.streak };
+	// }
 
 	// confirmed down or recovered
 	if (!isUp) {
