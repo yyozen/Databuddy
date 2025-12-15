@@ -2,8 +2,8 @@ import { and, db, eq, uptimeSchedules } from "@databuddy/db";
 import { logger } from "@databuddy/shared/logger";
 import { ORPCError } from "@orpc/server";
 import { Client } from "@upstash/qstash";
+import { nanoid } from "nanoid";
 import { z } from "zod";
-import { recordORPCError } from "../lib/otel";
 import { protectedProcedure } from "../orpc";
 import {
 	authorizeUptimeScheduleAccess,
@@ -55,12 +55,17 @@ async function findScheduleByWebsiteId(websiteId: string) {
 	return schedule;
 }
 
-async function createQStashSchedule(granularity: z.infer<typeof granularityEnum>) {
+async function createQStashSchedule(
+	scheduleId: string,
+	granularity: z.infer<typeof granularityEnum>
+) {
 	const result = await client.schedules.create({
+		scheduleId,
 		destination: UPTIME_URL_GROUP,
 		cron: CRON_GRANULARITIES[granularity],
 		headers: {
 			"Content-Type": "application/json",
+			"X-Schedule-Id": scheduleId,
 		},
 	});
 
@@ -76,8 +81,7 @@ async function createQStashSchedule(granularity: z.infer<typeof granularityEnum>
 async function ensureNoDuplicateSchedule(
 	url: string,
 	userId: string,
-	websiteId?: string | null,
-	excludeScheduleId?: string
+	websiteId?: string | null
 ) {
 	const conditions = [
 		eq(uptimeSchedules.url, url),
@@ -88,34 +92,25 @@ async function ensureNoDuplicateSchedule(
 		conditions.push(eq(uptimeSchedules.websiteId, websiteId));
 	}
 
-	const schedules = await db.query.uptimeSchedules.findMany({
+	const existing = await db.query.uptimeSchedules.findFirst({
 		where: and(...conditions),
 	});
 
-	const conflictingSchedules = excludeScheduleId
-		? schedules.filter((s) => s.id !== excludeScheduleId)
-		: schedules;
-
-	if (conflictingSchedules.length > 0) {
-		const message = websiteId
-			? "A monitor already exists for this website. Please delete the existing monitor before creating a new one."
-			: "A monitor already exists for this URL. Please delete the existing monitor before creating a new one.";
-		throw new ORPCError("CONFLICT", { message });
+	if (existing) {
+		throw new ORPCError("CONFLICT", {
+			message: websiteId
+				? "Monitor already exists for this website"
+				: "Monitor already exists for this URL",
+		});
 	}
 }
 
 export const uptimeRouter = {
 	getScheduleByWebsiteId: protectedProcedure
-		.input(
-			z.object({
-				websiteId: z.string().min(1, "Website ID is required"),
-			})
-		)
+		.input(z.object({ websiteId: z.string() }))
 		.handler(async ({ context, input }) => {
 			await authorizeWebsiteAccess(context, input.websiteId, "read");
-
-			const schedule = await findScheduleByWebsiteId(input.websiteId);
-			return schedule || null;
+			return await findScheduleByWebsiteId(input.websiteId);
 		}),
 
 	listSchedules: protectedProcedure
@@ -141,11 +136,7 @@ export const uptimeRouter = {
 		}),
 
 	getSchedule: protectedProcedure
-		.input(
-			z.object({
-				scheduleId: z.string().min(1, "Schedule ID is required"),
-			})
-		)
+		.input(z.object({ scheduleId: z.string() }))
 		.handler(async ({ context, input }) => {
 			const [dbSchedule, qstashSchedule] = await Promise.all([
 				findScheduleById(input.scheduleId),
@@ -153,13 +144,7 @@ export const uptimeRouter = {
 			]);
 
 			if (!dbSchedule) {
-				recordORPCError({
-					code: "NOT_FOUND",
-					message: "Schedule not found",
-				});
-				throw new ORPCError("NOT_FOUND", {
-					message: "Schedule not found",
-				});
+				throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
 			}
 
 			await authorizeUptimeScheduleAccess(context, {
@@ -193,7 +178,8 @@ export const uptimeRouter = {
 				input.websiteId ?? null
 			);
 
-			const scheduleId = await createQStashSchedule(input.granularity);
+			const scheduleId = input.websiteId || nanoid(10);
+			await createQStashSchedule(scheduleId, input.granularity);
 
 			await db.insert(uptimeSchedules).values({
 				id: scheduleId,
@@ -206,15 +192,19 @@ export const uptimeRouter = {
 				isPaused: false,
 			});
 
-			logger.info(
-				{
-					scheduleId,
-					url: input.url,
-					websiteId: input.websiteId,
-					userId: context.user.id,
-				},
-				"Uptime schedule created"
-			);
+			client
+				.publish({
+					urlGroup: UPTIME_URL_GROUP,
+					headers: {
+						"Content-Type": "application/json",
+						"X-Schedule-Id": scheduleId,
+					},
+				})
+				.catch((error) =>
+					logger.error({ scheduleId, error }, "Failed to trigger initial check")
+				);
+
+			logger.info({ scheduleId, url: input.url }, "Schedule created");
 
 			return {
 				scheduleId,
@@ -226,25 +216,11 @@ export const uptimeRouter = {
 		}),
 
 	updateSchedule: protectedProcedure
-		.input(
-			z.object({
-				scheduleId: z.string().min(1, "Schedule ID is required"),
-				url: z.string().url("Valid URL is required"),
-				name: z.string().optional(),
-				granularity: granularityEnum,
-			})
-		)
+		.input(z.object({ scheduleId: z.string(), granularity: granularityEnum }))
 		.handler(async ({ context, input }) => {
 			const schedule = await findScheduleById(input.scheduleId);
-
 			if (!schedule) {
-				recordORPCError({
-					code: "NOT_FOUND",
-					message: "Schedule not found",
-				});
-				throw new ORPCError("NOT_FOUND", {
-					message: "Schedule not found",
-				});
+				throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
 			}
 
 			await authorizeUptimeScheduleAccess(context, {
@@ -253,57 +229,32 @@ export const uptimeRouter = {
 			});
 
 			await client.schedules.delete(input.scheduleId);
-			const newScheduleId = await createQStashSchedule(input.granularity);
+			await createQStashSchedule(input.scheduleId, input.granularity);
 
-			await db.delete(uptimeSchedules).where(eq(uptimeSchedules.id, input.scheduleId));
-
-			await db.insert(uptimeSchedules).values({
-				id: newScheduleId,
-				websiteId: schedule.websiteId,
-				userId: schedule.userId,
-				url: input.url,
-				name: input.name ?? null,
-				granularity: input.granularity,
-				cron: CRON_GRANULARITIES[input.granularity],
-				isPaused: false,
-			});
-
-			logger.info(
-				{
-					oldScheduleId: input.scheduleId,
-					newScheduleId,
-					url: input.url,
+			await db
+				.update(uptimeSchedules)
+				.set({
 					granularity: input.granularity,
-				},
-				"Uptime schedule updated"
-			);
+					cron: CRON_GRANULARITIES[input.granularity],
+					updatedAt: new Date(),
+				})
+				.where(eq(uptimeSchedules.id, input.scheduleId));
+
+			logger.info({ scheduleId: input.scheduleId }, "Schedule updated");
 
 			return {
-				scheduleId: newScheduleId,
-				url: input.url,
-				name: input.name,
+				scheduleId: input.scheduleId,
 				granularity: input.granularity,
 				cron: CRON_GRANULARITIES[input.granularity],
 			};
 		}),
 
 	deleteSchedule: protectedProcedure
-		.input(
-			z.object({
-				scheduleId: z.string().min(1, "Schedule ID is required"),
-			})
-		)
+		.input(z.object({ scheduleId: z.string() }))
 		.handler(async ({ context, input }) => {
 			const schedule = await findScheduleById(input.scheduleId);
-
 			if (!schedule) {
-				recordORPCError({
-					code: "NOT_FOUND",
-					message: "Schedule not found",
-				});
-				throw new ORPCError("NOT_FOUND", {
-					message: "Schedule not found",
-				});
+				throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
 			}
 
 			await authorizeUptimeScheduleAccess(context, {
@@ -311,66 +262,22 @@ export const uptimeRouter = {
 				userId: schedule.userId,
 			});
 
-			try {
-				await client.schedules.delete(input.scheduleId);
-			} catch (error) {
-				logger.error(
-					{ scheduleId: input.scheduleId, error },
-					"Failed to delete QStash schedule"
-				);
-				recordORPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Failed to delete QStash schedule",
-				});
-				throw new ORPCError("INTERNAL_SERVER_ERROR", {
-					message: "Failed to delete QStash schedule. Please try again.",
-				});
-			}
+			await Promise.all([
+				client.schedules.delete(input.scheduleId),
+				db.delete(uptimeSchedules).where(eq(uptimeSchedules.id, input.scheduleId)),
+			]);
 
-			await db
-				.delete(uptimeSchedules)
-				.where(eq(uptimeSchedules.id, input.scheduleId));
-
-			const verifyDeleted = await findScheduleById(input.scheduleId);
-			if (verifyDeleted) {
-				recordORPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Failed to verify schedule deletion",
-				});
-				throw new ORPCError("INTERNAL_SERVER_ERROR", {
-					message: "Failed to verify schedule deletion",
-				});
-			}
-
-			logger.info(
-				{
-					scheduleId: input.scheduleId,
-					websiteId: schedule.websiteId,
-					userId: context.user.id,
-				},
-				"Uptime schedule deleted"
-			);
+			logger.info({ scheduleId: input.scheduleId }, "Schedule deleted");
 
 			return { success: true, scheduleId: input.scheduleId };
 		}),
 
 	pauseSchedule: protectedProcedure
-		.input(
-			z.object({
-				scheduleId: z.string().min(1, "Schedule ID is required"),
-			})
-		)
+		.input(z.object({ scheduleId: z.string() }))
 		.handler(async ({ context, input }) => {
 			const schedule = await findScheduleById(input.scheduleId);
-
 			if (!schedule) {
-				recordORPCError({
-					code: "NOT_FOUND",
-					message: "Schedule not found",
-				});
-				throw new ORPCError("NOT_FOUND", {
-					message: "Schedule not found",
-				});
+				throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
 			}
 
 			await authorizeUptimeScheduleAccess(context, {
@@ -379,10 +286,6 @@ export const uptimeRouter = {
 			});
 
 			if (schedule.isPaused) {
-				recordORPCError({
-					code: "BAD_REQUEST",
-					message: "Schedule is already paused",
-				});
 				throw new ORPCError("BAD_REQUEST", {
 					message: "Schedule is already paused",
 				});
@@ -396,35 +299,17 @@ export const uptimeRouter = {
 					.where(eq(uptimeSchedules.id, input.scheduleId)),
 			]);
 
-			logger.info(
-				{
-					scheduleId: input.scheduleId,
-					websiteId: schedule.websiteId,
-					userId: context.user.id,
-				},
-				"Uptime schedule paused"
-			);
+			logger.info({ scheduleId: input.scheduleId }, "Schedule paused");
 
 			return { success: true, scheduleId: input.scheduleId, isPaused: true };
 		}),
 
 	resumeSchedule: protectedProcedure
-		.input(
-			z.object({
-				scheduleId: z.string().min(1, "Schedule ID is required"),
-			})
-		)
+		.input(z.object({ scheduleId: z.string() }))
 		.handler(async ({ context, input }) => {
 			const schedule = await findScheduleById(input.scheduleId);
-
 			if (!schedule) {
-				recordORPCError({
-					code: "NOT_FOUND",
-					message: "Schedule not found",
-				});
-				throw new ORPCError("NOT_FOUND", {
-					message: "Schedule not found",
-				});
+				throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
 			}
 
 			await authorizeUptimeScheduleAccess(context, {
@@ -433,10 +318,6 @@ export const uptimeRouter = {
 			});
 
 			if (!schedule.isPaused) {
-				recordORPCError({
-					code: "BAD_REQUEST",
-					message: "Schedule is not paused",
-				});
 				throw new ORPCError("BAD_REQUEST", {
 					message: "Schedule is not paused",
 				});
@@ -450,14 +331,7 @@ export const uptimeRouter = {
 					.where(eq(uptimeSchedules.id, input.scheduleId)),
 			]);
 
-			logger.info(
-				{
-					scheduleId: input.scheduleId,
-					websiteId: schedule.websiteId,
-					userId: context.user.id,
-				},
-				"Uptime schedule resumed"
-			);
+			logger.info({ scheduleId: input.scheduleId }, "Schedule resumed");
 
 			return { success: true, scheduleId: input.scheduleId, isPaused: false };
 		}),

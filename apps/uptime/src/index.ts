@@ -89,7 +89,7 @@ const app = new Elysia()
 
 			const headerSchema = z.object({
 				"upstash-signature": z.string(),
-				"upstash-schedule-id": z.string(),
+				"x-schedule-id": z.string(),
 				"upstash-retried": z.string().optional(),
 			});
 
@@ -108,7 +108,7 @@ const app = new Elysia()
 				);
 			}
 
-			const { "upstash-signature": signature, "upstash-schedule-id": scheduleId } =
+			const { "upstash-signature": signature, "x-schedule-id": scheduleId } =
 				parsed.data;
 
 			const isValid = await receiver.verify({
