@@ -250,6 +250,10 @@ export const websiteNavigation: NavigationSection[] = [
 			rootLevel: false,
 			gatedFeature: GATED_FEATURES.ERROR_TRACKING,
 		}),
+		createNavItem("Pulse", HeartbeatIcon, "/pulse", {
+			rootLevel: false,
+			flag: "pulse",
+		}),
 	]),
 	createNavSection("Product Analytics", TrendUpIcon, [
 		createNavItem("Users", UsersThreeIcon, "/users", {
