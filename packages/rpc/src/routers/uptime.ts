@@ -10,13 +10,7 @@ import {
 	authorizeWebsiteAccess,
 } from "../utils/auth";
 
-if (!process.env.UPSTASH_QSTASH_TOKEN) {
-	logger.error("UPSTASH_QSTASH_TOKEN environment variable is required");
-}
-
-const client = new Client({
-	token: process.env.UPSTASH_QSTASH_TOKEN,
-});
+const client = new Client({ token: process.env.UPSTASH_QSTASH_TOKEN });
 
 const CRON_GRANULARITIES = {
 	minute: "* * * * *",
@@ -40,18 +34,23 @@ const granularityEnum = z.enum([
 
 const UPTIME_URL_GROUP = process.env.UPTIME_URL_GROUP || "uptime";
 
-async function findScheduleById(scheduleId: string) {
+async function getScheduleAndAuthorize(
+	scheduleId: string,
+	context: Parameters<typeof authorizeUptimeScheduleAccess>[0]
+) {
 	const schedule = await db.query.uptimeSchedules.findFirst({
 		where: eq(uptimeSchedules.id, scheduleId),
 	});
-	return schedule;
-}
 
-async function findScheduleByWebsiteId(websiteId: string) {
-	const schedule = await db.query.uptimeSchedules.findFirst({
-		where: eq(uptimeSchedules.websiteId, websiteId),
-		orderBy: (table, { desc }) => [desc(table.createdAt)],
+	if (!schedule) {
+		throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
+	}
+
+	await authorizeUptimeScheduleAccess(context, {
+		websiteId: schedule.websiteId,
+		userId: schedule.userId,
 	});
+
 	return schedule;
 }
 
@@ -59,50 +58,21 @@ async function createQStashSchedule(
 	scheduleId: string,
 	granularity: z.infer<typeof granularityEnum>
 ) {
-	const result = await client.schedules.create({
+	await client.schedules.create({
 		scheduleId,
 		destination: UPTIME_URL_GROUP,
 		cron: CRON_GRANULARITIES[granularity],
-		headers: {
-			"Content-Type": "application/json",
-			"X-Schedule-Id": scheduleId,
-		},
+		headers: { "Content-Type": "application/json", "X-Schedule-Id": scheduleId },
 	});
-
-	if (!result.scheduleId) {
-		throw new ORPCError("INTERNAL_SERVER_ERROR", {
-			message: "Failed to create uptime schedule",
-		});
-	}
-
-	return result.scheduleId;
 }
 
-async function ensureNoDuplicateSchedule(
-	url: string,
-	userId: string,
-	websiteId?: string | null
-) {
-	const conditions = [
-		eq(uptimeSchedules.url, url),
-		eq(uptimeSchedules.userId, userId),
-	];
-
-	if (websiteId) {
-		conditions.push(eq(uptimeSchedules.websiteId, websiteId));
-	}
-
-	const existing = await db.query.uptimeSchedules.findFirst({
-		where: and(...conditions),
-	});
-
-	if (existing) {
-		throw new ORPCError("CONFLICT", {
-			message: websiteId
-				? "Monitor already exists for this website"
-				: "Monitor already exists for this URL",
-		});
-	}
+function triggerInitialCheck(scheduleId: string) {
+	client
+		.publish({
+			urlGroup: UPTIME_URL_GROUP,
+			headers: { "Content-Type": "application/json", "X-Schedule-Id": scheduleId },
+		})
+		.catch((error) => logger.error({ scheduleId, error }, "Initial check failed"));
 }
 
 export const uptimeRouter = {
@@ -110,15 +80,14 @@ export const uptimeRouter = {
 		.input(z.object({ websiteId: z.string() }))
 		.handler(async ({ context, input }) => {
 			await authorizeWebsiteAccess(context, input.websiteId, "read");
-			return await findScheduleByWebsiteId(input.websiteId);
+			return await db.query.uptimeSchedules.findFirst({
+				where: eq(uptimeSchedules.websiteId, input.websiteId),
+				orderBy: (table, { desc }) => [desc(table.createdAt)],
+			});
 		}),
 
 	listSchedules: protectedProcedure
-		.input(
-			z.object({
-				websiteId: z.string().optional(),
-			})
-		)
+		.input(z.object({ websiteId: z.string().optional() }))
 		.handler(async ({ context, input }) => {
 			const conditions = [eq(uptimeSchedules.userId, context.user.id)];
 
@@ -127,19 +96,19 @@ export const uptimeRouter = {
 				conditions.push(eq(uptimeSchedules.websiteId, input.websiteId));
 			}
 
-			const schedules = await db.query.uptimeSchedules.findMany({
+			return await db.query.uptimeSchedules.findMany({
 				where: and(...conditions),
 				orderBy: (table, { desc }) => [desc(table.createdAt)],
 			});
-
-			return schedules;
 		}),
 
 	getSchedule: protectedProcedure
 		.input(z.object({ scheduleId: z.string() }))
 		.handler(async ({ context, input }) => {
 			const [dbSchedule, qstashSchedule] = await Promise.all([
-				findScheduleById(input.scheduleId),
+				db.query.uptimeSchedules.findFirst({
+					where: eq(uptimeSchedules.id, input.scheduleId),
+				}),
 				client.schedules.get(input.scheduleId).catch(() => null),
 			]);
 
@@ -161,7 +130,7 @@ export const uptimeRouter = {
 	createSchedule: protectedProcedure
 		.input(
 			z.object({
-				url: z.string().url("Valid URL is required"),
+				url: z.string().url(),
 				name: z.string().optional(),
 				websiteId: z.string().optional(),
 				granularity: granularityEnum,
@@ -172,15 +141,26 @@ export const uptimeRouter = {
 				await authorizeWebsiteAccess(context, input.websiteId, "update");
 			}
 
-			await ensureNoDuplicateSchedule(
-				input.url,
-				context.user.id,
-				input.websiteId ?? null
-			);
+			const existing = await db.query.uptimeSchedules.findFirst({
+				where: and(
+					eq(uptimeSchedules.url, input.url),
+					eq(uptimeSchedules.userId, context.user.id),
+					...(input.websiteId
+						? [eq(uptimeSchedules.websiteId, input.websiteId)]
+						: [])
+				),
+			});
+
+			if (existing) {
+				throw new ORPCError("CONFLICT", {
+					message: input.websiteId
+						? "Monitor already exists for this website"
+						: "Monitor already exists for this URL",
+				});
+			}
 
 			const scheduleId = input.websiteId || nanoid(10);
 
-			// Insert to DB first
 			await db.insert(uptimeSchedules).values({
 				id: scheduleId,
 				websiteId: input.websiteId ?? null,
@@ -192,30 +172,17 @@ export const uptimeRouter = {
 				isPaused: false,
 			});
 
-			// Then create QStash schedule, rollback DB if it fails
 			try {
 				await createQStashSchedule(scheduleId, input.granularity);
 			} catch (error) {
 				await db.delete(uptimeSchedules).where(eq(uptimeSchedules.id, scheduleId));
-				logger.error({ scheduleId, error }, "QStash creation failed, rolled back");
+				logger.error({ scheduleId, error }, "QStash failed, rolled back");
 				throw new ORPCError("INTERNAL_SERVER_ERROR", {
 					message: "Failed to create monitor",
 				});
 			}
 
-			// Trigger initial check (fire-and-forget)
-			client
-				.publish({
-					urlGroup: UPTIME_URL_GROUP,
-					headers: {
-						"Content-Type": "application/json",
-						"X-Schedule-Id": scheduleId,
-					},
-				})
-				.catch((error) =>
-					logger.error({ scheduleId, error }, "Failed to trigger initial check")
-				);
-
+			triggerInitialCheck(scheduleId);
 			logger.info({ scheduleId, url: input.url }, "Schedule created");
 
 			return {
@@ -230,15 +197,7 @@ export const uptimeRouter = {
 	updateSchedule: protectedProcedure
 		.input(z.object({ scheduleId: z.string(), granularity: granularityEnum }))
 		.handler(async ({ context, input }) => {
-			const schedule = await findScheduleById(input.scheduleId);
-			if (!schedule) {
-				throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
-			}
-
-			await authorizeUptimeScheduleAccess(context, {
-				websiteId: schedule.websiteId,
-				userId: schedule.userId,
-			});
+			await getScheduleAndAuthorize(input.scheduleId, context);
 
 			await client.schedules.delete(input.scheduleId);
 			await createQStashSchedule(input.scheduleId, input.granularity);
@@ -264,15 +223,7 @@ export const uptimeRouter = {
 	deleteSchedule: protectedProcedure
 		.input(z.object({ scheduleId: z.string() }))
 		.handler(async ({ context, input }) => {
-			const schedule = await findScheduleById(input.scheduleId);
-			if (!schedule) {
-				throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
-			}
-
-			await authorizeUptimeScheduleAccess(context, {
-				websiteId: schedule.websiteId,
-				userId: schedule.userId,
-			});
+			await getScheduleAndAuthorize(input.scheduleId, context);
 
 			await Promise.all([
 				client.schedules.delete(input.scheduleId),
@@ -280,22 +231,45 @@ export const uptimeRouter = {
 			]);
 
 			logger.info({ scheduleId: input.scheduleId }, "Schedule deleted");
-
-			return { success: true, scheduleId: input.scheduleId };
+			return { success: true };
 		}),
 
+	togglePause: protectedProcedure
+		.input(z.object({ scheduleId: z.string(), pause: z.boolean() }))
+		.handler(async ({ context, input }) => {
+			const schedule = await getScheduleAndAuthorize(input.scheduleId, context);
+
+			if (schedule.isPaused === input.pause) {
+				throw new ORPCError("BAD_REQUEST", {
+					message: input.pause
+						? "Schedule is already paused"
+						: "Schedule is not paused",
+				});
+			}
+
+			await Promise.all([
+				input.pause
+					? client.schedules.pause({ schedule: input.scheduleId })
+					: client.schedules.resume({ schedule: input.scheduleId }),
+				db
+					.update(uptimeSchedules)
+					.set({ isPaused: input.pause, updatedAt: new Date() })
+					.where(eq(uptimeSchedules.id, input.scheduleId)),
+			]);
+
+			logger.info(
+				{ scheduleId: input.scheduleId, paused: input.pause },
+				"Schedule toggled"
+			);
+
+			return { success: true, isPaused: input.pause };
+		}),
+
+	// Legacy endpoints for backwards compatibility
 	pauseSchedule: protectedProcedure
 		.input(z.object({ scheduleId: z.string() }))
 		.handler(async ({ context, input }) => {
-			const schedule = await findScheduleById(input.scheduleId);
-			if (!schedule) {
-				throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
-			}
-
-			await authorizeUptimeScheduleAccess(context, {
-				websiteId: schedule.websiteId,
-				userId: schedule.userId,
-			});
+			const schedule = await getScheduleAndAuthorize(input.scheduleId, context);
 
 			if (schedule.isPaused) {
 				throw new ORPCError("BAD_REQUEST", {
@@ -312,22 +286,13 @@ export const uptimeRouter = {
 			]);
 
 			logger.info({ scheduleId: input.scheduleId }, "Schedule paused");
-
-			return { success: true, scheduleId: input.scheduleId, isPaused: true };
+			return { success: true, isPaused: true };
 		}),
 
 	resumeSchedule: protectedProcedure
 		.input(z.object({ scheduleId: z.string() }))
 		.handler(async ({ context, input }) => {
-			const schedule = await findScheduleById(input.scheduleId);
-			if (!schedule) {
-				throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
-			}
-
-			await authorizeUptimeScheduleAccess(context, {
-				websiteId: schedule.websiteId,
-				userId: schedule.userId,
-			});
+			const schedule = await getScheduleAndAuthorize(input.scheduleId, context);
 
 			if (!schedule.isPaused) {
 				throw new ORPCError("BAD_REQUEST", {
@@ -344,7 +309,6 @@ export const uptimeRouter = {
 			]);
 
 			logger.info({ scheduleId: input.scheduleId }, "Schedule resumed");
-
-			return { success: true, scheduleId: input.scheduleId, isPaused: false };
+			return { success: true, isPaused: false };
 		}),
 };
