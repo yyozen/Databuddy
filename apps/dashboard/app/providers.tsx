@@ -12,6 +12,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { useState } from "react";
 import { OrganizationsProvider } from "@/components/providers/organizations-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useToastTracking } from "@/hooks/toast-hooks";
 
 const defaultQueryClientOptions = {
 	defaultOptions: {
@@ -53,7 +54,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 				<TooltipProvider>
 					<FlagsProviderWrapper>
 						<OrganizationsProvider>
-							<NuqsAdapter>{children}</NuqsAdapter>
+							<ToastTracker>
+								<NuqsAdapter>{children}</NuqsAdapter>
+							</ToastTracker>
 						</OrganizationsProvider>
 					</FlagsProviderWrapper>
 				</TooltipProvider>
@@ -94,4 +97,9 @@ function FlagsProviderWrapper({ children }: { children: React.ReactNode }) {
 			{children}
 		</FlagsProvider>
 	);
+}
+
+function ToastTracker({ children }: { children: React.ReactNode }) {
+	useToastTracking();
+	return <>{children}</>;
 }
