@@ -18,13 +18,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { orpc } from "@/lib/orpc";
-import type { Flag } from "./types";
-
-type FlagActionsProps = {
-	flag: Flag;
-	onEditAction: () => void;
-	onDeletedAction?: () => void;
-};
+import type { FlagActionsProps } from "./types";
 
 export function FlagActions({
 	flag,
@@ -49,14 +43,17 @@ export function FlagActions({
 		const queryKey = orpc.flags.list.queryKey({
 			input: { websiteId: flag.websiteId ?? "" },
 		});
-		queryClient.setQueryData(queryKey, (oldData: any) =>
-			oldData?.filter((f: any) => f.id !== flag.id)
-		);
+		queryClient.setQueryData(queryKey, (oldData) => {
+			if (!Array.isArray(oldData)) {
+				return oldData;
+			}
+			return oldData.filter((f) => f.id !== flag.id);
+		});
 		try {
 			await deleteMutation.mutateAsync({ id: flag.id });
 			toast.success("Flag deleted");
 			onDeletedAction?.();
-		} catch (_error) {
+		} catch {
 			queryClient.invalidateQueries({
 				queryKey: orpc.flags.list.key({
 					input: { websiteId: flag.websiteId ?? "" },

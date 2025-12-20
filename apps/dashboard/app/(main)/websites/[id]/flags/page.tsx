@@ -127,84 +127,86 @@ export default function FlagsPage() {
 
 	return (
 		<FeatureGate feature={GATED_FEATURES.FEATURE_FLAGS}>
-			<WebsitePageHeader
-				createActionLabel="Create Flag"
-				description="Control feature rollouts and A/B testing"
-				docsUrl="https://www.databuddy.cc/docs/features/feature-flags"
-				hasError={!!flagsError}
-				icon={
-					<FlagIcon
-						className="size-6 text-accent-foreground"
-						size={16}
-						weight="duotone"
-					/>
-				}
-				isLoading={isLoading}
-				isRefreshing={isRefreshing}
-				onCreateAction={handleCreateFlag}
-				onRefreshAction={handleRefresh}
-				subtitle={
-					isLoading
-						? undefined
-						: `${flags?.length || 0} flag${(flags?.length || 0) !== 1 ? "s" : ""}`
-				}
-				title="Feature Flags"
-				websiteId={websiteId}
-				websiteName={website?.name || undefined}
-			/>
-			<div className="h-full space-y-4 p-4">
-				{experimentFlag.isReady && flags && flags.length > 0 && (
-					<div className="flex items-center gap-2">
+			<div className="flex h-full min-h-0 flex-col overflow-hidden">
+				<WebsitePageHeader
+					createActionLabel="Create Flag"
+					description="Control feature rollouts and A/B testing"
+					docsUrl="https://www.databuddy.cc/docs/features/feature-flags"
+					hasError={!!flagsError}
+					icon={
 						<FlagIcon
-							className="size-4"
-							color={experimentFlag.enabled ? "red" : "blue"}
+							className="size-6 text-accent-foreground"
 							size={16}
-							weight="fill"
+							weight="duotone"
 						/>
-						{experimentFlag.enabled ? (
-							<Badge className="bg-red-500 text-white">Red Team</Badge>
-						) : (
-							<Badge className="bg-blue-500 text-white">Blue Team</Badge>
-						)}
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<InfoIcon className="size-4" weight="duotone" />
-							</TooltipTrigger>
-							<TooltipContent className="max-w-xs">
-								<div className="space-y-2">
-									<p className="font-medium">A/B Test Experiment</p>
-									<p className="text-xs leading-relaxed">
-										This is a proof-of-concept feature flag demonstrating A/B
-										testing capabilities. Approximately 50% of users are
-										randomly assigned to the "Red Team" experience, while the
-										other 50% see the "Blue Team" experience. This live
-										experiment helps test feature flag functionality and user
-										experience variations.
-									</p>
-								</div>
-							</TooltipContent>
-						</Tooltip>
-					</div>
-				)}
-				<Suspense fallback={<FlagsListSkeleton />}>
-					<FlagsList
-						flags={(flags as any) || []}
-						isLoading={isLoading}
-						onCreateFlagAction={handleCreateFlag}
-						onEditFlagAction={handleEditFlag}
-					/>
-				</Suspense>
-
-				{isSheetOpen && (
-					<Suspense fallback={null}>
-						<FlagSheet
-							flag={editingFlag}
-							isOpen={isSheetOpen}
-							onCloseAction={handleSheetClose}
-							websiteId={websiteId}
+					}
+					isLoading={isLoading}
+					isRefreshing={isRefreshing}
+					onCreateAction={handleCreateFlag}
+					onRefreshAction={handleRefresh}
+					subtitle={
+						isLoading
+							? undefined
+							: `${flags?.length || 0} flag${(flags?.length || 0) !== 1 ? "s" : ""}`
+					}
+					title="Feature Flags"
+					websiteId={websiteId}
+					websiteName={website?.name || undefined}
+				/>
+				<div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+					{experimentFlag.isReady && flags && flags.length > 0 && (
+						<div className="flex items-center gap-2">
+							<FlagIcon
+								className="size-4"
+								color={experimentFlag.enabled ? "red" : "blue"}
+								size={16}
+								weight="fill"
+							/>
+							{experimentFlag.enabled ? (
+								<Badge className="bg-red-500 text-white">Red Team</Badge>
+							) : (
+								<Badge className="bg-blue-500 text-white">Blue Team</Badge>
+							)}
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<InfoIcon className="size-4" weight="duotone" />
+								</TooltipTrigger>
+								<TooltipContent className="max-w-xs">
+									<div className="space-y-2">
+										<p className="font-medium">A/B Test Experiment</p>
+										<p className="text-xs leading-relaxed">
+											This is a proof-of-concept feature flag demonstrating A/B
+											testing capabilities. Approximately 50% of users are
+											randomly assigned to the "Red Team" experience, while the
+											other 50% see the "Blue Team" experience. This live
+											experiment helps test feature flag functionality and user
+											experience variations.
+										</p>
+									</div>
+								</TooltipContent>
+							</Tooltip>
+						</div>
+					)}
+					<Suspense fallback={<FlagsListSkeleton />}>
+						<FlagsList
+							flags={(flags as any) || []}
+							isLoading={isLoading}
+							onCreateFlagAction={handleCreateFlag}
+							onEditFlagAction={handleEditFlag}
 						/>
 					</Suspense>
-				)}
+
+					{isSheetOpen && (
+						<Suspense fallback={null}>
+							<FlagSheet
+								flag={editingFlag}
+								isOpen={isSheetOpen}
+								onCloseAction={handleSheetClose}
+								websiteId={websiteId}
+							/>
+						</Suspense>
+					)}
+				</div>
 			</div>
 		</FeatureGate>
 	);

@@ -56,7 +56,8 @@
       },
       "nursery": {
         "noShadow": "off",
-        "useMaxParams": "off"
+        "useMaxParams": "off",
+        "noLeakedRender": "off"
       },
       "a11y": {
         "noStaticElementInteractions": "off"

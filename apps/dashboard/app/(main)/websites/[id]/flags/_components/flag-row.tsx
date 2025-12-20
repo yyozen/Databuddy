@@ -7,15 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { orpc } from "@/lib/orpc";
 import { FlagActions } from "./flag-actions";
-import type { Flag } from "./types";
-
-type FlagRowProps = {
-	flag: Flag;
-	onEditAction: () => void;
-	isExpanded?: boolean;
-	onToggleAction?: (flagId: string) => void;
-	children?: React.ReactNode;
-};
+import type { FlagRowProps } from "./types";
 
 export function FlagRow({
 	flag,
@@ -31,9 +23,7 @@ export function FlagRow({
 		if (target.closest("button")) {
 			return;
 		}
-		if (onToggleAction) {
-			onToggleAction(flag.id);
-		}
+		onToggleAction?.(flag.id);
 	};
 
 	const getStatusBadge = (status: string) => {
@@ -64,10 +54,9 @@ export function FlagRow({
 		return <Badge>{status}</Badge>;
 	};
 
-	const ruleCount = Array.isArray(flag.rules) ? flag.rules.length : 0;
-	const rollout =
-		typeof flag.rolloutPercentage === "number" ? flag.rolloutPercentage : 0;
-	const isBooleanFlag = String(flag.type).toLowerCase() === "boolean";
+	const ruleCount = flag.rules?.length ?? 0;
+	const rollout = flag.rolloutPercentage ?? 0;
+	const isBooleanFlag = flag.type === "boolean";
 	const defaultLabel =
 		isBooleanFlag && typeof flag.defaultValue === "boolean"
 			? `Default: ${flag.defaultValue ? "On" : "Off"}`
@@ -79,6 +68,7 @@ export function FlagRow({
 			onClick={handleCardClick}
 			onKeyDown={(e) => {
 				if ((e.key === "Enter" || e.key === " ") && onToggleAction) {
+					e.preventDefault();
 					onToggleAction(flag.id);
 				}
 			}}
@@ -94,36 +84,36 @@ export function FlagRow({
 						>
 							{flag.key}
 						</h3>
-						{rollout > 0 && (
+						{rollout > 0 ? (
 							<span className="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-muted-foreground text-xs">
 								<span className="h-1.5 w-1.5 rounded bg-primary" />
 								{rollout}% rollout
 							</span>
-						)}
-						{ruleCount > 0 && (
+						) : null}
+						{ruleCount > 0 ? (
 							<span className="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-muted-foreground text-xs">
 								{ruleCount} rule{ruleCount !== 1 ? "s" : ""}
 							</span>
-						)}
+						) : null}
 					</div>
-					{flag.name && (
+					{flag.name ? (
 						<p className="mt-2 mb-1 font-medium text-foreground text-sm">
 							{flag.name}
 						</p>
-					)}
-					{flag.description && (
+					) : null}
+					{flag.description ? (
 						<p className="line-clamp-2 text-muted-foreground text-sm">
 							{flag.description}
 						</p>
-					)}
+					) : null}
 				</div>
 				<div className="flex items-center gap-2">
 					{getStatusBadge(flag.status)}
-					{defaultLabel && (
+					{defaultLabel ? (
 						<span className="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-muted-foreground text-xs">
 							{defaultLabel}
 						</span>
-					)}
+					) : null}
 					<FlagActions
 						flag={flag}
 						onDeletedAction={() => {
@@ -135,7 +125,7 @@ export function FlagRow({
 						}}
 						onEditAction={onEditAction}
 					/>
-					{onToggleAction && (
+					{onToggleAction ? (
 						<Button
 							className="focus-visible:ring-(--color-primary) focus-visible:ring-2"
 							onClick={(e) => {
@@ -152,14 +142,14 @@ export function FlagRow({
 								<CaretDownIcon className="size-4" weight="fill" />
 							)}
 						</Button>
-					)}
+					) : null}
 				</div>
 			</div>
-			{isExpanded && (
+			{isExpanded ? (
 				<div className="border-border border-t bg-muted/30">
 					<div className="p-4">{children}</div>
 				</div>
-			)}
+			) : null}
 		</Card>
 	);
 }

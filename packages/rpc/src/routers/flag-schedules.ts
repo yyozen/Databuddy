@@ -1,19 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { desc, eq, flagSchedules, flags } from "@databuddy/db";
-import {
-    type FlagScheduleType,
-    flagScheduleSchema,
-} from "@databuddy/shared/flags";
-import { logger } from "@databuddy/shared/logger";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import {
-    createQStashRolloutSchedule,
-    createQStashSchedule,
-    deleteQStashSchedule,
-    updateQStashRolloutSchedule,
-    updateQStashSchedule,
-} from "@/services/flag-scheduler";
+    createBullMQRolloutSchedule,
+    createBullMQSchedule,
+    deleteBullMQSchedule,
+    updateBullMQRolloutSchedule,
+    updateBullMQSchedule,
+} from "@/services/flag-scheduler-bullmq";
+import { logger } from "../lib/logger";
 import { protectedProcedure } from "../orpc";
 import { authorizeWebsiteAccess } from "../utils/auth";
 
@@ -23,7 +19,114 @@ type DbRolloutStep = {
     value: number | "enable" | "disable";
 };
 
-interface FlagScheduleUpdateData {
+type FlagScheduleType = "enable" | "disable" | "update_rollout";
+
+const rolloutStepSchema = z.object({
+    scheduledAt: z.string(),
+    executedAt: z.string().optional(),
+    value: z.union([
+        z.number().min(0).max(100),
+        z.literal("enable"),
+        z.literal("disable"),
+    ]),
+});
+
+const flagScheduleTypeEnum = z.enum(["enable", "disable", "update_rollout"]);
+
+const flagScheduleSchema = z
+    .object({
+        id: z.string().optional(),
+        flagId: z.string(),
+        type: flagScheduleTypeEnum,
+        isEnabled: z.boolean(),
+        scheduledAt: z.string().optional(),
+        rolloutSteps: z.array(rolloutStepSchema).optional(),
+    })
+    .superRefine((data, ctx) => {
+        if (!data.isEnabled) {
+            return;
+        }
+        if (data.type !== "update_rollout") {
+            if (data.rolloutSteps && data.rolloutSteps.length > 0) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["rolloutSteps"],
+                    message: "Rollout steps allowed only for update_rollout type",
+                });
+            }
+            if (data.scheduledAt) {
+                const scheduledDate = new Date(data.scheduledAt);
+                if (Number.isNaN(scheduledDate.getTime())) {
+                    ctx.addIssue({
+                        code: "custom",
+                        path: ["scheduledAt"],
+                        message: "Invalid schedule date",
+                    });
+                } else if (Date.now() > scheduledDate.getTime()) {
+                    ctx.addIssue({
+                        code: "custom",
+                        path: ["scheduledAt"],
+                        message: "Scheduled time must be in the future",
+                    });
+                }
+            } else {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["scheduledAt"],
+                    message: "Date time is required for enable/disable schedule types",
+                });
+            }
+        } else {
+            if (data.scheduledAt) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["scheduledAt"],
+                    message: "scheduledAt not allowed for rollout schedules",
+                });
+                return;
+            }
+            if (Array.isArray(data.rolloutSteps) && data.rolloutSteps.length > 0) {
+                for (const step of data.rolloutSteps) {
+                    if (typeof step.value !== "number") {
+                        ctx.addIssue({
+                            code: "custom",
+                            path: ["value"],
+                            message:
+                                "Step value must be a number between 0 and 100 for rollout steps",
+                        });
+                        continue;
+                    }
+                    if (step.value < 0 || step.value > 100) {
+                        ctx.addIssue({
+                            code: "custom",
+                            path: ["value"],
+                            message:
+                                "Step value must be a number between 0 and 100 for rollout steps",
+                        });
+                    }
+                    const stepDate = new Date(step.scheduledAt);
+                    if (
+                        Number.isNaN(stepDate.getTime()) ||
+                        Date.now() > stepDate.getTime()
+                    ) {
+                        ctx.addIssue({
+                            code: "custom",
+                            path: ["rolloutSteps"],
+                            message: "Scheduled time must be in the future",
+                        });
+                    }
+                }
+            } else {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["rolloutSteps"],
+                    message: "Rollout steps are required for batch rollout schedules",
+                });
+            }
+        }
+    });
+
+type FlagScheduleUpdateData = {
     flagId: string;
     type: FlagScheduleType;
     isEnabled: boolean;
@@ -31,7 +134,7 @@ interface FlagScheduleUpdateData {
     rolloutSteps?: DbRolloutStep[];
     executedAt: null;
     updatedAt: Date;
-}
+};
 
 export const flagSchedulesRouter = {
     getByFlagId: protectedProcedure
@@ -76,33 +179,39 @@ export const flagSchedulesRouter = {
             await authorizeWebsiteAccess(context, flag.websiteId, "update");
 
             const scheduleId = randomUUID();
-            let qstashScheduleIds: string[] | null = null;
+            let bullmqJobIds: string[] | null = null;
 
             try {
                 if (input.type === "update_rollout" && input.rolloutSteps) {
-                    qstashScheduleIds = await createQStashRolloutSchedule(
+                    bullmqJobIds = await createBullMQRolloutSchedule(
                         scheduleId,
+                        input.flagId,
                         input.rolloutSteps
                     );
-                } else if (input.scheduledAt) {
-                    const messageId = await createQStashSchedule(
+                } else if (
+                    input.scheduledAt &&
+                    (input.type === "enable" || input.type === "disable")
+                ) {
+                    const jobId = await createBullMQSchedule(
                         scheduleId,
-                        new Date(input.scheduledAt)
+                        new Date(input.scheduledAt),
+                        input.flagId,
+                        input.type
                     );
-                    qstashScheduleIds = [messageId]; // Store as array for consistency
+                    bullmqJobIds = [jobId]; // Store as array for consistency
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error(
                     { error, scheduleId, input },
-                    "Failed to create QStash schedule"
+                    "Failed to create BullMQ schedule"
                 );
                 throw new ORPCError("INTERNAL_SERVER_ERROR", {
-                    message: "Failed to create schedule in QStash",
+                    message: "Failed to create schedule in BullMQ",
                     data: error,
                 });
             }
 
-            let schedule;
+            let schedule: typeof flagSchedules.$inferSelect;
             try {
                 [schedule] = await context.db
                     .insert(flagSchedules)
@@ -112,20 +221,20 @@ export const flagSchedulesRouter = {
                         scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
                         type: input.type,
                         isEnabled: input.isEnabled,
-                        qstashScheduleIds,
-                        rolloutSteps: input.rolloutSteps?.map((step) => ({
+                        qstashScheduleIds: bullmqJobIds, // Using same column name for now (migration needed)
+                        rolloutSteps: input.rolloutSteps?.map((step: DbRolloutStep) => ({
                             ...step,
                             executedAt: undefined,
                         })),
                     })
                     .returning();
-            } catch (dbError) {
-                if (qstashScheduleIds) {
-                    for (const qid of qstashScheduleIds) {
-                        await deleteQStashSchedule(qid).catch((e) =>
+            } catch (dbError: unknown) {
+                if (bullmqJobIds) {
+                    for (const jobId of bullmqJobIds) {
+                        await deleteBullMQSchedule(jobId).catch((e) =>
                             logger.error(
-                                { error: e, qstashScheduleId: qid },
-                                "Failed to cleanup QStash schedule"
+                                { error: e, bullmqJobId: jobId },
+                                "Failed to cleanup BullMQ schedule"
                             )
                         );
                     }
@@ -136,7 +245,7 @@ export const flagSchedulesRouter = {
             logger.info(
                 {
                     scheduleId,
-                    qstashScheduleIds,
+                    bullmqJobIds,
                     flagId: input.flagId,
                     type: input.type,
                     userId: context.user.id,
@@ -176,30 +285,36 @@ export const flagSchedulesRouter = {
 
             const { id, ...updates } = input;
 
-            let qstashScheduleIds: string[] | null =
-                existingSchedule.qstashScheduleIds;
+            let bullmqJobIds: string[] | null =
+                (existingSchedule.qstashScheduleIds as string[] | null) || null; // Using same column for now
             try {
                 if (input.type === "update_rollout" && input.rolloutSteps) {
-                    qstashScheduleIds = await updateQStashRolloutSchedule(
+                    bullmqJobIds = await updateBullMQRolloutSchedule(
                         input.id,
                         existingSchedule.qstashScheduleIds,
-                        input.rolloutSteps
+                        input.rolloutSteps,
+                        input.flagId
                     );
-                } else if (input.scheduledAt) {
-                    const messageId = await updateQStashSchedule(
+                } else if (
+                    input.scheduledAt &&
+                    (input.type === "enable" || input.type === "disable")
+                ) {
+                    const jobId = await updateBullMQSchedule(
                         input.id,
                         existingSchedule.qstashScheduleIds?.[0] || null,
-                        new Date(input.scheduledAt)
+                        new Date(input.scheduledAt),
+                        input.flagId,
+                        input.type
                     );
-                    qstashScheduleIds = [messageId]; // Store as array for consistency
+                    bullmqJobIds = [jobId]; // Store as array for consistency
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 logger.error(
                     { error, scheduleId: input.id, input },
-                    "Failed to update QStash schedule"
+                    "Failed to update BullMQ schedule"
                 );
                 throw new ORPCError("INTERNAL_SERVER_ERROR", {
-                    message: "Failed to update schedule in QStash",
+                    message: "Failed to update schedule in BullMQ",
                 });
             }
 
@@ -208,7 +323,7 @@ export const flagSchedulesRouter = {
                 updatedAt: new Date(),
                 executedAt: null,
                 scheduledAt: updates.scheduledAt ? new Date(updates.scheduledAt) : null,
-                rolloutSteps: updates.rolloutSteps?.map((step) => ({
+                rolloutSteps: updates.rolloutSteps?.map((step: DbRolloutStep) => ({
                     value: step.value,
                     scheduledAt: step.scheduledAt,
                     executedAt: undefined,
@@ -217,14 +332,14 @@ export const flagSchedulesRouter = {
 
             const [updated] = await context.db
                 .update(flagSchedules)
-                .set({ ...updateData, qstashScheduleIds })
+                .set({ ...updateData, qstashScheduleIds: bullmqJobIds }) // Using same column for now
                 .where(eq(flagSchedules.id, id))
                 .returning();
 
             logger.info(
                 {
                     scheduleId: id,
-                    qstashScheduleIds,
+                    bullmqJobIds,
                     flagId: input.flagId,
                     userId: context.user.id,
                 },
@@ -253,17 +368,17 @@ export const flagSchedulesRouter = {
 
             await authorizeWebsiteAccess(context, flag.websiteId, "update");
 
-            // Delete QStash schedules if they exist
+            // Delete BullMQ jobs if they exist
             if (existingSchedule.qstashScheduleIds) {
-                for (const id of existingSchedule.qstashScheduleIds) {
+                for (const jobId of existingSchedule.qstashScheduleIds) {
                     try {
-                        await deleteQStashSchedule(id);
-                    } catch (error) {
+                        await deleteBullMQSchedule(jobId);
+                    } catch (error: unknown) {
                         logger.error(
-                            { error, scheduleId: input.id, qstashScheduleIds: id },
-                            "Failed to delete QStash schedule"
+                            { error, scheduleId: input.id, bullmqJobId: jobId },
+                            "Failed to delete BullMQ schedule"
                         );
-                        // Continue with database deletion even if QStash deletion fails
+                        // Continue with database deletion even if BullMQ deletion fails
                     }
                 }
             }
@@ -275,7 +390,7 @@ export const flagSchedulesRouter = {
             logger.info(
                 {
                     scheduleId: input.id,
-                    qstashScheduleIds: existingSchedule.qstashScheduleIds,
+                    bullmqJobIds: existingSchedule.qstashScheduleIds,
                     flagId: existingSchedule.flagId,
                     userId: context.user.id,
                 },
