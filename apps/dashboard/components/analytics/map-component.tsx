@@ -12,6 +12,7 @@ import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CountryFlag } from "@/components/icon";
 import { type Country, useCountries } from "@/lib/geo";
+import "leaflet/dist/leaflet.css";
 
 const MapContainer = dynamic(
 	() => import("react-leaflet").then((mod) => mod.MapContainer),
@@ -53,21 +54,6 @@ export function MapComponent({
 	const mapRef = useRef<LeafletMap | null>(null);
 	const locationsData = locationData;
 	const { resolvedTheme } = useTheme();
-
-	useEffect(() => {
-		if (typeof window !== "undefined") {
-			const link = document.createElement("link");
-			link.rel = "stylesheet";
-			link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-			link.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
-			link.crossOrigin = "anonymous";
-			document.head.appendChild(link);
-
-			return () => {
-				document.head.removeChild(link);
-			};
-		}
-	}, []);
 
 	const countryData = useMemo(() => {
 		if (!locationsData?.countries) {
