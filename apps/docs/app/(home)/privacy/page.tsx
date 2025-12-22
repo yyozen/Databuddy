@@ -490,6 +490,26 @@ export default function PrivacyPage() {
 								GDPR.
 							</p>
 						</div>
+						<div className="flex flex-wrap gap-4">
+							<a
+								className="text-primary hover:text-primary/80"
+								href="/data-policy"
+							>
+								Data Policy →
+							</a>
+							<a
+								className="text-primary hover:text-primary/80"
+								href="/docs/security"
+							>
+								Security & Privacy →
+							</a>
+							<a
+								className="text-primary hover:text-primary/80"
+								href="/docs/compliance/gdpr-compliance-guide"
+							>
+								GDPR Compliance Guide →
+							</a>
+						</div>
 					</section>
 				</div>
 

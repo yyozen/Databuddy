@@ -221,16 +221,20 @@ export default function TermsPage() {
 					<section className="mb-8">
 						<h2 className="mb-4 font-bold text-2xl">5. Privacy and Data</h2>
 						<p className="mb-4">
-							Your privacy is important to us. Our Privacy Policy explains how
-							we collect, use, and protect your information. By using our
-							Service, you consent to our data practices as described in our
-							<a
-								className="ml-2 text-primary hover:text-primary/80"
-								href="/privacy"
-							>
+							Your privacy is important to us. Our{" "}
+							<a className="text-primary hover:text-primary/80" href="/privacy">
 								Privacy Policy
-							</a>
-							.
+							</a>{" "}
+							and{" "}
+							<a
+								className="text-primary hover:text-primary/80"
+								href="/data-policy"
+							>
+								Data Policy
+							</a>{" "}
+							explain how we collect, use, and protect your information. By
+							using our Service, you consent to our data practices as described
+							in these policies.
 						</p>
 						<p className="mb-4">Key points about data:</p>
 						<ul className="mb-4 space-y-2">
