@@ -1,7 +1,7 @@
 import type { ClickHouseClient } from "@clickhouse/client";
 import { clickHouse, TABLE_NAMES } from "@databuddy/db";
+import { captureError, record, setAttributes } from "@lib/tracing";
 import { CompressionTypes, Kafka, type Producer } from "kafkajs";
-import { captureError, record, setAttributes } from "@/lib/tracing";
 
 /**
  * JSON stringify with undefined -> null conversion
@@ -26,7 +26,7 @@ interface ProducerStats {
 	dropped: number;
 	errors: number;
 	lastErrorTime: number | null;
-};
+}
 
 interface ProducerConfig {
 	broker?: string;
@@ -64,7 +64,7 @@ interface ProducerDependencies {
 	clickHouse: ClickHouseClient;
 	topicMap: Record<string, string>;
 	onError?: (error: Error) => void;
-};
+}
 
 export class EventProducer {
 	private readonly config: RequiredProducerConfig;

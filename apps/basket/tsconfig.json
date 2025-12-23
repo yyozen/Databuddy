@@ -5,7 +5,11 @@
     "moduleResolution": "bundler",
     "baseUrl": "src",
     "paths": {
-      "@/*": ["./*"]
+      "@lib/*": ["./lib/*"],
+      "@utils/*": ["./utils/*"],
+      "@hooks/*": ["./hooks/*"],
+      "@routes/*": ["./routes/*"],
+      "@types/*": ["./types/*"]
     },
     "types": ["bun-types", "autumn-js"],
     "esModuleInterop": true,

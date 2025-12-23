@@ -1,8 +1,8 @@
+import { insertAICallSpans } from "@lib/event-service";
+import { validateRequest } from "@lib/request-validation";
+import { captureError } from "@lib/tracing";
 import { Elysia } from "elysia";
 import { z } from "zod";
-import { insertAICallSpans } from "@/lib/event-service";
-import { validateRequest } from "@/lib/request-validation";
-import { captureError } from "@/lib/tracing";
 
 const aiCallSchema = z.object({
     timestamp: z.union([z.date(), z.number(), z.string()]),

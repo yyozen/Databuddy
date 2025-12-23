@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
 import { cacheable } from "@databuddy/redis";
+import { captureError, record, setAttributes } from "@lib/tracing";
 import type { City } from "@maxmind/geoip2-node";
 import {
 	AddressNotFoundError,
 	BadMethodCallError,
 	Reader,
 } from "@maxmind/geoip2-node";
-import { captureError, record, setAttributes } from "@/lib/tracing";
 
 interface GeoIPReader extends Reader {
 	city(ip: string): City;

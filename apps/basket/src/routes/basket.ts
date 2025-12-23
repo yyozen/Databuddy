@@ -5,7 +5,6 @@ import {
 	batchedErrorsSchema,
 	batchedVitalsSchema,
 } from "@databuddy/validation";
-import { Elysia } from "elysia";
 import {
 	insertCustomEventSpans,
 	insertErrorSpans,
@@ -14,15 +13,11 @@ import {
 	insertOutgoingLinksBatch,
 	insertTrackEvent,
 	insertTrackEventsBatch,
-} from "@/lib/event-service";
-import { checkForBot, validateRequest } from "@/lib/request-validation";
-import { captureError, record } from "@/lib/tracing";
-
-import {
-	analyticsEventSchema,
-	outgoingLinkSchema,
-} from "@/utils/event-schema";
-import { getGeo } from "@/utils/ip-geo";
+} from "@lib/event-service";
+import { checkForBot, validateRequest } from "@lib/request-validation";
+import { captureError, record } from "@lib/tracing";
+import { analyticsEventSchema, outgoingLinkSchema } from "@utils/event-schema";
+import { getGeo } from "@utils/ip-geo";
 import {
 	createBotDetectedResponse,
 	createSchemaErrorResponse,
@@ -30,14 +25,15 @@ import {
 	parseProperties,
 	parseTimestamp,
 	validateEventSchema,
-} from "@/utils/parsing-helpers";
-import { parseUserAgent } from "@/utils/user-agent";
+} from "@utils/parsing-helpers";
+import { parseUserAgent } from "@utils/user-agent";
 import {
 	sanitizeString,
 	VALIDATION_LIMITS,
 	validatePerformanceMetric,
 	validateSessionId,
-} from "@/utils/validation";
+} from "@utils/validation";
+import { Elysia } from "elysia";
 
 function processTrackEventData(
 	trackData: any,
