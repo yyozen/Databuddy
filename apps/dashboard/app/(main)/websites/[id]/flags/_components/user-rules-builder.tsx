@@ -27,23 +27,61 @@ const TARGET_TYPES = [
 ] as const;
 
 const CONDITIONS = [
-	{ value: "equals", label: "is", needsValue: true, multi: false },
-	{ value: "contains", label: "contains", needsValue: true, multi: false },
+	{
+		value: "equals",
+		label: "is",
+		needsValue: true,
+		multi: false,
+		description: "Exact match",
+	},
+	{
+		value: "contains",
+		label: "contains",
+		needsValue: true,
+		multi: false,
+		description: "Partial match",
+	},
 	{
 		value: "starts_with",
 		label: "starts with",
 		needsValue: true,
 		multi: false,
+		description: "Prefix match",
 	},
-	{ value: "ends_with", label: "ends with", needsValue: true, multi: false },
-	{ value: "in", label: "is one of", needsValue: true, multi: true },
-	{ value: "not_in", label: "is not one of", needsValue: true, multi: true },
-	{ value: "exists", label: "exists", needsValue: false, multi: false },
+	{
+		value: "ends_with",
+		label: "ends with",
+		needsValue: true,
+		multi: false,
+		description: "Suffix match",
+	},
+	{
+		value: "in",
+		label: "is one of",
+		needsValue: true,
+		multi: true,
+		description: "Matches any value exactly",
+	},
+	{
+		value: "not_in",
+		label: "is not one of",
+		needsValue: true,
+		multi: true,
+		description: "Doesn't match any value",
+	},
+	{
+		value: "exists",
+		label: "exists",
+		needsValue: false,
+		multi: false,
+		description: "Has any value",
+	},
 	{
 		value: "not_exists",
 		label: "doesn't exist",
 		needsValue: false,
 		multi: false,
+		description: "Has no value",
 	},
 ] as const;
 
@@ -136,6 +174,46 @@ function RuleRow({
 				? "user IDs"
 				: "values";
 
+	const getOperatorHelpText = () => {
+		if (!needsValue) {
+			return null;
+		}
+
+		if (isMulti) {
+			return `Match if ${rule.type === "email" ? "email" : rule.type === "user_id" ? "user ID" : "value"} exactly matches any item in the list`;
+		}
+
+		if (isBatch) {
+			const typeLabel =
+				rule.type === "email"
+					? "email"
+					: rule.type === "user_id"
+						? "user ID"
+						: "value";
+			switch (rule.operator) {
+				case "equals": {
+					return `Match if ${typeLabel} exactly equals any item in the list`;
+				}
+				case "contains": {
+					return `Match if ${typeLabel} contains any item in the list`;
+				}
+				case "starts_with": {
+					return `Match if ${typeLabel} starts with any item in the list`;
+				}
+				case "ends_with": {
+					return `Match if ${typeLabel} ends with any item in the list`;
+				}
+				default: {
+					return null;
+				}
+			}
+		}
+
+		return null;
+	};
+
+	const helpText = getOperatorHelpText();
+
 	return (
 		<div className="group rounded border bg-card">
 			<div className="flex items-center gap-2 p-3">
@@ -191,13 +269,26 @@ function RuleRow({
 				{needsValue && !isBatch && (
 					<div className="min-w-0 flex-1">
 						{isMulti ? (
-							<TagsChat
-								allowDuplicates={false}
-								maxTags={20}
-								onChange={(values: string[]) => onUpdate({ values })}
-								placeholder="Type and press Enter…"
-								values={rule.values || []}
-							/>
+							<div className="space-y-1">
+								<TagsChat
+									allowDuplicates={false}
+									maxTags={20}
+									onChange={(values: string[]) => onUpdate({ values })}
+									placeholder="Type and press Enter…"
+									values={rule.values || []}
+								/>
+								<p className="text-muted-foreground text-xs">
+									Match if{" "}
+									{rule.type === "email"
+										? "email"
+										: rule.type === "user_id"
+											? "user ID"
+											: "value"}{" "}
+									exactly{" "}
+									{rule.operator === "not_in" ? "doesn't match" : "matches"} any
+									item
+								</p>
+							</div>
 						) : (
 							<Input
 								className="h-9"
@@ -211,7 +302,8 @@ function RuleRow({
 
 				{isBatch && (
 					<span className="text-muted-foreground text-xs">
-						{(rule.batchValues || []).length} values
+						{(rule.batchValues || []).length} value
+						{(rule.batchValues || []).length !== 1 ? "s" : ""}
 					</span>
 				)}
 
@@ -241,6 +333,11 @@ function RuleRow({
 
 			{isBatch && (
 				<div className="border-t px-3 py-2">
+					{helpText && (
+						<p className="mb-2 text-balance text-muted-foreground text-xs">
+							{helpText}
+						</p>
+					)}
 					<TagsChat
 						allowDuplicates={false}
 						maxTags={100}
