@@ -30,13 +30,13 @@ const AgentRequestSchema = t.Object({
 	),
 });
 
-type UIMessage = {
+interface UIMessage {
 	id: string;
 	role: "user" | "assistant";
 	parts: Array<{ type: "text"; text: string }>;
-};
+}
 
-type IncomingMessage = {
+interface IncomingMessage {
 	id?: string;
 	role: "user" | "assistant";
 	content?: string;

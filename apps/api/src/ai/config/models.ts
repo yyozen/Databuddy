@@ -14,14 +14,10 @@ export const openrouter = createOpenRouter({
 });
 
 // Create Databuddy LLM instance with transport
-const aiLogsApiUrl = process.env.AI_LOGS_API_URL;
-const { track } = databuddyLLM(
-	aiLogsApiUrl
-		? {
-			apiUrl: aiLogsApiUrl,
-		}
-		: {}
-);
+const aiLogsApiUrl = "https://staging-basket.databuddy.cc"
+const { track } = databuddyLLM({
+	apiUrl: aiLogsApiUrl,
+});
 
 /**
  * Model configurations for different agent types.
