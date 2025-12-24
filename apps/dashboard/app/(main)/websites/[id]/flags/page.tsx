@@ -128,27 +128,31 @@ export default function FlagsPage() {
 					/>
 
 					<div className="min-h-0 flex-1 overflow-y-auto">
-						{experimentFlag.isReady && flags && flags.length > 0 && (
-							<div className="flex h-10 items-center border-border border-b bg-accent/30 px-4">
+						{experimentFlag.isReady && flags && (
+							<div className="flex h-10 items-center border-border border-b bg-accent px-4">
 								<div className="flex items-center gap-3">
 									<div className="flex items-center gap-2">
-										<FlagIcon
-											className="size-4"
-											color={experimentFlag.enabled ? "red" : "blue"}
-											weight="fill"
-										/>
 										{experimentFlag.enabled ? (
-											<Badge className="bg-red-500 text-white">Red Team</Badge>
+											<FlagIcon
+												className="size-4 text-destructive"
+												weight="fill"
+											/>
 										) : (
-											<Badge className="bg-blue-500 text-white">
-												Blue Team
-											</Badge>
+											<FlagIcon
+												className="size-4 text-blue-600"
+												weight="fill"
+											/>
+										)}
+										{experimentFlag.enabled ? (
+											<Badge variant="destructive">Red Team</Badge>
+										) : (
+											<Badge variant="blue">Blue Team</Badge>
 										)}
 									</div>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<button
-												className="flex items-center gap-1.5 text-muted-foreground text-sm hover:text-foreground"
+												className="flex items-center gap-1.5 text-foreground text-sm hover:text-foreground/80"
 												type="button"
 											>
 												<InfoIcon className="size-4" weight="duotone" />
