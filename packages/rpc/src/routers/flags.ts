@@ -1,6 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { websitesApi } from "@databuddy/auth";
-import { and, desc, eq, flags, flagsToTargetGroups, inArray, isNull } from "@databuddy/db";
+import {
+	and,
+	desc,
+	eq,
+	flags,
+	flagsToTargetGroups,
+	inArray,
+	isNull,
+	targetGroups,
+} from "@databuddy/db";
 import { createDrizzleCache, redis } from "@databuddy/redis";
 import {
 	flagFormSchema,
@@ -563,6 +572,21 @@ export const flagsRouter = {
 
 			// Insert target group associations
 			if (input.targetGroupIds && input.targetGroupIds.length > 0) {
+				// Validate that all target groups exist and belong to the same website
+				const validGroups = await context.db.query.targetGroups.findMany({
+					where: and(
+						inArray(targetGroups.id, input.targetGroupIds),
+						eq(targetGroups.websiteId, input.websiteId || ""),
+						isNull(targetGroups.deletedAt)
+					),
+				});
+
+				if (validGroups.length !== input.targetGroupIds.length) {
+					throw new ORPCError("BAD_REQUEST", {
+						message: "One or more target groups not found or do not belong to this website",
+					});
+				}
+
 				await context.db.insert(flagsToTargetGroups).values(
 					input.targetGroupIds.map((targetGroupId) => ({
 						flagId,
@@ -659,6 +683,23 @@ export const flagsRouter = {
 
 			// Update target group associations if provided
 			if (targetGroupIds !== undefined) {
+				// Validate that all target groups exist and belong to the same website
+				if (targetGroupIds.length > 0) {
+					const validGroups = await context.db.query.targetGroups.findMany({
+						where: and(
+							inArray(targetGroups.id, targetGroupIds),
+							eq(targetGroups.websiteId, flag.websiteId || ""),
+							isNull(targetGroups.deletedAt)
+						),
+					});
+
+					if (validGroups.length !== targetGroupIds.length) {
+						throw new ORPCError("BAD_REQUEST", {
+							message: "One or more target groups not found or do not belong to this website",
+						});
+					}
+				}
+
 				await context.db
 					.delete(flagsToTargetGroups)
 					.where(eq(flagsToTargetGroups.flagId, id));
