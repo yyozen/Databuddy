@@ -25,6 +25,7 @@
     "@databuddy/db": "workspace:*",
     "@databuddy/redis": "workspace:*",
     "@databuddy/rpc": "workspace:*",
+    "@databuddy/sdk": "workspace:*",
     "@databuddy/shared": "workspace:*",
     "@elysiajs/cors": "^1.4.0",
     "@openrouter/ai-sdk-provider": "^1.5.3",
