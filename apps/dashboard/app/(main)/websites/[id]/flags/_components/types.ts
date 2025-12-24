@@ -5,7 +5,7 @@ import type {
 } from "@databuddy/shared/flags";
 import type { UseFormReturn } from "react-hook-form";
 
-export type Flag = {
+export interface Flag {
 	id: string;
 	key: string;
 	name?: string | null;
@@ -27,60 +27,61 @@ export type Flag = {
 	createdAt: Date;
 	updatedAt: Date;
 	deletedAt?: Date | null;
-};
+}
 
-export type UserRule = {
+export interface UserRule {
 	type: "user_id" | "email" | "property";
 	operator:
-		| "equals"
-		| "contains"
-		| "starts_with"
-		| "ends_with"
-		| "in"
-		| "not_in"
-		| "exists"
-		| "not_exists";
+	| "equals"
+	| "contains"
+	| "starts_with"
+	| "ends_with"
+	| "in"
+	| "not_in"
+	| "exists"
+	| "not_exists";
 	field?: string;
 	value?: string;
 	values?: string[];
 	enabled: boolean;
 	batch: boolean;
 	batchValues?: string[];
-};
+}
 
 export type FlagStatus = "active" | "inactive" | "archived";
 
-export type FlagSheetProps = {
+export interface FlagSheetProps {
 	isOpen: boolean;
 	onCloseAction: () => void;
 	websiteId: string;
 	flag?: Flag | null;
-};
+}
 
-export type FlagsListProps = {
+export interface FlagsListProps {
 	flags: Flag[];
 	isLoading: boolean;
 	onCreateFlagAction: () => void;
 	onEditFlagAction: (flag: Flag) => void;
-};
+}
 
-export type VariantEditorProps = {
+export interface VariantEditorProps {
 	variants: Variant[];
 	onChangeAction: (variants: Variant[]) => void;
-};
+}
 
-export type ScheduleManagerProps = {
+export interface ScheduleManagerProps {
 	form: UseFormReturn<FlagWithScheduleForm>;
-};
+	flagId?: string;
+}
 
-export type DependencySelectorProps = {
+export interface DependencySelectorProps {
 	value: string[];
 	onChange: (dependencies: string[]) => void;
 	availableFlags: Flag[];
 	currentFlagKey?: string;
-};
+}
 
-export type UserRulesBuilderProps = {
+export interface UserRulesBuilderProps {
 	rules: UserRule[];
 	onChange: (rules: UserRule[]) => void;
-};
+}

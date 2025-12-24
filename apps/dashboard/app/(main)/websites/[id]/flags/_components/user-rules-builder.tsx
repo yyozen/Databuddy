@@ -1,6 +1,15 @@
 "use client";
 
-import { PlusIcon } from "@phosphor-icons/react";
+import {
+	CaretDownIcon,
+	EnvelopeIcon,
+	PlusIcon,
+	TrashIcon,
+	UserIcon,
+	WrenchIcon,
+} from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,7 +24,300 @@ import { TagsChat } from "@/components/ui/tags";
 import { cn } from "@/lib/utils";
 import type { UserRule, UserRulesBuilderProps } from "./types";
 
+const RULE_TYPE_CONFIG = {
+	user_id: {
+		icon: UserIcon,
+		label: "User ID",
+		placeholder: "Enter user ID…",
+		batchPlaceholder: "Type user ID and press Enter…",
+	},
+	email: {
+		icon: EnvelopeIcon,
+		label: "Email",
+		placeholder: "Enter email address…",
+		batchPlaceholder: "Type email and press Enter…",
+	},
+	property: {
+		icon: WrenchIcon,
+		label: "Property",
+		placeholder: "Enter property value…",
+		batchPlaceholder: "Type value and press Enter…",
+	},
+} as const;
+
+const OPERATORS = [
+	{ value: "equals", label: "equals" },
+	{ value: "contains", label: "contains" },
+	{ value: "starts_with", label: "starts with" },
+	{ value: "ends_with", label: "ends with" },
+	{ value: "in", label: "is one of" },
+	{ value: "not_in", label: "is not one of" },
+] as const;
+
+const PROPERTY_OPERATORS = [
+	...OPERATORS,
+	{ value: "exists", label: "exists" },
+	{ value: "not_exists", label: "does not exist" },
+] as const;
+
+function RuleRow({
+	rule,
+	index,
+	onUpdate,
+	onRemove,
+	isExpanded,
+	onToggle,
+}: {
+	rule: UserRule;
+	index: number;
+	onUpdate: (updates: Partial<UserRule>) => void;
+	onRemove: () => void;
+	isExpanded: boolean;
+	onToggle: () => void;
+}) {
+	const config = RULE_TYPE_CONFIG[rule.type];
+	const Icon = config.icon;
+	const operators = rule.type === "property" ? PROPERTY_OPERATORS : OPERATORS;
+	const needsValue =
+		rule.operator !== "exists" && rule.operator !== "not_exists";
+	const isMultiValue = rule.operator === "in" || rule.operator === "not_in";
+	const idPrefix = `rule-${index}`;
+
+	const getSummary = () => {
+		if (rule.batch) {
+			return `${(rule.batchValues || []).length} values`;
+		}
+		if (rule.operator === "exists" || rule.operator === "not_exists") {
+			return `${rule.field || "property"} ${rule.operator.replace("_", " ")}`;
+		}
+		return `${rule.operator.replace("_", " ")} "${rule.value || "..."}"`;
+	};
+
+	return (
+		<motion.div
+			animate={{ opacity: 1 }}
+			className="group"
+			exit={{ opacity: 0 }}
+			initial={{ opacity: 0 }}
+			layout
+		>
+			{/* Collapsed Row */}
+			<button
+				className={cn(
+					"flex w-full items-center gap-3 rounded py-2.5 text-left transition-colors hover:bg-accent/50",
+					isExpanded && "bg-accent/30"
+				)}
+				onClick={onToggle}
+				type="button"
+			>
+				<Icon
+					className={cn(
+						"shrink-0",
+						rule.enabled ? "text-primary" : "text-muted-foreground"
+					)}
+					size={16}
+					weight="duotone"
+				/>
+				<div className="flex min-w-0 flex-1 items-center gap-2">
+					<span className="font-medium text-sm">{config.label}</span>
+					<span className="truncate text-muted-foreground text-xs">
+						{getSummary()}
+					</span>
+					{!rule.enabled && (
+						<span className="shrink-0 text-amber-600 text-xs">disabled</span>
+					)}
+				</div>
+				<CaretDownIcon
+					className={cn(
+						"size-3.5 shrink-0 text-muted-foreground transition-transform",
+						isExpanded && "rotate-180"
+					)}
+					weight="fill"
+				/>
+			</button>
+
+			{/* Expanded Content */}
+			<AnimatePresence initial={false}>
+				{isExpanded && (
+					<motion.div
+						animate={{ height: "auto" }}
+						className="overflow-hidden"
+						exit={{ height: 0 }}
+						initial={{ height: 0 }}
+						transition={{ duration: 0.15 }}
+					>
+						<div className="space-y-4 py-3 pl-6">
+							{/* Type & Property */}
+							<div className="grid gap-3 sm:grid-cols-2">
+								<div className="space-y-1">
+									<label
+										className="text-muted-foreground text-xs"
+										htmlFor={`${idPrefix}-type`}
+									>
+										Target
+									</label>
+									<Select
+										onValueChange={(value: UserRule["type"]) =>
+											onUpdate({ type: value })
+										}
+										value={rule.type}
+									>
+										<SelectTrigger id={`${idPrefix}-type`}>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{(
+												Object.keys(RULE_TYPE_CONFIG) as UserRule["type"][]
+											).map((type) => (
+												<SelectItem key={type} value={type}>
+													{RULE_TYPE_CONFIG[type].label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+
+								{rule.type === "property" && (
+									<div className="space-y-1">
+										<label
+											className="text-muted-foreground text-xs"
+											htmlFor={`${idPrefix}-field`}
+										>
+											Property name
+										</label>
+										<Input
+											id={`${idPrefix}-field`}
+											onChange={(e) => onUpdate({ field: e.target.value })}
+											placeholder="e.g. plan, role…"
+											value={rule.field || ""}
+										/>
+									</div>
+								)}
+							</div>
+
+							{/* Batch Toggle */}
+							{needsValue && (
+								<div className="flex items-center justify-between">
+									<span className="text-muted-foreground text-sm">
+										Match multiple values
+									</span>
+									<Switch
+										checked={rule.batch}
+										onCheckedChange={(batch) => onUpdate({ batch })}
+									/>
+								</div>
+							)}
+
+							{/* Condition & Value */}
+							{rule.batch ? (
+								<div className="space-y-1">
+									<p className="text-muted-foreground text-xs">Values</p>
+									<TagsChat
+										allowDuplicates={false}
+										maxTags={100}
+										onChange={(values: string[]) =>
+											onUpdate({ batchValues: values })
+										}
+										placeholder={config.batchPlaceholder}
+										values={rule.batchValues || []}
+									/>
+								</div>
+							) : (
+								<div className="grid gap-3 sm:grid-cols-2">
+									<div className="space-y-1">
+										<label
+											className="text-muted-foreground text-xs"
+											htmlFor={`${idPrefix}-operator`}
+										>
+											Condition
+										</label>
+										<Select
+											onValueChange={(value: UserRule["operator"]) =>
+												onUpdate({ operator: value })
+											}
+											value={rule.operator}
+										>
+											<SelectTrigger id={`${idPrefix}-operator`}>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{operators.map((op) => (
+													<SelectItem key={op.value} value={op.value}>
+														{op.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+
+									{needsValue && (
+										<div className="space-y-1">
+											<label
+												className="text-muted-foreground text-xs"
+												htmlFor={`${idPrefix}-value`}
+											>
+												{isMultiValue ? "Values" : "Value"}
+											</label>
+											{isMultiValue ? (
+												<TagsChat
+													allowDuplicates={false}
+													maxTags={20}
+													onChange={(values: string[]) => onUpdate({ values })}
+													placeholder={config.batchPlaceholder}
+													values={rule.values || []}
+												/>
+											) : (
+												<Input
+													id={`${idPrefix}-value`}
+													onChange={(e) => onUpdate({ value: e.target.value })}
+													placeholder={config.placeholder}
+													value={rule.value || ""}
+												/>
+											)}
+										</div>
+									)}
+								</div>
+							)}
+
+							{/* Result & Delete */}
+							<div className="flex items-center justify-between border-t pt-3">
+								<div className="flex items-center gap-2">
+									<span className="text-muted-foreground text-sm">Result:</span>
+									<button
+										className={cn(
+											"rounded px-2 py-0.5 text-sm transition-colors",
+											rule.enabled
+												? "bg-green-500/15 text-green-600"
+												: "bg-amber-500/15 text-amber-600"
+										)}
+										onClick={() => onUpdate({ enabled: !rule.enabled })}
+										type="button"
+									>
+										{rule.enabled ? "Enable" : "Disable"} flag
+									</button>
+								</div>
+								<Button
+									className="text-destructive hover:text-destructive"
+									onClick={onRemove}
+									size="sm"
+									type="button"
+									variant="ghost"
+								>
+									<TrashIcon size={14} />
+									Remove
+								</Button>
+							</div>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</motion.div>
+	);
+}
+
 export function UserRulesBuilder({ rules, onChange }: UserRulesBuilderProps) {
+	const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
 	const addRule = () => {
 		const newRule: UserRule = {
 			type: "user_id",
@@ -25,318 +327,62 @@ export function UserRulesBuilder({ rules, onChange }: UserRulesBuilderProps) {
 			batch: false,
 		};
 		onChange([...rules, newRule]);
+		setExpandedIndex(rules.length);
 	};
 
-	const canUseBatch = (rule: UserRule) =>
-		rule.operator !== "exists" && rule.operator !== "not_exists";
-
-	const updateRule = (index: number, updatedRule: Partial<UserRule>) => {
+	const updateRule = (index: number, updates: Partial<UserRule>) => {
 		const newRules = [...rules];
-		newRules[index] = { ...newRules[index], ...updatedRule };
+		newRules[index] = { ...newRules[index], ...updates };
 		onChange(newRules);
-	};
-
-	const getPlaceholderText = (ruleType: UserRule["type"]) => {
-		switch (ruleType) {
-			case "user_id":
-				return "Type user ID and press Enter...";
-			case "email":
-				return "Type email address and press Enter...";
-			case "property":
-				return "Type property value and press Enter...";
-			default:
-				return "Type value and press Enter...";
-		}
-	};
-
-	const getInputPlaceholder = (ruleType: UserRule["type"]) => {
-		switch (ruleType) {
-			case "user_id":
-				return "Enter user ID";
-			case "email":
-				return "Enter email address";
-			case "property":
-				return "Enter property value";
-			default:
-				return "Enter value";
-		}
 	};
 
 	const removeRule = (index: number) => {
 		onChange(rules.filter((_, i) => i !== index));
+		if (expandedIndex === index) {
+			setExpandedIndex(null);
+		}
 	};
 
 	if (rules.length === 0) {
 		return (
-			<div className="rounded border border-dashed bg-background p-8 text-center">
-				<h3 className="mx-auto mb-2 w-full font-medium text-sm">
-					No targeting rules
-				</h3>
-				<p className="mx-auto mb-4 w-full text-muted-foreground text-xs">
-					Add rules to target specific users, emails, or properties
+			<div className="py-4 text-center">
+				<p className="mb-3 text-balance text-muted-foreground text-sm">
+					No targeting rules yet
 				</p>
-				<Button
-					className="mt-3"
-					onClick={addRule}
-					size="sm"
-					type="button"
-					variant="secondary"
-				>
-					<PlusIcon className="size-3" />
-					Add First Rule
+				<Button onClick={addRule} size="sm" type="button" variant="secondary">
+					<PlusIcon size={14} />
+					Add Rule
 				</Button>
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-4">
-			{rules.map((rule, index) => {
-				const ruleId = `rule-${index}`;
-				const supportsBatch = canUseBatch(rule);
-
-				return (
-					<div className="rounded border bg-card p-4" key={index}>
-						{/* Rule Header */}
-						<div className="mb-4 flex items-center justify-between">
-							<div className="flex items-center gap-2">
-								<div className="flex size-6 items-center justify-center rounded-full bg-accent-foreground font-medium text-accent text-xs">
-									{index + 1}
-								</div>
-								<span className="text-muted-foreground text-sm">
-									{rule.type === "user_id"
-										? "User ID"
-										: rule.type === "email"
-											? "Email"
-											: "Property"}
-									{rule.batch ? " (Batch)" : ""}
-								</span>
-							</div>
-							<Button
-								aria-label={`Remove rule ${index + 1}`}
-								onClick={() => removeRule(index)}
-								size="sm"
-								type="button"
-								variant="ghost"
-							>
-								Remove
-							</Button>
-						</div>
-
-						{/* Rule Configuration */}
-						<div className="space-y-4">
-							{/* Target Type & Batch Toggle */}
-							<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-								<div>
-									<label
-										className="mb-1 block font-medium text-sm"
-										htmlFor={`${ruleId}-type`}
-									>
-										Target Type
-									</label>
-									<Select
-										onValueChange={(value: UserRule["type"]) => {
-											updateRule(index, {
-												type: value,
-												batch: rule.batch,
-												operator: rule.operator,
-											});
-										}}
-										value={rule.type}
-									>
-										<SelectTrigger id={`${ruleId}-type`}>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="user_id">User ID</SelectItem>
-											<SelectItem value="email">Email</SelectItem>
-											<SelectItem value="property">Property</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-
-								{supportsBatch ? (
-									<div>
-										<label
-											className="mb-1 block font-medium text-sm"
-											htmlFor={`${ruleId}-batch-toggle`}
-										>
-											Mode
-										</label>
-										<div className="flex items-center gap-2 rounded border p-2">
-											<Switch
-												checked={rule.batch}
-												id={`${ruleId}-batch-toggle`}
-												onCheckedChange={(batch) =>
-													updateRule(index, { batch })
-												}
-											/>
-											<span className="font-medium text-sm">
-												{rule.batch ? "Batch Mode" : "Single Value"}
-											</span>
-										</div>
-									</div>
-								) : null}
-							</div>
-
-							{/* Property Field */}
-							{rule.type === "property" && (
-								<div>
-									<label
-										className="mb-1 block font-medium text-sm"
-										htmlFor={`${ruleId}-field`}
-									>
-										Property Name
-									</label>
-									<Input
-										id={`${ruleId}-field`}
-										onChange={(e) =>
-											updateRule(index, { field: e.target.value })
-										}
-										placeholder="e.g. plan, role, country"
-										value={rule.field || ""}
-									/>
-								</div>
-							)}
-
-							{/* Condition & Value */}
-							{rule.batch ? (
-								<div>
-									<div className="mb-1 block font-medium text-sm">
-										{rule.type === "user_id" && "User IDs"}
-										{rule.type === "email" && "Email Addresses"}
-										{rule.type === "property" && "Property Values"}
-									</div>
-									<TagsChat
-										allowDuplicates={false}
-										maxTags={100}
-										onChange={(values: string[]) =>
-											updateRule(index, { batchValues: values })
-										}
-										placeholder={getPlaceholderText(rule.type)}
-										values={rule.batchValues || []}
-									/>
-								</div>
-							) : (
-								<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-									<div>
-										<label
-											className="mb-1 block font-medium text-sm"
-											htmlFor={`${ruleId}-operator`}
-										>
-											Condition
-										</label>
-										<Select
-											onValueChange={(value: UserRule["operator"]) =>
-												updateRule(index, { operator: value })
-											}
-											value={rule.operator}
-										>
-											<SelectTrigger id={`${ruleId}-operator`}>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="equals">Equals</SelectItem>
-												<SelectItem value="contains">Contains</SelectItem>
-												<SelectItem value="starts_with">Starts with</SelectItem>
-												<SelectItem value="ends_with">Ends with</SelectItem>
-												<SelectItem value="in">Is one of</SelectItem>
-												<SelectItem value="not_in">Is not one of</SelectItem>
-												{rule.type === "property" && (
-													<>
-														<SelectItem value="exists">Exists</SelectItem>
-														<SelectItem value="not_exists">
-															Does not exist
-														</SelectItem>
-													</>
-												)}
-											</SelectContent>
-										</Select>
-									</div>
-
-									{rule.operator !== "exists" &&
-										rule.operator !== "not_exists" && (
-											<div>
-												<label
-													className="mb-1 block font-medium text-sm"
-													htmlFor={`${ruleId}-value`}
-												>
-													{rule.operator === "in" || rule.operator === "not_in"
-														? "Values"
-														: "Value"}
-												</label>
-												{rule.operator === "in" ||
-												rule.operator === "not_in" ? (
-													<TagsChat
-														allowDuplicates={false}
-														maxTags={20}
-														onChange={(values: string[]) =>
-															updateRule(index, { values })
-														}
-														placeholder={getPlaceholderText(rule.type)}
-														values={rule.values || []}
-													/>
-												) : (
-													<Input
-														id={`${ruleId}-value`}
-														onChange={(e) =>
-															updateRule(index, { value: e.target.value })
-														}
-														placeholder={getInputPlaceholder(rule.type)}
-														value={rule.value || ""}
-													/>
-												)}
-											</div>
-										)}
-								</div>
-							)}
-
-							{/* Result */}
-							<div className="flex items-center justify-between rounded bg-secondary p-3">
-								<span className="font-medium text-sm">
-									When this rule matches:
-								</span>
-								<div className="flex items-center gap-2">
-									<span
-										className={cn(
-											"text-sm",
-											rule.enabled
-												? "text-muted-foreground/50"
-												: "text-muted-foreground"
-										)}
-									>
-										Disabled
-									</span>
-									<Switch
-										checked={rule.enabled}
-										onCheckedChange={(enabled) =>
-											updateRule(index, { enabled })
-										}
-									/>
-									<span
-										className={cn(
-											"text-sm",
-											rule.enabled
-												? "text-muted-foreground"
-												: "text-muted-foreground/50"
-										)}
-									>
-										Enabled
-									</span>
-								</div>
-							</div>
-						</div>
-					</div>
-				);
-			})}
+		<div className="space-y-1">
+			<AnimatePresence mode="popLayout">
+				{rules.map((rule, index) => (
+					<RuleRow
+						index={index}
+						isExpanded={expandedIndex === index}
+						key={index}
+						onRemove={() => removeRule(index)}
+						onToggle={() =>
+							setExpandedIndex(expandedIndex === index ? null : index)
+						}
+						onUpdate={(updates) => updateRule(index, updates)}
+						rule={rule}
+					/>
+				))}
+			</AnimatePresence>
 
 			<Button
-				className="w-full"
+				className="mt-2 w-full"
 				onClick={addRule}
+				size="sm"
 				type="button"
-				variant="outline"
+				variant="ghost"
 			>
-				<PlusIcon className="mr-2 size-4" size={16} />
+				<PlusIcon size={14} />
 				Add Rule
 			</Button>
 		</div>
