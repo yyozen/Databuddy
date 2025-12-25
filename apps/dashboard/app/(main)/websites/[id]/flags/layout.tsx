@@ -1,6 +1,7 @@
 "use client";
 
 import { useFeature } from "@databuddy/sdk/react";
+import { GATED_FEATURES } from "@databuddy/shared/types/features";
 import { FlagIcon, InfoIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
@@ -76,12 +77,14 @@ export default function FlagsLayout({
 		<div className="flex h-full min-h-0 flex-col">
 			<WebsitePageHeader
 				createActionLabel={isGroupsPage ? "Create Group" : "Create Flag"}
+				currentUsage={isGroupsPage ? groups?.length : flags?.length}
 				description={
 					isGroupsPage
 						? "Reusable targeting rules for your flags"
 						: "Control feature rollouts and A/B testing"
 				}
 				docsUrl="https://www.databuddy.cc/docs/features/feature-flags"
+				feature={isGroupsPage ? undefined : GATED_FEATURES.FEATURE_FLAGS}
 				icon={
 					isGroupsPage ? (
 						<UsersThreeIcon className="size-6 text-accent-foreground" />

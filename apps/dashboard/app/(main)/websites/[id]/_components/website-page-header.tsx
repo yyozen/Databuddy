@@ -1,20 +1,34 @@
 "use client";
 
+import {
+	type GatedFeatureId,
+	getPlanFeatureLimit,
+	isWithinLimit,
+} from "@databuddy/shared/types/features";
 import type { IconProps } from "@phosphor-icons/react";
 import {
 	ArrowClockwiseIcon,
 	ArrowLeftIcon,
 	BookIcon,
 	PlusIcon,
+	WarningIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { cloneElement, type ReactNode } from "react";
+import { useBillingContext } from "@/components/providers/billing-provider";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-type WebsitePageHeaderProps = {
+interface WebsitePageHeaderProps {
 	title: string;
 	description?: string;
 	icon: React.ReactElement<IconProps>;
@@ -40,7 +54,11 @@ type WebsitePageHeaderProps = {
 	additionalActions?: ReactNode;
 
 	docsUrl?: string;
-};
+
+	// NEW: Feature usage tracking
+	feature?: GatedFeatureId;
+	currentUsage?: number;
+}
 
 export function WebsitePageHeader({
 	title,
@@ -59,7 +77,60 @@ export function WebsitePageHeader({
 	variant = "default",
 	additionalActions,
 	docsUrl,
+	feature,
+	currentUsage,
 }: WebsitePageHeaderProps) {
+	const { currentPlanId } = useBillingContext();
+
+	// Calculate usage badge
+	const showUsageBadge =
+		feature && typeof currentUsage === "number" && !isLoading;
+	const limit = showUsageBadge
+		? getPlanFeatureLimit(currentPlanId, feature)
+		: null;
+	const withinLimit =
+		showUsageBadge && onCreateAction
+			? isWithinLimit(currentPlanId, feature, currentUsage)
+			: true;
+
+	const getUsageBadgeColor = () => {
+		if (!showUsageBadge || limit === "unlimited" || limit === false) {
+			return null;
+		}
+		if (typeof currentUsage !== "number" || typeof limit !== "number") {
+			return null;
+		}
+		const percentUsed = (currentUsage / limit) * 100;
+		if (percentUsed >= 100) {
+			return "destructive" as const;
+		}
+		if (percentUsed >= 80) {
+			return "amber" as const;
+		}
+		return "secondary" as const;
+	};
+
+	const usageBadge = showUsageBadge ? (
+		<Badge
+			className="font-mono"
+			variant={
+				getUsageBadgeColor() as
+					| "default"
+					| "secondary"
+					| "destructive"
+					| "outline"
+					| "green"
+					| "amber"
+					| "gray"
+					| null
+					| undefined
+			}
+		>
+			{!withinLimit && <WarningIcon className="mr-1 size-3" weight="fill" />}
+			{currentUsage} /{" "}
+			{limit === "unlimited" ? "∞" : (limit?.toLocaleString() ?? "0")}
+		</Badge>
+	) : null;
 	const renderSubtitle = () => {
 		const showSubtitleSkeleton = isLoading && !description;
 
@@ -112,6 +183,7 @@ export function WebsitePageHeader({
 
 					<div className="flex-1">
 						<h1 className="font-semibold text-xl">{title}</h1>
+						{usageBadge}
 						{renderSubtitle()}
 					</div>
 				</div>
@@ -176,9 +248,12 @@ export function WebsitePageHeader({
 							})}
 						</div>
 						<div>
-							<h1 className="truncate font-medium text-foreground text-xl tracking-tight sm:text-2xl">
-								{title}
-							</h1>
+							<div className="flex items-center gap-2">
+								<h1 className="truncate font-medium text-foreground text-xl tracking-tight sm:text-2xl">
+									{title}
+								</h1>
+								{usageBadge}
+							</div>
 							{renderSubtitle()}
 						</div>
 					</div>
@@ -211,10 +286,30 @@ export function WebsitePageHeader({
 						</Button>
 					) : null}
 					{onCreateAction ? (
-						<Button onClick={onCreateAction}>
-							<PlusIcon size={16} />
-							{createActionLabel}
-						</Button>
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<div>
+										<Button disabled={!withinLimit} onClick={onCreateAction}>
+											<PlusIcon size={16} />
+											{createActionLabel}
+										</Button>
+									</div>
+								</TooltipTrigger>
+								{!withinLimit && (
+									<TooltipContent>
+										<p>
+											You've reached your limit of {limit?.toLocaleString()}.
+											<br />
+											<a className="underline" href="/billing">
+												Upgrade to create more
+											</a>
+											.
+										</p>
+									</TooltipContent>
+								)}
+							</Tooltip>
+						</TooltipProvider>
 					) : null}
 					{additionalActions}
 				</div>
