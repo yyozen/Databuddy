@@ -159,7 +159,9 @@ export default function GoalsPage() {
 			<div className="relative flex h-full flex-col">
 				<WebsitePageHeader
 					createActionLabel="Create Goal"
+					currentUsage={goals.length}
 					description="Track key conversions and measure success"
+					feature={GATED_FEATURES.GOALS}
 					hasError={!!goalsError}
 					icon={
 						<TargetIcon

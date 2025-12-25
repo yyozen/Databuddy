@@ -246,7 +246,9 @@ export default function FunnelsPage() {
 			<div className="relative flex h-full flex-col">
 				<WebsitePageHeader
 					createActionLabel="Create Funnel"
+					currentUsage={funnels.length}
 					description="Track user journeys and optimize conversion drop-off points"
+					feature={GATED_FEATURES.FUNNELS}
 					hasError={!!funnelsError}
 					icon={
 						<FunnelIcon
