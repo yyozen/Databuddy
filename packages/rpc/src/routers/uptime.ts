@@ -2,7 +2,7 @@ import { and, db, eq, uptimeSchedules } from "@databuddy/db";
 import { logger } from "@databuddy/shared/logger";
 import { ORPCError } from "@orpc/server";
 import { Client } from "@upstash/qstash";
-import { nanoid } from "nanoid";
+import { randomUUIDv7 } from "bun";
 import { z } from "zod";
 import { protectedProcedure } from "../orpc";
 import {
@@ -167,7 +167,7 @@ export const uptimeRouter = {
 				});
 			}
 
-			const scheduleId = input.websiteId || nanoid(10);
+			const scheduleId = input.websiteId || randomUUIDv7();
 
 			await db.insert(uptimeSchedules).values({
 				id: scheduleId,

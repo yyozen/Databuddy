@@ -1,5 +1,5 @@
 import { eq, userPreferences } from "@databuddy/db";
-import { nanoid } from "nanoid";
+import { randomUUIDv7 } from "bun";
 import { z } from "zod";
 import { protectedProcedure } from "../orpc";
 
@@ -19,7 +19,7 @@ export const preferencesRouter = {
 			const inserted = await context.db
 				.insert(userPreferences)
 				.values({
-					id: nanoid(),
+					id: randomUUIDv7(),
 					userId: context.user.id,
 					...defaultPreferences,
 					updatedAt: new Date(),
@@ -44,7 +44,7 @@ export const preferencesRouter = {
 			const result = await context.db
 				.insert(userPreferences)
 				.values({
-					id: nanoid(),
+					id: randomUUIDv7(),
 					userId: context.user.id,
 					timezone: input.timezone ?? defaultPreferences.timezone,
 					dateFormat: input.dateFormat ?? defaultPreferences.dateFormat,

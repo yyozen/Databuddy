@@ -10,6 +10,7 @@ import {
 } from "@databuddy/db";
 import { createDrizzleCache, redis } from "@databuddy/redis";
 import { ORPCError } from "@orpc/server";
+import { randomUUIDv7 } from "bun";
 import { z } from "zod";
 import type { Context } from "../orpc";
 import { protectedProcedure, publicProcedure } from "../orpc";
@@ -213,7 +214,7 @@ export const annotationsRouter = {
 				}
 			}
 
-			const annotationId = crypto.randomUUID();
+			const annotationId = randomUUIDv7();
 			const [newAnnotation] = await context.db
 				.insert(annotations)
 				.values({

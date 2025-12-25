@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { desc, eq, flagSchedules, flags } from "@databuddy/db";
 import { ORPCError } from "@orpc/server";
+import { randomUUIDv7 } from "bun";
 import { z } from "zod";
 import {
 	createBullMQRolloutSchedule,
@@ -13,11 +13,11 @@ import { logger } from "../lib/logger";
 import { protectedProcedure } from "../orpc";
 import { authorizeWebsiteAccess } from "../utils/auth";
 
-type DbRolloutStep = {
+interface DbRolloutStep {
 	scheduledAt: string;
 	executedAt?: string;
 	value: number | "enable" | "disable";
-};
+}
 
 type FlagScheduleType = "enable" | "disable" | "update_rollout";
 
@@ -126,7 +126,7 @@ const flagScheduleSchema = z
 		}
 	});
 
-type FlagScheduleUpdateData = {
+interface FlagScheduleUpdateData {
 	flagId: string;
 	type: FlagScheduleType;
 	isEnabled: boolean;
@@ -134,7 +134,7 @@ type FlagScheduleUpdateData = {
 	rolloutSteps?: DbRolloutStep[];
 	executedAt: null;
 	updatedAt: Date;
-};
+}
 
 export const flagSchedulesRouter = {
 	getByFlagId: protectedProcedure
@@ -178,7 +178,7 @@ export const flagSchedulesRouter = {
 
 			await authorizeWebsiteAccess(context, flag.websiteId, "update");
 
-			const scheduleId = randomUUID();
+			const scheduleId = randomUUIDv7();
 			let bullmqJobIds: string[] | null = null;
 
 			try {

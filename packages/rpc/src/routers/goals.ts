@@ -2,6 +2,7 @@ import { and, desc, eq, goals, inArray, isNull } from "@databuddy/db";
 import { createDrizzleCache, redis } from "@databuddy/redis";
 import { GATED_FEATURES } from "@databuddy/shared/types/features";
 import { ORPCError } from "@orpc/server";
+import { randomUUIDv7 } from "bun";
 import { z } from "zod";
 import {
 	type AnalyticsStep,
@@ -119,7 +120,7 @@ export const goalsRouter = {
 			const [newGoal] = await context.db
 				.insert(goals)
 				.values({
-					id: crypto.randomUUID(),
+					id: randomUUIDv7(),
 					websiteId: input.websiteId,
 					type: input.type,
 					target: input.target,

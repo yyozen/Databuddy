@@ -2,6 +2,7 @@ import { and, desc, eq, funnelDefinitions, isNull, sql } from "@databuddy/db";
 import { createDrizzleCache, redis } from "@databuddy/redis";
 import { GATED_FEATURES } from "@databuddy/shared/types/features";
 import { ORPCError } from "@orpc/server";
+import { randomUUIDv7 } from "bun";
 import { z } from "zod";
 import {
 	type AnalyticsStep,
@@ -172,7 +173,7 @@ export const funnelsRouter = {
 			const [newFunnel] = await context.db
 				.insert(funnelDefinitions)
 				.values({
-					id: crypto.randomUUID(),
+					id: randomUUIDv7(),
 					websiteId: input.websiteId,
 					name: input.name,
 					description: input.description,

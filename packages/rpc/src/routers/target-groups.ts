@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import {
     and,
     desc,
@@ -13,9 +12,12 @@ import {
     redis,
 } from "@databuddy/redis";
 import { userRuleSchema } from "@databuddy/shared/flags";
+import { GATED_FEATURES } from "@databuddy/shared/types/features";
 import { ORPCError } from "@orpc/server";
+import { randomUUIDv7 } from "bun";
 import { z } from "zod";
 import { protectedProcedure, publicProcedure } from "../orpc";
+import { requireFeature, requireUsageWithinLimit } from "../types/billing";
 import { authorizeWebsiteAccess, isFullyAuthorized } from "../utils/auth";
 
 const targetGroupsCache = createDrizzleCache({
@@ -63,7 +65,7 @@ const deleteSchema = z.object({
 interface TargetGroupWithRules {
     rules?: unknown;
     [key: string]: unknown;
-};
+}
 
 /**
  * Sanitizes target group data for unauthorized/demo users by removing sensitive targeting information.
@@ -72,7 +74,8 @@ interface TargetGroupWithRules {
 function sanitizeGroupForDemo<T extends TargetGroupWithRules>(group: T): T {
     return {
         ...group,
-        rules: Array.isArray(group.rules) && group.rules.length > 0 ? [] : group.rules,
+        rules:
+            Array.isArray(group.rules) && group.rules.length > 0 ? [] : group.rules,
     };
 }
 
@@ -142,7 +145,10 @@ export const targetGroupsRouter = {
                     }
 
                     // Check if user is fully authorized
-                    const isAuthorized = await isFullyAuthorized(context, input.websiteId);
+                    const isAuthorized = await isFullyAuthorized(
+                        context,
+                        input.websiteId
+                    );
 
                     // Sanitize data for unauthorized/demo users
                     if (!isAuthorized) {
@@ -159,10 +165,31 @@ export const targetGroupsRouter = {
         .handler(async ({ context, input }) => {
             await authorizeWebsiteAccess(context, input.websiteId, "update");
 
+            // Check if target groups feature is available on the plan
+            requireFeature(context.billing?.planId, GATED_FEATURES.TARGET_GROUPS);
+
+            // Check current target group count against plan limit
+            const existingGroups = await context.db
+                .select({ id: targetGroups.id })
+                .from(targetGroups)
+                .where(
+                    and(
+                        eq(targetGroups.websiteId, input.websiteId),
+                        isNull(targetGroups.deletedAt)
+                    )
+                );
+
+            // Enforce plan limit before creating new target group
+            requireUsageWithinLimit(
+                context.billing?.planId,
+                GATED_FEATURES.TARGET_GROUPS,
+                existingGroups.length
+            );
+
             const [newGroup] = await context.db
                 .insert(targetGroups)
                 .values({
-                    id: randomUUID(),
+                    id: randomUUIDv7(),
                     name: input.name,
                     description: input.description ?? null,
                     color: input.color,
@@ -205,16 +232,16 @@ export const targetGroupsRouter = {
                     ...updates,
                     updatedAt: new Date(),
                 })
-                .where(
-                    and(eq(targetGroups.id, id), isNull(targetGroups.deletedAt))
-                )
+                .where(and(eq(targetGroups.id, id), isNull(targetGroups.deletedAt)))
                 .returning();
 
             await targetGroupsCache.invalidateByTables(["target_groups"]);
 
             // Invalidate public API flag cache for this website since target group rules affect flag evaluation
             await invalidateCacheablePattern(`cacheable:flag:*,${group.websiteId}*`);
-            await invalidateCacheablePattern(`cacheable:flags-client:*${group.websiteId}*`);
+            await invalidateCacheablePattern(
+                `cacheable:flags-client:*${group.websiteId}*`
+            );
 
             return updatedGroup;
         }),
@@ -226,10 +253,7 @@ export const targetGroupsRouter = {
                 .select()
                 .from(targetGroups)
                 .where(
-                    and(
-                        eq(targetGroups.id, input.id),
-                        isNull(targetGroups.deletedAt)
-                    )
+                    and(eq(targetGroups.id, input.id), isNull(targetGroups.deletedAt))
                 )
                 .limit(1);
 
@@ -260,16 +284,14 @@ export const targetGroupsRouter = {
             // Invalidate both target groups and flags cache since flags may have been affected
             await targetGroupsCache.invalidateByTables(["target_groups"]);
             // Also invalidate flags cache to ensure flags reflect the removed group associations
-            await flagsCache.invalidateByTables([
-                "flags",
-                "flags_to_target_groups",
-            ]);
+            await flagsCache.invalidateByTables(["flags", "flags_to_target_groups"]);
 
             // Invalidate public API flag cache for this website
             await invalidateCacheablePattern(`cacheable:flag:*,${group.websiteId}*`);
-            await invalidateCacheablePattern(`cacheable:flags-client:*${group.websiteId}*`);
+            await invalidateCacheablePattern(
+                `cacheable:flags-client:*${group.websiteId}*`
+            );
 
             return { success: true };
         }),
 };
-

@@ -1,5 +1,6 @@
 import { streamToEventIterator } from "@orpc/server";
 import { convertToModelMessages, type UIMessage } from "ai";
+import { randomUUIDv7 } from "bun";
 import { z } from "zod";
 import { handleMessage, type Mode } from "../agent";
 import { protectedProcedure } from "../orpc";
@@ -36,7 +37,7 @@ export const chatRouter = {
 
 			// Convert UI messages to model messages
 			const uiMessages: UIMessage[] = input.messages.map((msg) => ({
-				id: crypto.randomUUID(),
+				id: randomUUIDv7(),
 				role: msg.role,
 				parts: [{ type: "text" as const, text: msg.content }],
 			}));

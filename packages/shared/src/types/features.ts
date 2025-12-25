@@ -43,6 +43,7 @@ export const GATED_FEATURES = {
 	AI_AGENT: "ai_agent",
 	// Enterprise
 	TEAM_ROLES: "team_roles",
+	TARGET_GROUPS: "target_groups",
 } as const;
 
 export type GatedFeatureId =
@@ -54,6 +55,7 @@ export const HIDDEN_PRICING_FEATURES: GatedFeatureId[] = [
 	GATED_FEATURES.ERROR_TRACKING,
 	GATED_FEATURES.AI_AGENT,
 	GATED_FEATURES.TEAM_ROLES,
+	GATED_FEATURES.TARGET_GROUPS,
 ];
 
 /**
@@ -84,6 +86,7 @@ export const PLAN_FEATURE_LIMITS: Record<
 		[GATED_FEATURES.AI_ASSISTANT]: "unlimited",
 		[GATED_FEATURES.AI_AGENT]: false, // no AI agent
 		[GATED_FEATURES.TEAM_ROLES]: 2, // owner + 1 viewer
+		[GATED_FEATURES.TARGET_GROUPS]: false, // Hobby+
 	},
 	[PLAN_IDS.HOBBY]: {
 		[GATED_FEATURES.FUNNELS]: 5, // 5 funnels
@@ -97,6 +100,7 @@ export const PLAN_FEATURE_LIMITS: Record<
 		[GATED_FEATURES.AI_ASSISTANT]: "unlimited",
 		[GATED_FEATURES.AI_AGENT]: false, // no AI agent
 		[GATED_FEATURES.TEAM_ROLES]: 5, // up to 5 team members
+		[GATED_FEATURES.TARGET_GROUPS]: 5, // 5 target groups
 	},
 	[PLAN_IDS.PRO]: {
 		[GATED_FEATURES.FUNNELS]: 50, // 50 funnels
@@ -110,6 +114,7 @@ export const PLAN_FEATURE_LIMITS: Record<
 		[GATED_FEATURES.AI_ASSISTANT]: "unlimited",
 		[GATED_FEATURES.AI_AGENT]: "unlimited",
 		[GATED_FEATURES.TEAM_ROLES]: 25, // up to 25 team members
+		[GATED_FEATURES.TARGET_GROUPS]: 25, // 25 target groups
 	},
 	[PLAN_IDS.SCALE]: {
 		[GATED_FEATURES.FUNNELS]: "unlimited",
@@ -123,6 +128,7 @@ export const PLAN_FEATURE_LIMITS: Record<
 		[GATED_FEATURES.AI_ASSISTANT]: "unlimited",
 		[GATED_FEATURES.AI_AGENT]: "unlimited",
 		[GATED_FEATURES.TEAM_ROLES]: "unlimited",
+		[GATED_FEATURES.TARGET_GROUPS]: "unlimited",
 	},
 };
 
@@ -143,6 +149,7 @@ export const PLAN_FEATURES: Record<PlanId, Record<GatedFeatureId, boolean>> = {
 		[GATED_FEATURES.AI_ASSISTANT]: true,
 		[GATED_FEATURES.AI_AGENT]: false,
 		[GATED_FEATURES.TEAM_ROLES]: true,
+		[GATED_FEATURES.TARGET_GROUPS]: false,
 	},
 	[PLAN_IDS.HOBBY]: {
 		[GATED_FEATURES.FUNNELS]: true,
@@ -156,6 +163,7 @@ export const PLAN_FEATURES: Record<PlanId, Record<GatedFeatureId, boolean>> = {
 		[GATED_FEATURES.AI_ASSISTANT]: true,
 		[GATED_FEATURES.AI_AGENT]: false,
 		[GATED_FEATURES.TEAM_ROLES]: true,
+		[GATED_FEATURES.TARGET_GROUPS]: true,
 	},
 	[PLAN_IDS.PRO]: {
 		[GATED_FEATURES.FUNNELS]: true,
@@ -169,6 +177,7 @@ export const PLAN_FEATURES: Record<PlanId, Record<GatedFeatureId, boolean>> = {
 		[GATED_FEATURES.AI_ASSISTANT]: true,
 		[GATED_FEATURES.AI_AGENT]: true,
 		[GATED_FEATURES.TEAM_ROLES]: true,
+		[GATED_FEATURES.TARGET_GROUPS]: true,
 	},
 	[PLAN_IDS.SCALE]: {
 		[GATED_FEATURES.FUNNELS]: true,
@@ -182,6 +191,7 @@ export const PLAN_FEATURES: Record<PlanId, Record<GatedFeatureId, boolean>> = {
 		[GATED_FEATURES.AI_ASSISTANT]: true,
 		[GATED_FEATURES.AI_AGENT]: true,
 		[GATED_FEATURES.TEAM_ROLES]: true,
+		[GATED_FEATURES.TARGET_GROUPS]: true,
 	},
 };
 
@@ -315,6 +325,12 @@ export const FEATURE_METADATA: Record<FeatureId | GatedFeatureId, FeatureMeta> =
 		description: "Control feature rollouts with targeting rules",
 		upgradeMessage: "Upgrade for more feature flags",
 		unit: "flags",
+	},
+	[GATED_FEATURES.TARGET_GROUPS]: {
+		name: "Target Groups",
+		description: "Create target groups to target your users",
+		upgradeMessage: "Upgrade for more target groups",
+		unit: "groups",
 	},
 	[GATED_FEATURES.WEB_VITALS]: {
 		name: "Web Vitals",

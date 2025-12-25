@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { websitesApi } from "@databuddy/auth";
 import {
 	and,
@@ -26,6 +25,7 @@ import {
 	handleFlagUpdateDependencyCascading,
 } from "@databuddy/shared/flags/utils";
 import { ORPCError } from "@orpc/server";
+import { randomUUIDv7 } from "bun";
 import { z } from "zod";
 import type { Context } from "../orpc";
 import { protectedProcedure, publicProcedure } from "../orpc";
@@ -578,7 +578,7 @@ export const flagsRouter = {
 				return restoredFlag;
 			}
 
-			const flagId = randomUUID();
+			const flagId = randomUUIDv7();
 			const [newFlag] = await context.db
 				.insert(flags)
 				.values({
