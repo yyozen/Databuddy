@@ -72,7 +72,7 @@ function CollapsibleSection({
 	return (
 		<div>
 			<button
-				className="group flex w-full items-center justify-between py-3 text-left"
+				className="group flex w-full cursor-pointer items-center justify-between rounded py-3 text-left transition-colors hover:bg-accent/50"
 				onClick={onToggleAction}
 				type="button"
 			>
@@ -116,6 +116,7 @@ export function FlagSheet({
 	onCloseAction,
 	websiteId,
 	flag,
+	template,
 }: FlagSheetProps) {
 	const [keyManuallyEdited, setKeyManuallyEdited] = useState(false);
 	const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
@@ -221,6 +222,30 @@ export function FlagSheet({
 						}
 					: undefined,
 			});
+		} else if (template) {
+			const templateKey = template.name.toLowerCase().replaceAll(/\s+/g, "-");
+			form.reset({
+				flag: {
+					key: templateKey,
+					name: template.name,
+					description: template.description,
+					type: template.type,
+					status: "inactive",
+					defaultValue: template.defaultValue,
+					rolloutPercentage:
+						template.type === "rollout" || template.type === "boolean"
+							? (template.rolloutPercentage ?? 0)
+							: 0,
+					rules: template.rules ?? [],
+					variants: template.type === "multivariant" ? template.variants : [],
+					dependencies: [],
+					targetGroupIds: [],
+				},
+				schedule: undefined,
+			});
+			if (template.rules && template.rules.length > 0) {
+				setExpandedSection("targeting");
+			}
 		} else {
 			form.reset({
 				flag: {
@@ -240,24 +265,24 @@ export function FlagSheet({
 			});
 		}
 		setKeyManuallyEdited(false);
-		setExpandedSection(null);
-	}, [flag, isEditing, form, schedule]);
+		if (!template) {
+			setExpandedSection(null);
+		}
+	}, [flag, isEditing, form, schedule, template]);
 
 	const handleOpenChange = (open: boolean) => {
-		if (open) {
-			resetForm();
-		} else {
+		if (!open) {
 			onCloseAction();
 		}
 	};
 
-	// Reset form when flag changes (for editing different flags)
+	// Reset form when dialog opens or flag/template changes
 	useEffect(() => {
-		if (isOpen && flag) {
+		if (isOpen) {
 			resetForm();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [flag?.id, isOpen]);
+	}, [flag?.id, template?.id, isOpen]);
 
 	const watchedType = form.watch("flag.type");
 	const watchedRules = form.watch("flag.rules") || [];
@@ -410,12 +435,18 @@ export function FlagSheet({
 						</div>
 						<div>
 							<SheetTitle className="text-lg">
-								{isEditing ? "Edit Flag" : "Create Flag"}
+								{isEditing
+									? "Edit Flag"
+									: template
+										? `Create from ${template.name}`
+										: "Create Flag"}
 							</SheetTitle>
 							<SheetDescription>
 								{isEditing
 									? `Editing ${flag?.name || flag?.key}`
-									: "Set up a new feature flag"}
+									: template
+										? "Pre-configured with template settings"
+										: "Set up a new feature flag"}
 							</SheetDescription>
 						</div>
 					</div>
@@ -520,10 +551,10 @@ export function FlagSheet({
 											return (
 												<button
 													className={cn(
-														"flex-1 rounded border py-2.5 text-center font-medium text-sm capitalize transition-all",
+														"flex-1 cursor-pointer rounded border py-2.5 text-center font-medium text-sm capitalize transition-all",
 														isSelected
 															? "border-primary bg-primary/5 text-foreground"
-															: "border-transparent bg-secondary text-muted-foreground hover:text-foreground"
+															: "border-transparent bg-secondary text-muted-foreground hover:border-border hover:bg-secondary/80 hover:text-foreground"
 													)}
 													key={type}
 													onClick={() => form.setValue("flag.type", type)}
@@ -569,10 +600,10 @@ export function FlagSheet({
 															{[0, 25, 50, 75, 100].map((preset) => (
 																<button
 																	className={cn(
-																		"flex-1 rounded border py-1.5 font-medium text-xs transition-all",
+																		"flex-1 cursor-pointer rounded border py-1.5 font-medium text-xs transition-all",
 																		Number(field.value) === preset
 																			? "border-primary bg-primary text-primary-foreground"
-																			: "border-transparent bg-secondary text-muted-foreground hover:text-foreground"
+																			: "border-transparent bg-secondary text-muted-foreground hover:border-border hover:bg-secondary/80 hover:text-foreground"
 																	)}
 																	key={preset}
 																	onClick={() => field.onChange(preset)}
@@ -668,14 +699,14 @@ export function FlagSheet({
 														return (
 															<button
 																className={cn(
-																	"flex-1 rounded border py-2 font-medium text-sm capitalize transition-all",
+																	"flex-1 cursor-pointer rounded border py-2 font-medium text-sm capitalize transition-all",
 																	isSelected
 																		? status === "active"
 																			? "border-green-500/50 bg-green-500/10 text-green-600"
 																			: status === "inactive"
 																				? "border-amber-500/50 bg-amber-500/10 text-amber-600"
 																				: "border-border bg-secondary text-foreground"
-																		: "border-transparent bg-secondary text-muted-foreground hover:text-foreground",
+																		: "border-transparent bg-secondary text-muted-foreground hover:border-border hover:bg-secondary/80 hover:text-foreground",
 																	isDisabled && "cursor-not-allowed opacity-50"
 																)}
 																disabled={isDisabled}

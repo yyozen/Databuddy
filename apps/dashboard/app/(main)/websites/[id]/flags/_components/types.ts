@@ -70,6 +70,7 @@ export interface FlagSheetProps {
 	onCloseAction: () => void;
 	websiteId: string;
 	flag?: Flag | null;
+	template?: FlagTemplate | null;
 }
 
 export interface FlagsListProps {
@@ -134,3 +135,42 @@ export const GROUP_COLORS = [
 	{ value: "#06b6d4", label: "Cyan" },
 	{ value: "#3b82f6", label: "Blue" },
 ] as const;
+
+interface BaseFlagTemplate {
+	id: string;
+	name: string;
+	description: string;
+	category: string;
+	icon: string;
+	isBuiltIn: true;
+	rules?: UserRule[];
+};
+
+type BooleanFlagTemplate = BaseFlagTemplate & {
+	type: "boolean";
+	defaultValue: boolean;
+	rolloutPercentage?: number;
+};
+
+type RolloutFlagTemplate = BaseFlagTemplate & {
+	type: "rollout";
+	defaultValue: boolean;
+	rolloutPercentage: number;
+};
+
+type MultivariantFlagTemplate = BaseFlagTemplate & {
+	type: "multivariant";
+	defaultValue: boolean;
+	variants: Variant[];
+};
+
+export type FlagTemplate =
+	| BooleanFlagTemplate
+	| RolloutFlagTemplate
+	| MultivariantFlagTemplate;
+
+export interface TemplatesListProps {
+	templates: FlagTemplate[];
+	isLoading: boolean;
+	onUseTemplateAction: (template: FlagTemplate) => void;
+}

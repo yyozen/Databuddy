@@ -2,12 +2,17 @@
 
 import { useFeature } from "@databuddy/sdk/react";
 import { GATED_FEATURES } from "@databuddy/shared/types/features";
-import { FlagIcon, InfoIcon, UsersThreeIcon } from "@phosphor-icons/react";
+import {
+	FlagIcon,
+	InfoIcon,
+	LayoutIcon,
+	UsersThreeIcon,
+} from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -24,6 +29,7 @@ import {
 	isGroupSheetOpenAtom,
 } from "@/stores/jotai/flagsAtoms";
 import { WebsitePageHeader } from "../_components/website-page-header";
+import { HARDCODED_TEMPLATES } from "./templates/_data/templates";
 
 export default function FlagsLayout({
 	children,
@@ -55,8 +61,15 @@ export default function FlagsLayout({
 		...orpc.targetGroups.list.queryOptions({ input: { websiteId } }),
 	});
 
+	const templates = useMemo(() => HARDCODED_TEMPLATES, []);
+
 	const isGroupsPage = pathname?.includes("/groups");
-	const isLoading = isGroupsPage ? groupsLoading : flagsLoading;
+	const isTemplatesPage = pathname?.includes("/templates");
+	const isLoading = isTemplatesPage
+		? false
+		: isGroupsPage
+			? groupsLoading
+			: flagsLoading;
 
 	const { on: isExperimentOn, loading: experimentLoading } =
 		useFeature("experiment-50");
@@ -66,28 +79,54 @@ export default function FlagsLayout({
 		try {
 			if (isGroupsPage) {
 				await refetchGroups();
-			} else {
+			} else if (!isTemplatesPage) {
 				await refetchFlags();
 			}
 		} finally {
 			setIsRefreshing(false);
 		}
-	}, [isGroupsPage, refetchFlags, refetchGroups, setIsRefreshing]);
+	}, [
+		isTemplatesPage,
+		isGroupsPage,
+		refetchFlags,
+		refetchGroups,
+		setIsRefreshing,
+	]);
 
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<WebsitePageHeader
-				createActionLabel={isGroupsPage ? "Create Group" : "Create Flag"}
-				currentUsage={isGroupsPage ? groups?.length : flags?.length}
+				createActionLabel={
+					isTemplatesPage
+						? undefined
+						: isGroupsPage
+							? "Create Group"
+							: "Create Flag"
+				}
+				currentUsage={
+					isTemplatesPage
+						? templates?.length
+						: isGroupsPage
+							? groups?.length
+							: flags?.length
+				}
 				description={
-					isGroupsPage
-						? "Reusable targeting rules for your flags"
-						: "Control feature rollouts and A/B testing"
+					isTemplatesPage
+						? "Pre-configured flag templates for common use cases"
+						: isGroupsPage
+							? "Reusable targeting rules for your flags"
+							: "Control feature rollouts and A/B testing"
 				}
 				docsUrl="https://www.databuddy.cc/docs/features/feature-flags"
-				feature={isGroupsPage ? undefined : GATED_FEATURES.FEATURE_FLAGS}
+				feature={
+					isGroupsPage || isTemplatesPage
+						? undefined
+						: GATED_FEATURES.FEATURE_FLAGS
+				}
 				icon={
-					isGroupsPage ? (
+					isTemplatesPage ? (
+						<LayoutIcon className="size-6 text-accent-foreground" />
+					) : isGroupsPage ? (
 						<UsersThreeIcon className="size-6 text-accent-foreground" />
 					) : (
 						<FlagIcon className="size-6 text-accent-foreground" />
@@ -95,22 +134,34 @@ export default function FlagsLayout({
 				}
 				isLoading={isLoading}
 				isRefreshing={isRefreshing}
-				onCreateAction={() => {
-					if (isGroupsPage) {
-						setIsGroupSheetOpen(true);
-					} else {
-						setIsFlagSheetOpen(true);
-					}
-				}}
-				onRefreshAction={handleRefresh}
+				onCreateAction={
+					isTemplatesPage
+						? undefined
+						: () => {
+								if (isGroupsPage) {
+									setIsGroupSheetOpen(true);
+								} else {
+									setIsFlagSheetOpen(true);
+								}
+							}
+				}
+				onRefreshAction={isTemplatesPage ? undefined : handleRefresh}
 				subtitle={
 					isLoading
 						? undefined
-						: isGroupsPage
-							? `${groups?.length ?? 0} group${(groups?.length ?? 0) !== 1 ? "s" : ""}`
-							: `${flags?.length || 0} flag${(flags?.length || 0) !== 1 ? "s" : ""}`
+						: isTemplatesPage
+							? `${templates?.length ?? 0} template${(templates?.length ?? 0) !== 1 ? "s" : ""}`
+							: isGroupsPage
+								? `${groups?.length ?? 0} group${(groups?.length ?? 0) !== 1 ? "s" : ""}`
+								: `${flags?.length || 0} flag${(flags?.length || 0) !== 1 ? "s" : ""}`
 				}
-				title={isGroupsPage ? "Target Groups" : "Feature Flags"}
+				title={
+					isTemplatesPage
+						? "Flag Templates"
+						: isGroupsPage
+							? "Target Groups"
+							: "Feature Flags"
+				}
 				websiteId={websiteId}
 				websiteName={website?.name ?? undefined}
 			/>
@@ -119,7 +170,7 @@ export default function FlagsLayout({
 			<div className="box-border flex h-10 shrink-0 border-border border-b bg-accent/30">
 				<Link
 					className={cn(
-						"flex items-center gap-2 border-b-2 px-3 py-2.5 font-medium text-sm transition-all",
+						"flex cursor-pointer items-center gap-2 border-b-2 px-3 py-2.5 font-medium text-sm transition-all",
 						pathname === `/websites/${websiteId}/flags`
 							? "border-primary text-foreground"
 							: "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
@@ -151,7 +202,7 @@ export default function FlagsLayout({
 				</Link>
 				<Link
 					className={cn(
-						"flex items-center gap-2 border-b-2 px-3 py-2.5 font-medium text-sm transition-all",
+						"flex cursor-pointer items-center gap-2 border-b-2 px-3 py-2.5 font-medium text-sm transition-all",
 						pathname === `/websites/${websiteId}/flags/groups`
 							? "border-primary text-foreground"
 							: "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
@@ -181,6 +232,41 @@ export default function FlagsLayout({
 							)}
 						>
 							{groups.length}
+						</span>
+					)}
+				</Link>
+				<Link
+					className={cn(
+						"flex cursor-pointer items-center gap-2 border-b-2 px-3 py-2.5 font-medium text-sm transition-all",
+						pathname === `/websites/${websiteId}/flags/templates`
+							? "border-primary text-foreground"
+							: "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+					)}
+					href={`/websites/${websiteId}/flags/templates`}
+				>
+					<LayoutIcon
+						className={cn(
+							"size-4",
+							pathname === `/websites/${websiteId}/flags/templates` &&
+								"text-primary"
+						)}
+						weight={
+							pathname === `/websites/${websiteId}/flags/templates`
+								? "fill"
+								: "duotone"
+						}
+					/>
+					Templates
+					{templates && templates.length > 0 && (
+						<span
+							className={cn(
+								"flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 font-semibold text-xs tabular-nums",
+								pathname === `/websites/${websiteId}/flags/templates`
+									? "bg-primary text-primary-foreground"
+									: "bg-muted text-foreground"
+							)}
+						>
+							{templates.length}
 						</span>
 					)}
 				</Link>

@@ -6,7 +6,9 @@ import {
 	TrashIcon,
 	UserIcon,
 	WrenchIcon,
+	XIcon,
 } from "@phosphor-icons/react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,7 +18,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { TagsChat } from "@/components/ui/tags";
 import { cn } from "@/lib/utils";
 import type { UserRule, UserRulesBuilderProps } from "./types";
 
@@ -27,62 +28,14 @@ const TARGET_TYPES = [
 ] as const;
 
 const CONDITIONS = [
-	{
-		value: "equals",
-		label: "is",
-		needsValue: true,
-		multi: false,
-		description: "Exact match",
-	},
-	{
-		value: "contains",
-		label: "contains",
-		needsValue: true,
-		multi: false,
-		description: "Partial match",
-	},
-	{
-		value: "starts_with",
-		label: "starts with",
-		needsValue: true,
-		multi: false,
-		description: "Prefix match",
-	},
-	{
-		value: "ends_with",
-		label: "ends with",
-		needsValue: true,
-		multi: false,
-		description: "Suffix match",
-	},
-	{
-		value: "in",
-		label: "is one of",
-		needsValue: true,
-		multi: true,
-		description: "Matches any value exactly",
-	},
-	{
-		value: "not_in",
-		label: "is not one of",
-		needsValue: true,
-		multi: true,
-		description: "Doesn't match any value",
-	},
-	{
-		value: "exists",
-		label: "exists",
-		needsValue: false,
-		multi: false,
-		description: "Has any value",
-	},
-	{
-		value: "not_exists",
-		label: "doesn't exist",
-		needsValue: false,
-		multi: false,
-		description: "Has no value",
-	},
+	{ value: "equals", label: "is", needsValue: true },
+	{ value: "contains", label: "contains", needsValue: true },
+	{ value: "starts_with", label: "starts with", needsValue: true },
+	{ value: "ends_with", label: "ends with", needsValue: true },
+	{ value: "in", label: "is one of", needsValue: true },
+	{ value: "not_in", label: "is not one of", needsValue: true },
+	{ value: "exists", label: "exists", needsValue: false },
+	{ value: "not_exists", label: "doesn't exist", needsValue: false },
 ] as const;
 
 function getConditionsForType(type: UserRule["type"]) {
@@ -95,9 +48,6 @@ function getConditionsForType(type: UserRule["type"]) {
 }
 
 function getCurrentValues(rule: UserRule): string[] {
-	if (rule.batch) {
-		return rule.batchValues || [];
-	}
 	if (rule.values?.length) {
 		return rule.values;
 	}
@@ -105,6 +55,74 @@ function getCurrentValues(rule: UserRule): string[] {
 		return [rule.value];
 	}
 	return [];
+}
+
+function InlineTagsInput({
+	values,
+	onChange,
+	placeholder,
+}: {
+	values: string[];
+	onChange: (values: string[]) => void;
+	placeholder: string;
+}) {
+	const [draft, setDraft] = useState("");
+
+	const addValue = (val: string) => {
+		const trimmed = val.trim();
+		if (!trimmed) {
+			return;
+		}
+		if (values.includes(trimmed)) {
+			setDraft("");
+			return;
+		}
+		onChange([...values, trimmed]);
+		setDraft("");
+	};
+
+	const removeValue = (index: number) => {
+		onChange(values.filter((_, i) => i !== index));
+	};
+
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === "Enter" || e.key === ",") {
+			e.preventDefault();
+			addValue(draft);
+		}
+		if (e.key === "Backspace" && draft === "" && values.length > 0) {
+			e.preventDefault();
+			removeValue(values.length - 1);
+		}
+	};
+
+	return (
+		<div className="flex min-h-[38px] flex-wrap items-center gap-1.5 rounded border bg-background px-2 py-1.5 focus-within:ring-1 focus-within:ring-ring">
+			{values.map((val, i) => (
+				<span
+					className="inline-flex items-center gap-1 rounded bg-secondary px-2 py-0.5 text-sm"
+					key={`${val}-${i}`}
+				>
+					{val}
+					<button
+						className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+						onClick={() => removeValue(i)}
+						type="button"
+					>
+						<XIcon size={12} />
+					</button>
+				</span>
+			))}
+			<input
+				className="min-w-[120px] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+				onChange={(e) => setDraft(e.target.value)}
+				onKeyDown={handleKeyDown}
+				placeholder={values.length === 0 ? placeholder : "Add more…"}
+				type="text"
+				value={draft}
+			/>
+		</div>
+	);
 }
 
 function RuleRow({
@@ -119,42 +137,7 @@ function RuleRow({
 	const conditions = getConditionsForType(rule.type);
 	const condition = CONDITIONS.find((c) => c.value === rule.operator);
 	const needsValue = condition?.needsValue ?? true;
-	const isMulti = condition?.multi ?? false;
-	const isBatch = rule.batch && needsValue;
-
-	const handleConditionChange = (newOperator: UserRule["operator"]) => {
-		const newCondition = CONDITIONS.find((c) => c.value === newOperator);
-		const currentValues = getCurrentValues(rule);
-		const updates: Partial<UserRule> = { operator: newOperator };
-
-		if (newCondition?.multi) {
-			updates.values = currentValues.length > 0 ? currentValues : [];
-			updates.value = "";
-			updates.batchValues = [];
-		} else {
-			updates.value = currentValues[0] || "";
-			updates.values = [];
-			updates.batchValues = [];
-		}
-
-		if (newOperator === "exists" || newOperator === "not_exists") {
-			updates.batch = false;
-		}
-
-		onUpdate(updates);
-	};
-
-	const handleBatchToggle = () => {
-		const currentValues = getCurrentValues(rule);
-		const newBatch = !rule.batch;
-		const updates: Partial<UserRule> = {
-			batch: newBatch,
-			batchValues: newBatch ? currentValues : [],
-			value: newBatch ? "" : currentValues[0] || "",
-			values: newBatch ? [] : isMulti ? currentValues : [],
-		};
-		onUpdate(updates);
-	};
+	const currentValues = getCurrentValues(rule);
 
 	const handleTypeChange = (newType: UserRule["type"]) => {
 		const updates: Partial<UserRule> = { type: newType };
@@ -169,59 +152,19 @@ function RuleRow({
 
 	const placeholderText =
 		rule.type === "email"
-			? "emails"
+			? "Enter emails…"
 			: rule.type === "user_id"
-				? "user IDs"
-				: "values";
-
-	const getOperatorHelpText = () => {
-		if (!needsValue) {
-			return null;
-		}
-
-		if (isMulti) {
-			return `Match if ${rule.type === "email" ? "email" : rule.type === "user_id" ? "user ID" : "value"} exactly matches any item in the list`;
-		}
-
-		if (isBatch) {
-			const typeLabel =
-				rule.type === "email"
-					? "email"
-					: rule.type === "user_id"
-						? "user ID"
-						: "value";
-			switch (rule.operator) {
-				case "equals": {
-					return `Match if ${typeLabel} exactly equals any item in the list`;
-				}
-				case "contains": {
-					return `Match if ${typeLabel} contains any item in the list`;
-				}
-				case "starts_with": {
-					return `Match if ${typeLabel} starts with any item in the list`;
-				}
-				case "ends_with": {
-					return `Match if ${typeLabel} ends with any item in the list`;
-				}
-				default: {
-					return null;
-				}
-			}
-		}
-
-		return null;
-	};
-
-	const helpText = getOperatorHelpText();
+				? "Enter user IDs…"
+				: "Enter values…";
 
 	return (
-		<div className="group rounded border bg-card">
-			<div className="flex items-center gap-2 p-3">
+		<div className="space-y-2 rounded border p-3">
+			<div className="flex items-center gap-2">
 				<Select
 					onValueChange={(v) => handleTypeChange(v as UserRule["type"])}
 					value={rule.type}
 				>
-					<SelectTrigger className="h-9 w-auto gap-2 border-0 bg-secondary px-2.5">
+					<SelectTrigger className="h-8 w-auto gap-1.5 border-0 bg-secondary px-2 text-sm">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -229,7 +172,7 @@ function RuleRow({
 							const TypeIcon = t.icon;
 							return (
 								<SelectItem key={t.value} value={t.value}>
-									<div className="flex items-center gap-2">
+									<div className="flex items-center gap-1.5">
 										<TypeIcon size={14} weight="duotone" />
 										{t.label}
 									</div>
@@ -241,7 +184,7 @@ function RuleRow({
 
 				{rule.type === "property" && (
 					<Input
-						className="h-9 w-28"
+						className="h-8 w-24 text-sm"
 						onChange={(e) => onUpdate({ field: e.target.value })}
 						placeholder="field…"
 						value={rule.field || ""}
@@ -250,11 +193,14 @@ function RuleRow({
 
 				<Select
 					onValueChange={(v) =>
-						handleConditionChange(v as UserRule["operator"])
+						onUpdate({
+							operator: v as UserRule["operator"],
+							values: currentValues,
+						})
 					}
 					value={rule.operator}
 				>
-					<SelectTrigger className="h-9 w-auto border-0 bg-transparent px-2 text-muted-foreground">
+					<SelectTrigger className="h-8 w-auto border-0 bg-transparent px-1.5 text-muted-foreground text-sm">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -266,64 +212,23 @@ function RuleRow({
 					</SelectContent>
 				</Select>
 
-				{needsValue && !isBatch && (
-					<div className="min-w-0 flex-1">
-						{isMulti ? (
-							<div className="space-y-1">
-								<TagsChat
-									allowDuplicates={false}
-									maxTags={20}
-									onChange={(values: string[]) => onUpdate({ values })}
-									placeholder="Type and press Enter…"
-									values={rule.values || []}
-								/>
-								<p className="text-muted-foreground text-xs">
-									Match if{" "}
-									{rule.type === "email"
-										? "email"
-										: rule.type === "user_id"
-											? "user ID"
-											: "value"}{" "}
-									exactly{" "}
-									{rule.operator === "not_in" ? "doesn't match" : "matches"} any
-									item
-								</p>
-							</div>
-						) : (
-							<Input
-								className="h-9"
-								onChange={(e) => onUpdate({ value: e.target.value })}
-								placeholder="Enter value…"
-								value={rule.value || ""}
-							/>
-						)}
-					</div>
-				)}
-
-				{isBatch && (
-					<span className="text-muted-foreground text-xs">
-						{(rule.batchValues || []).length} value
-						{(rule.batchValues || []).length !== 1 ? "s" : ""}
-					</span>
-				)}
-
-				{!needsValue && <div className="flex-1" />}
+				<div className="flex-1" />
 
 				<button
 					className={cn(
-						"shrink-0 rounded px-2.5 py-1.5 font-medium text-xs transition-colors",
+						"cursor-pointer rounded px-2 py-1 font-medium text-xs transition-colors",
 						rule.enabled
-							? "bg-green-500/15 text-green-600 hover:bg-green-500/25"
-							: "bg-red-500/15 text-red-500 hover:bg-red-500/25"
+							? "bg-green-500/10 text-green-600 hover:bg-green-500/20"
+							: "bg-muted text-muted-foreground hover:bg-muted/80"
 					)}
 					onClick={() => onUpdate({ enabled: !rule.enabled })}
 					type="button"
 				>
-					{rule.enabled ? "Enable" : "Disable"}
+					{rule.enabled ? "On" : "Off"}
 				</button>
 
 				<button
-					className="shrink-0 rounded p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+					className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
 					onClick={onRemove}
 					type="button"
 				>
@@ -331,38 +236,12 @@ function RuleRow({
 				</button>
 			</div>
 
-			{isBatch && (
-				<div className="border-t px-3 py-2">
-					{helpText && (
-						<p className="mb-2 text-balance text-muted-foreground text-xs">
-							{helpText}
-						</p>
-					)}
-					<TagsChat
-						allowDuplicates={false}
-						maxTags={100}
-						onChange={(values: string[]) => onUpdate({ batchValues: values })}
-						placeholder={`Type ${placeholderText} and press Enter…`}
-						values={rule.batchValues || []}
-					/>
-				</div>
-			)}
-
 			{needsValue && (
-				<div className="flex items-center justify-end border-t px-3 py-1.5">
-					<button
-						className={cn(
-							"rounded px-2 py-1 text-xs transition-colors",
-							rule.batch
-								? "bg-primary/10 text-primary"
-								: "text-muted-foreground hover:text-foreground"
-						)}
-						onClick={handleBatchToggle}
-						type="button"
-					>
-						{rule.batch ? "Batch mode on" : "Enable batch mode"}
-					</button>
-				</div>
+				<InlineTagsInput
+					onChange={(values) => onUpdate({ values })}
+					placeholder={placeholderText}
+					values={currentValues}
+				/>
 			)}
 		</div>
 	);
@@ -375,16 +254,16 @@ export function UserRulesBuilder({ rules, onChange }: UserRulesBuilderProps) {
 			{
 				type: "user_id",
 				operator: "equals",
-				value: "",
+				values: [],
 				enabled: true,
-				batch: false,
+				batch: true,
 			},
 		]);
 	};
 
 	const updateRule = (index: number, updates: Partial<UserRule>) => {
 		const newRules = [...rules];
-		newRules[index] = { ...newRules[index], ...updates };
+		newRules[index] = { ...newRules[index], ...updates, batch: true };
 		onChange(newRules);
 	};
 
@@ -395,7 +274,7 @@ export function UserRulesBuilder({ rules, onChange }: UserRulesBuilderProps) {
 	if (rules.length === 0) {
 		return (
 			<div className="py-4 text-center">
-				<p className="mb-3 text-balance text-muted-foreground text-sm">
+				<p className="mb-3 text-muted-foreground text-sm">
 					Target specific users, emails, or properties
 				</p>
 				<Button onClick={addRule} size="sm" type="button" variant="outline">
@@ -418,11 +297,11 @@ export function UserRulesBuilder({ rules, onChange }: UserRulesBuilderProps) {
 			))}
 
 			<Button
-				className="w-full text-muted-foreground"
+				className="w-full"
 				onClick={addRule}
 				size="sm"
 				type="button"
-				variant="outline"
+				variant="ghost"
 			>
 				<PlusIcon size={14} />
 				Add Rule
