@@ -6,7 +6,7 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*Z$/;
 let redisAvailable = true;
 let lastRedisCheck = 0;
 
-type CacheOptions = {
+interface CacheOptions {
 	expireInSec: number;
 	prefix?: string;
 	staleWhileRevalidate?: boolean;
@@ -99,10 +99,10 @@ export function cacheable<
 								if (fresh != null && redisAvailable) {
 									await redis
 										.setex(key, expireInSec, JSON.stringify(fresh))
-										.catch(() => {});
+										.catch(() => { });
 								}
 							})
-							.catch(() => {})
+							.catch(() => { })
 							.finally(() => activeRevalidations.delete(key));
 						activeRevalidations.set(key, revalidation);
 					}

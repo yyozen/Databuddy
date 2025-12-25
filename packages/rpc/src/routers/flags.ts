@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { websitesApi } from "@databuddy/auth";
 import {
 	and,
+	db,
 	desc,
 	eq,
 	flags,
@@ -10,7 +11,11 @@ import {
 	isNull,
 	targetGroups,
 } from "@databuddy/db";
-import { createDrizzleCache, redis } from "@databuddy/redis";
+import {
+	createDrizzleCache,
+	invalidateCacheableWithArgs,
+	redis,
+} from "@databuddy/redis";
 import {
 	flagFormSchema,
 	userRuleSchema,
@@ -65,10 +70,33 @@ const invalidateFlagCache = async (
 	organizationId?: string | null
 ) => {
 	const scope = getScope(websiteId ?? undefined, organizationId ?? undefined);
-	await Promise.all([
+
+	// Get the flag details to invalidate public API cache
+	const flag = await db
+		.select({ key: flags.key })
+		.from(flags)
+		.where(eq(flags.id, id))
+		.limit(1);
+
+	const invalidations: Promise<unknown>[] = [
 		flagsCache.invalidateByTables(["flags"]),
 		flagsCache.invalidateByKey(`byId:${id}:${scope}`),
-	]);
+	];
+
+	if (flag[0]?.key) {
+		const clientId = websiteId || organizationId;
+		if (clientId) {
+			invalidations.push(
+				invalidateCacheableWithArgs("flag", [flag[0].key, clientId])
+			);
+
+			invalidations.push(
+				invalidateCacheableWithArgs("flags-client", [clientId])
+			);
+		}
+	}
+
+	await Promise.all(invalidations);
 };
 
 const listFlagsSchema = z
@@ -225,7 +253,7 @@ interface FlagWithTargetGroups {
 		[key: string]: unknown;
 	}>;
 	[key: string]: unknown;
-};
+}
 
 /**
  * Sanitizes flag data for unauthorized/demo users by removing sensitive targeting information.
@@ -235,10 +263,15 @@ function sanitizeFlagForDemo<T extends FlagWithTargetGroups>(flag: T): T {
 	return {
 		...flag,
 		rules: Array.isArray(flag.rules) && flag.rules.length > 0 ? [] : flag.rules,
-		targetGroups: flag.targetGroups?.map((group: { rules?: unknown;[key: string]: unknown }) => ({
-			...group,
-			rules: Array.isArray(group.rules) && group.rules.length > 0 ? [] : group.rules,
-		})),
+		targetGroups: flag.targetGroups?.map(
+			(group: { rules?: unknown;[key: string]: unknown }) => ({
+				...group,
+				rules:
+					Array.isArray(group.rules) && group.rules.length > 0
+						? []
+						: group.rules,
+			})
+		),
 	};
 }
 
@@ -583,7 +616,8 @@ export const flagsRouter = {
 
 				if (validGroups.length !== input.targetGroupIds.length) {
 					throw new ORPCError("BAD_REQUEST", {
-						message: "One or more target groups not found or do not belong to this website",
+						message:
+							"One or more target groups not found or do not belong to this website",
 					});
 				}
 
@@ -595,10 +629,7 @@ export const flagsRouter = {
 				);
 			}
 
-			await flagsCache.invalidateByTables([
-				"flags",
-				"flags_to_target_groups",
-			]);
+			await flagsCache.invalidateByTables(["flags", "flags_to_target_groups"]);
 
 			return newFlag;
 		}),
@@ -695,7 +726,8 @@ export const flagsRouter = {
 
 					if (validGroups.length !== targetGroupIds.length) {
 						throw new ORPCError("BAD_REQUEST", {
-							message: "One or more target groups not found or do not belong to this website",
+							message:
+								"One or more target groups not found or do not belong to this website",
 						});
 					}
 				}
