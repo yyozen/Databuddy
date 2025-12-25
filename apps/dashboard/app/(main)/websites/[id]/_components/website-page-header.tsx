@@ -111,25 +111,62 @@ export function WebsitePageHeader({
 	};
 
 	const usageBadge = showUsageBadge ? (
-		<Badge
-			className="font-mono"
-			variant={
-				getUsageBadgeColor() as
-					| "default"
-					| "secondary"
-					| "destructive"
-					| "outline"
-					| "green"
-					| "amber"
-					| "gray"
-					| null
-					| undefined
-			}
-		>
-			{!withinLimit && <WarningIcon className="mr-1 size-3" weight="fill" />}
-			{currentUsage} /{" "}
-			{limit === "unlimited" ? "∞" : (limit?.toLocaleString() ?? "0")}
-		</Badge>
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Badge
+						className="cursor-help font-mono"
+						variant={
+							getUsageBadgeColor() as
+								| "default"
+								| "secondary"
+								| "destructive"
+								| "outline"
+								| "green"
+								| "amber"
+								| "gray"
+								| null
+								| undefined
+						}
+					>
+						{!withinLimit && (
+							<WarningIcon className="mr-1 size-3" weight="fill" />
+						)}
+						{currentUsage} /{" "}
+						{limit === "unlimited" ? "∞" : (limit?.toLocaleString() ?? "0")}
+					</Badge>
+				</TooltipTrigger>
+				<TooltipContent>
+					{limit === "unlimited" ? (
+						<p>Unlimited on your current plan</p>
+					) : withinLimit && typeof limit === "number" ? (
+						<p className="max-w-xs">
+							You've created {currentUsage} out of {limit?.toLocaleString()}{" "}
+							available on your current plan.
+							{currentUsage / limit >= 0.8 && (
+								<>
+									<br />
+									<span className="text-amber-600">
+										You're approaching your limit.
+									</span>
+								</>
+							)}
+						</p>
+					) : (
+						<p className="max-w-xs">
+							<span className="font-semibold text-red-600">Limit reached!</span>
+							<br />
+							You've used all {limit?.toLocaleString()} available slots.
+							<br />
+							<a className="underline" href="/billing">
+								Upgrade your plan
+							</a>{" "}
+							to create more.
+						</p>
+					)}
+				</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
 	) : null;
 	const renderSubtitle = () => {
 		const showSubtitleSkeleton = isLoading && !description;
