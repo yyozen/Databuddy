@@ -1,9 +1,10 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { orpc } from "@/lib/orpc";
 
-type ListAnnotationsInput = {
+interface ListAnnotationsInput {
 	websiteId: string;
 	chartType: "metrics";
 	chartContext: {
@@ -34,14 +35,35 @@ export function useAnnotations(input: ListAnnotationsInput) {
 
 	const createAnnotation = useMutation({
 		...orpc.annotations.create.mutationOptions(),
+		onSuccess: () => {
+			toast.success("Annotation created successfully");
+		},
+		onError: (error) => {
+			const message = error instanceof Error ? error.message : "Failed to create annotation";
+			toast.error(message);
+		},
 	});
 
 	const updateAnnotation = useMutation({
 		...orpc.annotations.update.mutationOptions(),
+		onSuccess: () => {
+			toast.success("Annotation updated successfully");
+		},
+		onError: (error) => {
+			const message = error instanceof Error ? error.message : "Failed to update annotation";
+			toast.error(message);
+		},
 	});
 
 	const deleteAnnotation = useMutation({
 		...orpc.annotations.delete.mutationOptions(),
+		onSuccess: () => {
+			toast.success("Annotation deleted successfully");
+		},
+		onError: (error) => {
+			const message = error instanceof Error ? error.message : "Failed to delete annotation";
+			toast.error(message);
+		},
 	});
 
 	return {

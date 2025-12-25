@@ -4,11 +4,12 @@ import type { InferSelectModel, websites } from "@databuddy/db";
 import type { ProcessedMiniChartData } from "@databuddy/shared/types/website";
 import type { QueryKey } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useOrganizationsContext } from "@/components/providers/organizations-provider";
 import { orpc } from "@/lib/orpc";
 
 export type Website = InferSelectModel<typeof websites>;
-export type WebsitesListData = {
+export interface WebsitesListData {
 	websites: Website[];
 	chartData: Record<string, ProcessedMiniChartData>;
 	activeUsers: Record<string, number>;
@@ -120,9 +121,11 @@ export function useCreateWebsite() {
 			queryClient.setQueryData<WebsitesListData>(listKey, (old) =>
 				addWebsiteToList(old, newWebsite)
 			);
+			toast.success("Website created successfully");
 		},
 		onError: (error) => {
-			console.error("Failed to create website:", error);
+			const message = error instanceof Error ? error.message : "Failed to create website";
+			toast.error(message);
 		},
 	});
 }
@@ -148,9 +151,11 @@ export function useUpdateWebsite() {
 		...orpc.websites.update.mutationOptions(),
 		onSuccess: (updatedWebsite: Website) => {
 			updateWebsiteCache(queryClient, updatedWebsite);
+			toast.success("Website updated successfully");
 		},
 		onError: (error) => {
-			console.error("Failed to update website:", error);
+			const message = error instanceof Error ? error.message : "Failed to update website";
+			toast.error(message);
 		},
 	});
 }
@@ -177,14 +182,17 @@ export function useDeleteWebsite() {
 
 			return { previousData, listKey };
 		},
-		onError: (_error, _variables, context) => {
+		onError: (error, _variables, context) => {
 			if (context?.previousData && context.listKey) {
 				queryClient.setQueryData(context.listKey, context.previousData);
 			}
+			const message = error instanceof Error ? error.message : "Failed to delete website";
+			toast.error(message);
 		},
 		onSuccess: (_data, { id }) => {
 			const getByIdKey = getWebsiteByIdKey(id);
 			queryClient.setQueryData(getByIdKey, undefined);
+			toast.success("Website deleted successfully");
 		},
 	});
 }

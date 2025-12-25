@@ -6,23 +6,24 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { orpc } from "@/lib/orpc";
 
-export type FunnelStep = {
+export interface FunnelStep {
 	type: "PAGE_VIEW" | "EVENT" | "CUSTOM";
 	target: string;
 	name: string;
 	conditions?: Record<string, unknown>;
-};
+}
 
-export type FunnelFilter = {
+export interface FunnelFilter {
 	field: string;
 	operator: "equals" | "contains" | "not_equals" | "in" | "not_in";
 	value: string | string[];
 	label?: string;
-};
+}
 
-export type Funnel = {
+export interface Funnel {
 	id: string;
 	name: string;
 	description?: string | null;
@@ -32,9 +33,9 @@ export type Funnel = {
 	isActive: boolean;
 	createdAt: string;
 	updatedAt: string;
-};
+}
 
-export type FunnelAnalytics = {
+export interface FunnelAnalytics {
 	step_number: number;
 	step_name: string;
 	users: number;
@@ -44,9 +45,9 @@ export type FunnelAnalytics = {
 	dropoff_rate: number;
 	step_completion_time?: number;
 	avg_time_to_complete?: number;
-};
+}
 
-export type FunnelPerformanceMetrics = {
+export interface FunnelPerformanceMetrics {
 	overall_conversion_rate: number;
 	total_users_entered: number;
 	total_users_completed: number;
@@ -55,17 +56,17 @@ export type FunnelPerformanceMetrics = {
 	biggest_dropoff_step: number;
 	biggest_dropoff_rate: number;
 	steps_analytics: FunnelAnalytics[];
-};
+}
 
-export type CreateFunnelData = {
+export interface CreateFunnelData {
 	name: string;
 	description?: string;
 	steps: FunnelStep[];
 	filters?: FunnelFilter[];
 	ignoreHistoricData?: boolean;
-};
+}
 
-export type AutocompleteData = {
+export interface AutocompleteData {
 	customEvents: string[];
 	pagePaths: string[];
 	browsers: string[];
@@ -75,8 +76,8 @@ export type AutocompleteData = {
 	utmSources: string[];
 	utmMediums: string[];
 	utmCampaigns: string[];
-};
-export type FunnelAnalyticsByReferrerResult = {
+}
+export interface FunnelAnalyticsByReferrerResult {
 	referrer: string;
 	referrer_parsed: {
 		name: string;
@@ -86,7 +87,7 @@ export type FunnelAnalyticsByReferrerResult = {
 	total_users: number;
 	completed_users: number;
 	conversion_rate: number;
-};
+}
 
 export function useFunnels(websiteId: string, enabled = true) {
 	const queryClient = useQueryClient();
@@ -112,6 +113,11 @@ export function useFunnels(websiteId: string, enabled = true) {
 			queryClient.invalidateQueries({
 				queryKey: orpc.funnels.list.key({ input: { websiteId } }),
 			});
+			toast.success("Funnel created successfully");
+		},
+		onError: (error) => {
+			const message = error instanceof Error ? error.message : "Failed to create funnel";
+			toast.error(message);
 		},
 	});
 
@@ -124,6 +130,11 @@ export function useFunnels(websiteId: string, enabled = true) {
 			queryClient.invalidateQueries({
 				queryKey: orpc.funnels.getAnalytics.key(),
 			});
+			toast.success("Funnel updated successfully");
+		},
+		onError: (error) => {
+			const message = error instanceof Error ? error.message : "Failed to update funnel";
+			toast.error(message);
 		},
 	});
 
@@ -136,6 +147,11 @@ export function useFunnels(websiteId: string, enabled = true) {
 			queryClient.invalidateQueries({
 				queryKey: orpc.funnels.getAnalytics.key(),
 			});
+			toast.success("Funnel deleted successfully");
+		},
+		onError: (error) => {
+			const message = error instanceof Error ? error.message : "Failed to delete funnel";
+			toast.error(message);
 		},
 	});
 

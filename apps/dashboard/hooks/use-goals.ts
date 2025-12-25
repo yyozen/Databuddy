@@ -2,6 +2,7 @@ import type { goals, InferInsertModel, InferSelectModel } from "@databuddy/db";
 import type { GoalFilter } from "@databuddy/shared/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { orpc } from "@/lib/orpc";
 
 export type Goal = InferSelectModel<typeof goals>;
@@ -31,6 +32,11 @@ export function useGoals(websiteId: string, enabled = true) {
 			queryClient.invalidateQueries({
 				queryKey: orpc.goals.list.key({ input: { websiteId } }),
 			});
+			toast.success("Goal created successfully");
+		},
+		onError: (error) => {
+			const message = error instanceof Error ? error.message : "Failed to create goal";
+			toast.error(message);
 		},
 	});
 
@@ -43,6 +49,11 @@ export function useGoals(websiteId: string, enabled = true) {
 			queryClient.invalidateQueries({
 				queryKey: orpc.goals.getAnalytics.key(),
 			});
+			toast.success("Goal updated successfully");
+		},
+		onError: (error) => {
+			const message = error instanceof Error ? error.message : "Failed to update goal";
+			toast.error(message);
 		},
 	});
 
@@ -55,6 +66,14 @@ export function useGoals(websiteId: string, enabled = true) {
 			queryClient.invalidateQueries({
 				queryKey: orpc.goals.getAnalytics.key(),
 			});
+			queryClient.invalidateQueries({
+				queryKey: orpc.goals.bulkAnalytics.key(),
+			});
+			toast.success("Goal deleted successfully");
+		},
+		onError: (error) => {
+			const message = error instanceof Error ? error.message : "Failed to delete goal";
+			toast.error(message);
 		},
 	});
 
@@ -64,14 +83,15 @@ export function useGoals(websiteId: string, enabled = true) {
 		error: query.error,
 		refetch: query.refetch,
 		createGoal: (goalData: CreateGoalData) =>
-			createMutation.mutateAsync(goalData),
+			createMutation.mutateAsync(goalData as any),
 		updateGoal: ({
 			goalId,
 			updates,
 		}: {
 			goalId: string;
 			updates: UpdateGoalData;
-		}) => updateMutation.mutateAsync({ id: goalId, ...updates }),
+		}) =>
+			updateMutation.mutateAsync({ id: goalId, ...updates } as any),
 		deleteGoal: (goalId: string) => deleteMutation.mutateAsync({ id: goalId }),
 		isCreating: createMutation.isPending,
 		isUpdating: updateMutation.isPending,

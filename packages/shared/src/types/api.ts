@@ -19,13 +19,13 @@ export interface DynamicQueryRequest {
 export interface DynamicQueryFilter {
 	field: string;
 	operator:
-		| "eq"
-		| "ne"
-		| "contains"
-		| "not_contains"
-		| "starts_with"
-		| "in"
-		| "not_in";
+	| "eq"
+	| "ne"
+	| "contains"
+	| "not_contains"
+	| "starts_with"
+	| "in"
+	| "not_in";
 	value: string | number | (string | number)[];
 }
 
@@ -54,7 +54,7 @@ export interface DynamicQueryResponse {
 export interface GoalFilter {
 	field: string;
 	operator: "equals" | "contains" | "not_equals" | "in" | "not_in";
-	value: DynamicQueryFilter["value"];
+	value: string | string[];
 }
 
 export interface BatchQueryResponse {

@@ -14,7 +14,6 @@ import { authorizeWebsiteAccess } from "../utils/auth";
 
 const cache = createDrizzleCache({ redis, namespace: "goals" });
 
-const CACHE_TTL = 300;
 const ANALYTICS_CACHE_TTL = 180;
 
 const filterSchema = z.object({
@@ -48,63 +47,41 @@ const getEffectiveStartDate = (
 		: createdDate;
 };
 
-const invalidateGoalsCache = async (websiteId: string, goalId?: string) => {
-	const keys = [`list:${websiteId}`];
-	if (goalId) {
-		keys.push(`byId:${goalId}:${websiteId}`);
-	}
-	await Promise.all(keys.map((key) => cache.invalidateByKey(key)));
-};
-
 export const goalsRouter = {
 	list: publicProcedure
 		.input(z.object({ websiteId: z.string() }))
-		.handler(({ context, input }) =>
-			cache.withCache({
-				key: `list:${input.websiteId}`,
-				ttl: CACHE_TTL,
-				tables: ["goals"],
-				queryFn: async () => {
-					await authorizeWebsiteAccess(context, input.websiteId, "read");
-					return context.db
-						.select()
-						.from(goals)
-						.where(
-							and(eq(goals.websiteId, input.websiteId), isNull(goals.deletedAt))
-						)
-						.orderBy(desc(goals.createdAt));
-				},
-			})
-		),
+		.handler(async ({ context, input }) => {
+			await authorizeWebsiteAccess(context, input.websiteId, "read");
+			return context.db
+				.select()
+				.from(goals)
+				.where(
+					and(eq(goals.websiteId, input.websiteId), isNull(goals.deletedAt))
+				)
+				.orderBy(desc(goals.createdAt));
+		}),
 
 	getById: publicProcedure
 		.input(z.object({ id: z.string(), websiteId: z.string() }))
-		.handler(({ context, input }) =>
-			cache.withCache({
-				key: `byId:${input.id}:${input.websiteId}`,
-				ttl: CACHE_TTL,
-				tables: ["goals"],
-				queryFn: async () => {
-					await authorizeWebsiteAccess(context, input.websiteId, "read");
-					const [goal] = await context.db
-						.select()
-						.from(goals)
-						.where(
-							and(
-								eq(goals.id, input.id),
-								eq(goals.websiteId, input.websiteId),
-								isNull(goals.deletedAt)
-							)
-						)
-						.limit(1);
+		.handler(async ({ context, input }) => {
+			await authorizeWebsiteAccess(context, input.websiteId, "read");
+			const [goal] = await context.db
+				.select()
+				.from(goals)
+				.where(
+					and(
+						eq(goals.id, input.id),
+						eq(goals.websiteId, input.websiteId),
+						isNull(goals.deletedAt)
+					)
+				)
+				.limit(1);
 
-					if (!goal) {
-						throw new ORPCError("NOT_FOUND", { message: "Goal not found" });
-					}
-					return goal;
-				},
-			})
-		),
+			if (!goal) {
+				throw new ORPCError("NOT_FOUND", { message: "Goal not found" });
+			}
+			return goal;
+		}),
 
 	create: protectedProcedure
 		.input(
@@ -155,7 +132,6 @@ export const goalsRouter = {
 				})
 				.returning();
 
-			await invalidateGoalsCache(input.websiteId);
 			return newGoal;
 		}),
 
@@ -192,7 +168,6 @@ export const goalsRouter = {
 				.where(and(eq(goals.id, id), isNull(goals.deletedAt)))
 				.returning();
 
-			await invalidateGoalsCache(existingGoal.websiteId, id);
 			return updatedGoal;
 		}),
 
@@ -216,7 +191,6 @@ export const goalsRouter = {
 				.set({ deletedAt: new Date(), isActive: false })
 				.where(and(eq(goals.id, input.id), isNull(goals.deletedAt)));
 
-			await invalidateGoalsCache(existingGoal.websiteId, input.id);
 			return { success: true };
 		}),
 
