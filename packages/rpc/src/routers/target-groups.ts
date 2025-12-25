@@ -9,6 +9,7 @@ import {
 import {
     createDrizzleCache,
     invalidateCacheablePattern,
+    invalidateCacheableWithArgs,
     redis,
 } from "@databuddy/redis";
 import { userRuleSchema } from "@databuddy/shared/flags";
@@ -237,11 +238,8 @@ export const targetGroupsRouter = {
 
             await targetGroupsCache.invalidateByTables(["target_groups"]);
 
-            // Invalidate public API flag cache for this website since target group rules affect flag evaluation
-            await invalidateCacheablePattern(`cacheable:flag:*,${group.websiteId}*`);
-            await invalidateCacheablePattern(
-                `cacheable:flags-client:*${group.websiteId}*`
-            );
+            await invalidateCacheablePattern(`cacheable:flag:*${group.websiteId}*`);
+            await invalidateCacheableWithArgs("flags-client", [group.websiteId]);
 
             return updatedGroup;
         }),
@@ -281,16 +279,9 @@ export const targetGroupsRouter = {
                     and(eq(targetGroups.id, input.id), isNull(targetGroups.deletedAt))
                 );
 
-            // Invalidate both target groups and flags cache since flags may have been affected
             await targetGroupsCache.invalidateByTables(["target_groups"]);
-            // Also invalidate flags cache to ensure flags reflect the removed group associations
             await flagsCache.invalidateByTables(["flags", "flags_to_target_groups"]);
-
-            // Invalidate public API flag cache for this website
-            await invalidateCacheablePattern(`cacheable:flag:*,${group.websiteId}*`);
-            await invalidateCacheablePattern(
-                `cacheable:flags-client:*${group.websiteId}*`
-            );
+            await invalidateCacheableWithArgs("flags-client", [group.websiteId]);
 
             return { success: true };
         }),

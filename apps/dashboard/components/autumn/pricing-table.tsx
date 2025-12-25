@@ -454,10 +454,11 @@ function PricingCard({
 						<span className="text-muted-foreground text-xs uppercase">
 							Features Included
 						</span>
-						{newGatedFeatures.map(({ feature, limit }) => {
+						{newGatedFeatures.map(({ feature, limit, isNew }) => {
 							const meta = FEATURE_METADATA[feature];
 							return (
 								<GatedFeatureItem
+									isNew={isNew}
 									key={feature}
 									limit={limit}
 									name={meta?.name ?? feature}
@@ -544,6 +545,7 @@ function GatedFeatureItem({
 	name,
 	limit,
 	unit,
+	isNew,
 }: {
 	name: string;
 	limit: FeatureLimit;
@@ -572,7 +574,12 @@ function GatedFeatureItem({
 				weight="bold"
 			/>
 			<div className="flex flex-col">
-				<span>{name}</span>
+				<div className="flex items-center gap-2">
+					<span>{name}</span>
+					{isNew && (
+						<Badge className="bg-primary/10 text-primary text-xs">New</Badge>
+					)}
+				</div>
 				{limitText && (
 					<span className="text-muted-foreground text-xs">{limitText}</span>
 				)}

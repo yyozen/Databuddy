@@ -3,7 +3,7 @@
 import { GATED_FEATURES } from "@databuddy/shared/types/features";
 import { BugIcon } from "@phosphor-icons/react";
 import { useAtom } from "jotai";
-import { use, useCallback } from "react";
+import { use, useCallback, useEffect } from "react";
 import { FeatureGate } from "@/components/feature-gate";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDateFilters } from "@/hooks/use-date-filters";
@@ -54,10 +54,11 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 		}
 	}, [isRefreshing, refetch, setIsRefreshing]);
 
-	// Trigger refresh when isRefreshing changes
-	if (isRefreshing) {
-		handleRefresh();
-	}
+	useEffect(() => {
+		if (isRefreshing) {
+			handleRefresh();
+		}
+	}, [isRefreshing, handleRefresh]);
 
 	const getData = <T,>(id: string): T[] =>
 		(errorResults?.find((r) => r.queryId === id)?.data?.[id] as T[]) || [];

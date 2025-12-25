@@ -133,67 +133,32 @@ export const PLAN_FEATURE_LIMITS: Record<
 };
 
 /**
+ * Generate PLAN_FEATURES from PLAN_FEATURE_LIMITS
+ * Maps each plan/feature: if limit === false then feature is false, otherwise true
+ */
+function generatePlanFeatures(): Record<PlanId, Record<GatedFeatureId, boolean>> {
+	const result = {} as Record<PlanId, Record<GatedFeatureId, boolean>>;
+
+	for (const planId of PLAN_HIERARCHY) {
+		result[planId] = {} as Record<GatedFeatureId, boolean>;
+		const planLimits = PLAN_FEATURE_LIMITS[planId];
+
+		for (const featureId of Object.values(GATED_FEATURES)) {
+			const limit = planLimits[featureId];
+			result[planId][featureId] = limit !== false;
+		}
+	}
+
+	return result;
+}
+
+/**
  * @deprecated Use PLAN_FEATURE_LIMITS instead
  * Legacy boolean feature matrix for backward compatibility
+ * Auto-generated from PLAN_FEATURE_LIMITS to prevent drift
  */
-export const PLAN_FEATURES: Record<PlanId, Record<GatedFeatureId, boolean>> = {
-	[PLAN_IDS.FREE]: {
-		[GATED_FEATURES.FUNNELS]: true,
-		[GATED_FEATURES.GOALS]: true,
-		[GATED_FEATURES.RETENTION]: false,
-		[GATED_FEATURES.USERS]: true,
-		[GATED_FEATURES.FEATURE_FLAGS]: true,
-		[GATED_FEATURES.WEB_VITALS]: true,
-		[GATED_FEATURES.ERROR_TRACKING]: false,
-		[GATED_FEATURES.GEOGRAPHIC]: true,
-		[GATED_FEATURES.AI_ASSISTANT]: true,
-		[GATED_FEATURES.AI_AGENT]: false,
-		[GATED_FEATURES.TEAM_ROLES]: true,
-		[GATED_FEATURES.TARGET_GROUPS]: false,
-	},
-	[PLAN_IDS.HOBBY]: {
-		[GATED_FEATURES.FUNNELS]: true,
-		[GATED_FEATURES.GOALS]: true,
-		[GATED_FEATURES.RETENTION]: true,
-		[GATED_FEATURES.USERS]: true,
-		[GATED_FEATURES.FEATURE_FLAGS]: true,
-		[GATED_FEATURES.WEB_VITALS]: true,
-		[GATED_FEATURES.ERROR_TRACKING]: true,
-		[GATED_FEATURES.GEOGRAPHIC]: true,
-		[GATED_FEATURES.AI_ASSISTANT]: true,
-		[GATED_FEATURES.AI_AGENT]: false,
-		[GATED_FEATURES.TEAM_ROLES]: true,
-		[GATED_FEATURES.TARGET_GROUPS]: true,
-	},
-	[PLAN_IDS.PRO]: {
-		[GATED_FEATURES.FUNNELS]: true,
-		[GATED_FEATURES.GOALS]: true,
-		[GATED_FEATURES.RETENTION]: true,
-		[GATED_FEATURES.USERS]: true,
-		[GATED_FEATURES.FEATURE_FLAGS]: true,
-		[GATED_FEATURES.WEB_VITALS]: true,
-		[GATED_FEATURES.ERROR_TRACKING]: true,
-		[GATED_FEATURES.GEOGRAPHIC]: true,
-		[GATED_FEATURES.AI_ASSISTANT]: true,
-		[GATED_FEATURES.AI_AGENT]: true,
-		[GATED_FEATURES.TEAM_ROLES]: true,
-		[GATED_FEATURES.TARGET_GROUPS]: true,
-	},
-	[PLAN_IDS.SCALE]: {
-		[GATED_FEATURES.FUNNELS]: true,
-		[GATED_FEATURES.GOALS]: true,
-		[GATED_FEATURES.RETENTION]: true,
-		[GATED_FEATURES.USERS]: true,
-		[GATED_FEATURES.FEATURE_FLAGS]: true,
-		[GATED_FEATURES.WEB_VITALS]: true,
-		[GATED_FEATURES.ERROR_TRACKING]: true,
-		[GATED_FEATURES.GEOGRAPHIC]: true,
-		[GATED_FEATURES.AI_ASSISTANT]: true,
-		[GATED_FEATURES.AI_AGENT]: true,
-		[GATED_FEATURES.TEAM_ROLES]: true,
-		[GATED_FEATURES.TARGET_GROUPS]: true,
-	},
-};
+export const PLAN_FEATURES: Record<PlanId, Record<GatedFeatureId, boolean>> =
+	generatePlanFeatures();
 
 /** AI capability identifiers */
 export const AI_CAPABILITIES = {

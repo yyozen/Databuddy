@@ -5,6 +5,7 @@ import type {
     PlanId,
 } from "@databuddy/shared/types/features";
 import {
+    getMinimumPlanForAiCapability,
     getNextPlanForFeature,
     getPlanCapabilities,
     getPlanFeatureLimit,
@@ -251,8 +252,11 @@ export function requireAiCapability(
     capability: AiCapabilityId
 ): void {
     if (!isPlanAiCapabilityEnabled(planId ?? null, capability)) {
+        const minPlan = getMinimumPlanForAiCapability(capability);
         throw new ORPCError("FORBIDDEN", {
-            message: "This AI capability is not available on your plan",
+            message: minPlan
+                ? `This AI capability is not available on your plan; upgrade to ${minPlan} to access it`
+                : "This AI capability is not available on your plan",
         });
     }
 }
