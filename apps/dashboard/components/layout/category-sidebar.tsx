@@ -43,13 +43,13 @@ interface User {
 interface CategorySidebarProps {
 	onCategoryChangeAction?: (categoryId: string) => void;
 	selectedCategory?: string;
-	user: User;
+	user: User | null;
 }
 
 export function CategorySidebar({
 	onCategoryChangeAction,
 	selectedCategory,
-	user,
+	user = null,
 }: CategorySidebarProps) {
 	const pathname = usePathname();
 	const { websites, isLoading: isLoadingWebsites } = useWebsites();
@@ -110,7 +110,6 @@ export function CategorySidebar({
 					const Icon = category.icon;
 					const isActive = activeCategory === category.id;
 					const isLast = idx === categories.length - 1;
-					// biome-ignore lint/nursery/noLeakedRender: FUCK ULTRACITE BRO THIS MAKES NO SENSE
 					const borderClass = isActive && !isLast ? "border-accent" : "";
 					const hoverClass = isActive ? "" : "hover:bg-sidebar-accent-brighter";
 					const boxClass = isLast
@@ -177,9 +176,11 @@ export function CategorySidebar({
 						</Button>
 					</div>
 
-					<div className="flex justify-center">
-						<ProfileButtonClient user={user} />
-					</div>
+					{user ? (
+						<div className="flex justify-center">
+							<ProfileButtonClient user={user} />
+						</div>
+					) : null}
 				</div>
 
 				<HelpDialog onOpenChangeAction={setHelpOpen} open={helpOpen} />

@@ -38,10 +38,10 @@ interface User {
 }
 
 interface SidebarProps {
-	user: User;
+	user: User | null;
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user = null }: SidebarProps) {
 	const pathname = usePathname();
 	const [isMobileOpen, setIsMobileOpen] = useState(false);
 	const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
