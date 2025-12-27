@@ -266,7 +266,6 @@ export const websiteNavigation: NavigationSection[] = [
 		}),
 		createNavItem("Retention", RepeatIcon, "/retention", {
 			rootLevel: false,
-			alpha: true,
 			gatedFeature: GATED_FEATURES.RETENTION,
 		}),
 		createNavItem("Feature Flags", FlagIcon, "/flags", {
