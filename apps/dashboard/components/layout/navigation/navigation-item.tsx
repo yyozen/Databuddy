@@ -38,9 +38,8 @@ export function NavigationItem({
 	const pathname = usePathname();
 
 	const fullPath = useMemo(() => {
-		if (isRootLevel) return href;
-		if (currentWebsiteId === "sandbox") {
-			return href === "" ? "/sandbox" : `/sandbox${href}`;
+		if (isRootLevel) {
+			return href;
 		}
 		if (pathname.startsWith("/demo/")) {
 			return href === ""

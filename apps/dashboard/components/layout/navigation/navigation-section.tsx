@@ -44,9 +44,6 @@ const isItemActive = (
 	}
 
 	const fullPath = (() => {
-		if (currentWebsiteId === "sandbox") {
-			return buildFullPath("/sandbox", item.href);
-		}
 		if (pathname.startsWith("/demo")) {
 			return buildFullPath(`/demo/${currentWebsiteId}`, item.href);
 		}
