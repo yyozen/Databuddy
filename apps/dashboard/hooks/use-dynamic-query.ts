@@ -252,7 +252,6 @@ export function useBatchDynamicQuery(
 		enabled: options?.enabled !== false && !!websiteId && queries.length > 0,
 	});
 
-	// Enhanced processing with better debugging and clearer structure
 	const processedResults = useMemo(() => {
 		if (!query.data?.results) {
 			return [];

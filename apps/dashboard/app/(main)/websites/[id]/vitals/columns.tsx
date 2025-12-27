@@ -12,7 +12,7 @@ import {
 	formatPerformanceTime,
 } from "../_components/tabs/performance/_utils/performance-utils";
 
-export type VitalsBreakdownData = {
+export interface VitalsBreakdownData {
 	name: string;
 	samples: number;
 	visitors?: number;
@@ -24,7 +24,7 @@ export type VitalsBreakdownData = {
 	fps?: number;
 	country_code?: string;
 	country_name?: string;
-};
+}
 
 const createMetricColumns = (): ColumnDef<VitalsBreakdownData>[] => [
 	{
@@ -82,10 +82,10 @@ const createMetricColumns = (): ColumnDef<VitalsBreakdownData>[] => [
 			const isGood = value <= thresholds.good;
 			const isPoor = value > thresholds.poor;
 			const colorClass = isGood
-				? "text-green-600"
+				? "text-success"
 				: isPoor
-					? "text-red-600"
-					: "text-yellow-600";
+					? "text-destructive"
+					: "text-warning";
 			return <span className={colorClass}>{formatPerformanceTime(value)}</span>;
 		},
 	},
