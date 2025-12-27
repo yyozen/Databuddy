@@ -6,7 +6,7 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 
-export default function AgentError({
+export default function VitalsError({
 	error,
 	reset,
 }: {
@@ -19,9 +19,9 @@ export default function AgentError({
 				<WarningCircleIcon className="size-6 text-destructive" weight="fill" />
 			</div>
 			<div className="max-w-sm space-y-2 text-center">
-				<h2 className="font-semibold text-lg">Something went wrong</h2>
+				<h2 className="font-semibold text-lg">Failed to load Web Vitals</h2>
 				<p className="text-muted-foreground text-sm">
-					{error.message || "An error occurred while loading the agent"}
+					{error.message || "An error occurred while loading performance data"}
 				</p>
 				{error.digest && (
 					<p className="font-mono text-muted-foreground text-xs">
