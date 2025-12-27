@@ -244,13 +244,25 @@ export default function VitalsPage() {
 	// Calculate Core Web Vitals pass rate
 	const cwvSummary = useMemo(() => {
 		if (overviewData.length === 0) {
-			return { passRate: 0, good: 0, needsWork: 0, poor: 0, totalSamples: 0 };
+			return {
+				passRate: 0,
+				good: 0,
+				needsWork: 0,
+				poor: 0,
+				totalSamples: 0,
+				metrics: [],
+			};
 		}
 
 		let passCount = 0;
 		let needsWorkCount = 0;
 		let poorCount = 0;
 		let totalSamples = 0;
+		const metrics: Array<{
+			name: string;
+			status: "good" | "needs-work" | "poor";
+			value: number;
+		}> = [];
 
 		for (const metric of overviewData) {
 			const config = VITAL_CONFIGS[metric.metric_name];
@@ -269,21 +281,35 @@ export default function VitalsPage() {
 			const value = metric.p75;
 			totalSamples += metric.samples;
 
+			let status: "good" | "needs-work" | "poor" = "good";
+
 			if (config.lowerIsBetter !== false) {
 				if (value <= config.goodThreshold) {
 					passCount++;
+					status = "good";
 				} else if (value <= config.poorThreshold) {
 					needsWorkCount++;
+					status = "needs-work";
 				} else {
 					poorCount++;
+					status = "poor";
 				}
 			} else if (value >= config.goodThreshold) {
 				passCount++;
+				status = "good";
 			} else if (value >= config.poorThreshold) {
 				needsWorkCount++;
+				status = "needs-work";
 			} else {
 				poorCount++;
+				status = "poor";
 			}
+
+			metrics.push({
+				name: metric.metric_name,
+				status,
+				value,
+			});
 		}
 
 		const totalMetrics = passCount + needsWorkCount + poorCount;
@@ -295,6 +321,7 @@ export default function VitalsPage() {
 			needsWork: needsWorkCount,
 			poor: poorCount,
 			totalSamples,
+			metrics,
 		};
 	}, [overviewData]);
 
@@ -630,26 +657,27 @@ export default function VitalsPage() {
 									</span>
 								</div>
 								<p className="text-muted-foreground text-xs">
-									{cwvSummary.good > 0 && (
-										<span className="text-success">{cwvSummary.good} good</span>
-									)}
-									{cwvSummary.needsWork > 0 && (
-										<>
-											{cwvSummary.good > 0 && " · "}
-											<span className="text-warning">
-												{cwvSummary.needsWork} needs work
+									{cwvSummary.metrics.map((metric, idx) => (
+										<span key={metric.name}>
+											{idx > 0 && " · "}
+											<span className="font-medium text-foreground">
+												{metric.name}
+											</span>{" "}
+											<span
+												className={cn(
+													metric.status === "good" && "text-success",
+													metric.status === "needs-work" && "text-warning",
+													metric.status === "poor" && "text-destructive"
+												)}
+											>
+												{metric.status === "good"
+													? "✓"
+													: metric.status === "needs-work"
+														? "⚠"
+														: "✗"}
 											</span>
-										</>
-									)}
-									{cwvSummary.poor > 0 && (
-										<>
-											{(cwvSummary.good > 0 || cwvSummary.needsWork > 0) &&
-												" · "}
-											<span className="text-destructive">
-												{cwvSummary.poor} poor
-											</span>
-										</>
-									)}
+										</span>
+									))}
 									{cwvSummary.totalSamples > 0 && (
 										<> · {cwvSummary.totalSamples.toLocaleString()} samples</>
 									)}
