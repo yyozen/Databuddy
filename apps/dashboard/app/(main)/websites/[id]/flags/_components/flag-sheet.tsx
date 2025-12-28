@@ -43,7 +43,6 @@ import { orpc } from "@/lib/orpc";
 import { cn } from "@/lib/utils";
 import { GroupSelector } from "../groups/_components/group-selector";
 import { DependencySelector } from "./dependency-selector";
-import { ScheduleManager } from "./schedule-manager";
 import type { Flag, FlagSheetProps, TargetGroup } from "./types";
 import { UserRulesBuilder } from "./user-rules-builder";
 import { VariantEditor } from "./variant-editor";
@@ -288,7 +287,7 @@ export function FlagSheet({
 	const watchedType = form.watch("flag.type");
 	const watchedRules = form.watch("flag.rules") || [];
 	const watchedDependencies = form.watch("flag.dependencies") || [];
-	const watchedScheduleEnabled = form.watch("schedule.isEnabled");
+	// const watchedScheduleEnabled = form.watch("schedule.isEnabled");
 
 	const handleNameChange = (value: string) => {
 		form.setValue("flag.name", value);
@@ -818,13 +817,24 @@ export function FlagSheet({
 								</CollapsibleSection>
 
 								<CollapsibleSection
-									badge={watchedScheduleEnabled ? 1 : undefined}
 									icon={ClockIcon}
 									isExpanded={expandedSection === "scheduling"}
 									onToggleAction={() => toggleSection("scheduling")}
 									title="Scheduling"
 								>
-									<ScheduleManager flagId={flag?.id} form={form} />
+									<div className="rounded border border-border border-dashed bg-muted/30 px-4 py-8 text-center">
+										<ClockIcon
+											className="mx-auto mb-2 text-muted-foreground"
+											size={24}
+											weight="duotone"
+										/>
+										<p className="font-medium text-foreground text-sm">
+											Coming Soon
+										</p>
+										<p className="mt-1 text-muted-foreground text-xs">
+											Schedule flag changes and rollouts for future dates
+										</p>
+									</div>
 								</CollapsibleSection>
 							</div>
 						</SheetBody>
