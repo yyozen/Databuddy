@@ -23,18 +23,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatMetricNumber } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
-type MiniChartDataPoint = {
+interface MiniChartDataPoint {
 	date: string;
 	value: number;
-};
+}
 
-type Trend = {
+interface Trend {
 	change?: number;
 	current: number;
 	previous: number;
 	currentPeriod: { start: string; end: string };
 	previousPeriod: { start: string; end: string };
-};
+}
 
 export type ChartType = "area" | "bar" | "line";
 export type ChartStepType =
@@ -44,7 +44,7 @@ export type ChartStepType =
 	| "stepBefore"
 	| "stepAfter";
 
-type StatCardProps = {
+interface StatCardProps {
 	title: string;
 	titleExtra?: React.ReactNode;
 	value: string | number;
@@ -63,7 +63,7 @@ type StatCardProps = {
 	chartStepType?: ChartStepType;
 	formatValue?: (value: number) => string;
 	formatChartValue?: (value: number) => string;
-};
+}
 
 const formatTrendValue = (
 	value: string | number,
