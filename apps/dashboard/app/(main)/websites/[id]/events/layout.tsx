@@ -10,9 +10,18 @@ export default function EventsLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const { id } = useParams();
-	const websiteId = id as string;
+	const params = useParams();
+	const websiteId = params.id as string;
+	const eventName = params.eventName as string | undefined;
 	const pathname = usePathname();
+
+	const isDetailPage = Boolean(eventName);
+	const isSummaryPage = pathname === `/websites/${websiteId}/events`;
+	const isStreamPage = pathname === `/websites/${websiteId}/events/stream`;
+
+	if (isDetailPage) {
+		return <div className="flex h-full min-h-0 flex-col">{children}</div>;
+	}
 
 	return (
 		<div className="flex h-full min-h-0 flex-col">
@@ -20,43 +29,30 @@ export default function EventsLayout({
 				<Link
 					className={cn(
 						"flex cursor-pointer items-center gap-2 border-b-2 px-3 py-2.5 font-medium text-sm transition-all",
-						pathname === `/websites/${websiteId}/events`
+						isSummaryPage
 							? "border-primary text-foreground"
 							: "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
 					)}
 					href={`/websites/${websiteId}/events`}
 				>
 					<ChartBarIcon
-						className={cn(
-							"size-4",
-							pathname === `/websites/${websiteId}/events` && "text-primary"
-						)}
-						weight={
-							pathname === `/websites/${websiteId}/events` ? "fill" : "duotone"
-						}
+						className={cn("size-4", isSummaryPage && "text-primary")}
+						weight={isSummaryPage ? "fill" : "duotone"}
 					/>
 					Summary
 				</Link>
 				<Link
 					className={cn(
 						"flex cursor-pointer items-center gap-2 border-b-2 px-3 py-2.5 font-medium text-sm transition-all",
-						pathname === `/websites/${websiteId}/events/stream`
+						isStreamPage
 							? "border-primary text-foreground"
 							: "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
 					)}
 					href={`/websites/${websiteId}/events/stream`}
 				>
 					<ListBulletsIcon
-						className={cn(
-							"size-4",
-							pathname === `/websites/${websiteId}/events/stream` &&
-								"text-primary"
-						)}
-						weight={
-							pathname === `/websites/${websiteId}/events/stream`
-								? "fill"
-								: "duotone"
-						}
+						className={cn("size-4", isStreamPage && "text-primary")}
+						weight={isStreamPage ? "fill" : "duotone"}
 					/>
 					Stream
 				</Link>

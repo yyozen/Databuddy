@@ -1,10 +1,13 @@
 "use client";
 
 import {
+	ArrowRightIcon,
 	ChartBarIcon,
 	FunnelIcon,
 	ListBulletsIcon,
 } from "@phosphor-icons/react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
 	Select,
@@ -36,6 +39,8 @@ export function SummaryView({
 	isLoading,
 	onFilterAction,
 }: SummaryViewProps) {
+	const params = useParams();
+	const websiteId = params.id as string;
 	const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
 
 	const activeEvent = useMemo(() => {
@@ -87,10 +92,19 @@ export function SummaryView({
 					</SelectContent>
 				</Select>
 				{activeEvent && (
-					<span className="text-muted-foreground text-sm">
-						{activeEvent.summaryProperties.length} propert
-						{activeEvent.summaryProperties.length !== 1 ? "ies" : "y"}
-					</span>
+					<>
+						<span className="text-muted-foreground text-sm">
+							{activeEvent.summaryProperties.length} propert
+							{activeEvent.summaryProperties.length !== 1 ? "ies" : "y"}
+						</span>
+						<Link
+							className="flex items-center gap-1 text-primary text-sm transition-colors hover:text-primary/80 hover:underline"
+							href={`/websites/${websiteId}/events/${encodeURIComponent(activeEvent.name)}`}
+						>
+							View details
+							<ArrowRightIcon className="size-3.5" />
+						</Link>
+					</>
 				)}
 			</div>
 

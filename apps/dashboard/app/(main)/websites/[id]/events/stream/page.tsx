@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	ArrowSquareOutIcon,
 	CopyIcon,
 	FunnelIcon,
 	LightningIcon,
@@ -16,6 +17,7 @@ import {
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useAtom } from "jotai";
+import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -233,18 +235,27 @@ export default function EventsStreamPage() {
 				header: "Event",
 				accessorFn: (row) => row.event_name,
 				cell: ({ row }) => (
-					<button
-						className="group flex items-center gap-1.5"
-						onClick={() => handleAddFilter(row.original.event_name)}
-						type="button"
-					>
-						<span className="rounded bg-primary/10 px-2 py-1 font-medium text-primary text-xs transition-colors group-hover:bg-primary/20">
-							{row.original.event_name}
-						</span>
-						<FunnelIcon className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-					</button>
+					<div className="flex items-center gap-1.5">
+						<Link
+							className="group flex items-center gap-1"
+							href={`/websites/${websiteId}/events/${encodeURIComponent(row.original.event_name)}`}
+						>
+							<span className="rounded bg-primary/10 px-2 py-1 font-medium text-primary text-xs transition-colors group-hover:bg-primary/20">
+								{row.original.event_name}
+							</span>
+							<ArrowSquareOutIcon className="size-3 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+						</Link>
+						<button
+							className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover/row:opacity-100"
+							onClick={() => handleAddFilter(row.original.event_name)}
+							title="Filter by this event"
+							type="button"
+						>
+							<FunnelIcon className="size-3.5" weight="duotone" />
+						</button>
+					</div>
 				),
-				size: 140,
+				size: 160,
 			},
 			{
 				id: "path",
