@@ -23,18 +23,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatMetricNumber } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
-type MiniChartDataPoint = {
+interface MiniChartDataPoint {
 	date: string;
 	value: number;
-};
+}
 
-type Trend = {
+interface Trend {
 	change?: number;
 	current: number;
 	previous: number;
 	currentPeriod: { start: string; end: string };
 	previousPeriod: { start: string; end: string };
-};
+}
 
 export type ChartType = "area" | "bar" | "line";
 export type ChartStepType =
@@ -44,7 +44,7 @@ export type ChartStepType =
 	| "stepBefore"
 	| "stepAfter";
 
-type StatCardProps = {
+interface StatCardProps {
 	title: string;
 	titleExtra?: React.ReactNode;
 	value: string | number;
@@ -63,7 +63,7 @@ type StatCardProps = {
 	chartStepType?: ChartStepType;
 	formatValue?: (value: number) => string;
 	formatChartValue?: (value: number) => string;
-};
+}
 
 const formatTrendValue = (
 	value: string | number,
@@ -146,7 +146,9 @@ const MiniChart = memo(
 		if (!hasData) {
 			return (
 				<div className="flex h-24 items-center justify-center pt-2">
-					<span className="text-[10px] text-muted opacity-60">No data</span>
+					<span className="text-[10px] text-muted-foreground opacity-60">
+						No data
+					</span>
 				</div>
 			);
 		}
