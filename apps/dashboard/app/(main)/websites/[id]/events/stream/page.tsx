@@ -351,7 +351,7 @@ export default function EventsStreamPage() {
 		data: filteredEvents,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
-		getRowId: (row) => `${row.timestamp}-${row.event_name}-${row.session_id}`,
+		getRowId: (row, index) => `${index}-${row.timestamp}-${row.event_name}`,
 	});
 
 	if (isLoading && isInitialLoad) {
