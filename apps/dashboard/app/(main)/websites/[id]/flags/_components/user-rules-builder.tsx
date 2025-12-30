@@ -47,10 +47,17 @@ function getConditionsForType(type: UserRule["type"]) {
 			);
 }
 
-function getRuleValues(rule: UserRule): string[] {
-	return rule.batch && rule.batchValues
-		? rule.batchValues
-		: (rule.values ?? []);
+function getCurrentValues(rule: UserRule): string[] {
+	if (rule.values?.length) {
+		return rule.values;
+	}
+	if (rule.batchValues?.length) {
+		return rule.batchValues;
+	}
+	if (rule.value) {
+		return [rule.value];
+	}
+	return [];
 }
 
 function InlineTagsInput({
@@ -161,7 +168,7 @@ function RuleRow({
 	const conditions = getConditionsForType(rule.type);
 	const needsValue =
 		CONDITIONS.find((c) => c.value === rule.operator)?.needsValue ?? true;
-	const currentValues = getRuleValues(rule);
+	const currentValues = getCurrentValues(rule);
 
 	const handleTypeChange = (newType: UserRule["type"]) => {
 		const needsReset =
@@ -299,9 +306,13 @@ export function UserRulesBuilder({ rules, onChange }: UserRulesBuilderProps) {
 	};
 
 	const updateRule = (index: number, updates: Partial<UserRule>) => {
-		onChange(
-			rules.map((rule, i) => (i === index ? { ...rule, ...updates } : rule))
-		);
+		const newRules = [...rules];
+		const syncedUpdates = { ...updates };
+		if (syncedUpdates.values !== undefined) {
+			syncedUpdates.batchValues = syncedUpdates.values;
+		}
+		newRules[index] = { ...newRules[index], ...syncedUpdates, batch: true };
+		onChange(newRules);
 	};
 
 	const removeRule = (index: number) => {
