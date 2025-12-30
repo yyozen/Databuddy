@@ -133,6 +133,8 @@ export function EventsPageContent({ params }: EventsPageContentProps) {
 			total_events: createChartSeries("total_events"),
 			unique_users: createChartSeries("unique_users"),
 			unique_event_types: createChartSeries("unique_event_types"),
+			unique_sessions: createChartSeries("unique_sessions"),
+			unique_pages: createChartSeries("unique_pages"),
 		};
 	}, [trendsData, dateRange.granularity]);
 
@@ -238,16 +240,24 @@ export function EventsPageContent({ params }: EventsPageContentProps) {
 							value={formatNumber(summary.unique_event_types)}
 						/>
 						<StatCard
+							chartData={isLoading ? undefined : miniChartData.unique_sessions}
+							chartStepType={chartStepType}
+							chartType={chartType}
 							icon={UsersIcon}
 							id="events-sessions"
 							isLoading={isLoading}
+							showChart
 							title="Sessions"
 							value={formatNumber(summary.unique_sessions)}
 						/>
 						<StatCard
+							chartData={isLoading ? undefined : miniChartData.unique_pages}
+							chartStepType={chartStepType}
+							chartType={chartType}
 							icon={CalendarBlankIcon}
 							id="events-pages"
 							isLoading={isLoading}
+							showChart
 							title="Unique Pages"
 							value={formatNumber(summary.unique_pages)}
 						/>

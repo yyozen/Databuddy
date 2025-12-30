@@ -41,6 +41,8 @@ export interface CustomEventsTrend {
     total_events: number;
     unique_event_types: number;
     unique_users: number;
+    unique_sessions?: number;
+    unique_pages?: number;
 }
 
 export interface MiniChartDataPoint {

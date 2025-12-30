@@ -272,7 +272,9 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 						toDate(timestamp) as date,
 						COUNT(*) as total_events,
 						COUNT(DISTINCT event_name) as unique_event_types,
-						COUNT(DISTINCT anonymous_id) as unique_users
+						COUNT(DISTINCT anonymous_id) as unique_users,
+						COUNT(DISTINCT session_id) as unique_sessions,
+						COUNT(DISTINCT path) as unique_pages
 					FROM ${Analytics.custom_event_spans}
 					WHERE 
 						client_id = {websiteId:String}

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-	ArrowLeftIcon,
 	CalendarBlankIcon,
 	ClockIcon,
 	LightningIcon,
@@ -55,16 +54,32 @@ export default function EventDetailPage() {
 
 	const miniChartData = useMemo(() => {
 		if (!data?.trends) {
-			return { total_events: [], unique_users: [] };
+			return {
+				total_events: [],
+				unique_users: [],
+				unique_sessions: [],
+				unique_pages: [],
+			};
 		}
+		const formatDate = (date: string) =>
+			dateRange.granularity === "hourly" ? date : date.slice(0, 10);
+
 		return {
 			total_events: data.trends.map((t) => ({
-				date: dateRange.granularity === "hourly" ? t.date : t.date.slice(0, 10),
+				date: formatDate(t.date),
 				value: t.total_events ?? 0,
 			})),
 			unique_users: data.trends.map((t) => ({
-				date: dateRange.granularity === "hourly" ? t.date : t.date.slice(0, 10),
+				date: formatDate(t.date),
 				value: t.unique_users ?? 0,
+			})),
+			unique_sessions: data.trends.map((t) => ({
+				date: formatDate(t.date),
+				value: t.unique_sessions ?? 0,
+			})),
+			unique_pages: data.trends.map((t) => ({
+				date: formatDate(t.date),
+				value: t.unique_pages ?? 0,
 			})),
 		};
 	}, [data?.trends, dateRange.granularity]);
@@ -104,18 +119,6 @@ export default function EventDetailPage() {
 
 	return (
 		<div className="space-y-3 p-3 sm:space-y-4 sm:p-4">
-			<div className="flex items-center gap-3">
-				<Link
-					className="flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground"
-					href={`/websites/${websiteId}/events`}
-				>
-					<ArrowLeftIcon className="size-4" />
-					<span>Events</span>
-				</Link>
-				<span className="text-muted-foreground/40">/</span>
-				<h1 className="font-medium text-foreground">{eventName}</h1>
-			</div>
-
 			{isLoading ? (
 				<EventDetailSkeleton />
 			) : summary.total_events === 0 ? (
@@ -157,16 +160,24 @@ export default function EventDetailPage() {
 							value={formatNumber(summary.unique_users)}
 						/>
 						<StatCard
+							chartData={isLoading ? undefined : miniChartData.unique_sessions}
+							chartStepType={chartStepType}
+							chartType={chartType}
 							icon={UsersIcon}
 							id="event-sessions"
 							isLoading={isLoading}
+							showChart
 							title="Sessions"
 							value={formatNumber(summary.unique_sessions)}
 						/>
 						<StatCard
+							chartData={isLoading ? undefined : miniChartData.unique_pages}
+							chartStepType={chartStepType}
+							chartType={chartType}
 							icon={CalendarBlankIcon}
 							id="event-pages"
 							isLoading={isLoading}
+							showChart
 							title="Unique Pages"
 							value={formatNumber(summary.unique_pages)}
 						/>
