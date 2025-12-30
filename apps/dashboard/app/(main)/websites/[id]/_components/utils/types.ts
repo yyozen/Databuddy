@@ -1,25 +1,29 @@
-import type { DateRange as BaseDateRange } from "@databuddy/shared/types/analytics";
-import type { DynamicQueryFilter } from "@databuddy/shared/types/api";
-import type { Website } from "@databuddy/shared/types/website";
+import type { useWebsite } from "@/hooks/use-websites";
+import type { DynamicQueryFilter } from "@/stores/jotai/filterAtoms";
 
-export type DateRange = BaseDateRange & {
-	granularity?: "daily" | "hourly";
+export interface DateRange {
+	start_date: string;
+	end_date: string;
+	granularity?: "hourly" | "daily";
+	timezone?: string;
 };
 
-export type BaseTabProps = {
+export interface BaseTabProps {
 	websiteId: string;
 	dateRange: DateRange;
 };
 
+export type WebsiteData = ReturnType<typeof useWebsite>["data"];
+
 export type FullTabProps = BaseTabProps & {
-	websiteData: Website | undefined;
+	websiteData: WebsiteData;
 	isRefreshing: boolean;
 	setIsRefreshing: (value: boolean) => void;
 	filters: DynamicQueryFilter[];
 	addFilter: (filter: DynamicQueryFilter) => void;
 };
 
-export type MetricPoint = {
+export interface MetricPoint {
 	date: string;
 	pageviews?: number;
 	visitors?: number;
@@ -28,7 +32,7 @@ export type MetricPoint = {
 	[key: string]: string | number | undefined;
 };
 
-export type TrackingOptions = {
+export interface TrackingOptions {
 	disabled: boolean;
 	trackScreenViews: boolean;
 	trackHashChanges: boolean;
@@ -52,7 +56,7 @@ export type TrackingOptions = {
 	batchTimeout: number;
 };
 
-export type TrackingOptionConfig = {
+export interface TrackingOptionConfig {
 	key: keyof TrackingOptions;
 	title: string;
 	description: string;
