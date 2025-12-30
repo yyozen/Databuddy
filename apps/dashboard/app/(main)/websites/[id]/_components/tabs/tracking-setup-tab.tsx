@@ -756,14 +756,14 @@ export function WebsiteTrackingSetupTab({ websiteId }: TrackingSetupTabProps) {
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-4">
 			<TrackingStatusBanner
 				isRefreshing={isRefreshing}
 				isSetup={isSetup}
 				onRefresh={handleRefresh}
 			/>
 
-			<div className="space-y-6">
+			<div className="space-y-4">
 				{/* Step 1: Install */}
 				<Card className="gap-0 py-0">
 					<CardContent className="p-0">
