@@ -27,7 +27,9 @@ export default function EventsLayout({
 					currentPage={decodedEventName}
 					variant="breadcrumb"
 				/>
-				<div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+				<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+					{children}
+				</div>
 			</div>
 		);
 	}
@@ -51,7 +53,9 @@ export default function EventsLayout({
 				]}
 				variant="tabs"
 			/>
-			<div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+			<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+				{children}
+			</div>
 		</div>
 	);
 }
