@@ -31,11 +31,11 @@ import {
 import { Switch } from "../ui/switch";
 import type { ApiKeyListItem, ApiScope } from "./api-key-types";
 
-type ApiKeyDetailDialogProps = {
+interface ApiKeyDetailDialogProps {
 	apiKey: ApiKeyListItem | null;
 	open: boolean;
 	onOpenChangeAction: (open: boolean) => void;
-};
+}
 
 const SCOPES: { value: ApiScope; label: string }[] = [
 	{ value: "read:data", label: "Read Data" },
