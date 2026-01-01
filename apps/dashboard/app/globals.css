@@ -296,11 +296,9 @@
   background-size: 8px 8px;
 }
 
-
 /* ==========================================================================
    Root Variables
    ========================================================================== */
-
 
 :root {
 
@@ -310,7 +308,6 @@
   --card-foreground: oklch(0.25 0.01 240);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.25 0.01 240);
-  
 
   --primary: oklch(0.4722 0.2664 270);
   --primary-foreground: oklch(1 0 0);
@@ -358,7 +355,7 @@
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
-  
+
   /* Font stack for kbd elements with better symbol support */
   --font-kbd:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
@@ -462,7 +459,7 @@
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
-  
+
   /* Font stack for kbd elements with better symbol support */
   --font-kbd:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
@@ -495,7 +492,6 @@
 /* ==========================================================================
    Base Styles & Reset
    ========================================================================== */
-   
 
 @layer base {
   * {
@@ -566,6 +562,12 @@
   [type="button"],
   [role="button"] {
     cursor: pointer !important;
+  }
+  .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  }
+  .maplibregl-popup-tip {
+    @apply hidden!;
   }
 
 }

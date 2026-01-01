@@ -46,7 +46,13 @@ const CustomEventsSection = dynamic(() =>
 	}))
 );
 
-type ChartDataPoint = {
+const GeoMapSection = dynamic(() =>
+	import("./overview/_components/geo-map-section").then((mod) => ({
+		default: mod.GeoMapSection,
+	}))
+);
+
+interface ChartDataPoint {
 	date: string;
 	rawDate?: string;
 	pageviews?: number;
@@ -55,36 +61,36 @@ type ChartDataPoint = {
 	bounce_rate?: number;
 	median_session_duration?: number;
 	[key: string]: unknown;
-};
+}
 
-type TechnologyData = {
+interface TechnologyData {
 	name: string;
 	visitors: number;
 	pageviews?: number;
 	percentage: number;
 	icon?: string;
 	category?: string;
-};
+}
 
-type CellInfo = {
+interface CellInfo {
 	getValue: () => unknown;
 	row: { original: unknown };
-};
+}
 
-type PageRowData = {
+interface PageRowData {
 	name: string;
 	visitors: number;
 	pageviews: number;
 	percentage: number;
-};
+}
 
-type AnalyticsRowData = {
+interface AnalyticsRowData {
 	name: string;
 	visitors: number;
 	pageviews: number;
 	percentage: number;
 	referrer?: string;
-};
+}
 
 const MIN_PREVIOUS_SESSIONS_FOR_TREND = 5;
 const MIN_PREVIOUS_VISITORS_FOR_TREND = 5;
@@ -114,6 +120,7 @@ const QUERY_CONFIG = {
 			"outbound_links",
 			"outbound_domains",
 		] as string[],
+		geo: ["country"] as string[],
 	},
 } as const;
 
@@ -204,6 +211,13 @@ export function WebsiteOverviewTab({
 			granularity: dateRange.granularity,
 			filters,
 		},
+		{
+			id: "overview-geo",
+			parameters: QUERY_CONFIG.parameters.geo,
+			limit: QUERY_CONFIG.limit,
+			granularity: dateRange.granularity,
+			filters,
+		},
 	];
 
 	const { isLoading, error, getDataForQuery } = useBatchDynamicQuery(
@@ -242,6 +256,10 @@ export function WebsiteOverviewTab({
 			getDataForQuery("overview-custom-events", "outbound_links") || [],
 		outbound_domains:
 			getDataForQuery("overview-custom-events", "outbound_domains") || [],
+	};
+
+	const geoData = {
+		countries: getDataForQuery("overview-geo", "country") || [],
 	};
 
 	const createPercentageCell = () => (info: CellInfo) => {
@@ -972,7 +990,7 @@ export function WebsiteOverviewTab({
 			/>
 
 			{/* Technology */}
-			<div className="grid grid-cols-1 gap-3 sm:gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+			<div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
 				<DataTable
 					columns={deviceColumns}
 					data={analytics.device_types || []}
@@ -1048,6 +1066,8 @@ export function WebsiteOverviewTab({
 					]}
 					title="Operating Systems"
 				/>
+
+				<GeoMapSection countries={geoData.countries} isLoading={isLoading} />
 			</div>
 		</div>
 	);
