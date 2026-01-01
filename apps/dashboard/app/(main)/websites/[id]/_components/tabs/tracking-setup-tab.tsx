@@ -397,7 +397,9 @@ function OptionToggle({
 			onClick={onToggle}
 			type="button"
 		>
-			<Switch checked={isEnabled} className="shrink-0" />
+			<span aria-hidden="true" className="pointer-events-none shrink-0">
+				<Switch checked={isEnabled} tabIndex={-1} />
+			</span>
 			<div className="min-w-0 flex-1">
 				<span className="font-medium text-sm">{option.title}</span>
 				<p className="text-muted-foreground text-xs">{option.description}</p>
