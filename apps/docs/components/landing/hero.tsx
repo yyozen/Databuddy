@@ -41,7 +41,9 @@ export default function Hero() {
 
 						<p className="fade-in slide-in-from-bottom-6 max-w-prose animate-in text-balance font-medium text-base text-muted-foreground leading-relaxed tracking-tight delay-200 duration-700 sm:text-lg lg:text-xl">
 							Track users, not identities. Get fast, accurate insights with zero
-							cookies and 100% GDPR compliance.
+							cookies and 100% GDPR compliance.{" "}
+							<span className="text-foreground">Open source</span> and fully
+							transparent.
 						</p>
 
 						<div className="fade-in slide-in-from-bottom-6 flex w-full animate-in justify-center pt-4 delay-300 duration-700 lg:justify-start">
