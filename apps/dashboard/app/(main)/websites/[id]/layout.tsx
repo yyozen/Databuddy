@@ -1,30 +1,133 @@
-import { getServerRPCClient } from "@/lib/orpc-server";
-import { WebsiteLayoutClient } from "./_components/website-layout-client";
+"use client";
+
+import { useQueryClient } from "@tanstack/react-query";
+import { useAtom } from "jotai";
+import { useParams, usePathname } from "next/navigation";
+import { toast } from "sonner";
+import { WebsiteErrorState } from "@/components/website-error-state";
+import { useTrackingSetup } from "@/hooks/use-tracking-setup";
+import { useWebsite } from "@/hooks/use-websites";
+import { isAnalyticsRefreshingAtom } from "@/stores/jotai/filterAtoms";
+import { AnalyticsToolbar } from "./_components/analytics-toolbar";
+import { WebsiteTrackingSetupTab } from "./_components/tabs/tracking-setup-tab";
+
+const NO_TOOLBAR_ROUTES = [
+	"/assistant",
+	"/map",
+	"/flags",
+	"/databunny",
+	"/settings",
+	"/users",
+	"/agent",
+	"/pulse",
+];
 
 interface WebsiteLayoutProps {
 	children: React.ReactNode;
-	params: Promise<{ id: string }>;
 }
 
-export default async function WebsiteLayout({
-	children,
-	params,
-}: WebsiteLayoutProps) {
-	const { id: websiteId } = await params;
-	const rpc = await getServerRPCClient();
+export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
+	const { id } = useParams();
+	const websiteId = id as string;
+	const pathname = usePathname();
+	const queryClient = useQueryClient();
+	const [isRefreshing, setIsRefreshing] = useAtom(isAnalyticsRefreshingAtom);
 
-	const [website, trackingData] = await Promise.all([
-		rpc.websites.getById({ id: websiteId }).catch(() => null),
-		rpc.websites.isTrackingSetup({ websiteId }).catch(() => null),
-	]);
+	const isDemoRoute = pathname?.startsWith("/demo/");
+	const hideToolbar = NO_TOOLBAR_ROUTES.some((route) =>
+		pathname.includes(route)
+	);
+
+	const {
+		data: websiteData,
+		isLoading: isWebsiteLoading,
+		isError: isWebsiteError,
+		error: websiteError,
+	} = useWebsite(websiteId);
+
+	const { isTrackingSetup, isTrackingSetupLoading } =
+		useTrackingSetup(websiteId);
+
+	if (!id) {
+		return <WebsiteErrorState error={{ data: { code: "NOT_FOUND" } }} />;
+	}
+
+	if (!isWebsiteLoading && isWebsiteError) {
+		return <WebsiteErrorState error={websiteError} websiteId={websiteId} />;
+	}
+
+	const isToolbarLoading =
+		isWebsiteLoading ||
+		(!isDemoRoute && (isTrackingSetupLoading || isTrackingSetup === null));
+
+	const isToolbarDisabled =
+		!isDemoRoute && (!isTrackingSetup || isToolbarLoading);
+
+	const showTrackingSetup =
+		!(isDemoRoute || isTrackingSetupLoading) &&
+		websiteData &&
+		isTrackingSetup === false;
+
+	const handleRefresh = async () => {
+		setIsRefreshing(true);
+		try {
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: ["websites", id] }),
+				queryClient.invalidateQueries({
+					queryKey: ["websites", "isTrackingSetup", id],
+				}),
+				queryClient.invalidateQueries({ queryKey: ["dynamic-query", id] }),
+				queryClient.invalidateQueries({
+					queryKey: ["batch-dynamic-query", id],
+				}),
+			]);
+			toast.success("Data refreshed");
+		} catch {
+			toast.error("Failed to refresh data");
+		} finally {
+			setIsRefreshing(false);
+		}
+	};
+
+	const renderContent = () => {
+		if (hideToolbar) {
+			return children;
+		}
+
+		if (showTrackingSetup) {
+			return (
+				<div className="p-4">
+					<WebsiteTrackingSetupTab websiteId={websiteId} />
+				</div>
+			);
+		}
+
+		return children;
+	};
 
 	return (
-		<WebsiteLayoutClient
-			initialTrackingSetup={trackingData?.tracking_setup ?? false}
-			initialWebsite={website}
-			websiteId={websiteId}
-		>
-			{children}
-		</WebsiteLayoutClient>
+		<div className="flex h-full flex-col overflow-hidden">
+			{!hideToolbar && (
+				<div className="sticky top-0 right-0 left-0 z-50 shrink-0 overscroll-contain bg-background md:top-0 md:left-84">
+					<AnalyticsToolbar
+						isDisabled={isToolbarDisabled}
+						isLoading={isToolbarLoading}
+						isRefreshing={isRefreshing}
+						onRefreshAction={handleRefresh}
+						websiteId={websiteId}
+					/>
+				</div>
+			)}
+
+			<div
+				className={
+					hideToolbar
+						? "min-h-0 flex-1"
+						: "min-h-0 flex-1 overflow-y-auto overscroll-contain"
+				}
+			>
+				{renderContent()}
+			</div>
+		</div>
 	);
 }
