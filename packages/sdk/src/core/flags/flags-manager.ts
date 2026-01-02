@@ -106,6 +106,14 @@ export class CoreFlagsManager implements FlagsManager {
 		};
 	}
 
+	private removeStaleKeys(validCacheKeys: Set<string>): void {
+		for (const key of this.cache.keys()) {
+			if (!validCacheKeys.has(key)) {
+				this.cache.delete(key);
+			}
+		}
+	}
+
 	private async initialize(): Promise<void> {
 		// Load from persistent storage first (instant hydration)
 		if (!this.config.skipStorage && this.storage) {
@@ -294,16 +302,22 @@ export class CoreFlagsManager implements FlagsManager {
 		const apiUrl = this.config.apiUrl ?? "https://api.databuddy.cc";
 		const params = buildQueryParams(this.config, user);
 
+		const ttl = this.config.cacheTtl ?? 60_000;
+		const staleTime = this.config.staleTime ?? ttl / 2;
+
 		try {
 			const flags = await fetchAllFlagsApi(apiUrl, params);
+			const flagCacheEntries = Object.entries(flags).map(([key, result]) => ({
+				cacheKey: getCacheKey(key, user ?? this.config.user),
+				cacheEntry: createCacheEntry(result, ttl, staleTime),
+			}));
 
-			// Update cache with all flags
-			const ttl = this.config.cacheTtl ?? 60_000;
-			const staleTime = this.config.staleTime ?? ttl / 2;
+			this.removeStaleKeys(
+				new Set(flagCacheEntries.map(({ cacheKey }) => cacheKey))
+			);
 
-			for (const [key, result] of Object.entries(flags)) {
-				const cacheKey = getCacheKey(key, user ?? this.config.user);
-				this.cache.set(cacheKey, createCacheEntry(result, ttl, staleTime));
+			for (const { cacheKey, cacheEntry } of flagCacheEntries) {
+				this.cache.set(cacheKey, cacheEntry);
 			}
 
 			this.ready = true;
