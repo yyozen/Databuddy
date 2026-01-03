@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { FeatureGate } from "@/components/feature-gate";
+import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { orpc } from "@/lib/orpc";
 import { isFlagSheetOpenAtom } from "@/stores/jotai/flagsAtoms";
 import { FlagSheet } from "./_components/flag-sheet";
@@ -42,6 +43,7 @@ export default function FlagsPage() {
 	const websiteId = id as string;
 	const [isFlagSheetOpen, setIsFlagSheetOpen] = useAtom(isFlagSheetOpenAtom);
 	const [editingFlag, setEditingFlag] = useState<Flag | null>(null);
+	const [flagToDelete, setFlagToDelete] = useState<Flag | null>(null);
 
 	const { data: flags, isLoading: flagsLoading } = useQuery({
 		...orpc.flags.list.queryOptions({ input: { websiteId } }),
@@ -64,8 +66,18 @@ export default function FlagsPage() {
 		setIsFlagSheetOpen(true);
 	};
 
-	const handleDeleteFlag = async (flagId: string) => {
-		await deleteFlagMutation.mutateAsync({ id: flagId });
+	const handleDeleteFlagRequest = (flagId: string) => {
+		const flag = flags?.find((f) => f.id === flagId);
+		if (flag) {
+			setFlagToDelete(flag as Flag);
+		}
+	};
+
+	const handleConfirmDelete = async () => {
+		if (flagToDelete) {
+			await deleteFlagMutation.mutateAsync({ id: flagToDelete.id });
+			setFlagToDelete(null);
+		}
 	};
 
 	const handleFlagSheetClose = () => {
@@ -82,7 +94,7 @@ export default function FlagsPage() {
 							flags={(flags as Flag[]) ?? []}
 							isLoading={flagsLoading}
 							onCreateFlagAction={handleCreateFlag}
-							onDeleteFlag={handleDeleteFlag}
+							onDeleteFlag={handleDeleteFlagRequest}
 							onEditFlagAction={handleEditFlag}
 						/>
 					</Suspense>
@@ -97,6 +109,15 @@ export default function FlagsPage() {
 							/>
 						</Suspense>
 					)}
+
+					<DeleteDialog
+						isDeleting={deleteFlagMutation.isPending}
+						isOpen={flagToDelete !== null}
+						itemName={flagToDelete?.name || flagToDelete?.key}
+						onClose={() => setFlagToDelete(null)}
+						onConfirm={handleConfirmDelete}
+						title="Delete Feature Flag"
+					/>
 				</div>
 			</ErrorBoundary>
 		</FeatureGate>
