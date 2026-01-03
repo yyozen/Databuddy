@@ -3,6 +3,7 @@
 import { useFeature } from "@databuddy/sdk/react";
 import { GATED_FEATURES } from "@databuddy/shared/types/features";
 import {
+	ArchiveIcon,
 	FlagIcon,
 	InfoIcon,
 	LayoutIcon,
@@ -62,8 +63,18 @@ export default function FlagsLayout({
 
 	const templates = useMemo(() => HARDCODED_TEMPLATES, []);
 
+	const activeFlags = useMemo(
+		() => flags?.filter((f) => f.status !== "archived") ?? [],
+		[flags]
+	);
+	const archivedFlags = useMemo(
+		() => flags?.filter((f) => f.status === "archived") ?? [],
+		[flags]
+	);
+
 	const isGroupsPage = pathname?.includes("/groups");
 	const isTemplatesPage = pathname?.includes("/templates");
+	const isArchivePage = pathname?.includes("/archive");
 	const isLoading = isTemplatesPage
 		? false
 		: isGroupsPage
@@ -96,7 +107,7 @@ export default function FlagsLayout({
 		<div className="flex h-full min-h-0 flex-col">
 			<WebsitePageHeader
 				createActionLabel={
-					isTemplatesPage
+					isTemplatesPage || isArchivePage
 						? undefined
 						: isGroupsPage
 							? "Create Group"
@@ -107,18 +118,22 @@ export default function FlagsLayout({
 						? templates?.length
 						: isGroupsPage
 							? groups?.length
-							: flags?.length
+							: isArchivePage
+								? archivedFlags.length
+								: activeFlags.length
 				}
 				description={
 					isTemplatesPage
 						? "Pre-configured flag templates for common use cases"
 						: isGroupsPage
 							? "Reusable targeting rules for your flags"
-							: "Control feature rollouts and A/B testing"
+							: isArchivePage
+								? "Flags that have been archived"
+								: "Control feature rollouts and A/B testing"
 				}
 				docsUrl="https://www.databuddy.cc/docs/features/feature-flags"
 				feature={
-					isGroupsPage || isTemplatesPage
+					isGroupsPage || isTemplatesPage || isArchivePage
 						? undefined
 						: GATED_FEATURES.FEATURE_FLAGS
 				}
@@ -127,6 +142,8 @@ export default function FlagsLayout({
 						<LayoutIcon className="size-6 text-accent-foreground" />
 					) : isGroupsPage ? (
 						<UsersThreeIcon className="size-6 text-accent-foreground" />
+					) : isArchivePage ? (
+						<ArchiveIcon className="size-6 text-accent-foreground" />
 					) : (
 						<FlagIcon className="size-6 text-accent-foreground" />
 					)
@@ -134,7 +151,7 @@ export default function FlagsLayout({
 				isLoading={isLoading}
 				isRefreshing={isRefreshing}
 				onCreateAction={
-					isTemplatesPage
+					isTemplatesPage || isArchivePage
 						? undefined
 						: () => {
 								if (isGroupsPage) {
@@ -152,14 +169,18 @@ export default function FlagsLayout({
 							? `${templates?.length ?? 0} template${(templates?.length ?? 0) !== 1 ? "s" : ""}`
 							: isGroupsPage
 								? `${groups?.length ?? 0} group${(groups?.length ?? 0) !== 1 ? "s" : ""}`
-								: `${flags?.length || 0} flag${(flags?.length || 0) !== 1 ? "s" : ""}`
+								: isArchivePage
+									? `${archivedFlags.length} archived`
+									: `${activeFlags.length} flag${activeFlags.length !== 1 ? "s" : ""}`
 				}
 				title={
 					isTemplatesPage
 						? "Flag Templates"
 						: isGroupsPage
 							? "Target Groups"
-							: "Feature Flags"
+							: isArchivePage
+								? "Archived Flags"
+								: "Feature Flags"
 				}
 				websiteId={websiteId}
 				websiteName={website?.name ?? undefined}
@@ -173,7 +194,7 @@ export default function FlagsLayout({
 						label: "Flags",
 						href: `/websites/${websiteId}/flags`,
 						icon: FlagIcon,
-						count: flags?.length,
+						count: activeFlags.length,
 					},
 					{
 						id: "groups",
@@ -188,6 +209,13 @@ export default function FlagsLayout({
 						href: `/websites/${websiteId}/flags/templates`,
 						icon: LayoutIcon,
 						count: templates?.length,
+					},
+					{
+						id: "archive",
+						label: "Archive",
+						href: `/websites/${websiteId}/flags/archive`,
+						icon: ArchiveIcon,
+						count: archivedFlags.length,
 					},
 				]}
 				variant="tabs"

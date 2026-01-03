@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	ArchiveIcon,
 	DotsThreeIcon,
 	PencilSimpleIcon,
 	TrashIcon,
@@ -86,6 +87,13 @@ export function FlagItem({
 		updateStatusMutation.mutate({
 			id: flag.id,
 			status: checked ? "active" : "inactive",
+		});
+	};
+
+	const handleArchive = () => {
+		updateStatusMutation.mutate({
+			id: flag.id,
+			status: "archived",
 		});
 	};
 
@@ -220,6 +228,10 @@ export function FlagItem({
 							<DropdownMenuItem onClick={() => onEdit(flag)}>
 								<PencilSimpleIcon className="size-4" weight="duotone" />
 								Edit
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={handleArchive}>
+								<ArchiveIcon className="size-4" weight="duotone" />
+								Archive
 							</DropdownMenuItem>
 							<DropdownMenuSeparator />
 							<DropdownMenuItem

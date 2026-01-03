@@ -4,7 +4,7 @@ import { GATED_FEATURES } from "@databuddy/shared/types/features";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { FeatureGate } from "@/components/feature-gate";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
@@ -49,6 +49,11 @@ export default function FlagsPage() {
 		...orpc.flags.list.queryOptions({ input: { websiteId } }),
 	});
 
+	const activeFlags = useMemo(
+		() => flags?.filter((f) => f.status !== "archived") ?? [],
+		[flags]
+	);
+
 	const deleteFlagMutation = useMutation({
 		...orpc.flags.delete.mutationOptions(),
 		onSuccess: () => {
@@ -91,7 +96,7 @@ export default function FlagsPage() {
 				<div className="h-full overflow-y-auto">
 					<Suspense fallback={<FlagsListSkeleton />}>
 						<FlagsList
-							flags={(flags as Flag[]) ?? []}
+							flags={activeFlags as Flag[]}
 							isLoading={flagsLoading}
 							onCreateFlagAction={handleCreateFlag}
 							onDeleteFlag={handleDeleteFlagRequest}

@@ -457,15 +457,27 @@ export function FlagSheet({
 							{/* Type & Value */}
 							<div className="space-y-4">
 								<div className="space-y-2">
-									<span className="text-muted-foreground text-xs">Type</span>
+									<div className="space-y-0.5">
+										<span className="font-medium text-foreground text-sm">
+											Flag Type
+										</span>
+										<p className="text-muted-foreground text-xs">
+											How the flag value is determined for each user
+										</p>
+									</div>
 									<div className="flex gap-2">
 										{(["boolean", "rollout", "multivariant"] as const).map(
 											(type) => {
 												const isSelected = watchedType === type;
+												const typeDescriptions = {
+													boolean: "On or Off",
+													rollout: "% of users",
+													multivariant: "A/B variants",
+												};
 												return (
 													<button
 														className={cn(
-															"flex-1 cursor-pointer rounded border py-2.5 text-center font-medium text-sm capitalize transition-all",
+															"flex-1 cursor-pointer rounded border py-2 text-center transition-all",
 															isSelected
 																? "border-primary bg-primary/5 text-foreground"
 																: "border-transparent bg-secondary text-muted-foreground hover:border-border hover:bg-secondary/80 hover:text-foreground"
@@ -474,7 +486,12 @@ export function FlagSheet({
 														onClick={() => form.setValue("flag.type", type)}
 														type="button"
 													>
-														{type}
+														<span className="block font-medium text-sm capitalize">
+															{type}
+														</span>
+														<span className="block text-muted-foreground text-xs">
+															{typeDescriptions[type]}
+														</span>
 													</button>
 												);
 											}
@@ -498,10 +515,15 @@ export function FlagSheet({
 												render={({ field }) => (
 													<div className="space-y-3">
 														<div className="flex items-center justify-between">
-															<span className="text-muted-foreground text-sm">
-																Rollout percentage
-															</span>
-															<span className="font-mono text-sm tabular-nums">
+															<div className="space-y-0.5">
+																<span className="font-medium text-foreground text-sm">
+																	Rollout Percentage
+																</span>
+																<p className="text-muted-foreground text-xs">
+																	% of users who get true (when active)
+																</p>
+															</div>
+															<span className="font-mono text-foreground text-lg tabular-nums">
 																{field.value}%
 															</span>
 														</div>
@@ -555,47 +577,54 @@ export function FlagSheet({
 									) : (
 										<motion.div
 											animate={{ opacity: 1, y: 0 }}
-											className="flex items-center justify-between"
+											className="space-y-2"
 											exit={{ opacity: 0, y: -10 }}
 											initial={{ opacity: 0, y: 10 }}
 											key="boolean"
 											transition={{ duration: 0.15 }}
 										>
-											<span className="text-muted-foreground text-sm">
-												Default value
-											</span>
-											<FormField
-												control={form.control}
-												name="flag.defaultValue"
-												render={({ field }) => (
-													<div className="flex items-center gap-3">
-														<span
-															className={cn(
-																"text-sm transition-colors",
-																field.value
-																	? "text-muted-foreground/60"
-																	: "text-foreground"
-															)}
-														>
-															Off
-														</span>
-														<Switch
-															checked={field.value}
-															onCheckedChange={field.onChange}
-														/>
-														<span
-															className={cn(
-																"text-sm transition-colors",
-																field.value
-																	? "text-foreground"
-																	: "text-muted-foreground/60"
-															)}
-														>
-															On
-														</span>
-													</div>
-												)}
-											/>
+											<div className="flex items-center justify-between">
+												<div className="space-y-0.5">
+													<span className="font-medium text-foreground text-sm">
+														Return Value
+													</span>
+													<p className="text-muted-foreground text-xs">
+														What users get when flag is active
+													</p>
+												</div>
+												<FormField
+													control={form.control}
+													name="flag.defaultValue"
+													render={({ field }) => (
+														<div className="flex items-center gap-3">
+															<span
+																className={cn(
+																	"text-sm transition-colors",
+																	field.value
+																		? "text-muted-foreground/60"
+																		: "text-foreground"
+																)}
+															>
+																Off
+															</span>
+															<Switch
+																checked={field.value}
+																onCheckedChange={field.onChange}
+															/>
+															<span
+																className={cn(
+																	"text-sm transition-colors",
+																	field.value
+																		? "text-foreground"
+																		: "text-muted-foreground/60"
+																)}
+															>
+																On
+															</span>
+														</div>
+													)}
+												/>
+											</div>
 										</motion.div>
 									)}
 								</AnimatePresence>
@@ -613,14 +642,26 @@ export function FlagSheet({
 									);
 									const canBeActive = inactiveDeps.length === 0;
 
+									const statusDescriptions = {
+										active: "Live, evaluates rules",
+										inactive: "Off, always returns false",
+										archived: "Retired, hidden from list",
+									};
+
 									return (
 										<div className="space-y-2">
 											<div className="flex items-center justify-between">
-												<span className="text-muted-foreground text-xs">
-													Status
-												</span>
+												<div className="space-y-0.5">
+													<span className="font-medium text-foreground text-sm">
+														Flag Status
+													</span>
+													<p className="text-muted-foreground text-xs">
+														Active = uses settings below. Inactive = completely
+														off.
+													</p>
+												</div>
 												{!canBeActive && (
-													<span className="text-amber-600 text-xs">
+													<span className="text-warning text-xs">
 														Dependencies must be active first
 													</span>
 												)}
@@ -634,13 +675,13 @@ export function FlagSheet({
 														return (
 															<button
 																className={cn(
-																	"flex-1 cursor-pointer rounded border py-2 font-medium text-sm capitalize transition-all",
+																	"flex-1 cursor-pointer rounded border py-2 transition-all",
 																	isSelected
 																		? status === "active"
-																			? "border-green-500/50 bg-green-500/10 text-green-600"
+																			? "green-angled-rectangle-gradient border-success/50 bg-success/10 text-success"
 																			: status === "inactive"
-																				? "border-amber-500/50 bg-amber-500/10 text-amber-600"
-																				: "border-border bg-secondary text-foreground"
+																				? "red-angled-rectangle-gradient border-destructive/50 bg-destructive/10 text-destructive"
+																				: "amber-angled-rectangle-gradient border-warning/50 bg-warning/10 text-warning"
 																		: "border-transparent bg-secondary text-muted-foreground hover:border-border hover:bg-secondary/80 hover:text-foreground",
 																	isDisabled && "cursor-not-allowed opacity-50"
 																)}
@@ -649,7 +690,19 @@ export function FlagSheet({
 																onClick={() => field.onChange(status)}
 																type="button"
 															>
-																{status}
+																<span className="block font-medium text-sm capitalize">
+																	{status}
+																</span>
+																<span
+																	className={cn(
+																		"block text-xs",
+																		isSelected
+																			? "opacity-80"
+																			: "text-muted-foreground"
+																	)}
+																>
+																	{statusDescriptions[status]}
+																</span>
 															</button>
 														);
 													}
