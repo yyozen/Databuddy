@@ -209,12 +209,18 @@ const fetchChartData = async (
 			acc[id] = { points: [], hasAnyData: false };
 			return acc;
 		},
-		{} as Record<string, { points: { date: string; value: number }[]; hasAnyData: boolean }>
+		{} as Record<
+			string,
+			{ points: { date: string; value: number }[]; hasAnyData: boolean }
+		>
 	);
 
 	for (const row of queryResults) {
 		if (groupedData[row.websiteId]) {
-			groupedData[row.websiteId].points.push({ date: row.date, value: row.value });
+			groupedData[row.websiteId].points.push({
+				date: row.date,
+				value: row.value,
+			});
 			if (row.hasAnyData === 1) {
 				groupedData[row.websiteId].hasAnyData = true;
 			}
