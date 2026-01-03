@@ -207,14 +207,15 @@ export function Sidebar({ user = null }: SidebarProps) {
 						</Button>
 
 						<Link
-							className="flex items-center gap-2 transition-opacity hover:opacity-80"
+							className="flex select-none items-center gap-2 transition-opacity hover:opacity-80"
 							data-track="logo-click"
 							href="/websites"
 						>
-							<div className="flex size-8 items-center justify-center">
+							<div className="flex items-center justify-center">
 								<Image
 									alt="Databuddy Logo"
 									className="invert dark:invert-0"
+									draggable={false}
 									height={24}
 									priority
 									src="/logo.svg"

@@ -53,7 +53,7 @@ const getPlanDisplayInfo = (planId: PlanId | null) => {
 };
 
 const MENU_ITEM_BASE_CLASSES =
-	"flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground";
+	"flex h-10 cursor-pointer items-center gap-3 px-4 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground";
 const MENU_ITEM_ACTIVE_CLASSES =
 	"bg-sidebar-accent font-medium text-sidebar-accent-foreground";
 
@@ -274,7 +274,7 @@ export function OrganizationSelector() {
 				>
 					<DropdownMenuItem
 						className={cn(
-							"flex cursor-pointer items-center gap-3 border-b px-4 py-2.5 text-sm",
+							"flex h-10 cursor-pointer items-center gap-3 border-b px-4 text-sm",
 							"text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
 							!activeOrganization &&
 								"bg-sidebar-accent font-medium text-sidebar-accent-foreground"
