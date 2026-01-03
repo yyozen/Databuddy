@@ -32,8 +32,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-const getDicebearUrl = (seed: string) =>
-	`https://api.dicebear.com/9.x/glass/svg?seed=${seed}`;
+const getDicebearUrl = (seed: string | undefined) =>
+	`https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(seed || "")}`;
 
 const getPlanDisplayInfo = (planId: PlanId | null) => {
 	if (!planId || planId === PLAN_IDS.FREE) {
@@ -111,14 +111,11 @@ function OrganizationSelectorTrigger({
 								alt={activeOrganization?.name || "Personal"}
 								className="rounded"
 								src={
-									activeOrganization?.logo ||
-									(activeOrganization
+									activeOrganization
 										? getDicebearUrl(
-												activeOrganization.id ||
-													activeOrganization.slug ||
-													activeOrganization.name
+												activeOrganization.logo || activeOrganization.id
 											)
-										: getDicebearUrl("personal"))
+										: getDicebearUrl("personal")
 								}
 							/>
 							<AvatarFallback className="bg-secondary">
@@ -129,9 +126,7 @@ function OrganizationSelectorTrigger({
 									src={
 										activeOrganization
 											? getDicebearUrl(
-													activeOrganization.id ||
-														activeOrganization.slug ||
-														activeOrganization.name
+													activeOrganization.logo || activeOrganization.id
 												)
 											: getDicebearUrl("personal")
 									}
@@ -311,17 +306,14 @@ export function OrganizationSelector() {
 									<Avatar className="size-5">
 										<AvatarImage
 											alt={org.name}
-											src={
-												org.logo ||
-												getDicebearUrl(org.id || org.slug || org.name)
-											}
+											src={getDicebearUrl(org.logo || org.id)}
 										/>
 										<AvatarFallback className="bg-sidebar-primary/30">
 											<Image
 												alt={org.name}
 												className="rounded"
 												height={20}
-												src={getDicebearUrl(org.id || org.slug || org.name)}
+												src={getDicebearUrl(org.logo || org.id)}
 												unoptimized
 												width={20}
 											/>

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { type Organization, useOrganizations } from "@/hooks/use-organizations";
-import { OrganizationLogoUploader } from "./organization-logo-uploader";
+import { OrganizationAvatarEditor } from "./organization-avatar-editor";
 
 export function GeneralSettings({
 	organization,
@@ -71,15 +71,15 @@ export function GeneralSettings({
 			{/* Main Content */}
 			<div className="flex flex-col border-b lg:border-b-0">
 				<div className="flex-1 overflow-y-auto">
-					{/* Logo Section */}
+					{/* Avatar Section */}
 					<section className="border-b px-5 py-6">
 						<div className="mb-4">
-							<h3 className="font-semibold text-sm">Organization Logo</h3>
+							<h3 className="font-semibold text-sm">Organization Avatar</h3>
 							<p className="text-muted-foreground text-xs">
-								Upload a logo to represent your organization
+								Customize your organization's avatar
 							</p>
 						</div>
-						<OrganizationLogoUploader organization={organization} />
+						<OrganizationAvatarEditor organization={organization} />
 					</section>
 
 					{/* Organization Details */}

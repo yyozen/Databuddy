@@ -1,29 +1,8 @@
 "use client";
 
-import {
-	BuildingsIcon,
-	UploadSimpleIcon,
-	UsersIcon,
-} from "@phosphor-icons/react";
-import Image from "next/image";
-// import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from "react";
-import ReactCrop, {
-	type Crop,
-	centerCrop,
-	makeAspectCrop,
-	type PixelCrop,
-} from "react-image-crop";
-import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BuildingsIcon, UsersIcon } from "@phosphor-icons/react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -36,23 +15,13 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import { useOrganizations } from "@/hooks/use-organizations";
-import { getCroppedImage } from "@/lib/canvas-utils";
-import "react-image-crop/dist/ReactCrop.css";
 
-// Top-level regex literals for performance and lint compliance
 const SLUG_ALLOWED_REGEX = /^[a-z0-9-]+$/;
 const REGEX_NON_SLUG_NAME_CHARS = /[^a-z0-9\s-]/g;
 const REGEX_SPACES_TO_DASH = /\s+/g;
 const REGEX_MULTI_DASH = /-+/g;
 const REGEX_TRIM_DASH = /^-+|-+$/g;
 const REGEX_INVALID_SLUG_CHARS = /[^a-z0-9-]/g;
-
-interface CreateOrganizationData {
-	name: string;
-	slug: string;
-	logo: string;
-	metadata: Record<string, unknown>;
-}
 
 interface CreateOrganizationDialogProps {
 	isOpen: boolean;
@@ -65,65 +34,39 @@ export function CreateOrganizationDialog({
 }: CreateOrganizationDialogProps) {
 	const { createOrganization, isCreatingOrganization, setActiveOrganization } =
 		useOrganizations();
-	// const router = useRouter();
 
-	// Form state
-	const [formData, setFormData] = useState<CreateOrganizationData>({
-		name: "",
-		slug: "",
-		logo: "",
-		metadata: {},
-	});
+	const [name, setName] = useState("");
+	const [slug, setSlug] = useState("");
 	const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
-	const [touchedFields, setTouchedFields] = useState<{
-		name: boolean;
-		slug: boolean;
-	}>({
+	const [touchedFields, setTouchedFields] = useState({
 		name: false,
 		slug: false,
 	});
 
-	// Image upload state
-	const [preview, setPreview] = useState<string | null>(null);
-	const [imageSrc, setImageSrc] = useState<string | null>(null);
-	const [crop, setCrop] = useState<Crop>();
-	const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
-	const [isCropModalOpen, setIsCropModalOpen] = useState(false);
-	const [logoFile, setLogoFile] = useState<File | null>(null);
-	const fileInputRef = useRef<HTMLInputElement>(null);
-	const imageRef = useRef<HTMLImageElement | null>(null);
-
-	// Slug auto-generation
 	useEffect(() => {
-		if (!(slugManuallyEdited && formData.slug)) {
-			const generatedSlug = formData.name
+		if (!(slugManuallyEdited && slug)) {
+			const generatedSlug = name
 				.toLowerCase()
 				.replace(REGEX_NON_SLUG_NAME_CHARS, "")
 				.replace(REGEX_SPACES_TO_DASH, "-")
 				.replace(REGEX_MULTI_DASH, "-")
 				.replace(REGEX_TRIM_DASH, "");
-			setFormData((prev) => ({ ...prev, slug: generatedSlug }));
+			setSlug(generatedSlug);
 		}
-	}, [formData.name, formData.slug, slugManuallyEdited]);
+	}, [name, slug, slugManuallyEdited]);
 
-	// Reset form
 	const resetForm = () => {
-		setFormData({ name: "", slug: "", logo: "", metadata: {} });
-		setPreview(null);
-		setLogoFile(null);
+		setName("");
+		setSlug("");
 		setSlugManuallyEdited(false);
 		setTouchedFields({ name: false, slug: false });
-		resetCropState();
-		setIsCropModalOpen(false);
 	};
 
-	// Close dialog
 	const handleClose = () => {
 		onClose();
 		resetForm();
 	};
 
-	// Slug input handler
 	const handleSlugChange = (value: string) => {
 		setSlugManuallyEdited(true);
 		const cleanSlug = value
@@ -131,103 +74,19 @@ export function CreateOrganizationDialog({
 			.replace(REGEX_INVALID_SLUG_CHARS, "")
 			.replace(REGEX_MULTI_DASH, "-")
 			.replace(REGEX_TRIM_DASH, "");
-		setFormData((prev) => ({ ...prev, slug: cleanSlug }));
+		setSlug(cleanSlug);
 		if (cleanSlug === "") {
 			setSlugManuallyEdited(false);
 		}
 	};
 
-	// Form validation
 	const isFormValid = useMemo(
 		() =>
-			formData.name.trim().length >= 2 &&
-			(formData.slug || "").trim().length >= 2 &&
-			SLUG_ALLOWED_REGEX.test(formData.slug || ""),
-		[formData.name, formData.slug]
+			name.trim().length >= 2 &&
+			slug.trim().length >= 2 &&
+			SLUG_ALLOWED_REGEX.test(slug),
+		[name, slug]
 	);
-
-	// Image crop modal handlers
-	const resetCropState = () => {
-		setImageSrc(null);
-		setCrop(undefined);
-		setCompletedCrop(undefined);
-		if (fileInputRef.current) {
-			fileInputRef.current.value = "";
-		}
-	};
-
-	const handleCropModalOpenChange = (open: boolean) => {
-		if (!open) {
-			resetCropState();
-		}
-		setIsCropModalOpen(open);
-	};
-
-	function onImageLoad(img: HTMLImageElement) {
-		const width = img.naturalWidth;
-		const height = img.naturalHeight;
-		const percentCrop = centerCrop(
-			makeAspectCrop({ unit: "%", width: 90 }, 1, width, height),
-			width,
-			height
-		);
-		setCrop(percentCrop);
-		setCompletedCrop({
-			unit: "px",
-			x: Math.round((percentCrop.x / 100) * width),
-			y: Math.round((percentCrop.y / 100) * height),
-			width: Math.round((percentCrop.width / 100) * width),
-			height: Math.round((percentCrop.height / 100) * height),
-		});
-		imageRef.current = img;
-	}
-
-	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onloadend = () => {
-				setImageSrc(reader.result as string);
-				setIsCropModalOpen(true);
-			};
-			reader.readAsDataURL(file);
-		}
-	};
-
-	const handleCropSave = async () => {
-		if (!(imageSrc && completedCrop && imageRef.current)) {
-			toast.error("Please crop the image before saving.");
-			return;
-		}
-		try {
-			const croppedFile = await getCroppedImage(
-				imageRef.current,
-				completedCrop,
-				"logo.png"
-			);
-
-			setLogoFile(croppedFile);
-
-			const reader = new FileReader();
-			reader.onloadend = () => {
-				const dataUrl = reader.result as string;
-				setPreview(dataUrl);
-				handleCropModalOpenChange(false);
-				toast.success("Logo saved successfully!");
-			};
-			reader.readAsDataURL(croppedFile);
-		} catch {
-			toast.error("Failed to crop image.");
-		}
-	};
-
-	const getOrganizationInitials = (name: string) =>
-		name
-			.split(" ")
-			.map((n) => n[0])
-			.join("")
-			.toUpperCase()
-			.slice(0, 2);
 
 	const handleSubmit = () => {
 		if (!isFormValid) {
@@ -236,10 +95,9 @@ export function CreateOrganizationDialog({
 
 		createOrganization(
 			{
-				name: formData.name,
-				slug: formData.slug,
-				logo: preview || undefined,
-				metadata: formData.metadata,
+				name: name.trim(),
+				slug: slug.trim(),
+				metadata: {},
 			},
 			{
 				onSuccess: (organization) => {
@@ -253,260 +111,149 @@ export function CreateOrganizationDialog({
 	};
 
 	return (
-		<>
-			<Sheet onOpenChange={handleClose} open={isOpen}>
-				<SheetContent className="sm:max-w-lg" side="right">
-					<SheetHeader>
-						<div className="flex items-center gap-4">
-							<div className="flex h-11 w-11 items-center justify-center rounded border bg-secondary-brighter">
-								<BuildingsIcon
-									className="text-accent-foreground"
-									size={22}
-									weight="fill"
-								/>
-							</div>
-							<div>
-								<SheetTitle className="text-lg">
-									Create New Organization
-								</SheetTitle>
-								<SheetDescription>
-									Set up a new organization to collaborate with your team
-								</SheetDescription>
-							</div>
+		<Sheet onOpenChange={handleClose} open={isOpen}>
+			<SheetContent className="sm:max-w-lg" side="right">
+				<SheetHeader>
+					<div className="flex items-center gap-4">
+						<div className="flex h-11 w-11 items-center justify-center rounded border bg-secondary-brighter">
+							<BuildingsIcon
+								className="text-accent-foreground"
+								size={22}
+								weight="fill"
+							/>
 						</div>
-					</SheetHeader>
-
-					<SheetBody className="space-y-6">
-						{/* Organization Name */}
-						<div className="space-y-2">
-							<Label className="font-medium" htmlFor="org-name">
-								Organization Name
-							</Label>
-							{(() => {
-								const isNameValid = formData.name.trim().length >= 2;
-								const hasUserTyped = formData.name.length > 0;
-								const shouldShowError =
-									(touchedFields.name || hasUserTyped) && !isNameValid;
-								return (
-									<>
-										<Input
-											aria-describedby="org-name-help"
-											aria-invalid={shouldShowError}
-											id="org-name"
-											maxLength={100}
-											onBlur={() =>
-												setTouchedFields((prev) => ({ ...prev, name: true }))
-											}
-											onChange={(e) =>
-												setFormData((prev) => ({
-													...prev,
-													name: e.target.value,
-												}))
-											}
-											placeholder="e.g., Acme Corporation"
-											value={formData.name}
-										/>
-										<p
-											className="text-muted-foreground text-xs"
-											id="org-name-help"
-										>
-											This is the display name for your organization
-										</p>
-									</>
-								);
-							})()}
+						<div>
+							<SheetTitle className="text-lg">
+								Create New Organization
+							</SheetTitle>
+							<SheetDescription>
+								Set up a new organization to collaborate with your team
+							</SheetDescription>
 						</div>
+					</div>
+				</SheetHeader>
 
-						{/* Organization Slug */}
-						<div className="space-y-2">
-							<Label className="font-medium" htmlFor="org-slug">
-								Organization Slug
-							</Label>
-							{(() => {
-								const isSlugValid =
-									SLUG_ALLOWED_REGEX.test(formData.slug || "") &&
-									(formData.slug || "").trim().length >= 2;
-								const hasUserTyped = (formData.slug || "").length > 0;
-								const shouldShowError =
-									(touchedFields.slug || hasUserTyped) && !isSlugValid;
-								return (
-									<>
-										<Input
-											aria-describedby="org-slug-help"
-											aria-invalid={shouldShowError}
-											id="org-slug"
-											maxLength={50}
-											onBlur={() =>
-												setTouchedFields((prev) => ({ ...prev, slug: true }))
-											}
-											onChange={(e) => handleSlugChange(e.target.value)}
-											placeholder="e.g., acme-corp"
-											value={formData.slug}
-										/>
-										<p
-											className="text-muted-foreground text-xs"
-											id="org-slug-help"
-										>
-											Used in URLs and must be unique. Only lowercase letters,
-											numbers, and hyphens allowed.
-										</p>
-									</>
-								);
-							})()}
-						</div>
-
-						{/* Organization Logo */}
-						<div className="space-y-2">
-							<Label className="font-medium">
-								Organization Logo
-								<span className="font-normal text-muted-foreground">
-									{" "}
-									(optional)
-								</span>
-							</Label>
-							<div className="flex items-center gap-4">
-								<div className="group relative">
-									<Avatar className="size-12">
-										<AvatarImage
-											alt={formData.name || "Organization"}
-											src={preview || undefined}
-										/>
-										<AvatarFallback className="bg-accent font-medium">
-											{getOrganizationInitials(formData.name || "O")}
-										</AvatarFallback>
-									</Avatar>
-									<button
-										aria-label="Upload organization logo"
-										className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-accent-foreground opacity-0 transition-opacity group-hover:opacity-100"
-										onClick={() => fileInputRef.current?.click()}
-										onKeyDown={(e) => {
-											if (e.key === "Enter" || e.key === " ") {
-												e.preventDefault();
-												fileInputRef.current?.click();
-											}
-										}}
-										type="button"
-									>
-										<UploadSimpleIcon className="size-5 text-accent" />
-										<span className="sr-only">Upload organization logo</span>
-									</button>
-								</div>
-								<div className="min-w-0 flex-1">
-									<p className="font-medium text-sm">Upload your logo</p>
-									<p className="text-muted-foreground text-xs">
-										Click the image to upload a new one.
-									</p>
-									<Input
-										accept="image/png, image/jpeg, image/gif"
-										className="hidden"
-										onChange={handleFileChange}
-										ref={fileInputRef}
-										type="file"
-									/>
-								</div>
-							</div>
-						</div>
-
-						{/* Getting Started */}
-						<div className="space-y-3">
-							<div className="flex items-center gap-2">
-								<UsersIcon
-									className="text-muted-foreground"
-									size={16}
-									weight="duotone"
-								/>
-								<Label className="font-medium">Getting Started</Label>
-							</div>
-							<div className="rounded border bg-muted/20 p-4">
-								<p className="text-muted-foreground text-sm">
-									After creating your organization, you'll be able to:
-								</p>
-								<ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground text-sm">
-									<li>Invite team members with different roles</li>
-									<li>Share websites and analytics data</li>
-									<li>Manage organization settings and permissions</li>
-								</ul>
-							</div>
-						</div>
-					</SheetBody>
-
-					<SheetFooter>
-						<Button
-							disabled={isCreatingOrganization}
-							onClick={handleClose}
-							type="button"
-							variant="ghost"
-						>
-							Cancel
-						</Button>
-						<Button
-							disabled={!isFormValid || isCreatingOrganization}
-							onClick={handleSubmit}
-							type="button"
-						>
-							{isCreatingOrganization ? (
-								"Creating..."
-							) : (
+				<SheetBody className="space-y-6">
+					{/* Organization Name */}
+					<div className="space-y-2">
+						<Label className="font-medium" htmlFor="org-name">
+							Organization Name
+						</Label>
+						{(() => {
+							const isNameValid = name.trim().length >= 2;
+							const hasUserTyped = name.length > 0;
+							const shouldShowError =
+								(touchedFields.name || hasUserTyped) && !isNameValid;
+							return (
 								<>
-									<BuildingsIcon className="mr-2" size={16} />
-									Create Organization
+									<Input
+										aria-describedby="org-name-help"
+										aria-invalid={shouldShowError}
+										id="org-name"
+										maxLength={100}
+										onBlur={() =>
+											setTouchedFields((prev) => ({ ...prev, name: true }))
+										}
+										onChange={(e) => setName(e.target.value)}
+										placeholder="e.g., Acme Corporation"
+										value={name}
+									/>
+									<p
+										className="text-muted-foreground text-xs"
+										id="org-name-help"
+									>
+										This is the display name for your organization
+									</p>
 								</>
-							)}
-						</Button>
-					</SheetFooter>
-				</SheetContent>
-			</Sheet>
+							);
+						})()}
+					</div>
 
-			<Dialog onOpenChange={handleCropModalOpenChange} open={isCropModalOpen}>
-				<DialogContent className="max-h-[95vh] max-w-[95vw] overflow-auto">
-					<DialogHeader>
-						<DialogTitle>Crop organization logo</DialogTitle>
-					</DialogHeader>
-					{imageSrc && (
-						<div className="flex justify-center">
-							<ReactCrop
-								aspect={1}
-								circularCrop
-								crop={crop}
-								onChange={(pixelCrop, percentCrop) => {
-									setCrop(percentCrop);
-									setCompletedCrop(pixelCrop);
-								}}
-								onComplete={(pixelCrop) => {
-									setCompletedCrop(pixelCrop);
-								}}
-							>
-								<Image
-									alt="Crop preview"
-									className="max-h-[60vh] max-w-full object-contain"
-									height={600}
-									onLoadingComplete={onImageLoad}
-									src={imageSrc as string}
-									width={800}
-								/>
-							</ReactCrop>
+					{/* Organization Slug */}
+					<div className="space-y-2">
+						<Label className="font-medium" htmlFor="org-slug">
+							Organization Slug
+						</Label>
+						{(() => {
+							const isSlugValid =
+								SLUG_ALLOWED_REGEX.test(slug) && slug.trim().length >= 2;
+							const hasUserTyped = slug.length > 0;
+							const shouldShowError =
+								(touchedFields.slug || hasUserTyped) && !isSlugValid;
+							return (
+								<>
+									<Input
+										aria-describedby="org-slug-help"
+										aria-invalid={shouldShowError}
+										id="org-slug"
+										maxLength={50}
+										onBlur={() =>
+											setTouchedFields((prev) => ({ ...prev, slug: true }))
+										}
+										onChange={(e) => handleSlugChange(e.target.value)}
+										placeholder="e.g., acme-corp"
+										value={slug}
+									/>
+									<p
+										className="text-muted-foreground text-xs"
+										id="org-slug-help"
+									>
+										Used in URLs and must be unique. Only lowercase letters,
+										numbers, and hyphens allowed.
+									</p>
+								</>
+							);
+						})()}
+					</div>
+
+					{/* Getting Started */}
+					<div className="space-y-3">
+						<div className="flex items-center gap-2">
+							<UsersIcon
+								className="text-muted-foreground"
+								size={16}
+								weight="duotone"
+							/>
+							<Label className="font-medium">Getting Started</Label>
 						</div>
-					)}
-					<DialogFooter className="flex flex-col gap-2 sm:flex-row">
-						<Button
-							className="w-full sm:w-auto"
-							onClick={() => handleCropModalOpenChange(false)}
-							type="button"
-							variant="outline"
-						>
-							Cancel
-						</Button>
-						<Button
-							className="w-full sm:w-auto"
-							disabled={!(imageSrc && completedCrop)}
-							onClick={handleCropSave}
-							type="button"
-						>
-							Save Logo
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		</>
+						<div className="rounded border bg-muted/20 p-4">
+							<p className="text-muted-foreground text-sm">
+								After creating your organization, you'll be able to:
+							</p>
+							<ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground text-sm">
+								<li>Invite team members with different roles</li>
+								<li>Share websites and analytics data</li>
+								<li>Manage organization settings and permissions</li>
+							</ul>
+						</div>
+					</div>
+				</SheetBody>
+
+				<SheetFooter>
+					<Button
+						disabled={isCreatingOrganization}
+						onClick={handleClose}
+						type="button"
+						variant="ghost"
+					>
+						Cancel
+					</Button>
+					<Button
+						disabled={!isFormValid || isCreatingOrganization}
+						onClick={handleSubmit}
+						type="button"
+					>
+						{isCreatingOrganization ? (
+							"Creating..."
+						) : (
+							<>
+								<BuildingsIcon className="mr-2" size={16} />
+								Create Organization
+							</>
+						)}
+					</Button>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
 	);
 }

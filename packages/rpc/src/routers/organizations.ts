@@ -17,7 +17,6 @@ import { ORPCError } from "@orpc/server";
 import { Autumn as autumn } from "autumn-js";
 import { z } from "zod";
 import { protectedProcedure, publicProcedure } from "../orpc";
-import { s3 } from "../utils/s3";
 
 /**
  * Gets the billing owner ID for the current context.
@@ -96,33 +95,25 @@ async function getBillingOwnerFromWebsite(websiteId: string): Promise<{
 	};
 }
 
-const deleteOrganizationLogoSchema = z.object({
+const updateAvatarSeedSchema = z.object({
 	organizationId: z.string().min(1, "Organization ID is required"),
-});
-
-const uploadOrganizationLogoSchema = z.object({
-	organizationId: z.string().min(1, "Organization ID is required"),
-	fileData: z.string().min(1, "File data is required"),
-	fileName: z.string().min(1, "File name is required"),
-	fileType: z.string().min(1, "File type is required"),
+	seed: z.string().min(1, "Seed is required"),
 });
 
 export const organizationsRouter = {
-	uploadLogo: protectedProcedure
-		.input(uploadOrganizationLogoSchema)
+	updateAvatarSeed: protectedProcedure
+		.input(updateAvatarSeedSchema)
 		.handler(async ({ input, context }) => {
 			const { success } = await websitesApi.hasPermission({
 				headers: context.headers,
-				body: { permissions: { organization: ["manage_logo"] } },
+				body: { permissions: { organization: ["update"] } },
 			});
 			if (!success) {
 				throw new ORPCError("FORBIDDEN", {
-					message:
-						"You do not have permission to manage this organization logo.",
+					message: "You do not have permission to update this organization.",
 				});
 			}
 
-			// Get organization
 			const [org] = await db
 				.select()
 				.from(organization)
@@ -135,114 +126,13 @@ export const organizationsRouter = {
 				});
 			}
 
-			try {
-				// Delete old logo if it exists
-				if (org.logo) {
-					await s3.deleteOrganizationLogo(org.logo);
-				}
-
-				// Type check the input since it's extended
-				if (
-					typeof input.fileData !== "string" ||
-					typeof input.fileName !== "string" ||
-					typeof input.fileType !== "string"
-				) {
-					throw new ORPCError("BAD_REQUEST", {
-						message: "Invalid file data format",
-					});
-				}
-
-				const base64Data = input.fileData.split(",")[1];
-				if (!base64Data) {
-					throw new ORPCError("BAD_REQUEST", {
-						message: "Invalid file data format",
-					});
-				}
-				const buffer = Buffer.from(base64Data, "base64");
-				const file = new File([buffer], input.fileName, {
-					type: input.fileType,
-				});
-
-				const logoUrl = await s3.uploadOrganizationLogo(
-					input.organizationId,
-					file
-				);
-
-				// Update organization with new logo URL
-				const [updatedOrganization] = await db
-					.update(organization)
-					.set({ logo: logoUrl })
-					.where(eq(organization.id, input.organizationId))
-					.returning();
-
-				return {
-					organization: updatedOrganization,
-					logoUrl,
-				};
-			} catch (error) {
-				if (error instanceof ORPCError) {
-					throw error;
-				}
-				throw new ORPCError("INTERNAL_SERVER_ERROR", {
-					message: "Failed to upload organization logo",
-					cause: error,
-				});
-			}
-		}),
-
-	deleteLogo: protectedProcedure
-		.input(deleteOrganizationLogoSchema)
-		.handler(async ({ input, context }) => {
-			const { success } = await websitesApi.hasPermission({
-				headers: context.headers,
-				body: { permissions: { organization: ["manage_logo"] } },
-			});
-			if (!success) {
-				throw new ORPCError("FORBIDDEN", {
-					message:
-						"You do not have permission to manage this organization logo.",
-				});
-			}
-
-			// Get organization
-			const [org] = await db
-				.select()
-				.from(organization)
+			const [updatedOrganization] = await db
+				.update(organization)
+				.set({ logo: input.seed })
 				.where(eq(organization.id, input.organizationId))
-				.limit(1);
+				.returning();
 
-			if (!org) {
-				throw new ORPCError("NOT_FOUND", {
-					message: "Organization not found.",
-				});
-			}
-
-			try {
-				// Delete logo if it exists
-				if (org.logo) {
-					await s3.deleteOrganizationLogo(org.logo);
-				}
-
-				// Remove logo URL from database
-				const [updatedOrganization] = await db
-					.update(organization)
-					.set({ logo: null })
-					.where(eq(organization.id, input.organizationId))
-					.returning();
-
-				return {
-					organization: updatedOrganization,
-					success: true,
-				};
-			} catch (error) {
-				if (error instanceof ORPCError) {
-					throw error;
-				}
-				throw new ORPCError("INTERNAL_SERVER_ERROR", {
-					message: "Failed to delete organization logo",
-					cause: error,
-				});
-			}
+			return { organization: updatedOrganization };
 		}),
 
 	getPendingInvitations: protectedProcedure

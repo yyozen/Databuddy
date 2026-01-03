@@ -132,19 +132,11 @@ export function useOrganizations() {
 		)
 	);
 
-	const uploadOrganizationLogoMutation = useMutation({
-		...orpc.organizations.uploadLogo.mutationOptions(),
+	const updateAvatarSeedMutation = useMutation({
+		...orpc.organizations.updateAvatarSeed.mutationOptions(),
 		onSuccess: () => {
 			invalidateOrganizationQueries();
-			toast.success("Logo uploaded successfully");
-		},
-	});
-
-	const deleteOrganizationLogoMutation = useMutation({
-		...orpc.organizations.deleteLogo.mutationOptions(),
-		onSuccess: () => {
-			invalidateOrganizationQueries();
-			toast.success("Logo deleted successfully");
+			toast.success("Avatar updated successfully");
 		},
 	});
 
@@ -225,16 +217,14 @@ export function useOrganizations() {
 		deleteOrganization: deleteOrganizationMutation.mutate,
 		setActiveOrganization: setActiveOrganizationMutation.mutate,
 		leaveOrganization: leaveOrganizationMutation.mutate,
-		uploadOrganizationLogo: uploadOrganizationLogoMutation.mutate,
-		deleteOrganizationLogo: deleteOrganizationLogoMutation.mutate,
+		updateAvatarSeed: updateAvatarSeedMutation.mutate,
 
 		isCreatingOrganization: createOrganizationMutation.isPending,
 		isUpdatingOrganization: updateOrganizationMutation.isPending,
 		isDeletingOrganization: deleteOrganizationMutation.isPending,
 		isSettingActiveOrganization: setActiveOrganizationMutation.isPending,
 		isLeavingOrganization: leaveOrganizationMutation.isPending,
-		isUploadingOrganizationLogo: uploadOrganizationLogoMutation.isPending,
-		isDeletingOrganizationLogo: deleteOrganizationLogoMutation.isPending,
+		isUpdatingAvatarSeed: updateAvatarSeedMutation.isPending,
 	};
 }
 

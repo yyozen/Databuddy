@@ -26,10 +26,14 @@ import { cn, getOrganizationInitials } from "@/lib/utils";
 
 dayjs.extend(relativeTime);
 
-type OrganizationsListProps = {
+function getDicebearUrl(seed: string): string {
+	return `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(seed)}`;
+}
+
+interface OrganizationsListProps {
 	organizations: Organization[] | null | undefined;
 	activeOrganization: Organization | null | undefined;
-};
+}
 
 function EmptyState() {
 	const [showCreateOrganizationDialog, setShowCreateOrganizationDialog] =
@@ -58,12 +62,12 @@ function EmptyState() {
 	);
 }
 
-type OrganizationRowProps = {
+interface OrganizationRowProps {
 	organization: Organization;
 	isActive: boolean;
 	isProcessing: boolean;
 	onClick: () => void;
-};
+}
 
 function OrganizationRow({
 	organization,
@@ -89,7 +93,7 @@ function OrganizationRow({
 			<Avatar className="size-10">
 				<AvatarImage
 					alt={organization.name}
-					src={organization.logo ?? undefined}
+					src={getDicebearUrl(organization.logo || organization.id)}
 				/>
 				<AvatarFallback className="bg-accent text-sm">
 					{getOrganizationInitials(organization.name)}
