@@ -168,10 +168,10 @@ export function Sidebar({ user = null }: SidebarProps) {
 		}
 
 		return {
-			navigation: navSections.filter((section) => {
-				if (section.flag) {
-					const flagState = isEnabled(section.flag);
-					return flagState.isReady && flagState.enabled;
+			navigation: navSections.filter((entry) => {
+				if (entry.flag) {
+					const flagState = isEnabled(entry.flag);
+					return flagState.status === "ready" && flagState.on;
 				}
 				return true;
 			}),

@@ -118,6 +118,7 @@ export const createWebsitesNavigation = (
 ): NavigationEntry[] => [
 	createNavItem("Home", HouseIcon, "/home", {
 		highlight: true,
+		flag: "home",
 	}),
 	...createDynamicNavigation(
 		websites,
@@ -441,6 +442,7 @@ const createLoadingNavigation = (
 export const createLoadingWebsitesNavigation = (): NavigationEntry[] => [
 	createNavItem("Home", HouseIcon, "/home", {
 		highlight: true,
+		flag: "home",
 	}),
 	...createLoadingNavigation(
 		"Websites",
