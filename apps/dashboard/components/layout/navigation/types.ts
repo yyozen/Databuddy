@@ -34,6 +34,8 @@ export interface NavigationSection {
 	flag?: string;
 }
 
+export type NavigationEntry = NavigationSection | NavigationItem;
+
 export interface Category {
 	id: string;
 	name: string;

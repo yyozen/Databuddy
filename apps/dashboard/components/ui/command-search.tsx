@@ -19,7 +19,11 @@ import {
 	websiteNavigation,
 	websiteSettingsNavigation,
 } from "@/components/layout/navigation/navigation-config";
-import type { NavigationItem, NavigationSection } from "@/components/layout/navigation/types";
+import type {
+	NavigationEntry,
+	NavigationItem,
+	NavigationSection,
+} from "@/components/layout/navigation/types";
 import { Badge } from "@/components/ui/badge";
 import {
 	Dialog,
@@ -68,13 +72,34 @@ function toSearchItem(item: NavigationItem, pathPrefix = ""): SearchItem {
 	};
 }
 
-function toSearchGroups(sections: NavigationSection[], pathPrefix = ""): SearchGroup[] {
-	return sections.map((section) => ({
-		category: section.title,
-		items: section.items
-			.filter((item) => !item.hideFromDemo)
-			.map((item) => toSearchItem(item, pathPrefix)),
-	}));
+const isSection = (entry: NavigationEntry): entry is NavigationSection =>
+	"items" in entry;
+
+function toSearchGroups(entries: NavigationEntry[], pathPrefix = ""): SearchGroup[] {
+	const groups: SearchGroup[] = [];
+	const standaloneItems: SearchItem[] = [];
+
+	for (const entry of entries) {
+		if (isSection(entry)) {
+			groups.push({
+				category: entry.title,
+				items: entry.items
+					.filter((item) => !item.hideFromDemo)
+					.map((item) => toSearchItem(item, pathPrefix)),
+			});
+		} else if (!entry.hideFromDemo) {
+			standaloneItems.push(toSearchItem(entry, pathPrefix));
+		}
+	}
+
+	if (standaloneItems.length > 0) {
+		groups.unshift({
+			category: "Quick Access",
+			items: standaloneItems,
+		});
+	}
+
+	return groups;
 }
 
 function mergeGroups(groups: SearchGroup[]): SearchGroup[] {

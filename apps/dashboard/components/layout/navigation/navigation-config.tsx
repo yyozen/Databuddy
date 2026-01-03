@@ -21,6 +21,7 @@ import {
 	GlobeIcon,
 	GlobeSimpleIcon,
 	HeartbeatIcon,
+	HouseIcon,
 	IdentificationCardIcon,
 	KeyIcon,
 	LightningIcon,
@@ -41,7 +42,7 @@ import {
 	UsersThreeIcon,
 	WarningIcon,
 } from "@phosphor-icons/react";
-import type { Category, NavigationSection } from "./types";
+import type { Category, NavigationEntry, NavigationSection } from "./types";
 
 const createNavItem = (
 	name: string,
@@ -114,8 +115,11 @@ const createDynamicNavigation = <T extends { id: string; name: string | null }>(
 
 export const createWebsitesNavigation = (
 	websites: Array<{ id: string; name: string | null; domain: string }>
-): NavigationSection[] =>
-	createDynamicNavigation(
+): NavigationEntry[] => [
+	createNavItem("Home", HouseIcon, "/home", {
+		highlight: true,
+	}),
+	...createDynamicNavigation(
 		websites,
 		"Websites",
 		GlobeSimpleIcon,
@@ -125,7 +129,8 @@ export const createWebsitesNavigation = (
 		"/websites",
 		"Add Your First Website",
 		(website) => ({ domain: website.domain })
-	);
+	),
+];
 
 export const personalNavigation: NavigationSection[] = [
 	createNavSection("Personal", UserGearIcon, [
@@ -315,7 +320,7 @@ export const websiteSettingsNavigation: NavigationSection[] = [
 const createCategoryConfig = (
 	categories: Category[],
 	defaultCategory: string,
-	navigationMap: Record<string, NavigationSection[]>
+	navigationMap: Record<string, NavigationEntry[]>
 ) => ({ categories, defaultCategory, navigationMap });
 
 export const categoryConfig = {
@@ -433,12 +438,16 @@ const createLoadingNavigation = (
 	]),
 ];
 
-export const createLoadingWebsitesNavigation = (): NavigationSection[] =>
-	createLoadingNavigation(
+export const createLoadingWebsitesNavigation = (): NavigationEntry[] => [
+	createNavItem("Home", HouseIcon, "/home", {
+		highlight: true,
+	}),
+	...createLoadingNavigation(
 		"Websites",
 		GlobeSimpleIcon,
 		"Website Overview",
 		"/websites",
 		"Loading websites...",
 		GlobeIcon
-	);
+	),
+];

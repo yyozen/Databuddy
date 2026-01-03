@@ -20,13 +20,18 @@ import {
 	getContextConfig,
 	getDefaultCategory,
 } from "./navigation/navigation-config";
+import { NavigationItem } from "./navigation/navigation-item";
 import { NavigationSection } from "./navigation/navigation-section";
-import type { NavigationSection as NavigationSectionType } from "./navigation/types";
+import type {
+	NavigationEntry,
+	NavigationItem as NavigationItemType,
+	NavigationSection as NavigationSectionType,
+} from "./navigation/types";
 import { WebsiteHeader } from "./navigation/website-header";
 import { OrganizationSelector } from "./organization-selector";
 
 interface NavigationConfig {
-	navigation: NavigationSectionType[];
+	navigation: NavigationEntry[];
 	header: React.ReactNode;
 	currentWebsiteId?: string | null;
 }
@@ -40,6 +45,44 @@ interface User {
 interface SidebarProps {
 	user: User | null;
 }
+
+const isNavigationSection = (
+	entry: NavigationEntry
+): entry is NavigationSectionType => {
+	return "items" in entry;
+};
+
+const isNavigationItem = (
+	entry: NavigationEntry
+): entry is NavigationItemType => {
+	return "href" in entry && !("items" in entry);
+};
+
+const isItemActive = (
+	item: NavigationItemType,
+	pathname: string,
+	currentWebsiteId?: string | null
+): boolean => {
+	if (item.rootLevel) {
+		return pathname === item.href;
+	}
+
+	const buildFullPath = (basePath: string, itemHref: string) =>
+		itemHref === "" ? basePath : `${basePath}${itemHref}`;
+
+	const fullPath = (() => {
+		if (pathname.startsWith("/demo")) {
+			return buildFullPath(`/demo/${currentWebsiteId}`, item.href);
+		}
+		return buildFullPath(`/websites/${currentWebsiteId}`, item.href);
+	})();
+
+	if (item.href === "") {
+		return pathname === fullPath;
+	}
+
+	return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
+};
 
 export function Sidebar({ user = null }: SidebarProps) {
 	const pathname = usePathname();
@@ -287,27 +330,65 @@ export function Sidebar({ user = null }: SidebarProps) {
 						/>
 
 						<nav aria-label="Main navigation" className="flex flex-col">
-							{navigation.map((section, idx) => (
-								<NavigationSection
-									accordionStates={accordionStates}
-									className={cn(
-										navigation.length > 1 && idx === navigation.length - 1
-											? "border-t"
-											: idx === 0 && navigation.length < 2
-												? "box-content border-b"
-												: idx !== 0 && navigation.length > 1
+							{navigation.map((entry, idx) => {
+								if (isNavigationSection(entry)) {
+									return (
+										<NavigationSection
+											accordionStates={accordionStates}
+											className={cn(
+												navigation.length > 1 && idx === navigation.length - 1
 													? "border-t"
-													: "border-transparent"
-									)}
-									currentWebsiteId={currentWebsiteId}
-									flag={section.flag}
-									icon={section.icon}
-									items={section.items}
-									key={section.title}
-									pathname={pathname}
-									title={section.title}
-								/>
-							))}
+													: idx === 0 && navigation.length < 2
+														? "box-content border-b"
+														: idx !== 0 && navigation.length > 1
+															? "border-t"
+															: "border-transparent"
+											)}
+											currentWebsiteId={currentWebsiteId}
+											flag={entry.flag}
+											icon={entry.icon}
+											items={entry.items}
+											key={entry.title}
+											pathname={pathname}
+											title={entry.title}
+										/>
+									);
+								}
+
+								if (isNavigationItem(entry)) {
+									return (
+										<div
+											className={cn(idx !== 0 && "border-t")}
+											key={entry.name}
+										>
+											<NavigationItem
+												alpha={entry.alpha}
+												badge={entry.badge}
+												currentWebsiteId={currentWebsiteId}
+												disabled={entry.disabled}
+												domain={entry.domain}
+												href={entry.href}
+												icon={entry.icon}
+												isActive={isItemActive(
+													entry,
+													pathname,
+													currentWebsiteId
+												)}
+												isExternal={entry.external}
+												isLocked={false}
+												isRootLevel={!!entry.rootLevel}
+												lockedPlanName={null}
+												name={entry.name}
+												production={entry.production}
+												sectionName="main"
+												tag={entry.tag}
+											/>
+										</div>
+									);
+								}
+
+								return null;
+							})}
 						</nav>
 					</div>
 				</ScrollArea>

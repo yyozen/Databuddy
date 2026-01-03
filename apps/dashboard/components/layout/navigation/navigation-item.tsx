@@ -65,7 +65,7 @@ export function NavigationItem({
 					size={20}
 				/>
 			) : (
-				<Icon aria-hidden className="size-4 shrink-0" />
+				<Icon aria-hidden className="size-4 shrink-0" weight="duotone" />
 			)}
 			<span className="flex-1">{name}</span>
 		</>
