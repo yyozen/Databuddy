@@ -7,119 +7,119 @@ const CACHE_TTL = 300;
 const AUTH_CACHE_TTL = 60;
 
 type InsightType =
-    | "error_spike"
-    | "vitals_degraded"
-    | "custom_event_spike"
-    | "traffic_drop"
-    | "traffic_spike"
-    | "uptime_issue";
+	| "error_spike"
+	| "vitals_degraded"
+	| "custom_event_spike"
+	| "traffic_drop"
+	| "traffic_spike"
+	| "uptime_issue";
 
 type InsightSeverity = "critical" | "warning" | "info";
 
 interface Insight {
-    id: string;
-    type: InsightType;
-    severity: InsightSeverity;
-    websiteId: string;
-    websiteName: string | null;
-    websiteDomain: string;
-    title: string;
-    description: string;
-    metric?: string;
-    currentValue?: number;
-    previousValue?: number;
-    changePercent?: number;
-    link: string;
+	id: string;
+	type: InsightType;
+	severity: InsightSeverity;
+	websiteId: string;
+	websiteName: string | null;
+	websiteDomain: string;
+	title: string;
+	description: string;
+	metric?: string;
+	currentValue?: number;
+	previousValue?: number;
+	changePercent?: number;
+	link: string;
 }
 
 interface ErrorInsightRow {
-    websiteId: string;
-    currentErrors: number;
-    previousErrors: number;
+	websiteId: string;
+	currentErrors: number;
+	previousErrors: number;
 }
 
 interface VitalInsightRow {
-    websiteId: string;
-    metricName: string;
-    currentP75: number;
-    previousP75: number;
+	websiteId: string;
+	metricName: string;
+	currentP75: number;
+	previousP75: number;
 }
 
 interface CustomEventInsightRow {
-    websiteId: string;
-    eventName: string;
-    currentCount: number;
-    previousCount: number;
+	websiteId: string;
+	eventName: string;
+	currentCount: number;
+	previousCount: number;
 }
 
 interface TrafficInsightRow {
-    websiteId: string;
-    currentViews: number;
-    previousViews: number;
+	websiteId: string;
+	currentViews: number;
+	previousViews: number;
 }
 
 const WEB_VITAL_THRESHOLDS: Record<
-    string,
-    { good: number; poor: number; unit: string; label: string }
+	string,
+	{ good: number; poor: number; unit: string; label: string }
 > = {
-    LCP: {
-        good: 2500,
-        poor: 4000,
-        unit: "ms",
-        label: "Largest Contentful Paint",
-    },
-    FCP: { good: 1800, poor: 3000, unit: "ms", label: "First Contentful Paint" },
-    CLS: { good: 0.1, poor: 0.25, unit: "", label: "Cumulative Layout Shift" },
-    INP: { good: 200, poor: 500, unit: "ms", label: "Interaction to Next Paint" },
-    TTFB: { good: 800, poor: 1800, unit: "ms", label: "Time to First Byte" },
+	LCP: {
+		good: 2500,
+		poor: 4000,
+		unit: "ms",
+		label: "Largest Contentful Paint",
+	},
+	FCP: { good: 1800, poor: 3000, unit: "ms", label: "First Contentful Paint" },
+	CLS: { good: 0.1, poor: 0.25, unit: "", label: "Cumulative Layout Shift" },
+	INP: { good: 200, poor: 500, unit: "ms", label: "Interaction to Next Paint" },
+	TTFB: { good: 800, poor: 1800, unit: "ms", label: "Time to First Byte" },
 };
 
 const getAuthorizedWebsiteIds = (
-    userId: string
+	userId: string
 ): Promise<Array<{ id: string; name: string | null; domain: string }>> => {
-    const authCacheKey = `insights-auth:${userId}`;
+	const authCacheKey = `insights-auth:${userId}`;
 
-    return insightsCache.withCache({
-        key: authCacheKey,
-        ttl: AUTH_CACHE_TTL,
-        tables: ["websites", "member"],
-        queryFn: async () => {
-            const userOrgs = await db.query.member.findMany({
-                where: eq(member.userId, userId),
-                columns: { organizationId: true },
-            });
+	return insightsCache.withCache({
+		key: authCacheKey,
+		ttl: AUTH_CACHE_TTL,
+		tables: ["websites", "member"],
+		queryFn: async () => {
+			const userOrgs = await db.query.member.findMany({
+				where: eq(member.userId, userId),
+				columns: { organizationId: true },
+			});
 
-            const orgIds = userOrgs.map((m) => m.organizationId);
+			const orgIds = userOrgs.map((m) => m.organizationId);
 
-            const orgFilter =
-                orgIds.length > 0
-                    ? inArray(websites.organizationId, orgIds)
-                    : undefined;
+			const orgFilter =
+				orgIds.length > 0
+					? inArray(websites.organizationId, orgIds)
+					: undefined;
 
-            const accessibleWebsites = await db.query.websites.findMany({
-                where: orgFilter
-                    ? or(eq(websites.userId, userId), orgFilter)
-                    : eq(websites.userId, userId),
-                columns: {
-                    id: true,
-                    name: true,
-                    domain: true,
-                },
-            });
+			const accessibleWebsites = await db.query.websites.findMany({
+				where: orgFilter
+					? or(eq(websites.userId, userId), orgFilter)
+					: eq(websites.userId, userId),
+				columns: {
+					id: true,
+					name: true,
+					domain: true,
+				},
+			});
 
-            return accessibleWebsites;
-        },
-    });
+			return accessibleWebsites;
+		},
+	});
 };
 
 const fetchErrorInsights = (
-    websiteIds: string[]
+	websiteIds: string[]
 ): Promise<ErrorInsightRow[]> => {
-    if (websiteIds.length === 0) {
-        return Promise.resolve([]);
-    }
+	if (websiteIds.length === 0) {
+		return Promise.resolve([]);
+	}
 
-    const query = `
+	const query = `
     WITH 
       current_period AS (
         SELECT 
@@ -152,17 +152,17 @@ const fetchErrorInsights = (
       AND COALESCE(c.errors, 0) >= 5
   `;
 
-    return chQuery<ErrorInsightRow>(query, { websiteIds });
+	return chQuery<ErrorInsightRow>(query, { websiteIds });
 };
 
 const fetchVitalsInsights = (
-    websiteIds: string[]
+	websiteIds: string[]
 ): Promise<VitalInsightRow[]> => {
-    if (websiteIds.length === 0) {
-        return Promise.resolve([]);
-    }
+	if (websiteIds.length === 0) {
+		return Promise.resolve([]);
+	}
 
-    const query = `
+	const query = `
     WITH 
       current_period AS (
         SELECT 
@@ -201,17 +201,17 @@ const fetchVitalsInsights = (
     WHERE c.p75 > p.p75 * 1.2
   `;
 
-    return chQuery<VitalInsightRow>(query, { websiteIds });
+	return chQuery<VitalInsightRow>(query, { websiteIds });
 };
 
 const fetchCustomEventInsights = (
-    websiteIds: string[]
+	websiteIds: string[]
 ): Promise<CustomEventInsightRow[]> => {
-    if (websiteIds.length === 0) {
-        return Promise.resolve([]);
-    }
+	if (websiteIds.length === 0) {
+		return Promise.resolve([]);
+	}
 
-    const query = `
+	const query = `
     WITH 
       current_period AS (
         SELECT 
@@ -249,17 +249,17 @@ const fetchCustomEventInsights = (
     LIMIT 10
   `;
 
-    return chQuery<CustomEventInsightRow>(query, { websiteIds });
+	return chQuery<CustomEventInsightRow>(query, { websiteIds });
 };
 
 const fetchTrafficInsights = (
-    websiteIds: string[]
+	websiteIds: string[]
 ): Promise<TrafficInsightRow[]> => {
-    if (websiteIds.length === 0) {
-        return Promise.resolve([]);
-    }
+	if (websiteIds.length === 0) {
+		return Promise.resolve([]);
+	}
 
-    const query = `
+	const query = `
     WITH 
       current_period AS (
         SELECT 
@@ -294,180 +294,180 @@ const fetchTrafficInsights = (
     )
   `;
 
-    return chQuery<TrafficInsightRow>(query, { websiteIds });
+	return chQuery<TrafficInsightRow>(query, { websiteIds });
 };
 
 const buildInsights = (
-    websiteMap: Map<string, { name: string | null; domain: string }>,
-    errorData: ErrorInsightRow[],
-    vitalsData: VitalInsightRow[],
-    customEventData: CustomEventInsightRow[],
-    trafficData: TrafficInsightRow[]
+	websiteMap: Map<string, { name: string | null; domain: string }>,
+	errorData: ErrorInsightRow[],
+	vitalsData: VitalInsightRow[],
+	customEventData: CustomEventInsightRow[],
+	trafficData: TrafficInsightRow[]
 ): Insight[] => {
-    const insights: Insight[] = [];
+	const insights: Insight[] = [];
 
-    for (const row of errorData) {
-        const website = websiteMap.get(row.websiteId);
-        if (!website) {
-            continue;
-        }
+	for (const row of errorData) {
+		const website = websiteMap.get(row.websiteId);
+		if (!website) {
+			continue;
+		}
 
-        const changePercent =
-            row.previousErrors > 0
-                ? ((row.currentErrors - row.previousErrors) / row.previousErrors) * 100
-                : 100;
+		const changePercent =
+			row.previousErrors > 0
+				? ((row.currentErrors - row.previousErrors) / row.previousErrors) * 100
+				: 100;
 
-        insights.push({
-            id: `error-${row.websiteId}`,
-            type: "error_spike",
-            severity: changePercent > 200 ? "critical" : "warning",
-            websiteId: row.websiteId,
-            websiteName: website.name,
-            websiteDomain: website.domain,
-            title: "Error spike detected",
-            description: `${row.currentErrors} errors in last 24h (was ${row.previousErrors})`,
-            currentValue: row.currentErrors,
-            previousValue: row.previousErrors,
-            changePercent: Math.round(changePercent),
-            link: `/websites/${row.websiteId}/errors`,
-        });
-    }
+		insights.push({
+			id: `error-${row.websiteId}`,
+			type: "error_spike",
+			severity: changePercent > 200 ? "critical" : "warning",
+			websiteId: row.websiteId,
+			websiteName: website.name,
+			websiteDomain: website.domain,
+			title: "Error spike detected",
+			description: `${row.currentErrors} errors in last 24h (was ${row.previousErrors})`,
+			currentValue: row.currentErrors,
+			previousValue: row.previousErrors,
+			changePercent: Math.round(changePercent),
+			link: `/websites/${row.websiteId}/errors`,
+		});
+	}
 
-    for (const row of vitalsData) {
-        const website = websiteMap.get(row.websiteId);
-        if (!website) {
-            continue;
-        }
+	for (const row of vitalsData) {
+		const website = websiteMap.get(row.websiteId);
+		if (!website) {
+			continue;
+		}
 
-        const threshold = WEB_VITAL_THRESHOLDS[row.metricName];
-        if (!threshold) {
-            continue;
-        }
+		const threshold = WEB_VITAL_THRESHOLDS[row.metricName];
+		if (!threshold) {
+			continue;
+		}
 
-        const isPoor = row.currentP75 > threshold.poor;
-        const changePercent =
-            ((row.currentP75 - row.previousP75) / row.previousP75) * 100;
+		const isPoor = row.currentP75 > threshold.poor;
+		const changePercent =
+			((row.currentP75 - row.previousP75) / row.previousP75) * 100;
 
-        insights.push({
-            id: `vitals-${row.websiteId}-${row.metricName}`,
-            type: "vitals_degraded",
-            severity: isPoor ? "critical" : "warning",
-            websiteId: row.websiteId,
-            websiteName: website.name,
-            websiteDomain: website.domain,
-            title: `${threshold.label} degraded`,
-            description: `p75 now ${row.metricName === "CLS" ? row.currentP75.toFixed(3) : Math.round(row.currentP75)}${threshold.unit} (was ${row.metricName === "CLS" ? row.previousP75.toFixed(3) : Math.round(row.previousP75)}${threshold.unit})`,
-            metric: row.metricName,
-            currentValue: row.currentP75,
-            previousValue: row.previousP75,
-            changePercent: Math.round(changePercent),
-            link: `/websites/${row.websiteId}/vitals`,
-        });
-    }
+		insights.push({
+			id: `vitals-${row.websiteId}-${row.metricName}`,
+			type: "vitals_degraded",
+			severity: isPoor ? "critical" : "warning",
+			websiteId: row.websiteId,
+			websiteName: website.name,
+			websiteDomain: website.domain,
+			title: `${threshold.label} degraded`,
+			description: `p75 now ${row.metricName === "CLS" ? row.currentP75.toFixed(3) : Math.round(row.currentP75)}${threshold.unit} (was ${row.metricName === "CLS" ? row.previousP75.toFixed(3) : Math.round(row.previousP75)}${threshold.unit})`,
+			metric: row.metricName,
+			currentValue: row.currentP75,
+			previousValue: row.previousP75,
+			changePercent: Math.round(changePercent),
+			link: `/websites/${row.websiteId}/vitals`,
+		});
+	}
 
-    for (const row of customEventData) {
-        const website = websiteMap.get(row.websiteId);
-        if (!website) {
-            continue;
-        }
+	for (const row of customEventData) {
+		const website = websiteMap.get(row.websiteId);
+		if (!website) {
+			continue;
+		}
 
-        const changePercent =
-            row.previousCount > 0
-                ? ((row.currentCount - row.previousCount) / row.previousCount) * 100
-                : 100;
+		const changePercent =
+			row.previousCount > 0
+				? ((row.currentCount - row.previousCount) / row.previousCount) * 100
+				: 100;
 
-        insights.push({
-            id: `event-${row.websiteId}-${row.eventName}`,
-            type: "custom_event_spike",
-            severity: "info",
-            websiteId: row.websiteId,
-            websiteName: website.name,
-            websiteDomain: website.domain,
-            title: `"${row.eventName}" event spiking`,
-            description: `${row.currentCount} events in 24h (was ${row.previousCount})`,
-            currentValue: row.currentCount,
-            previousValue: row.previousCount,
-            changePercent: Math.round(changePercent),
-            link: `/websites/${row.websiteId}/events`,
-        });
-    }
+		insights.push({
+			id: `event-${row.websiteId}-${row.eventName}`,
+			type: "custom_event_spike",
+			severity: "info",
+			websiteId: row.websiteId,
+			websiteName: website.name,
+			websiteDomain: website.domain,
+			title: `"${row.eventName}" event spiking`,
+			description: `${row.currentCount} events in 24h (was ${row.previousCount})`,
+			currentValue: row.currentCount,
+			previousValue: row.previousCount,
+			changePercent: Math.round(changePercent),
+			link: `/websites/${row.websiteId}/events`,
+		});
+	}
 
-    for (const row of trafficData) {
-        const website = websiteMap.get(row.websiteId);
-        if (!website) {
-            continue;
-        }
+	for (const row of trafficData) {
+		const website = websiteMap.get(row.websiteId);
+		if (!website) {
+			continue;
+		}
 
-        const changePercent =
-            row.previousViews > 0
-                ? ((row.currentViews - row.previousViews) / row.previousViews) * 100
-                : 0;
+		const changePercent =
+			row.previousViews > 0
+				? ((row.currentViews - row.previousViews) / row.previousViews) * 100
+				: 0;
 
-        const isSpike = row.currentViews > row.previousViews;
+		const isSpike = row.currentViews > row.previousViews;
 
-        insights.push({
-            id: `traffic-${row.websiteId}`,
-            type: isSpike ? "traffic_spike" : "traffic_drop",
-            severity: isSpike ? "info" : "warning",
-            websiteId: row.websiteId,
-            websiteName: website.name,
-            websiteDomain: website.domain,
-            title: isSpike ? "Traffic spike" : "Traffic drop",
-            description: `${row.currentViews} views in 24h (was ${row.previousViews})`,
-            currentValue: row.currentViews,
-            previousValue: row.previousViews,
-            changePercent: Math.round(Math.abs(changePercent)),
-            link: `/websites/${row.websiteId}`,
-        });
-    }
+		insights.push({
+			id: `traffic-${row.websiteId}`,
+			type: isSpike ? "traffic_spike" : "traffic_drop",
+			severity: isSpike ? "info" : "warning",
+			websiteId: row.websiteId,
+			websiteName: website.name,
+			websiteDomain: website.domain,
+			title: isSpike ? "Traffic spike" : "Traffic drop",
+			description: `${row.currentViews} views in 24h (was ${row.previousViews})`,
+			currentValue: row.currentViews,
+			previousValue: row.previousViews,
+			changePercent: Math.round(Math.abs(changePercent)),
+			link: `/websites/${row.websiteId}`,
+		});
+	}
 
-    return insights.sort((a, b) => {
-        const severityOrder = { critical: 0, warning: 1, info: 2 };
-        return severityOrder[a.severity] - severityOrder[b.severity];
-    });
+	return insights.sort((a, b) => {
+		const severityOrder = { critical: 0, warning: 1, info: 2 };
+		return severityOrder[a.severity] - severityOrder[b.severity];
+	});
 };
 
 export const insightsRouter = {
-    getSmartInsights: protectedProcedure.handler(({ context }) => {
-        const userId = context.user.id;
-        const cacheKey = `smart-insights:${userId}`;
+	getSmartInsights: protectedProcedure.handler(({ context }) => {
+		const userId = context.user.id;
+		const cacheKey = `smart-insights:${userId}`;
 
-        return insightsCache.withCache({
-            key: cacheKey,
-            ttl: CACHE_TTL,
-            tables: ["websites", "member"],
-            queryFn: async () => {
-                const websitesList = await getAuthorizedWebsiteIds(userId);
-                const websiteIds = websitesList.map((w) => w.id);
+		return insightsCache.withCache({
+			key: cacheKey,
+			ttl: CACHE_TTL,
+			tables: ["websites", "member"],
+			queryFn: async () => {
+				const websitesList = await getAuthorizedWebsiteIds(userId);
+				const websiteIds = websitesList.map((w) => w.id);
 
-                if (websiteIds.length === 0) {
-                    return { insights: [] as Insight[] };
-                }
+				if (websiteIds.length === 0) {
+					return { insights: [] as Insight[] };
+				}
 
-                const websiteMap = new Map(
-                    websitesList.map((w) => [w.id, { name: w.name, domain: w.domain }])
-                );
+				const websiteMap = new Map(
+					websitesList.map((w) => [w.id, { name: w.name, domain: w.domain }])
+				);
 
-                const [errorData, vitalsData, customEventData, trafficData] =
-                    await Promise.all([
-                        fetchErrorInsights(websiteIds),
-                        fetchVitalsInsights(websiteIds),
-                        fetchCustomEventInsights(websiteIds),
-                        fetchTrafficInsights(websiteIds),
-                    ]);
+				const [errorData, vitalsData, customEventData, trafficData] =
+					await Promise.all([
+						fetchErrorInsights(websiteIds),
+						fetchVitalsInsights(websiteIds),
+						fetchCustomEventInsights(websiteIds),
+						fetchTrafficInsights(websiteIds),
+					]);
 
-                const insights = buildInsights(
-                    websiteMap,
-                    errorData,
-                    vitalsData,
-                    customEventData,
-                    trafficData
-                );
+				const insights = buildInsights(
+					websiteMap,
+					errorData,
+					vitalsData,
+					customEventData,
+					trafficData
+				);
 
-                return { insights: insights.slice(0, 10) };
-            },
-        });
-    }),
+				return { insights: insights.slice(0, 10) };
+			},
+		});
+	}),
 };
 
 export type InsightsRouter = typeof insightsRouter;
