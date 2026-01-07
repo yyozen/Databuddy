@@ -41,47 +41,36 @@ interface InvitationData {
 
 type ActionStatus = "idle" | "accepting" | "success";
 
-function LoadingSkeleton() {
+function ContentSkeleton() {
 	return (
-		<div className="flex h-full flex-col">
-			<div className="box-border flex h-fit shrink-0 flex-col justify-between gap-0 border-b p-0 sm:flex-row sm:items-center md:h-22 md:max-h-22 lg:gap-3">
-				<div className="flex h-full items-center gap-3 p-3 sm:p-4">
-					<Skeleton className="size-11 rounded-lg" />
-					<div className="space-y-2">
-						<Skeleton className="h-6 w-48" />
-						<Skeleton className="h-4 w-32" />
+		<div className="flex flex-1 items-center justify-center p-8">
+			<div className="w-full max-w-md space-y-6">
+				<div className="flex justify-center">
+					<Skeleton className="size-16 rounded" />
+				</div>
+				<div className="space-y-3 text-center">
+					<Skeleton className="mx-auto h-7 w-48" />
+					<Skeleton className="mx-auto h-5 w-64" />
+				</div>
+				<div className="space-y-4 rounded border p-4">
+					<div className="flex items-center gap-3">
+						<Skeleton className="size-10 rounded" />
+						<div className="flex-1 space-y-2">
+							<Skeleton className="h-4 w-32" />
+							<Skeleton className="h-3 w-24" />
+						</div>
+					</div>
+					<div className="flex items-center gap-3">
+						<Skeleton className="size-10 rounded" />
+						<div className="flex-1 space-y-2">
+							<Skeleton className="h-4 w-28" />
+							<Skeleton className="h-3 w-40" />
+						</div>
 					</div>
 				</div>
-			</div>
-			<div className="flex flex-1 items-center justify-center p-8">
-				<div className="w-full max-w-md space-y-6">
-					<div className="flex justify-center">
-						<Skeleton className="size-16 rounded" />
-					</div>
-					<div className="space-y-3 text-center">
-						<Skeleton className="mx-auto h-7 w-48" />
-						<Skeleton className="mx-auto h-5 w-64" />
-					</div>
-					<div className="space-y-4 rounded border p-4">
-						<div className="flex items-center gap-3">
-							<Skeleton className="size-10 rounded" />
-							<div className="flex-1 space-y-2">
-								<Skeleton className="h-4 w-32" />
-								<Skeleton className="h-3 w-24" />
-							</div>
-						</div>
-						<div className="flex items-center gap-3">
-							<Skeleton className="size-10 rounded" />
-							<div className="flex-1 space-y-2">
-								<Skeleton className="h-4 w-28" />
-								<Skeleton className="h-3 w-40" />
-							</div>
-						</div>
-					</div>
-					<div className="flex gap-3">
-						<Skeleton className="h-10 flex-1" />
-						<Skeleton className="h-10 w-28" />
-					</div>
+				<div className="flex gap-3">
+					<Skeleton className="h-10 flex-1" />
+					<Skeleton className="h-10 w-28" />
 				</div>
 			</div>
 		</div>
@@ -354,7 +343,16 @@ export default function AcceptInvitationPage() {
 	}, [router]);
 
 	if (isLoading) {
-		return <LoadingSkeleton />;
+		return (
+			<div className="flex h-full flex-col">
+				<PageHeader
+					description="Loading invitation…"
+					icon={<UserPlusIcon />}
+					title="Invitation"
+				/>
+				<ContentSkeleton />
+			</div>
+		);
 	}
 
 	if (error) {
