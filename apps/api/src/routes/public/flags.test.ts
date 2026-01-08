@@ -68,33 +68,25 @@ describe("evaluateStringRule", () => {
 	});
 
 	it("handles all operators correctly", () => {
-		// equals
 		expect(evaluateStringRule("user-123", rule("equals", "user-123"))).toBe(true);
 		expect(evaluateStringRule("other", rule("equals", "user-123"))).toBe(false);
 
-		// contains
 		expect(evaluateStringRule("user@company.com", rule("contains", "@company"))).toBe(true);
 		expect(evaluateStringRule("user@other.com", rule("contains", "@company"))).toBe(false);
 
-		// starts_with
 		expect(evaluateStringRule("admin-user", rule("starts_with", "admin-"))).toBe(true);
 		expect(evaluateStringRule("user-admin", rule("starts_with", "admin-"))).toBe(false);
 
-		// ends_with
 		expect(evaluateStringRule("file.com", rule("ends_with", ".com"))).toBe(true);
 		expect(evaluateStringRule("file.org", rule("ends_with", ".com"))).toBe(false);
 
-		// in/not_in
 		const vals = ["a", "b", "c"];
 		expect(evaluateStringRule("b", rule("in", undefined, vals))).toBe(true);
 		expect(evaluateStringRule("z", rule("in", undefined, vals))).toBe(false);
 		expect(evaluateStringRule("z", rule("not_in", undefined, vals))).toBe(true);
 		expect(evaluateStringRule("a", rule("not_in", undefined, vals))).toBe(false);
 
-		// unknown operator
 		expect(evaluateStringRule("test", rule("unknown_op", "test"))).toBe(false);
-
-		// undefined value
 		expect(evaluateStringRule(undefined, rule("equals", "test"))).toBe(false);
 	});
 });
@@ -559,13 +551,11 @@ describe("target groups", () => {
 			],
 		};
 
-		// Direct rule takes priority
 		expect(evaluateFlag(flag, { userId: "direct" })).toMatchObject({
 			enabled: true,
 			reason: "USER_RULE_MATCH",
 		});
 
-		// Target group matches
 		expect(evaluateFlag(flag, { email: "x@beta.com" })).toMatchObject({
 			enabled: true,
 			reason: "TARGET_GROUP_MATCH",
@@ -575,14 +565,12 @@ describe("target groups", () => {
 			evaluateFlag(flag, { properties: { plan: "pro" } })
 		).toMatchObject({ enabled: true, reason: "TARGET_GROUP_MATCH" });
 
-		// Blocklist (enabled: false)
 		expect(evaluateFlag(flag, { email: "x@blocked.com" })).toMatchObject({
 			enabled: false,
 			reason: "TARGET_GROUP_MATCH",
 			payload: null,
 		});
 
-		// No match falls to default
 		expect(evaluateFlag(flag, { userId: "random" })).toMatchObject({
 			enabled: false,
 			reason: "BOOLEAN_DEFAULT",
@@ -683,11 +671,10 @@ describe("edge cases and stress tests", () => {
 			evaluateFlag(flag, { userId: `u${i}` });
 		}
 		const duration = performance.now() - start;
-		expect(duration).toBeLessThan(1000); // Should complete in under 1s
+		expect(duration).toBeLessThan(1000);
 	});
 
 	it("handles percentage edge values", () => {
-		// Test boundary cases
 		for (let i = 0; i < 100; i += 1) {
 			const ctx = { userId: randomId() };
 
@@ -718,7 +705,6 @@ describe("edge cases and stress tests", () => {
 			).toBe(true);
 		}
 
-		// Test mid-range percentages produce mixed results
 		for (const pct of [10, 25, 50, 75, 90]) {
 			const flag = {
 				key: `pct-${pct}`,
@@ -735,7 +721,6 @@ describe("edge cases and stress tests", () => {
 				}
 			}
 
-			// Should be roughly around target percentage (±20%)
 			const lowerBound = Math.max(0, (pct - 20) / 100) * SAMPLE_SIZE;
 			const upperBound = Math.min(100, (pct + 20) / 100) * SAMPLE_SIZE;
 			expect(enabled).toBeGreaterThanOrEqual(lowerBound);
