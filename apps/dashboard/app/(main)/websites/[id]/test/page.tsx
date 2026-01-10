@@ -1,128 +1,158 @@
 "use client";
 
-import {
-	ChartLineIcon,
-	CursorClickIcon,
-	EyeIcon,
-	UsersIcon,
-} from "@phosphor-icons/react";
-import { useState } from "react";
-import type {
-	ChartStepType,
-	ChartType,
-	StatCardDisplayMode,
-} from "@/components/analytics/stat-card";
+import type { DateRange } from "@databuddy/shared/types/analytics";
+import { PlusIcon } from "@phosphor-icons/react";
+import { useAtomValue } from "jotai";
+import { useParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { StatCard } from "@/components/analytics/stat-card";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import {
+	formattedDateRangeAtom,
+	timeGranularityAtom,
+	timezoneAtom,
+} from "@/stores/jotai/filterAtoms";
+import { AddCardSheet } from "./_components/add-card-sheet";
+import { useDashboardData } from "./_components/hooks/use-dashboard-data";
+import { getCategoryIcon } from "./_components/utils/category-utils";
+import type { DashboardCardConfig } from "./_components/utils/types";
 
-const SAMPLE_CHART_DATA = [
-	{ date: "2026-01-01", value: 120 },
-	{ date: "2026-01-02", value: 145 },
-	{ date: "2026-01-03", value: 132 },
-	{ date: "2026-01-04", value: 178 },
-	{ date: "2026-01-05", value: 165 },
-	{ date: "2026-01-06", value: 198 },
-	{ date: "2026-01-07", value: 210 },
-];
-
-interface DashboardItemConfig {
-	id: string;
-	title: string;
-	value: string | number;
-	description?: string;
-	icon?: React.ElementType;
-	trend?: number;
-	invertTrend?: boolean;
-	chartData?: Array<{ date: string; value: number }>;
-	chartType?: ChartType;
-	chartStepType?: ChartStepType;
-	displayMode: StatCardDisplayMode;
-}
-
-const DEFAULT_ITEMS: DashboardItemConfig[] = [
-	{
-		id: "active-users",
-		title: "Active Now",
-		value: 42,
-		description: "real-time visitors",
-		icon: UsersIcon,
-		displayMode: "text",
-	},
+const DEFAULT_CARDS: DashboardCardConfig[] = [
 	{
 		id: "pageviews",
-		title: "Pageviews",
-		value: "12.4K",
-		icon: EyeIcon,
-		trend: 12.5,
-		chartData: SAMPLE_CHART_DATA,
-		chartType: "area",
-		displayMode: "chart",
+		type: "card",
+		queryType: "summary_metrics",
+		field: "pageviews",
+		label: "Pageviews",
+		displayMode: "text",
+		category: "Analytics",
 	},
 	{
-		id: "events",
-		title: "Events",
-		value: "3.2K",
-		icon: CursorClickIcon,
-		trend: -4.2,
-		chartData: SAMPLE_CHART_DATA.map((d) => ({ ...d, value: d.value * 0.3 })),
-		chartType: "bar",
-		displayMode: "chart",
+		id: "visitors",
+		type: "card",
+		queryType: "summary_metrics",
+		field: "unique_visitors",
+		label: "Unique Visitors",
+		displayMode: "text",
+		category: "Analytics",
+	},
+	{
+		id: "sessions",
+		type: "card",
+		queryType: "summary_metrics",
+		field: "sessions",
+		label: "Sessions",
+		displayMode: "text",
+		category: "Analytics",
 	},
 	{
 		id: "bounce-rate",
-		title: "Bounce Rate",
-		value: "34%",
-		description: "last 7 days",
-		icon: ChartLineIcon,
+		type: "card",
+		queryType: "summary_metrics",
+		field: "bounce_rate",
+		label: "Bounce Rate",
 		displayMode: "text",
+		category: "Analytics",
 	},
 ];
 
 export default function TestPage() {
-	const [items, setItems] = useState<DashboardItemConfig[]>(DEFAULT_ITEMS);
-	const [isLoading, setIsLoading] = useState(false);
+	const { id: websiteId } = useParams<{ id: string }>();
+	const formattedDateRange = useAtomValue(formattedDateRangeAtom);
+	const granularity = useAtomValue(timeGranularityAtom);
+	const timezone = useAtomValue(timezoneAtom);
+	const [cards, setCards] = useState<DashboardCardConfig[]>(DEFAULT_CARDS);
+	const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-	const toggleLoading = () => {
-		setIsLoading((prev) => !prev);
-	};
+	const dateRange: DateRange = useMemo(
+		() => ({
+			start_date: formattedDateRange.startDate,
+			end_date: formattedDateRange.endDate,
+			granularity,
+			timezone,
+		}),
+		[
+			formattedDateRange.startDate,
+			formattedDateRange.endDate,
+			granularity,
+			timezone,
+		]
+	);
 
-	const shuffleItems = () => {
-		setItems((prev) => [...prev].sort(() => Math.random() - 0.5));
+	const { getValue, getChartData, isLoading, isFetching } = useDashboardData(
+		websiteId,
+		dateRange,
+		cards
+	);
+
+	const handleAddCard = (card: DashboardCardConfig) => {
+		setCards((prev) => [...prev, card]);
 	};
 
 	return (
 		<div className="space-y-6 p-4 lg:p-6">
 			<div className="flex items-center justify-between">
-				<h1 className="font-semibold text-lg">Custom Dashboard</h1>
-				<div className="flex gap-2">
-					<Button onClick={toggleLoading} size="sm" variant="outline">
-						{isLoading ? "Stop Loading" : "Simulate Loading"}
-					</Button>
-					<Button onClick={shuffleItems} size="sm" variant="outline">
-						Shuffle
-					</Button>
+				<div>
+					<h1 className="font-semibold text-lg">Custom Dashboard</h1>
+					<p className="text-muted-foreground text-sm">
+						{cards.length} card{cards.length !== 1 ? "s" : ""}
+					</p>
 				</div>
+				<Button
+					onClick={() => setIsSheetOpen(true)}
+					size="sm"
+					variant="outline"
+				>
+					<PlusIcon className="mr-1.5 size-4" />
+					Add Card
+				</Button>
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				{items.map((item) => (
+				{cards.map((card) => (
 					<StatCard
-						chartData={item.chartData}
-						chartStepType={item.chartStepType}
-						chartType={item.chartType}
-						description={item.description}
-						displayMode={item.displayMode}
-						icon={item.icon}
-						id={item.id}
-						invertTrend={item.invertTrend}
-						isLoading={isLoading}
-						key={item.id}
-						title={item.title}
-						trend={item.trend}
-						value={item.value}
+						chartData={
+							card.displayMode === "chart"
+								? getChartData(card.queryType, card.field)
+								: undefined
+						}
+						chartType="area"
+						displayMode={card.displayMode}
+						icon={getCategoryIcon(card.category || "Other")}
+						id={card.id}
+						isLoading={isLoading || isFetching}
+						key={card.id}
+						title={card.title || card.label}
+						value={getValue(card.queryType, card.field)}
 					/>
 				))}
+
+				{/* Add Card Tile */}
+				<Card
+					className={cn(
+						"group flex cursor-pointer flex-col items-center justify-center gap-2 border-dashed bg-transparent py-0 transition-all hover:border-primary hover:bg-accent/50",
+						"min-h-[168px]"
+					)}
+					onClick={() => setIsSheetOpen(true)}
+				>
+					<div className="flex size-10 items-center justify-center rounded-full bg-accent transition-colors group-hover:bg-primary/10">
+						<PlusIcon className="size-5 text-muted-foreground transition-colors group-hover:text-primary" />
+					</div>
+					<span className="font-medium text-muted-foreground text-sm transition-colors group-hover:text-foreground">
+						Add Card
+					</span>
+				</Card>
 			</div>
+
+			<AddCardSheet
+				dateRange={dateRange}
+				isOpen={isSheetOpen}
+				onAddAction={handleAddCard}
+				onCloseAction={() => setIsSheetOpen(false)}
+				websiteId={websiteId}
+			/>
 		</div>
 	);
 }
