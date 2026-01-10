@@ -1,6 +1,10 @@
 /**
  * ClickHouse Analytics Schema Definitions
  * Used by both frontend (query builder UI) and backend (SQL validation)
+ *
+ * NOTE: This only exposes user-facing columns. Internal columns like
+ * id, client_id, anonymous_id, session_id, ip, user_agent are handled
+ * automatically by the query builder and not exposed to users.
  */
 
 export type ColumnType = "string" | "number" | "datetime" | "boolean" | "array";
@@ -58,53 +62,38 @@ const EVENTS_TABLE: TableDefinition = {
 	primaryTimeField: "time",
 	clientIdField: "client_id",
 	columns: [
-		col("id", "string", "Event ID", { filterable: false }),
-		col("client_id", "string", "Website ID", { filterable: false }),
+		// Core event data
 		col("event_name", "string", "Event Name", { description: "Type of event (screen_view, etc.)" }),
-		col("anonymous_id", "string", "Anonymous ID", { description: "Unique visitor identifier" }),
-		col("time", "datetime", "Event Time"),
-		col("session_id", "string", "Session ID"),
-		col("event_type", "string", "Event Type", { description: "track, error, or web_vitals" }),
 		col("referrer", "string", "Referrer", { nullable: true }),
-		col("url", "string", "URL"),
 		col("path", "string", "Path"),
 		col("title", "string", "Page Title", { nullable: true }),
-		col("ip", "string", "IP Address", { filterable: false }),
-		col("user_agent", "string", "User Agent", { filterable: false }),
+
+		// Browser & device
 		col("browser_name", "string", "Browser", { nullable: true }),
-		col("browser_version", "string", "Browser Version", { nullable: true }),
 		col("os_name", "string", "Operating System", { nullable: true }),
-		col("os_version", "string", "OS Version", { nullable: true }),
 		col("device_type", "string", "Device Type", { nullable: true, description: "desktop, mobile, tablet" }),
-		col("device_brand", "string", "Device Brand", { nullable: true }),
-		col("device_model", "string", "Device Model", { nullable: true }),
+
+		// Location
 		col("country", "string", "Country", { nullable: true }),
 		col("region", "string", "Region", { nullable: true }),
 		col("city", "string", "City", { nullable: true }),
-		col("screen_resolution", "string", "Screen Resolution", { nullable: true }),
-		col("viewport_size", "string", "Viewport Size", { nullable: true }),
+
+		// User preferences
 		col("language", "string", "Language", { nullable: true }),
-		col("timezone", "string", "Timezone", { nullable: true }),
-		col("connection_type", "string", "Connection Type", { nullable: true }),
-		col("rtt", "number", "Round Trip Time (ms)", { nullable: true }),
-		col("downlink", "number", "Downlink Speed", { nullable: true }),
+
+		// Engagement metrics
 		col("time_on_page", "number", "Time on Page (s)", { nullable: true }),
 		col("scroll_depth", "number", "Scroll Depth (%)", { nullable: true }),
-		col("interaction_count", "number", "Interaction Count", { nullable: true }),
 		col("page_count", "number", "Page Count"),
+
+		// UTM tracking
 		col("utm_source", "string", "UTM Source", { nullable: true }),
 		col("utm_medium", "string", "UTM Medium", { nullable: true }),
 		col("utm_campaign", "string", "UTM Campaign", { nullable: true }),
-		col("utm_term", "string", "UTM Term", { nullable: true }),
-		col("utm_content", "string", "UTM Content", { nullable: true }),
+
+		// Performance
 		col("load_time", "number", "Load Time (ms)", { nullable: true }),
-		col("dom_ready_time", "number", "DOM Ready Time (ms)", { nullable: true }),
-		col("dom_interactive", "number", "DOM Interactive (ms)", { nullable: true }),
 		col("ttfb", "number", "Time to First Byte (ms)", { nullable: true }),
-		col("connection_time", "number", "Connection Time (ms)", { nullable: true }),
-		col("render_time", "number", "Render Time (ms)", { nullable: true }),
-		col("redirect_time", "number", "Redirect Time (ms)", { nullable: true }),
-		col("domain_lookup_time", "number", "DNS Lookup Time (ms)", { nullable: true }),
 	],
 };
 
@@ -119,17 +108,10 @@ const ERROR_SPANS_TABLE: TableDefinition = {
 	primaryTimeField: "timestamp",
 	clientIdField: "client_id",
 	columns: [
-		col("client_id", "string", "Website ID", { filterable: false }),
-		col("anonymous_id", "string", "Anonymous ID"),
-		col("session_id", "string", "Session ID"),
-		col("timestamp", "datetime", "Timestamp"),
 		col("path", "string", "Path"),
 		col("message", "string", "Error Message"),
-		col("filename", "string", "Filename", { nullable: true }),
-		col("lineno", "number", "Line Number", { nullable: true, aggregatable: false }),
-		col("colno", "number", "Column Number", { nullable: true, aggregatable: false }),
-		col("stack", "string", "Stack Trace", { nullable: true, filterable: false }),
 		col("error_type", "string", "Error Type"),
+		col("filename", "string", "Filename", { nullable: true }),
 	],
 };
 
@@ -144,12 +126,8 @@ const WEB_VITALS_SPANS_TABLE: TableDefinition = {
 	primaryTimeField: "timestamp",
 	clientIdField: "client_id",
 	columns: [
-		col("client_id", "string", "Website ID", { filterable: false }),
-		col("anonymous_id", "string", "Anonymous ID"),
-		col("session_id", "string", "Session ID"),
-		col("timestamp", "datetime", "Timestamp"),
 		col("path", "string", "Path"),
-		col("metric_name", "string", "Metric Name", { description: "FCP, LCP, CLS, INP, TTFB, FPS" }),
+		col("metric_name", "string", "Metric Name", { description: "FCP, LCP, CLS, INP, TTFB" }),
 		col("metric_value", "number", "Metric Value"),
 	],
 };
@@ -165,13 +143,8 @@ const CUSTOM_EVENT_SPANS_TABLE: TableDefinition = {
 	primaryTimeField: "timestamp",
 	clientIdField: "client_id",
 	columns: [
-		col("client_id", "string", "Website ID", { filterable: false }),
-		col("anonymous_id", "string", "Anonymous ID"),
-		col("session_id", "string", "Session ID"),
-		col("timestamp", "datetime", "Timestamp"),
 		col("path", "string", "Path"),
 		col("event_name", "string", "Event Name"),
-		col("properties", "string", "Properties JSON", { filterable: false, aggregatable: false }),
 	],
 };
 
@@ -186,31 +159,8 @@ const OUTGOING_LINKS_TABLE: TableDefinition = {
 	primaryTimeField: "timestamp",
 	clientIdField: "client_id",
 	columns: [
-		col("id", "string", "ID", { filterable: false }),
-		col("client_id", "string", "Website ID", { filterable: false }),
-		col("anonymous_id", "string", "Anonymous ID"),
-		col("session_id", "string", "Session ID"),
 		col("href", "string", "Link URL"),
 		col("text", "string", "Link Text", { nullable: true }),
-		col("properties", "string", "Properties JSON", { filterable: false, aggregatable: false }),
-		col("timestamp", "datetime", "Timestamp"),
-	],
-};
-
-/**
- * Daily pageviews aggregated table
- */
-const DAILY_PAGEVIEWS_TABLE: TableDefinition = {
-	name: "daily_pageviews",
-	database: "analytics",
-	label: "Daily Pageviews",
-	description: "Pre-aggregated daily pageview counts",
-	primaryTimeField: "date",
-	clientIdField: "client_id",
-	columns: [
-		col("client_id", "string", "Website ID", { filterable: false }),
-		col("date", "datetime", "Date"),
-		col("pageviews", "number", "Pageviews"),
 	],
 };
 
@@ -223,7 +173,6 @@ export const ANALYTICS_TABLES: TableDefinition[] = [
 	WEB_VITALS_SPANS_TABLE,
 	CUSTOM_EVENT_SPANS_TABLE,
 	OUTGOING_LINKS_TABLE,
-	DAILY_PAGEVIEWS_TABLE,
 ];
 
 /**

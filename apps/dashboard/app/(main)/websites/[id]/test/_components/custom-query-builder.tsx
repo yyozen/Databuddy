@@ -16,7 +16,7 @@ import {
 	AGGREGATE_FUNCTIONS,
 	CUSTOM_QUERY_OPERATORS,
 	getAggregatesForType,
-	getOperatorsForType,
+	getOperatorsForType,	
 } from "@databuddy/shared/types/custom-query";
 import {
 	CaretDownIcon,
