@@ -26,49 +26,18 @@ interface CustomQueryBuilderProps {
 	disabled?: boolean;
 }
 
-// Aggregate options that return a single value (for stat cards)
-const SINGLE_VALUE_AGGREGATES: {
+const AGGREGATES: {
 	value: AggregateFunction;
 	label: string;
-	description: string;
+	prefix: string;
 	forTypes: ("string" | "number")[];
 }[] = [
-	{
-		value: "count",
-		label: "Count",
-		description: "Total number of rows",
-		forTypes: ["string", "number"],
-	},
-	{
-		value: "uniq",
-		label: "Count Unique",
-		description: "Number of distinct values",
-		forTypes: ["string"],
-	},
-	{
-		value: "sum",
-		label: "Sum",
-		description: "Total of all values",
-		forTypes: ["number"],
-	},
-	{
-		value: "avg",
-		label: "Average",
-		description: "Mean of all values",
-		forTypes: ["number"],
-	},
-	{
-		value: "max",
-		label: "Maximum",
-		description: "Highest value",
-		forTypes: ["number"],
-	},
-	{
-		value: "min",
-		label: "Minimum",
-		description: "Lowest value",
-		forTypes: ["number"],
-	},
+	{ value: "count", label: "Count", prefix: "", forTypes: ["string", "number"] },
+	{ value: "uniq", label: "Count Unique", prefix: "Unique ", forTypes: ["string"] },
+	{ value: "sum", label: "Sum", prefix: "Total ", forTypes: ["number"] },
+	{ value: "avg", label: "Average", prefix: "Avg ", forTypes: ["number"] },
+	{ value: "max", label: "Maximum", prefix: "Max ", forTypes: ["number"] },
+	{ value: "min", label: "Minimum", prefix: "Min ", forTypes: ["number"] },
 ];
 
 export function CustomQueryBuilder({
@@ -77,15 +46,10 @@ export function CustomQueryBuilder({
 	disabled,
 }: CustomQueryBuilderProps) {
 	const tables = useMemo(
-		() =>
-			ANALYTICS_TABLES.map((t) => ({
-				name: t.name,
-				label: t.label,
-			})),
+		() => ANALYTICS_TABLES.map((t) => ({ name: t.name, label: t.label })),
 		[]
 	);
 
-	// Get columns grouped by type
 	const { stringColumns, numberColumns } = useMemo(() => {
 		if (!value?.table) {
 			return { stringColumns: [], numberColumns: [] };
@@ -96,26 +60,29 @@ export function CustomQueryBuilder({
 		}
 		return {
 			stringColumns: table.columns.filter((c) => c.type === "string"),
-			numberColumns: table.columns.filter(
-				(c) => c.type === "number" && c.aggregatable
-			),
+			numberColumns: table.columns.filter((c) => c.type === "number" && c.aggregatable),
 		};
 	}, [value?.table]);
 
-	// Get available aggregates based on selected field
 	const currentField = value?.selects?.at(0)?.field || "*";
 	const currentAggregate = value?.selects?.at(0)?.aggregate || "count";
 
 	const availableAggregates = useMemo(() => {
 		if (currentField === "*") {
-			return SINGLE_VALUE_AGGREGATES.filter((a) => a.value === "count");
+			return AGGREGATES.filter((a) => a.value === "count");
 		}
 		const isNumber = numberColumns.some((c) => c.name === currentField);
-		const fieldType = isNumber ? "number" : "string";
-		return SINGLE_VALUE_AGGREGATES.filter((a) =>
-			a.forTypes.includes(fieldType)
-		);
+		return AGGREGATES.filter((a) => a.forTypes.includes(isNumber ? "number" : "string"));
 	}, [currentField, numberColumns]);
+
+	const getAlias = (field: string, aggregate: AggregateFunction) => {
+		if (field === "*") {
+			return "Count";
+		}
+		const col = [...stringColumns, ...numberColumns].find((c) => c.name === field);
+		const agg = AGGREGATES.find((a) => a.value === aggregate);
+		return `${agg?.prefix || ""}${col?.label || field}`;
+	};
 
 	const handleTableChange = (tableName: string) => {
 		onChangeAction({
@@ -128,30 +95,13 @@ export function CustomQueryBuilder({
 		if (!value?.table) {
 			return;
 		}
-
-		// Auto-select best aggregate for field type
 		const isNumber = numberColumns.some((c) => c.name === field);
-		let aggregate: AggregateFunction = "count";
-
-		if (field === "*") {
-			aggregate = "count";
-		} else if (isNumber) {
-			aggregate = "sum"; // Default to sum for numbers
-		} else {
-			aggregate = "uniq"; // Default to unique for strings
-		}
-
-		const col = [...stringColumns, ...numberColumns].find(
-			(c) => c.name === field
-		);
-		const alias =
-			field === "*"
-				? "Count"
-				: `${aggregate === "uniq" ? "Unique " : ""}${col?.label || field}`;
+		const aggregate: AggregateFunction =
+			field === "*" ? "count" : isNumber ? "sum" : "uniq";
 
 		onChangeAction({
 			...value,
-			selects: [{ field, aggregate, alias }],
+			selects: [{ field, aggregate, alias: getAlias(field, aggregate) }],
 		});
 	};
 
@@ -159,41 +109,17 @@ export function CustomQueryBuilder({
 		if (!value?.table) {
 			return;
 		}
-
-		const col = [...stringColumns, ...numberColumns].find(
-			(c) => c.name === currentField
-		);
-		const prefix =
-			aggregate === "uniq"
-				? "Unique "
-				: aggregate === "avg"
-					? "Avg "
-					: aggregate === "sum"
-						? "Total "
-						: aggregate === "max"
-							? "Max "
-							: aggregate === "min"
-								? "Min "
-								: "";
-		const alias =
-			currentField === "*" ? "Count" : `${prefix}${col?.label || currentField}`;
-
 		onChangeAction({
 			...value,
-			selects: [{ field: currentField, aggregate, alias }],
+			selects: [{ field: currentField, aggregate, alias: getAlias(currentField, aggregate) }],
 		});
 	};
 
 	return (
 		<div className="space-y-4">
-			{/* Table */}
 			<div className="space-y-2">
 				<Label>Table</Label>
-				<Select
-					disabled={disabled}
-					onValueChange={handleTableChange}
-					value={value?.table || ""}
-				>
+				<Select disabled={disabled} onValueChange={handleTableChange} value={value?.table || ""}>
 					<SelectTrigger>
 						<SelectValue placeholder="Select table..." />
 					</SelectTrigger>
@@ -209,20 +135,14 @@ export function CustomQueryBuilder({
 
 			{value?.table && (
 				<>
-					{/* Field */}
 					<div className="space-y-2">
 						<Label>Field</Label>
-						<Select
-							disabled={disabled}
-							onValueChange={handleFieldChange}
-							value={currentField}
-						>
+						<Select disabled={disabled} onValueChange={handleFieldChange} value={currentField}>
 							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="*">All rows</SelectItem>
-
 								{stringColumns.length > 0 && (
 									<SelectGroup>
 										<SelectLabel>Text fields</SelectLabel>
@@ -233,7 +153,6 @@ export function CustomQueryBuilder({
 										))}
 									</SelectGroup>
 								)}
-
 								{numberColumns.length > 0 && (
 									<SelectGroup>
 										<SelectLabel>Numeric fields</SelectLabel>
@@ -248,15 +167,12 @@ export function CustomQueryBuilder({
 						</Select>
 					</div>
 
-					{/* Aggregate - only show if not "All rows" or if multiple options */}
 					{availableAggregates.length > 1 && (
 						<div className="space-y-2">
 							<Label>Calculation</Label>
 							<Select
 								disabled={disabled}
-								onValueChange={(v) =>
-									handleAggregateChange(v as AggregateFunction)
-								}
+								onValueChange={(v) => handleAggregateChange(v as AggregateFunction)}
 								value={currentAggregate}
 							>
 								<SelectTrigger>
