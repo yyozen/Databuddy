@@ -2,6 +2,7 @@
 
 import {
 	ArrowClockwiseIcon,
+	BugIcon,
 	ClockIcon,
 	TargetIcon,
 	TrendDownIcon,
@@ -33,14 +34,14 @@ function createChartData(
 	}));
 }
 
-type FunnelAnalyticsProps = {
+interface FunnelAnalyticsProps {
 	isLoading: boolean;
 	error: Error | null;
 	data: FunnelAnalyticsData | undefined;
 	onRetry: () => void;
 	selectedReferrer?: string;
 	referrerAnalytics?: FunnelAnalyticsByReferrerResult[];
-};
+}
 
 function AnalyticsSkeleton() {
 	return (
@@ -170,7 +171,6 @@ export function FunnelAnalytics({
 		return null;
 	}
 
-	// Prepare chart data from time series
 	const timeSeries = data?.time_series;
 	const usersChartData = createChartData(timeSeries, "users");
 	const conversionChartData = createChartData(timeSeries, "conversion_rate");
@@ -178,6 +178,12 @@ export function FunnelAnalytics({
 	const avgTimeChartData = createChartData(timeSeries, "avg_time");
 
 	const hasChartData = usersChartData.length > 1;
+
+	const errorInsights = data?.error_insights;
+	const hasErrorCorrelation =
+		errorInsights &&
+		errorInsights.dropoffs_with_errors > 0 &&
+		errorInsights.error_correlation_rate > 0;
 
 	return (
 		<div className="space-y-6">
@@ -225,6 +231,27 @@ export function FunnelAnalytics({
 					value={displayData.avg_completion_time_formatted || "—"}
 				/>
 			</div>
+
+			{/* Error Insights Banner */}
+			{hasErrorCorrelation && (
+				<div className="amber-angled-rectangle-gradient flex items-center gap-3 rounded border border-warning/20 bg-warning/5 p-3">
+					<div className="flex size-8 shrink-0 items-center justify-center rounded bg-warning/10">
+						<BugIcon className="size-4 text-warning" weight="duotone" />
+					</div>
+					<div className="min-w-0 flex-1">
+						<p className="font-medium text-foreground text-sm">
+							{errorInsights.error_correlation_rate.toFixed(0)}% of drop-offs
+							had errors
+						</p>
+						<p className="text-muted-foreground text-xs">
+							{errorInsights.dropoffs_with_errors} of{" "}
+							{errorInsights.sessions_with_errors} sessions with errors dropped
+							off · {errorInsights.total_errors} total errors in funnel
+						</p>
+					</div>
+				</div>
+			)}
+
 			<FunnelFlow steps={displayData.steps_analytics} />
 		</div>
 	);
