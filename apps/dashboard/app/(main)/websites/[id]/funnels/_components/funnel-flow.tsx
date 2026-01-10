@@ -1,10 +1,13 @@
 "use client";
 
 import {
+	ArrowSquareOutIcon,
 	CaretDownIcon,
 	CheckCircleIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useLayoutEffect, useRef, useState } from "react";
 import {
 	Tooltip,
@@ -86,6 +89,8 @@ function LineProgress({ percentage, isLast }: LineProgressProps) {
 }
 
 export function FunnelFlow({ steps }: FunnelFlowProps) {
+	const { id: websiteId } = useParams<{ id: string }>();
+
 	if (!steps.length) {
 		return (
 			<div className="flex h-[120px] items-center justify-center rounded border border-border bg-card text-muted-foreground text-sm">
@@ -200,6 +205,13 @@ export function FunnelFlow({ steps }: FunnelFlowProps) {
 																))}
 															</div>
 														)}
+														<Link
+															className="flex items-center gap-1 pt-1 text-primary text-xs hover:underline"
+															href={`/websites/${websiteId}/errors`}
+														>
+															View all errors
+															<ArrowSquareOutIcon className="size-3" />
+														</Link>
 													</div>
 												</TooltipContent>
 											</Tooltip>

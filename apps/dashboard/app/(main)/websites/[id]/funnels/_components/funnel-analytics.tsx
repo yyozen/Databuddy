@@ -2,6 +2,7 @@
 
 import {
 	ArrowClockwiseIcon,
+	ArrowSquareOutIcon,
 	BugIcon,
 	ClockIcon,
 	TargetIcon,
@@ -9,6 +10,8 @@ import {
 	UsersIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useMemo } from "react";
 import { StatCard } from "@/components/analytics/stat-card";
 import { Button } from "@/components/ui/button";
@@ -82,6 +85,7 @@ export function FunnelAnalytics({
 	selectedReferrer,
 	referrerAnalytics,
 }: FunnelAnalyticsProps) {
+	const { id: websiteId } = useParams<{ id: string }>();
 	const { chartType, chartStepType } = useChartPreferences("funnels");
 	const selectedReferrerData = useMemo(() => {
 		if (!selectedReferrer || selectedReferrer === "all" || !referrerAnalytics) {
@@ -249,6 +253,13 @@ export function FunnelAnalytics({
 							off · {errorInsights.total_errors} total errors in funnel
 						</p>
 					</div>
+					<Link
+						className="flex shrink-0 items-center gap-1 text-primary text-xs hover:underline"
+						href={`/websites/${websiteId}/errors`}
+					>
+						View errors
+						<ArrowSquareOutIcon className="size-3" />
+					</Link>
 				</div>
 			)}
 

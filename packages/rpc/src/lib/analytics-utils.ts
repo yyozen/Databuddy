@@ -595,7 +595,44 @@ export const processGoalAnalytics = async (
 		params
 	);
 
-	const completions = new Set(rows.map((r) => r.vid)).size;
+	const goalVids = new Set(rows.map((r) => r.vid));
+	const completions = goalVids.size;
+
+	// Query errors for goal sessions
+	const { errorsByPath, sessionsWithErrors, totalErrors } =
+		await queryFunnelErrors(steps, goalVids, params);
+
+	// Get errors for this goal's path
+	const stepErrors = errorsByPath.get(step.target) ?? [];
+	const stepErrorCount = stepErrors.reduce((sum, e) => sum + e.error_count, 0);
+	const usersWithErrors = new Set(stepErrors.map((e) => e.vid)).size;
+
+	// Aggregate top errors by type
+	const errorsByType = new Map<
+		string,
+		{ message: string; count: number; type: string }
+	>();
+	for (const e of stepErrors) {
+		const existing = errorsByType.get(e.error_type);
+		if (existing) {
+			existing.count += e.error_count;
+		} else {
+			errorsByType.set(e.error_type, {
+				message: e.message,
+				count: e.error_count,
+				type: e.error_type,
+			});
+		}
+	}
+
+	const topErrors = [...errorsByType.values()]
+		.sort((a, b) => b.count - a.count)
+		.slice(0, 3)
+		.map((e) => ({
+			message: e.message,
+			error_type: e.type,
+			count: e.count,
+		}));
 
 	return {
 		overall_conversion_rate: pct(completions, totalWebsiteUsers),
@@ -615,14 +652,14 @@ export const processGoalAnalytics = async (
 				dropoffs: 0,
 				dropoff_rate: 0,
 				avg_time_to_complete: 0,
-				error_count: 0,
-				error_rate: 0,
-				top_errors: [],
+				error_count: stepErrorCount,
+				error_rate: pct(usersWithErrors, completions),
+				top_errors: topErrors,
 			},
 		],
 		error_insights: {
-			total_errors: 0,
-			sessions_with_errors: 0,
+			total_errors: totalErrors,
+			sessions_with_errors: sessionsWithErrors.size,
 			dropoffs_with_errors: 0,
 			error_correlation_rate: 0,
 		},
