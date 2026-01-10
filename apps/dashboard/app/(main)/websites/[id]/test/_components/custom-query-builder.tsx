@@ -4,8 +4,10 @@ import {
 	ANALYTICS_TABLES,
 	getTableDefinition,
 } from "@databuddy/shared/schema/analytics-tables";
-import type { CustomQueryConfig } from "@databuddy/shared/types/custom-query";
-import type { AggregateFunction } from "@databuddy/shared/types/custom-query";
+import type {
+	AggregateFunction,
+	CustomQueryConfig,
+} from "@databuddy/shared/types/custom-query";
 import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import {
@@ -143,7 +145,9 @@ export function CustomQueryBuilder({
 			(c) => c.name === field
 		);
 		const alias =
-			field === "*" ? "Count" : `${aggregate === "uniq" ? "Unique " : ""}${col?.label || field}`;
+			field === "*"
+				? "Count"
+				: `${aggregate === "uniq" ? "Unique " : ""}${col?.label || field}`;
 
 		onChangeAction({
 			...value,

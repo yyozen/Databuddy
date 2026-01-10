@@ -238,7 +238,9 @@ function buildSQL(
 	const selectExpressions = config.selects.map((select: CustomQuerySelect) => {
 		const sqlExpr = aggregateToSQL(select.aggregate, select.field);
 		const alias = select.alias || `${select.aggregate}_${select.field === "*" ? "all" : select.field}`;
-		return `${sqlExpr} AS ${alias}`;
+		// Quote alias with backticks for ClickHouse (handles spaces and special chars)
+		const safeAlias = alias.replace(/`/g, "``");
+		return `${sqlExpr} AS \`${safeAlias}\``;
 	});
 
 	// Add GROUP BY fields to SELECT if present
