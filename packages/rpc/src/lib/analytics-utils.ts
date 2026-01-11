@@ -333,7 +333,6 @@ const countStepCompletions = (
 	return counts;
 };
 
-// Query errors for funnel sessions
 interface ErrorRow {
 	path: string;
 	vid: string;
@@ -359,13 +358,30 @@ const queryFunnelErrors = async (
 		};
 	}
 
-	const pathTargets = steps
-		.filter((s) => s.type === "PAGE_VIEW")
-		.map((s) => s.target);
+	const firstStep = steps[0];
+	if (!firstStep) {
+		return {
+			errorsByPath: new Map(),
+			sessionsWithErrors: new Set(),
+			totalErrors: 0,
+		};
+	}
 
-	const vidsArray = [...funnelVids];
-	params.funnelVids = vidsArray;
-	params.stepPaths = pathTargets;
+	params.firstStepTarget = firstStep.target;
+
+	const subquery =
+		firstStep.type === "PAGE_VIEW"
+			? `SELECT DISTINCT anonymous_id FROM analytics.events
+			   WHERE client_id = {websiteId:String}
+			   AND time >= parseDateTimeBestEffort({startDate:String})
+			   AND time <= parseDateTimeBestEffort({endDate:String})
+			   AND event_name = 'screen_view'
+			   AND path = {firstStepTarget:String}`
+			: `SELECT DISTINCT anonymous_id FROM analytics.events
+			   WHERE client_id = {websiteId:String}
+			   AND time >= parseDateTimeBestEffort({startDate:String})
+			   AND time <= parseDateTimeBestEffort({endDate:String})
+			   AND event_name = {firstStepTarget:String}`;
 
 	const errorRows = await chQuery<ErrorRow>(
 		`SELECT 
@@ -378,9 +394,10 @@ const queryFunnelErrors = async (
 		WHERE client_id = {websiteId:String}
 			AND timestamp >= parseDateTimeBestEffort({startDate:String})
 			AND timestamp <= parseDateTimeBestEffort({endDate:String})
-			AND anonymous_id IN {funnelVids:Array(String)}
+			AND anonymous_id IN (${subquery})
 		GROUP BY path, anonymous_id, error_type
-		ORDER BY error_count DESC`,
+		ORDER BY error_count DESC
+		LIMIT 1000`,
 		params
 	);
 
