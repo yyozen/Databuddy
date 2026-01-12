@@ -33,7 +33,7 @@ const granularityEnum = z.enum([
 ]);
 
 const isProd = process.env.NODE_ENV === "production";
-const UPTIME_URL_GROUP = isProd ? "uptime" : "uptnvime-staging";
+const UPTIME_URL_GROUP = isProd ? "uptime" : "uptime-staging";
 
 async function getScheduleAndAuthorize(
 	scheduleId: string,
