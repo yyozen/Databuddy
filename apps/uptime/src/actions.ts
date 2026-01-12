@@ -7,7 +7,7 @@ import { MonitorStatus } from "./types";
 
 const CONFIG = {
 	userAgent:
-		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Databuddy-Pulse/1.0",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
 	timeout: 30_000,
 	maxRedirects: 10,
 	maxRetries: 3,
@@ -16,7 +16,22 @@ const CONFIG = {
 	env: process.env.NODE_ENV || "prod",
 } as const;
 
-type FetchSuccess = {
+const BROWSER_HEADERS = {
+	"User-Agent": CONFIG.userAgent,
+	Accept:
+		"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+	"Accept-Language": "en-US,en;q=0.9",
+	"Accept-Encoding": "gzip, deflate, br",
+	"Cache-Control": "no-cache",
+	DNT: "1",
+	"Sec-Fetch-Dest": "document",
+	"Sec-Fetch-Mode": "navigate",
+	"Sec-Fetch-Site": "none",
+	"Sec-Fetch-User": "?1",
+	"Upgrade-Insecure-Requests": "1",
+} as const;
+
+interface FetchSuccess {
 	ok: true;
 	statusCode: number;
 	ttfb: number;
@@ -24,15 +39,15 @@ type FetchSuccess = {
 	redirects: number;
 	bytes: number;
 	content: string;
-};
+}
 
-type FetchFailure = {
+interface FetchFailure {
 	ok: false;
 	statusCode: number;
 	ttfb: number;
 	total: number;
 	error: string;
-};
+}
 
 // type Heartbeat = {
 // 	status: number;
@@ -98,13 +113,16 @@ function pingWebsite(
 		try {
 			let redirects = 0;
 			let current = url;
+			let useHead = true;
+			let headSucceeded = false;
 
-			// follow redirects manually so we can count them accurately
 			while (redirects < CONFIG.maxRedirects) {
+				const method = useHead ? "HEAD" : "GET";
 				const res = await fetch(current, {
+					method,
 					signal: abort.signal,
 					redirect: "manual",
-					headers: { "User-Agent": CONFIG.userAgent },
+					headers: BROWSER_HEADERS,
 				});
 
 				const ttfb = performance.now() - start;
@@ -121,7 +139,17 @@ function pingWebsite(
 					continue;
 				}
 
-				// got a final response, read the body
+				if (useHead && res.status === 405) {
+					useHead = false;
+					continue;
+				}
+
+				if (useHead && res.ok) {
+					headSucceeded = true;
+					useHead = false;
+					continue;
+				}
+
 				const content = await res.text();
 				const total = performance.now() - start;
 
@@ -137,13 +165,19 @@ function pingWebsite(
 					};
 				}
 
+				const contentLength = res.headers.get("content-length");
+				const bytes =
+					method === "HEAD" && contentLength && !headSucceeded
+						? Number.parseInt(contentLength, 10)
+						: new Blob([content]).size;
+
 				return {
 					ok: true,
 					statusCode: res.status,
 					ttfb: Math.round(ttfb),
 					total: Math.round(total),
 					redirects,
-					bytes: new Blob([content]).size,
+					bytes,
 					content,
 				};
 			}

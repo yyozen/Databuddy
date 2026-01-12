@@ -90,10 +90,11 @@ export const uptimeRouter = {
 		.input(z.object({ websiteId: z.string() }))
 		.handler(async ({ context, input }) => {
 			await authorizeWebsiteAccess(context, input.websiteId, "read");
-			return await db.query.uptimeSchedules.findFirst({
+			const schedule = await db.query.uptimeSchedules.findFirst({
 				where: eq(uptimeSchedules.websiteId, input.websiteId),
 				orderBy: (table, { desc }) => [desc(table.createdAt)],
 			});
+			return schedule ?? null;
 		}),
 
 	listSchedules: protectedProcedure
