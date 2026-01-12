@@ -53,7 +53,9 @@ function aggregateToSQL(aggregate: AggregateFunction, field: string): string {
 		case "min":
 			return `min(${field})`;
 		default:
-			throw new CustomQueryValidationError(`Unknown aggregate function: ${aggregate}`);
+			throw new CustomQueryValidationError(
+				`Unknown aggregate function: ${aggregate}`
+			);
 	}
 }
 
@@ -135,7 +137,12 @@ function validateSelect(select: CustomQuerySelect, tableName: string): void {
 
 	if (select.field !== "*") {
 		const column = getColumnDefinition(tableName, select.field);
-		if (column && !column.aggregatable && select.aggregate !== "count" && select.aggregate !== "uniq") {
+		if (
+			column &&
+			!column.aggregatable &&
+			select.aggregate !== "count" &&
+			select.aggregate !== "uniq"
+		) {
 			throw new CustomQueryValidationError(
 				`Column "${select.field}" cannot be used with aggregate "${select.aggregate}"`,
 				"selects"
@@ -177,11 +184,17 @@ function validateQueryConfig(config: CustomQueryConfig): void {
 	}
 
 	if (!config.selects || config.selects.length === 0) {
-		throw new CustomQueryValidationError("At least one SELECT expression is required", "selects");
+		throw new CustomQueryValidationError(
+			"At least one SELECT expression is required",
+			"selects"
+		);
 	}
 
 	if (config.selects.length > 10) {
-		throw new CustomQueryValidationError("Maximum 10 SELECT expressions allowed", "selects");
+		throw new CustomQueryValidationError(
+			"Maximum 10 SELECT expressions allowed",
+			"selects"
+		);
 	}
 
 	for (const select of config.selects) {
@@ -190,7 +203,10 @@ function validateQueryConfig(config: CustomQueryConfig): void {
 
 	if (config.filters) {
 		if (config.filters.length > 20) {
-			throw new CustomQueryValidationError("Maximum 20 filters allowed", "filters");
+			throw new CustomQueryValidationError(
+				"Maximum 20 filters allowed",
+				"filters"
+			);
 		}
 		for (const filter of config.filters) {
 			validateFilter(filter, config.table);
@@ -199,7 +215,10 @@ function validateQueryConfig(config: CustomQueryConfig): void {
 
 	if (config.groupBy) {
 		if (config.groupBy.length > 5) {
-			throw new CustomQueryValidationError("Maximum 5 GROUP BY fields allowed", "groupBy");
+			throw new CustomQueryValidationError(
+				"Maximum 5 GROUP BY fields allowed",
+				"groupBy"
+			);
 		}
 		for (const field of config.groupBy) {
 			if (!isValidColumn(config.table, field)) {
@@ -237,7 +256,9 @@ function buildSQL(
 	// Build SELECT clause
 	const selectExpressions = config.selects.map((select: CustomQuerySelect) => {
 		const sqlExpr = aggregateToSQL(select.aggregate, select.field);
-		const alias = select.alias || `${select.aggregate}_${select.field === "*" ? "all" : select.field}`;
+		const alias =
+			select.alias ||
+			`${select.aggregate}_${select.field === "*" ? "all" : select.field}`;
 		// Quote alias with backticks for ClickHouse (handles spaces and special chars)
 		const safeAlias = alias.replace(/`/g, "``");
 		return `${sqlExpr} AS \`${safeAlias}\``;
@@ -263,22 +284,27 @@ function buildSQL(
 	if (config.filters) {
 		for (const [index, filter] of config.filters.entries()) {
 			const paramName = `filter_${index}`;
-			whereConditions.push(operatorToSQL(filter.field, filter.operator, paramName));
+			whereConditions.push(
+				operatorToSQL(filter.field, filter.operator, paramName)
+			);
 			params[paramName] = prepareFilterValue(filter.operator, filter.value);
 		}
 	}
 
 	// Build GROUP BY clause
-	const groupByClause = config.groupBy && config.groupBy.length > 0
-		? `GROUP BY ${config.groupBy.join(", ")}`
-		: "";
+	const groupByClause =
+		config.groupBy && config.groupBy.length > 0
+			? `GROUP BY ${config.groupBy.join(", ")}`
+			: "";
 
 	// Build ORDER BY clause (order by first aggregate descending)
-	const firstAlias = config.selects[0]?.alias ||
+	const firstAlias =
+		config.selects[0]?.alias ||
 		`${config.selects[0]?.aggregate}_${config.selects[0]?.field === "*" ? "all" : config.selects[0]?.field}`;
-	const orderByClause = config.groupBy && config.groupBy.length > 0
-		? `ORDER BY ${firstAlias} DESC`
-		: "";
+	const orderByClause =
+		config.groupBy && config.groupBy.length > 0
+			? `ORDER BY ${firstAlias} DESC`
+			: "";
 
 	const sql = `
 		SELECT ${selectExpressions.join(", ")}
@@ -344,4 +370,3 @@ export async function executeCustomQuery(
 		};
 	}
 }
-

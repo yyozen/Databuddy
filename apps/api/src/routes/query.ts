@@ -69,9 +69,9 @@ function getAccessibleWebsites(authCtx: AuthContext) {
 				? eq(websites.organizationId, authCtx.apiKey.organizationId)
 				: authCtx.apiKey.userId
 					? and(
-						eq(websites.userId, authCtx.apiKey.userId),
-						isNull(websites.organizationId)
-					)
+							eq(websites.userId, authCtx.apiKey.userId),
+							isNull(websites.organizationId)
+						)
 					: eq(websites.id, "");
 			return db
 				.select(select)
@@ -126,9 +126,7 @@ async function verifyWebsiteAccess(
 				return website.organizationId === ctx.apiKey.organizationId;
 			}
 			if (ctx.apiKey.userId) {
-				return (
-					website.userId === ctx.apiKey.userId && !website.organizationId
-				);
+				return website.userId === ctx.apiKey.userId && !website.organizationId;
 			}
 			return false;
 		}
@@ -188,12 +186,12 @@ function getTimeUnit(
 type ParamInput =
 	| string
 	| {
-		name: string;
-		start_date?: string;
-		end_date?: string;
-		granularity?: string;
-		id?: string;
-	};
+			name: string;
+			start_date?: string;
+			end_date?: string;
+			granularity?: string;
+			id?: string;
+	  };
 
 function parseParam(p: ParamInput) {
 	if (typeof p === "string") {
@@ -233,7 +231,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 			}
 			const list = await getAccessibleWebsites(ctx);
 			const count = Array.isArray(list) ? list.length : 0;
-			setAttributes({ "websites_count": count, "auth_method": ctx.authMethod });
+			setAttributes({ websites_count: count, auth_method: ctx.authMethod });
 			return { success: true, websites: list, total: count };
 		})
 	)
@@ -351,8 +349,8 @@ export const query = new Elysia({ prefix: "/v1/query" })
 				const tz = q.timezone || "UTC";
 				const isBatch = Array.isArray(body);
 				setAttributes({
-					"query_is_batch": isBatch,
-					"query_count": isBatch ? body.length : 1,
+					query_is_batch: isBatch,
+					query_count: isBatch ? body.length : 1,
 				});
 
 				if (isBatch) {
@@ -413,9 +411,9 @@ export const query = new Elysia({ prefix: "/v1/query" })
 				}
 
 				setAttributes({
-					"custom_query_table": body.query.table,
-					"custom_query_selects": body.query.selects.length,
-					"custom_query_filters": body.query.filters?.length || 0,
+					custom_query_table: body.query.table,
+					custom_query_selects: body.query.selects.length,
+					custom_query_filters: body.query.filters?.length || 0,
 				});
 
 				return executeCustomQuery(body, q.website_id);

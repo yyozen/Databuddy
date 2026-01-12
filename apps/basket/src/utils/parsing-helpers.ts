@@ -35,9 +35,9 @@ export function validateEventSchema<T>(
 				clientId
 			);
 			setAttributes({
-				"validation_failed": true,
-				"validation_reason": "invalid_schema",
-				"schema_error_count": parseResult.error.issues.length,
+				validation_failed: true,
+				validation_reason: "invalid_schema",
+				schema_error_count: parseResult.error.issues.length,
 			});
 			return {
 				success: false,

@@ -101,8 +101,8 @@ function lookupGeoLocation(ip: string): Promise<{
 					message: "Failed to load database for IP lookup",
 				});
 				setAttributes({
-					"geo_lookup_failed": true,
-					"geo_error": "database_load_failed",
+					geo_lookup_failed: true,
+					geo_error: "database_load_failed",
 				});
 				return { country: undefined, region: undefined, city: undefined };
 			}
@@ -110,8 +110,8 @@ function lookupGeoLocation(ip: string): Promise<{
 
 		if (!reader) {
 			setAttributes({
-				"geo_lookup_failed": true,
-				"geo_error": "no_reader",
+				geo_lookup_failed: true,
+				geo_error: "no_reader",
 			});
 			return { country: undefined, region: undefined, city: undefined };
 		}
@@ -125,9 +125,9 @@ function lookupGeoLocation(ip: string): Promise<{
 			};
 
 			setAttributes({
-				"geo_country": result.country || "unknown",
-				"geo_region": result.region || "unknown",
-				"geo_city": result.city || "unknown",
+				geo_country: result.country || "unknown",
+				geo_region: result.region || "unknown",
+				geo_city: result.city || "unknown",
 			});
 
 			return result;
@@ -137,14 +137,14 @@ function lookupGeoLocation(ip: string): Promise<{
 				error instanceof BadMethodCallError
 			) {
 				setAttributes({
-					"geo_address_not_found": true,
+					geo_address_not_found: true,
 				});
 				return { country: undefined, region: undefined, city: undefined };
 			}
 			captureError(error, { message: "Error looking up IP" });
 			setAttributes({
-				"geo_lookup_failed": true,
-				"geo_error": "lookup_error",
+				geo_lookup_failed: true,
+				geo_error: "lookup_error",
 			});
 			return { country: undefined, region: undefined, city: undefined };
 		}

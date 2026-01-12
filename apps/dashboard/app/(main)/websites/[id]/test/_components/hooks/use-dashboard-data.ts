@@ -403,8 +403,9 @@ export function useDashboardData<T extends WidgetWithSettings>(
 					return customData
 						.map((row) => {
 							const rawDate = row.date;
-							const rawValue = (row[field] ??
-								Object.values(row).at(0)) as QueryCell | undefined;
+							const rawValue = (row[field] ?? Object.values(row).at(0)) as
+								| QueryCell
+								| undefined;
 							return {
 								date: rawDate ? String(rawDate) : "",
 								value: parseNumericValue(rawValue),

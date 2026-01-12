@@ -143,9 +143,9 @@ export function startRequestSpan(
 	return tracer.startSpan(`${method} ${route ?? path}`, {
 		kind: 1, // SERVER
 		attributes: {
-			"http_method": method,
-			"http_route": route ?? path,
-			"http_target": path,
+			http_method: method,
+			http_route: route ?? path,
+			http_target: path,
 		},
 	});
 }

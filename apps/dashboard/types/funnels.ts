@@ -2,7 +2,7 @@ export interface StepErrorInsight {
 	message: string;
 	error_type: string;
 	count: number;
-};
+}
 
 export interface FunnelStepAnalytics {
 	step_number: number;
@@ -16,14 +16,14 @@ export interface FunnelStepAnalytics {
 	error_count: number;
 	error_rate: number;
 	top_errors: StepErrorInsight[];
-};
+}
 
 export interface FunnelErrorInsights {
 	total_errors: number;
 	sessions_with_errors: number;
 	dropoffs_with_errors: number;
 	error_correlation_rate: number;
-};
+}
 
 export interface FunnelTimeSeriesPoint {
 	date: string;
@@ -33,7 +33,7 @@ export interface FunnelTimeSeriesPoint {
 	dropoffs: number;
 	avg_time: number;
 	errors?: number;
-};
+}
 
 export interface FunnelAnalyticsData {
 	overall_conversion_rate: number;
@@ -46,4 +46,4 @@ export interface FunnelAnalyticsData {
 	steps_analytics: FunnelStepAnalytics[];
 	time_series?: FunnelTimeSeriesPoint[];
 	error_insights?: FunnelErrorInsights;
-};
+}

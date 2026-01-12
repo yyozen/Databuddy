@@ -6,7 +6,13 @@
 /**
  * Aggregate functions supported in custom queries
  */
-export type AggregateFunction = "count" | "sum" | "avg" | "max" | "min" | "uniq";
+export type AggregateFunction =
+	| "count"
+	| "sum"
+	| "avg"
+	| "max"
+	| "min"
+	| "uniq";
 
 /**
  * Aggregate function metadata for UI
@@ -101,17 +107,72 @@ export interface OperatorInfo {
  * All available filter operators with metadata
  */
 export const CUSTOM_QUERY_OPERATORS: OperatorInfo[] = [
-	{ value: "eq", label: "Equals", applicableTypes: ["string", "number", "datetime", "boolean"], multiValue: false },
-	{ value: "ne", label: "Not equals", applicableTypes: ["string", "number", "datetime", "boolean"], multiValue: false },
-	{ value: "gt", label: "Greater than", applicableTypes: ["number", "datetime"], multiValue: false },
-	{ value: "lt", label: "Less than", applicableTypes: ["number", "datetime"], multiValue: false },
-	{ value: "gte", label: "Greater or equal", applicableTypes: ["number", "datetime"], multiValue: false },
-	{ value: "lte", label: "Less or equal", applicableTypes: ["number", "datetime"], multiValue: false },
-	{ value: "contains", label: "Contains", applicableTypes: ["string"], multiValue: false },
-	{ value: "not_contains", label: "Does not contain", applicableTypes: ["string"], multiValue: false },
-	{ value: "starts_with", label: "Starts with", applicableTypes: ["string"], multiValue: false },
-	{ value: "in", label: "Is one of", applicableTypes: ["string", "number"], multiValue: true },
-	{ value: "not_in", label: "Is not one of", applicableTypes: ["string", "number"], multiValue: true },
+	{
+		value: "eq",
+		label: "Equals",
+		applicableTypes: ["string", "number", "datetime", "boolean"],
+		multiValue: false,
+	},
+	{
+		value: "ne",
+		label: "Not equals",
+		applicableTypes: ["string", "number", "datetime", "boolean"],
+		multiValue: false,
+	},
+	{
+		value: "gt",
+		label: "Greater than",
+		applicableTypes: ["number", "datetime"],
+		multiValue: false,
+	},
+	{
+		value: "lt",
+		label: "Less than",
+		applicableTypes: ["number", "datetime"],
+		multiValue: false,
+	},
+	{
+		value: "gte",
+		label: "Greater or equal",
+		applicableTypes: ["number", "datetime"],
+		multiValue: false,
+	},
+	{
+		value: "lte",
+		label: "Less or equal",
+		applicableTypes: ["number", "datetime"],
+		multiValue: false,
+	},
+	{
+		value: "contains",
+		label: "Contains",
+		applicableTypes: ["string"],
+		multiValue: false,
+	},
+	{
+		value: "not_contains",
+		label: "Does not contain",
+		applicableTypes: ["string"],
+		multiValue: false,
+	},
+	{
+		value: "starts_with",
+		label: "Starts with",
+		applicableTypes: ["string"],
+		multiValue: false,
+	},
+	{
+		value: "in",
+		label: "Is one of",
+		applicableTypes: ["string", "number"],
+		multiValue: true,
+	},
+	{
+		value: "not_in",
+		label: "Is not one of",
+		applicableTypes: ["string", "number"],
+		multiValue: true,
+	},
 ];
 
 /**
@@ -190,7 +251,9 @@ export function getOperatorsForType(
 	columnType: "string" | "number" | "datetime" | "boolean" | "array"
 ): OperatorInfo[] {
 	return CUSTOM_QUERY_OPERATORS.filter((op) =>
-		op.applicableTypes.includes(columnType as "string" | "number" | "datetime" | "boolean")
+		op.applicableTypes.includes(
+			columnType as "string" | "number" | "datetime" | "boolean"
+		)
 	);
 }
 
@@ -200,5 +263,7 @@ export function getOperatorsForType(
 export function getAggregatesForType(
 	columnType: "string" | "number" | "datetime" | "boolean" | "array"
 ): AggregateFunctionInfo[] {
-	return AGGREGATE_FUNCTIONS.filter((agg) => agg.applicableTypes.includes(columnType));
+	return AGGREGATE_FUNCTIONS.filter((agg) =>
+		agg.applicableTypes.includes(columnType)
+	);
 }

@@ -6,16 +6,16 @@ export const DATE_RANGE_PRESETS: {
 	value: DateRangePreset;
 	label: string;
 }[] = [
-		{ value: "global", label: "Use global date range" },
-		{ value: "today", label: "Today" },
-		{ value: "yesterday", label: "Yesterday" },
-		{ value: "last_7_days", label: "Last 7 days" },
-		{ value: "last_14_days", label: "Last 14 days" },
-		{ value: "last_30_days", label: "Last 30 days" },
-		{ value: "this_month", label: "This month" },
-		{ value: "last_month", label: "Last month" },
-		{ value: "last_90_days", label: "Last 90 days" },
-	];
+	{ value: "global", label: "Use global date range" },
+	{ value: "today", label: "Today" },
+	{ value: "yesterday", label: "Yesterday" },
+	{ value: "last_7_days", label: "Last 7 days" },
+	{ value: "last_14_days", label: "Last 14 days" },
+	{ value: "last_30_days", label: "Last 30 days" },
+	{ value: "this_month", label: "This month" },
+	{ value: "last_month", label: "Last month" },
+	{ value: "last_90_days", label: "Last 90 days" },
+];
 
 export function resolveDateRange(
 	preset: DateRangePreset,
@@ -85,7 +85,5 @@ export function resolveDateRange(
 }
 
 export function getPresetLabel(preset: DateRangePreset): string {
-	return (
-		DATE_RANGE_PRESETS.find((p) => p.value === preset)?.label || "Global"
-	);
+	return DATE_RANGE_PRESETS.find((p) => p.value === preset)?.label || "Global";
 }

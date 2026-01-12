@@ -44,10 +44,10 @@ export function insertTrackEvent(
 		}
 
 		setAttributes({
-			"event_type": "track",
-			"event_id": eventId,
-			"client_id": clientId,
-			"event_name": trackData.name,
+			event_type: "track",
+			event_id: eventId,
+			client_id: clientId,
+			event_name: trackData.name,
 		});
 
 		const [isDuplicate, geoData, salt] = await Promise.all([
@@ -57,7 +57,7 @@ export function insertTrackEvent(
 		]);
 
 		if (isDuplicate) {
-			setAttributes({ "event_duplicate": true });
+			setAttributes({ event_duplicate: true });
 			return;
 		}
 
@@ -162,11 +162,11 @@ export function insertTrackEvent(
 		};
 
 		setAttributes({
-			"geo_country": country || "unknown",
-			"geo_city": city || "unknown",
-			"browser_name": browserName || "unknown",
-			"device_type": deviceType || "unknown",
-			"event_path": trackData.path,
+			geo_country: country || "unknown",
+			geo_city: city || "unknown",
+			browser_name: browserName || "unknown",
+			device_type: deviceType || "unknown",
+			event_path: trackData.path,
 		});
 
 		try {
@@ -269,8 +269,8 @@ export function insertTrackEventsBatch(
 		}
 
 		setAttributes({
-			"batch_type": "track",
-			"batch_size": events.length,
+			batch_type: "track",
+			batch_size: events.length,
 		});
 
 		try {
@@ -366,8 +366,8 @@ export function insertOutgoingLinksBatch(
 		}
 
 		setAttributes({
-			"batch_type": "outgoing_link",
-			"batch_size": events.length,
+			batch_type: "outgoing_link",
+			batch_size: events.length,
 		});
 
 		try {

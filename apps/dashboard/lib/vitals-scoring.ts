@@ -117,7 +117,10 @@ function normalCDF(z: number): number {
 
 	const t = 1 / (1 + p * absZ);
 	const y =
-		1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-absZ * absZ / 2);
+		1 -
+		((((a5 * t + a4) * t + a3) * t + a2) * t + a1) *
+			t *
+			Math.exp((-absZ * absZ) / 2);
 
 	return 0.5 * (1 + sign * y);
 }

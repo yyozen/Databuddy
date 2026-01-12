@@ -6,13 +6,13 @@ export interface AnalyticsStep {
 	name: string;
 	type: "PAGE_VIEW" | "EVENT";
 	target: string;
-};
+}
 
 export interface StepErrorInsight {
 	message: string;
 	error_type: string;
 	count: number;
-};
+}
 
 export interface StepAnalytics {
 	step_number: number;
@@ -26,7 +26,7 @@ export interface StepAnalytics {
 	error_count: number;
 	error_rate: number;
 	top_errors: StepErrorInsight[];
-};
+}
 
 export interface FunnelAnalytics {
 	overall_conversion_rate: number;
@@ -43,7 +43,7 @@ export interface FunnelAnalytics {
 		dropoffs_with_errors: number;
 		error_correlation_rate: number;
 	};
-};
+}
 
 export interface ReferrerAnalytics {
 	referrer: string;
@@ -51,7 +51,7 @@ export interface ReferrerAnalytics {
 	total_users: number;
 	completed_users: number;
 	conversion_rate: number;
-};
+}
 
 export type ClickhouseQueryParamValue =
 	| string
@@ -68,9 +68,17 @@ interface Filter {
 	field: string;
 	operator: string;
 	value: string | readonly string[];
-};
-interface VisitorStep { step: number; time: number; referrer?: string };
-interface ParsedReferrer { name: string; type: string; domain: string };
+}
+interface VisitorStep {
+	step: number;
+	time: number;
+	referrer?: string;
+}
+interface ParsedReferrer {
+	name: string;
+	type: string;
+	domain: string;
+}
 
 // Helpers
 const ESCAPE_BACKSLASH_REGEX = /\\/g;
@@ -339,7 +347,7 @@ interface ErrorRow {
 	error_type: string;
 	message: string;
 	error_count: number;
-};
+}
 
 const queryFunnelErrors = async (
 	steps: AnalyticsStep[],
@@ -574,8 +582,8 @@ export const processFunnelAnalytics = async (
 	const biggestDropoff =
 		stepsAnalytics.length > 1
 			? stepsAnalytics
-				.slice(1)
-				.reduce((max, s) => (s.dropoff_rate > max.dropoff_rate ? s : max))
+					.slice(1)
+					.reduce((max, s) => (s.dropoff_rate > max.dropoff_rate ? s : max))
 			: stepsAnalytics[0];
 
 	return {

@@ -323,15 +323,15 @@ export class EventProducer {
 	send(topic: string, event: unknown, key?: string): Promise<void> {
 		return record("kafkaSend", async () => {
 			setAttributes({
-				"kafka_topic": topic,
-				"kafka_has_key": Boolean(key),
+				kafka_topic: topic,
+				kafka_has_key: Boolean(key),
 			});
 
 			if (this.shuttingDown) {
 				this.toBuffer(topic, event);
 				setAttributes({
-					"kafka_buffered": true,
-					"kafka_reason": "shutting_down",
+					kafka_buffered: true,
+					kafka_reason: "shutting_down",
 				});
 				return;
 			}
@@ -357,8 +357,8 @@ export class EventProducer {
 						});
 						this.stats.sent += 1;
 						setAttributes({
-							"kafka_sent": true,
-							"kafka_stats_sent": this.stats.sent,
+							kafka_sent: true,
+							kafka_stats_sent: this.stats.sent,
 						});
 						return;
 					} catch (error) {
@@ -368,15 +368,15 @@ export class EventProducer {
 						});
 						this.failed = true;
 						setAttributes({
-							"kafka_send_failed": true,
-							"kafka_stats_failed": this.stats.failed,
+							kafka_send_failed: true,
+							kafka_stats_failed: this.stats.failed,
 						});
 					}
 				}
 				this.toBuffer(topic, event);
 				setAttributes({
-					"kafka_buffered": true,
-					"kafka_reason": "not_connected",
+					kafka_buffered: true,
+					kafka_reason: "not_connected",
 				});
 			} catch (error) {
 				this.stats.errors += 1;
@@ -384,8 +384,8 @@ export class EventProducer {
 				captureError(error, { message: "Send error" });
 				this.toBuffer(topic, event);
 				setAttributes({
-					"kafka_error": true,
-					"kafka_buffered": true,
+					kafka_error: true,
+					kafka_buffered: true,
 				});
 			}
 		});
@@ -413,8 +413,8 @@ export class EventProducer {
 			}
 
 			setAttributes({
-				"kafka_topic": topic,
-				"kafka_batch_size": events.length,
+				kafka_topic: topic,
+				kafka_batch_size: events.length,
 			});
 
 			if (this.shuttingDown) {
@@ -422,8 +422,8 @@ export class EventProducer {
 					this.toBuffer(topic, e);
 				}
 				setAttributes({
-					"kafka_buffered": true,
-					"kafka_reason": "shutting_down",
+					kafka_buffered: true,
+					kafka_reason: "shutting_down",
 				});
 				return;
 			}
@@ -449,8 +449,8 @@ export class EventProducer {
 						});
 						this.stats.sent += events.length;
 						setAttributes({
-							"kafka_sent": true,
-							"kafka_stats_sent": this.stats.sent,
+							kafka_sent: true,
+							kafka_stats_sent: this.stats.sent,
 						});
 						return;
 					} catch (error) {
@@ -460,8 +460,8 @@ export class EventProducer {
 						});
 						this.failed = true;
 						setAttributes({
-							"kafka_send_failed": true,
-							"kafka_stats_failed": this.stats.failed,
+							kafka_send_failed: true,
+							kafka_stats_failed: this.stats.failed,
 						});
 					}
 				}
@@ -469,8 +469,8 @@ export class EventProducer {
 					this.toBuffer(topic, e);
 				}
 				setAttributes({
-					"kafka_buffered": true,
-					"kafka_reason": "not_connected",
+					kafka_buffered: true,
+					kafka_reason: "not_connected",
 				});
 			} catch (error) {
 				this.stats.errors += 1;
@@ -479,8 +479,8 @@ export class EventProducer {
 					this.toBuffer(topic, e);
 				}
 				setAttributes({
-					"kafka_error": true,
-					"kafka_buffered": true,
+					kafka_error: true,
+					kafka_buffered: true,
 				});
 			}
 		});

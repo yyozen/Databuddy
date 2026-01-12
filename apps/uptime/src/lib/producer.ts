@@ -11,7 +11,7 @@ interface ProducerConfig {
 	broker?: string;
 	username?: string;
 	password?: string;
-};
+}
 
 class UptimeProducer {
 	private producer: Producer | null = null;
@@ -37,13 +37,13 @@ class UptimeProducer {
 				clientId: "uptime-producer",
 				...(this.config.username &&
 					this.config.password && {
-					sasl: {
-						mechanism: "scram-sha-256",
-						username: this.config.username,
-						password: this.config.password,
-					},
-					ssl: false,
-				}),
+						sasl: {
+							mechanism: "scram-sha-256",
+							username: this.config.username,
+							password: this.config.password,
+						},
+						ssl: false,
+					}),
 			});
 
 			this.producer = kafka.producer({

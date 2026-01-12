@@ -30,8 +30,7 @@ export function formatWidgetValue(
 		return String(value);
 	}
 
-	const fieldType =
-		options?.forceType ?? detectFieldType(field);
+	const fieldType = options?.forceType ?? detectFieldType(field);
 
 	switch (fieldType) {
 		case "rate":

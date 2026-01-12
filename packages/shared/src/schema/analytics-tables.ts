@@ -38,7 +38,12 @@ function col(
 	name: string,
 	type: ColumnType,
 	label: string,
-	options?: Partial<Pick<TableColumn, "nullable" | "description" | "aggregatable" | "filterable">>
+	options?: Partial<
+		Pick<
+			TableColumn,
+			"nullable" | "description" | "aggregatable" | "filterable"
+		>
+	>
 ): TableColumn {
 	return {
 		name,
@@ -46,7 +51,7 @@ function col(
 		label,
 		nullable: options?.nullable ?? false,
 		description: options?.description,
-		aggregatable: options?.aggregatable ?? (type === "number"),
+		aggregatable: options?.aggregatable ?? type === "number",
 		filterable: options?.filterable ?? true,
 	};
 }
@@ -63,7 +68,9 @@ const EVENTS_TABLE: TableDefinition = {
 	clientIdField: "client_id",
 	columns: [
 		// Core event data
-		col("event_name", "string", "Event Name", { description: "Type of event (screen_view, etc.)" }),
+		col("event_name", "string", "Event Name", {
+			description: "Type of event (screen_view, etc.)",
+		}),
 		col("referrer", "string", "Referrer", { nullable: true }),
 		col("path", "string", "Path"),
 		col("title", "string", "Page Title", { nullable: true }),
@@ -71,7 +78,10 @@ const EVENTS_TABLE: TableDefinition = {
 		// Browser & device
 		col("browser_name", "string", "Browser", { nullable: true }),
 		col("os_name", "string", "Operating System", { nullable: true }),
-		col("device_type", "string", "Device Type", { nullable: true, description: "desktop, mobile, tablet" }),
+		col("device_type", "string", "Device Type", {
+			nullable: true,
+			description: "desktop, mobile, tablet",
+		}),
 
 		// Location
 		col("country", "string", "Country", { nullable: true }),
@@ -127,7 +137,9 @@ const WEB_VITALS_SPANS_TABLE: TableDefinition = {
 	clientIdField: "client_id",
 	columns: [
 		col("path", "string", "Path"),
-		col("metric_name", "string", "Metric Name", { description: "FCP, LCP, CLS, INP, TTFB" }),
+		col("metric_name", "string", "Metric Name", {
+			description: "FCP, LCP, CLS, INP, TTFB",
+		}),
 		col("metric_value", "number", "Metric Value"),
 	],
 };
@@ -178,14 +190,19 @@ export const ANALYTICS_TABLES: TableDefinition[] = [
 /**
  * Get a table definition by name
  */
-export function getTableDefinition(tableName: string): TableDefinition | undefined {
+export function getTableDefinition(
+	tableName: string
+): TableDefinition | undefined {
 	return ANALYTICS_TABLES.find((t) => t.name === tableName);
 }
 
 /**
  * Get a column definition from a table
  */
-export function getColumnDefinition(tableName: string, columnName: string): TableColumn | undefined {
+export function getColumnDefinition(
+	tableName: string,
+	columnName: string
+): TableColumn | undefined {
 	const table = getTableDefinition(tableName);
 	return table?.columns.find((c) => c.name === columnName);
 }
