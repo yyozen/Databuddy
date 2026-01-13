@@ -548,14 +548,15 @@ interface QueryResult {
 
 async function runDynamicQuery(
 	req: DynamicQueryRequestType,
-	websiteId?: string,
+	projectId?: string,
 	timezone?: string,
 	domainCache?: Record<string, string | null>
 ) {
 	const from = req.startDate;
 	const to = req.endDate;
-	const domain = websiteId
-		? (domainCache?.[websiteId] ?? (await getWebsiteDomain(websiteId)))
+	// Try to get domain for website IDs (will return null for schedule IDs)
+	const domain = projectId
+		? (domainCache?.[projectId] ?? (await getWebsiteDomain(projectId).catch(() => null)))
 		: null;
 
 	type PreparedItem =
@@ -570,14 +571,14 @@ async function runDynamicQuery(
 		if (!QueryBuilders[name]) {
 			return { id, error: `Unknown query type: ${name}` };
 		}
-		if (!(websiteId && paramFrom && paramTo)) {
-			return { id, error: "Missing website_id, start_date, or end_date" };
+		if (!(projectId && paramFrom && paramTo)) {
+			return { id, error: "Missing project identifier, start_date, or end_date" };
 		}
 
 		return {
 			id,
 			request: {
-				projectId: websiteId,
+				projectId,
 				type: name,
 				from: paramFrom,
 				to: paramTo,
