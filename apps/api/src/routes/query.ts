@@ -33,6 +33,7 @@ import {
 } from "../schemas/query-schemas";
 
 const MAX_HOURLY_DAYS = 7;
+const MS_PER_DAY = 86_400_000;
 
 interface AuthContext {
 	apiKey: ApiKeyRow | null;
@@ -41,7 +42,19 @@ interface AuthContext {
 	authMethod: "api_key" | "session" | "none";
 }
 
-const AUTH_FAILED = new Response(
+type ProjectAccessResult =
+	| {
+		success: true;
+		projectId: string;
+	}
+	| {
+		success: false;
+		error: string;
+		code: string;
+		status?: number;
+	};
+
+const AUTH_FAILED_RESPONSE = new Response(
 	JSON.stringify({
 		success: false,
 		error: "Authentication required",
@@ -50,57 +63,15 @@ const AUTH_FAILED = new Response(
 	{ status: 401, headers: { "Content-Type": "application/json" } }
 );
 
-function getAccessibleWebsites(authCtx: AuthContext) {
-	const select = {
-		id: websites.id,
-		name: websites.name,
-		domain: websites.domain,
-		isPublic: websites.isPublic,
-		createdAt: websites.createdAt,
-	};
-
-	if (authCtx.user) {
-		return db
-			.select(select)
-			.from(websites)
-			.where(
-				and(
-					eq(websites.userId, authCtx.user.id),
-					isNull(websites.organizationId)
-				)
-			)
-			.orderBy((t) => t.createdAt);
-	}
-
-	if (authCtx.apiKey) {
-		if (hasGlobalAccess(authCtx.apiKey)) {
-			const filter = authCtx.apiKey.organizationId
-				? eq(websites.organizationId, authCtx.apiKey.organizationId)
-				: authCtx.apiKey.userId
-					? and(
-						eq(websites.userId, authCtx.apiKey.userId),
-						isNull(websites.organizationId)
-					)
-					: eq(websites.id, "");
-			return db
-				.select(select)
-				.from(websites)
-				.where(filter)
-				.orderBy((t) => t.createdAt);
-		}
-
-		const ids = getAccessibleWebsiteIds(authCtx.apiKey);
-		if (ids.length === 0) {
-			return [];
-		}
-		return db
-			.select(select)
-			.from(websites)
-			.where(inArray(websites.id, ids))
-			.orderBy((t) => t.createdAt);
-	}
-
-	return [];
+function createErrorResponse(
+	error: string,
+	code: string,
+	status = 403
+): Response {
+	return new Response(JSON.stringify({ success: false, error, code }), {
+		status,
+		headers: { "Content-Type": "application/json" },
+	});
 }
 
 async function verifyWebsiteAccess(
@@ -210,7 +181,114 @@ async function verifyScheduleAccess(
 	return false;
 }
 
-const MS_PER_DAY = 86_400_000;
+async function resolveProjectAccess(
+	ctx: AuthContext,
+	options: { websiteId?: string; scheduleId?: string }
+): Promise<ProjectAccessResult> {
+	const { websiteId, scheduleId } = options;
+
+	// Check schedule_id first (for custom uptime monitors)
+	if (scheduleId) {
+		const hasAccess = await verifyScheduleAccess(ctx, scheduleId);
+		if (!hasAccess) {
+			return {
+				success: false,
+				error: ctx.isAuthenticated
+					? "Access denied to this monitor"
+					: "Authentication required",
+				code: ctx.isAuthenticated ? "ACCESS_DENIED" : "AUTH_REQUIRED",
+				status: ctx.isAuthenticated ? 403 : 401,
+			};
+		}
+		return { success: true, projectId: scheduleId };
+	}
+
+	// Check website access (handles public websites)
+	if (websiteId) {
+		const hasAccess = await verifyWebsiteAccess(ctx, websiteId);
+		if (!hasAccess) {
+			return {
+				success: false,
+				error: ctx.isAuthenticated
+					? "Access denied to this website"
+					: "Authentication required",
+				code: ctx.isAuthenticated ? "ACCESS_DENIED" : "AUTH_REQUIRED",
+				status: ctx.isAuthenticated ? 403 : 401,
+			};
+		}
+		return { success: true, projectId: websiteId };
+	}
+
+	// No project identifier provided
+	if (!ctx.isAuthenticated) {
+		return {
+			success: false,
+			error: "Authentication required",
+			code: "AUTH_REQUIRED",
+			status: 401,
+		};
+	}
+
+	return {
+		success: false,
+		error: "Missing project identifier (website_id or schedule_id)",
+		code: "MISSING_PROJECT_ID",
+		status: 400,
+	};
+}
+
+function getAccessibleWebsites(authCtx: AuthContext) {
+	const select = {
+		id: websites.id,
+		name: websites.name,
+		domain: websites.domain,
+		isPublic: websites.isPublic,
+		createdAt: websites.createdAt,
+	};
+
+	if (authCtx.user) {
+		return db
+			.select(select)
+			.from(websites)
+			.where(
+				and(
+					eq(websites.userId, authCtx.user.id),
+					isNull(websites.organizationId)
+				)
+			)
+			.orderBy((t) => t.createdAt);
+	}
+
+	if (authCtx.apiKey) {
+		if (hasGlobalAccess(authCtx.apiKey)) {
+			const filter = authCtx.apiKey.organizationId
+				? eq(websites.organizationId, authCtx.apiKey.organizationId)
+				: authCtx.apiKey.userId
+					? and(
+						eq(websites.userId, authCtx.apiKey.userId),
+						isNull(websites.organizationId)
+					)
+					: eq(websites.id, "");
+			return db
+				.select(select)
+				.from(websites)
+				.where(filter)
+				.orderBy((t) => t.createdAt);
+		}
+
+		const ids = getAccessibleWebsiteIds(authCtx.apiKey);
+		if (ids.length === 0) {
+			return [];
+		}
+		return db
+			.select(select)
+			.from(websites)
+			.where(inArray(websites.id, ids))
+			.orderBy((t) => t.createdAt);
+	}
+
+	return [];
+}
 
 function getTimeUnit(
 	granularity?: string,
@@ -231,7 +309,7 @@ function getTimeUnit(
 	return isHourly ? "hour" : "day";
 }
 
-type ParamInput =
+type ParameterInput =
 	| string
 	| {
 		name: string;
@@ -241,16 +319,159 @@ type ParamInput =
 		id?: string;
 	};
 
-function parseParam(p: ParamInput) {
-	if (typeof p === "string") {
-		return { name: p, id: p };
+function parseQueryParameter(param: ParameterInput) {
+	if (typeof param === "string") {
+		return { name: param, id: param };
 	}
 	return {
-		name: p.name,
-		id: p.id || p.name,
-		start: p.start_date,
-		end: p.end_date,
-		granularity: p.granularity,
+		name: param.name,
+		id: param.id || param.name,
+		start: param.start_date,
+		end: param.end_date,
+		granularity: param.granularity,
+	};
+}
+
+interface QueryResult {
+	parameter: string;
+	success: boolean;
+	data: Record<string, unknown>[];
+	error?: string;
+}
+
+async function executeDynamicQuery(
+	request: DynamicQueryRequestType,
+	projectId: string,
+	timezone: string,
+	domainCache?: Record<string, string | null>
+): Promise<{
+	queryId: string;
+	data: QueryResult[];
+	meta: {
+		parameters: (string | Record<string, unknown>)[];
+		total_parameters: number;
+		page: number;
+		limit: number;
+		filters_applied: number;
+	};
+}> {
+	const { startDate: from, endDate: to } = request;
+
+	// Try to get domain for website IDs (will return null for schedule IDs)
+	const domain = domainCache?.[projectId] ?? (await getWebsiteDomain(projectId).catch(() => null));
+
+	type PreparedParameter =
+		| { id: string; error: string }
+		| { id: string; request: QueryRequest & { type: string } };
+
+	const prepared: PreparedParameter[] = request.parameters.map((param) => {
+		const { name, id, start, end, granularity } = parseQueryParameter(param);
+		const paramFrom = start || from;
+		const paramTo = end || to;
+
+		if (!QueryBuilders[name]) {
+			return { id, error: `Unknown query type: ${name}` };
+		}
+
+		const hasRequiredFields = projectId && paramFrom && paramTo;
+		if (!hasRequiredFields) {
+			return {
+				id,
+				error: "Missing project identifier, start_date, or end_date",
+			};
+		}
+
+		return {
+			id,
+			request: {
+				projectId,
+				type: name,
+				from: paramFrom,
+				to: paramTo,
+				timeUnit: getTimeUnit(granularity || request.granularity, paramFrom, paramTo),
+				filters: (request.filters || []) as Filter[],
+				limit: request.limit || 100,
+				offset: request.page ? (request.page - 1) * (request.limit || 100) : 0,
+				timezone,
+			},
+		};
+	});
+
+	const validParameters = prepared.filter(
+		(p): p is { id: string; request: QueryRequest & { type: string } } =>
+			"request" in p
+	);
+	const errorParameters = prepared.filter(
+		(p): p is { id: string; error: string } => "error" in p
+	);
+
+	const resultMap = new Map<string, QueryResult>();
+
+	// Add error results
+	for (const errorParam of errorParameters) {
+		resultMap.set(errorParam.id, {
+			parameter: errorParam.id,
+			success: false,
+			error: errorParam.error,
+			data: [],
+		});
+	}
+
+	// Execute valid queries
+	if (validParameters.length > 0) {
+		const results = await executeBatch(
+			validParameters.map((v) => v.request),
+			{ websiteDomain: domain, timezone }
+		);
+
+		for (let i = 0; i < validParameters.length; i++) {
+			const param = validParameters[i];
+			const result = results[i];
+			if (param) {
+				resultMap.set(param.id, {
+					parameter: param.id,
+					success: !result?.error,
+					data: result?.data || [],
+					error: result?.error,
+				});
+			}
+		}
+	}
+
+	// Build results array maintaining parameter order
+	const allResults = prepared.map(
+		(p) =>
+			resultMap.get(p.id) || {
+				parameter: p.id,
+				success: false,
+				error: "Unknown",
+				data: [],
+			}
+	);
+
+	// Sort: successes first, then errors
+	const sortedResults = allResults.sort((a, b) => {
+		const aIsError = !a.success;
+		const bIsError = !b.success;
+		if (!aIsError && bIsError) {
+			return -1;
+		}
+		if (aIsError && !bIsError) {
+			return 1;
+		}
+		return 0;
+	});
+
+	return {
+		queryId: request.id || "",
+		data: sortedResults,
+		meta: {
+			parameters: request.parameters as (string | Record<string, unknown>)[],
+			total_parameters: request.parameters.length,
+			page: request.page || 1,
+			limit: request.limit || 100,
+			filters_applied: request.filters?.length || 0,
+		},
 	};
 }
 
@@ -275,7 +496,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 	.get("/websites", ({ auth: ctx }) =>
 		record("getWebsites", async () => {
 			if (!ctx.isAuthenticated) {
-				return AUTH_FAILED;
+				return AUTH_FAILED_RESPONSE;
 			}
 			const list = await getAccessibleWebsites(ctx);
 			const count = Array.isArray(list) ? list.length : 0;
@@ -294,7 +515,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 			auth: AuthContext;
 		}) => {
 			if (!ctx.isAuthenticated) {
-				return AUTH_FAILED;
+				return AUTH_FAILED_RESPONSE;
 			}
 			const includeMeta = params.include_meta === "true";
 			const configs = Object.fromEntries(
@@ -324,27 +545,16 @@ export const query = new Elysia({ prefix: "/v1/query" })
 			query: { website_id?: string; timezone?: string };
 			auth: AuthContext;
 		}) => {
-			// Check website access first (handles public websites)
-			if (q.website_id) {
-				const hasAccess = await verifyWebsiteAccess(ctx, q.website_id);
-				if (!hasAccess) {
-					return new Response(
-						JSON.stringify({
-							success: false,
-							error: ctx.isAuthenticated
-								? "Access denied to this website"
-								: "Authentication required",
-							code: ctx.isAuthenticated ? "ACCESS_DENIED" : "AUTH_REQUIRED",
-						}),
-						{
-							status: ctx.isAuthenticated ? 403 : 401,
-							headers: { "Content-Type": "application/json" },
-						}
-					);
-				}
-			} else if (!ctx.isAuthenticated) {
-				// No website_id and not authenticated
-				return AUTH_FAILED;
+			const accessResult = await resolveProjectAccess(ctx, {
+				websiteId: q.website_id,
+			});
+
+			if (!accessResult.success) {
+				return createErrorResponse(
+					accessResult.error,
+					accessResult.code,
+					accessResult.status
+				);
 			}
 
 			try {
@@ -377,41 +587,20 @@ export const query = new Elysia({ prefix: "/v1/query" })
 			auth: AuthContext;
 		}) =>
 			record("executeQuery", async () => {
-				// Determine the effective ID to use for queries
-				let effectiveId: string | undefined;
+				const accessResult = await resolveProjectAccess(ctx, {
+					websiteId: q.website_id,
+					scheduleId: q.schedule_id,
+				});
 
-				// Check schedule_id first (for custom uptime monitors)
-				if (q.schedule_id) {
-					const hasAccess = await verifyScheduleAccess(ctx, q.schedule_id);
-					if (!hasAccess) {
-						return {
-							success: false,
-							error: ctx.isAuthenticated
-								? "Access denied to this monitor"
-								: "Authentication required",
-							code: ctx.isAuthenticated ? "ACCESS_DENIED" : "AUTH_REQUIRED",
-						};
-					}
-					effectiveId = q.schedule_id;
-				} else if (q.website_id) {
-					// Check website access (handles public websites)
-					const hasAccess = await verifyWebsiteAccess(ctx, q.website_id);
-					if (!hasAccess) {
-						return {
-							success: false,
-							error: ctx.isAuthenticated
-								? "Access denied to this website"
-								: "Authentication required",
-							code: ctx.isAuthenticated ? "ACCESS_DENIED" : "AUTH_REQUIRED",
-						};
-					}
-					effectiveId = q.website_id;
-				} else if (!ctx.isAuthenticated) {
-					// No website_id/schedule_id and not authenticated
-					return AUTH_FAILED;
+				if (!accessResult.success) {
+					return {
+						success: false,
+						error: accessResult.error,
+						code: accessResult.code,
+					};
 				}
 
-				const tz = q.timezone || "UTC";
+				const timezone = q.timezone || "UTC";
 				const isBatch = Array.isArray(body);
 				setAttributes({
 					query_is_batch: isBatch,
@@ -422,10 +611,26 @@ export const query = new Elysia({ prefix: "/v1/query" })
 					const cache = await getCachedWebsiteDomain([]);
 					const results = await Promise.all(
 						body.map((req) =>
-							runDynamicQuery(req, effectiveId, tz, cache).catch((e) => ({
-								success: false,
-								error: e instanceof Error ? e.message : "Query failed",
-							}))
+							executeDynamicQuery(req, accessResult.projectId, timezone, cache).catch(
+								(e) => ({
+									queryId: req.id,
+									data: [
+										{
+											parameter: req.parameters[0] as string,
+											success: false,
+											error: e instanceof Error ? e.message : "Query failed",
+											data: [],
+										},
+									],
+									meta: {
+										parameters: req.parameters,
+										total_parameters: req.parameters.length,
+										page: req.page || 1,
+										limit: req.limit || 100,
+										filters_applied: req.filters?.length || 0,
+									},
+								})
+							)
 						)
 					);
 					return { success: true, batch: true, results };
@@ -433,7 +638,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 
 				return {
 					success: true,
-					...(await runDynamicQuery(body, effectiveId, tz)),
+					...(await executeDynamicQuery(body, accessResult.projectId, timezone)),
 				};
 			}),
 		{
@@ -464,14 +669,15 @@ export const query = new Elysia({ prefix: "/v1/query" })
 					};
 				}
 
-				const hasAccess = await verifyWebsiteAccess(ctx, q.website_id);
-				if (!hasAccess) {
+				const accessResult = await resolveProjectAccess(ctx, {
+					websiteId: q.website_id,
+				});
+
+				if (!accessResult.success) {
 					return {
 						success: false,
-						error: ctx.isAuthenticated
-							? "Access denied to this website"
-							: "Authentication required",
-						code: ctx.isAuthenticated ? "ACCESS_DENIED" : "AUTH_REQUIRED",
+						error: accessResult.error,
+						code: accessResult.code,
 					};
 				}
 
@@ -481,7 +687,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 					custom_query_filters: body.query.filters?.length || 0,
 				});
 
-				return executeCustomQuery(body, q.website_id);
+				return executeCustomQuery(body, accessResult.projectId);
 			}),
 		{
 			body: t.Object({
@@ -538,133 +744,3 @@ export const query = new Elysia({ prefix: "/v1/query" })
 			}),
 		}
 	);
-
-interface QueryResult {
-	parameter: string;
-	success: boolean;
-	data: Record<string, unknown>[];
-	error?: string;
-}
-
-async function runDynamicQuery(
-	req: DynamicQueryRequestType,
-	projectId?: string,
-	timezone?: string,
-	domainCache?: Record<string, string | null>
-) {
-	const from = req.startDate;
-	const to = req.endDate;
-	const domain = projectId
-		? (domainCache?.[projectId] ?? (await getWebsiteDomain(projectId).catch(() => null)))
-		: null;
-
-	type PreparedItem =
-		| { id: string; error: string }
-		| { id: string; request: QueryRequest & { type: string } };
-
-	const prepared: PreparedItem[] = req.parameters.map((p) => {
-		const { name, id, start, end, granularity } = parseParam(p);
-		const paramFrom = start || from;
-		const paramTo = end || to;
-
-		if (!QueryBuilders[name]) {
-			return { id, error: `Unknown query type: ${name}` };
-		}
-		if (!(projectId && paramFrom && paramTo)) {
-			return { id, error: "Missing project identifier, start_date, or end_date" };
-		}
-
-		return {
-			id,
-			request: {
-				projectId,
-				type: name,
-				from: paramFrom,
-				to: paramTo,
-				timeUnit: getTimeUnit(
-					granularity || req.granularity,
-					paramFrom,
-					paramTo
-				),
-				filters: (req.filters || []) as Filter[],
-				limit: req.limit || 100,
-				offset: req.page ? (req.page - 1) * (req.limit || 100) : 0,
-				timezone,
-			},
-		};
-	});
-
-	const valid = prepared.filter(
-		(p): p is { id: string; request: QueryRequest & { type: string } } =>
-			"request" in p
-	);
-	const errors = prepared.filter(
-		(p): p is { id: string; error: string } => "error" in p
-	);
-
-	const resultMap = new Map<string, QueryResult>();
-
-	for (const e of errors) {
-		resultMap.set(e.id, {
-			parameter: e.id,
-			success: false,
-			error: e.error,
-			data: [],
-		});
-	}
-
-	if (valid.length > 0) {
-		const results = await executeBatch(
-			valid.map((v) => v.request),
-			{ websiteDomain: domain, timezone }
-		);
-		for (let i = 0; i < valid.length; i++) {
-			const v = valid[i];
-			const r = results[i];
-			if (v) {
-				resultMap.set(v.id, {
-					parameter: v.id,
-					success: !r?.error,
-					data: r?.data || [],
-					error: r?.error,
-				});
-			}
-		}
-	}
-
-	// Build results array, separating errors from successes
-	const allResults = prepared.map(
-		(p) =>
-			resultMap.get(p.id) || {
-				parameter: p.id,
-				success: false,
-				error: "Unknown",
-				data: [],
-			}
-	);
-
-	// Sort: successes first, then errors (at the bottom)
-	const sortedResults = allResults.sort((a, b) => {
-		const aIsError = !a.success;
-		const bIsError = !b.success;
-		if (!aIsError && bIsError) {
-			return -1; // a (success) comes before b (error)
-		}
-		if (aIsError && !bIsError) {
-			return 1; // b (success) comes before a (error)
-		}
-		return 0; // maintain original order for same type
-	});
-
-	return {
-		queryId: req.id,
-		data: sortedResults,
-		meta: {
-			parameters: req.parameters,
-			total_parameters: req.parameters.length,
-			page: req.page || 1,
-			limit: req.limit || 100,
-			filters_applied: req.filters?.length || 0,
-		},
-	};
-}
