@@ -109,7 +109,7 @@ export function FunnelItem({
 	className,
 	children,
 }: FunnelItemProps) {
-	const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+	const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
 		const target = e.target as HTMLElement;
 		if (
 			target.closest("button") ||
@@ -132,8 +132,7 @@ export function FunnelItem({
 				isExpanded && "bg-accent/30"
 			)}
 		>
-			{/* Main row */}
-			<div
+			<button
 				className="group flex cursor-pointer select-none items-center hover:bg-accent/50"
 				onClick={handleClick}
 				onKeyDown={(e) => {
@@ -141,8 +140,8 @@ export function FunnelItem({
 						onToggle(funnel.id);
 					}
 				}}
-				role="button"
 				tabIndex={0}
+				type="button"
 			>
 				<div className="flex flex-1 items-center gap-4 px-4 py-3 sm:px-6 sm:py-4">
 					{/* Expand indicator */}
@@ -243,18 +242,13 @@ export function FunnelItem({
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</div>
-			</div>
+			</button>
 
 			{/* Expanded content */}
 			{isExpanded && (
-				<div
-					className="border-border border-t bg-background"
-					onClick={(e) => e.stopPropagation()}
-					onKeyDown={(e) => e.stopPropagation()}
-					role="region"
-				>
+				<section className="border-border border-t bg-background">
 					<div className="p-4 sm:p-6">{children}</div>
-				</div>
+				</section>
 			)}
 		</div>
 	);

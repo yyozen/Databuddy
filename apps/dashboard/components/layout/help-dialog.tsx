@@ -17,10 +17,10 @@ import {
 } from "@/components/ui/dialog";
 import { KeyboardShortcuts } from "@/components/ui/keyboard-shortcuts";
 
-type HelpDialogProps = {
+interface HelpDialogProps {
 	open: boolean;
 	onOpenChangeAction: (open: boolean) => void;
-};
+}
 
 const helpItems = [
 	{

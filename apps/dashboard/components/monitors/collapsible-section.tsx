@@ -22,9 +22,9 @@ export function CollapsibleSection({
 	children,
 }: CollapsibleSectionProps) {
 	return (
-		<div>
+		<div className="flex flex-col gap-2">
 			<button
-				className="group flex w-full cursor-pointer items-center justify-between rounded py-3 text-left transition-colors hover:bg-accent/50"
+				className="group flex w-full cursor-pointer items-center justify-between rounded p-3 text-left transition-colors hover:bg-accent/50"
 				onClick={onToggleAction}
 				type="button"
 			>

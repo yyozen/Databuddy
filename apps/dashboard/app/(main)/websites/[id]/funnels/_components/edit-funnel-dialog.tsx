@@ -111,7 +111,9 @@ export function EditFunnelDialog({
 	}, [funnel]);
 
 	const handleSubmit = async () => {
-		if (!formData) return;
+		if (!formData) {
+			return;
+		}
 
 		// Ensure all filters have valid operators (default to "equals" if missing)
 		const sanitizedFilters = (formData.filters || []).map((f) => ({
@@ -161,7 +163,9 @@ export function EditFunnelDialog({
 	}, [isCreateMode]);
 
 	const addStep = useCallback(() => {
-		if (!formData) return;
+		if (!formData) {
+			return;
+		}
 		setFormData((prev) =>
 			prev
 				? {
@@ -177,7 +181,9 @@ export function EditFunnelDialog({
 
 	const removeStep = useCallback(
 		(index: number) => {
-			if (!formData || formData.steps.length <= 2) return;
+			if (!formData || formData.steps.length <= 2) {
+				return;
+			}
 			setFormData((prev) =>
 				prev
 					? { ...prev, steps: prev.steps.filter((_, i) => i !== index) }
@@ -205,12 +211,16 @@ export function EditFunnelDialog({
 
 	const reorderSteps = useCallback(
 		(result: DropResult) => {
-			if (!(result.destination && formData)) return;
+			if (!(result.destination && formData)) {
+				return;
+			}
 
 			const sourceIndex = result.source.index;
 			const destinationIndex = result.destination.index;
 
-			if (sourceIndex === destinationIndex) return;
+			if (sourceIndex === destinationIndex) {
+				return;
+			}
 
 			const items = [...formData.steps];
 			const [reorderedItem] = items.splice(sourceIndex, 1);
@@ -233,7 +243,9 @@ export function EditFunnelDialog({
 
 	const getSuggestions = useCallback(
 		(field: string): string[] => {
-			if (!autocompleteData) return [];
+			if (!autocompleteData) {
+				return [];
+			}
 
 			switch (field) {
 				case "browser_name":
@@ -259,10 +271,16 @@ export function EditFunnelDialog({
 
 	const getStepSuggestions = useCallback(
 		(stepType: string): string[] => {
-			if (!autocompleteData) return [];
+			if (!autocompleteData) {
+				return [];
+			}
 
-			if (stepType === "PAGE_VIEW") return autocompleteData.pagePaths || [];
-			if (stepType === "EVENT") return autocompleteData.customEvents || [];
+			if (stepType === "PAGE_VIEW") {
+				return autocompleteData.pagePaths || [];
+			}
+			if (stepType === "EVENT") {
+				return autocompleteData.customEvents || [];
+			}
 
 			return [];
 		},
@@ -271,11 +289,15 @@ export function EditFunnelDialog({
 
 	const handleClose = useCallback(() => {
 		onClose();
-		if (isCreateMode) resetForm();
+		if (isCreateMode) {
+			resetForm();
+		}
 	}, [onClose, isCreateMode, resetForm]);
 
 	const isFormValid = useMemo(() => {
-		if (!formData) return false;
+		if (!formData) {
+			return false;
+		}
 		return (
 			formData.name &&
 			!formData.steps.some((s) => !(s.name && s.target)) &&
@@ -283,7 +305,9 @@ export function EditFunnelDialog({
 		);
 	}, [formData]);
 
-	if (!formData) return null;
+	if (!formData) {
+		return null;
+	}
 
 	return (
 		<Sheet onOpenChange={handleClose} open={isOpen}>

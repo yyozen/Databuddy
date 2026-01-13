@@ -47,7 +47,7 @@ export function FunnelsList({
 
 	return (
 		<div>
-			{funnels.map((funnel, index) => (
+			{funnels.map((funnel) => (
 				<FunnelItem
 					analytics={analyticsMap?.get(funnel.id)}
 					funnel={funnel}
