@@ -94,6 +94,7 @@
     "@biomejs/biome": "catalog:",
     "@orpc/server": "^1.13.0",
     "@tailwindcss/postcss": "^4.1.18",
+    "@tanstack/react-query-devtools": "^5.91.2",
     "@types/d3-geo": "^3.1.0",
     "@types/node": "^22.19.3",
     "@types/react": "catalog:",
