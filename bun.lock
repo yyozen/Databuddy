@@ -388,6 +388,17 @@
         "typescript": "catalog:",
       },
     },
+    "packages/notifications": {
+      "name": "@databuddy/notifications",
+      "version": "0.0.1",
+      "dependencies": {
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@types/node": "^24.10.4",
+        "typescript": "catalog:",
+      },
+    },
     "packages/redis": {
       "name": "@databuddy/redis",
       "version": "1.0.0",
@@ -728,6 +739,8 @@
     "@databuddy/env": ["@databuddy/env@workspace:packages/env"],
 
     "@databuddy/mapper": ["@databuddy/mapper@workspace:packages/mapper"],
+
+    "@databuddy/notifications": ["@databuddy/notifications@workspace:packages/notifications"],
 
     "@databuddy/redis": ["@databuddy/redis@workspace:packages/redis"],
 
