@@ -11,6 +11,7 @@ import {
 	TagIcon,
 	XIcon,
 } from "@phosphor-icons/react";
+import { useDebouncedCallback } from "@tanstack/react-pacer";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
 	flexRender,
@@ -23,7 +24,7 @@ import { useAtom } from "jotai";
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -170,6 +171,26 @@ export default function EventsStreamPage() {
 		"search",
 		parseAsString.withDefault("")
 	);
+	const [searchInput, setSearchInput] = useState(searchQuery);
+
+	const debouncedSetSearchQuery = useDebouncedCallback(
+		(value: string) => {
+			setSearchQuery(value);
+		},
+		{ wait: 300 }
+	);
+
+	const handleSearchInputChange = useCallback(
+		(value: string) => {
+			setSearchInput(value);
+			debouncedSetSearchQuery(value);
+		},
+		[debouncedSetSearchQuery]
+	);
+
+	useEffect(() => {
+		setSearchInput(searchQuery);
+	}, [searchQuery]);
 	const [selectedEventType, setSelectedEventType] = useQueryState(
 		"event",
 		parseAsString.withDefault("all")
@@ -423,6 +444,7 @@ export default function EventsStreamPage() {
 		setSelectedPropertyKey("all");
 		setSelectedPropertyValue("all");
 		setSearchQuery("");
+		setSearchInput("");
 	}, [
 		setSelectedEventType,
 		setSelectedPath,
@@ -852,9 +874,9 @@ export default function EventsStreamPage() {
 								searchQuery.trim() &&
 									"border-primary/40 bg-primary/5 text-primary"
 							)}
-							onChange={(e) => setSearchQuery(e.target.value)}
+							onChange={(e) => handleSearchInputChange(e.target.value)}
 							placeholder="Search…"
-							value={searchQuery}
+							value={searchInput}
 						/>
 					</div>
 

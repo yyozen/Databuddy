@@ -9,6 +9,7 @@ import {
 import { Command as CommandPrimitive } from "cmdk";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
+import { useDebouncedCallback } from "@tanstack/react-pacer";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
 	billingNavigation,
@@ -118,6 +119,7 @@ function mergeGroups(groups: SearchGroup[]): SearchGroup[] {
 export function CommandSearch() {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const router = useRouter();
 	const pathname = usePathname();
 	const { websites } = useWebsites();
@@ -127,6 +129,21 @@ export function CommandSearch() {
 		: undefined;
 
 	useHotkeys(["mod+k", "/"], () => setOpen((o) => !o), { preventDefault: true }, []);
+
+	const handleSearchChange = useDebouncedCallback(
+		(value: string) => {
+			setDebouncedSearch(value);
+		},
+		{ wait: 200 }
+	);
+
+	const handleInputChange = useCallback(
+		(value: string) => {
+			setSearch(value);
+			handleSearchChange(value);
+		},
+		[handleSearchChange]
+	);
 
 	const groups = useMemo(() => {
 		const result: SearchGroup[] = [];
@@ -149,11 +166,30 @@ export function CommandSearch() {
 		return mergeGroups(result);
 	}, [websites, pathname, currentWebsiteId]);
 
+	const filteredGroups = useMemo(() => {
+		if (!debouncedSearch.trim()) {
+			return groups;
+		}
+
+		const query = debouncedSearch.toLowerCase();
+		return groups
+			.map((group) => ({
+				...group,
+				items: group.items.filter(
+					(item) =>
+						item.name.toLowerCase().includes(query) ||
+						item.path.toLowerCase().includes(query)
+				),
+			}))
+			.filter((group) => group.items.length > 0);
+	}, [groups, debouncedSearch]);
+
 	const handleSelect = useCallback(
 		(item: SearchItem) => {
 			if (item.disabled) return;
 			setOpen(false);
 			setSearch("");
+			setDebouncedSearch("");
 			if (item.external || item.path.startsWith("http")) {
 				window.open(item.path, "_blank", "noopener,noreferrer");
 			} else {
@@ -163,10 +199,21 @@ export function CommandSearch() {
 		[router]
 	);
 
-	const totalResults = groups.reduce((acc, g) => acc + g.items.length, 0);
+	const totalResults = filteredGroups.reduce((acc, g) => acc + g.items.length, 0);
+
+	const handleOpenChange = useCallback(
+		(isOpen: boolean) => {
+			setOpen(isOpen);
+			if (!isOpen) {
+				setSearch("");
+				setDebouncedSearch("");
+			}
+		},
+		[]
+	);
 
 	return (
-		<Dialog onOpenChange={setOpen} open={open}>
+		<Dialog onOpenChange={handleOpenChange} open={open}>
 			<DialogHeader className="sr-only">
 				<DialogTitle>Command Search</DialogTitle>
 				<DialogDescription>Search for pages, settings, and websites</DialogDescription>
@@ -194,7 +241,7 @@ export function CommandSearch() {
 						</div>
 						<CommandPrimitive.Input
 							className="h-8 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-							onValueChange={setSearch}
+							onValueChange={handleInputChange}
 							placeholder="Search pages, settings, websites..."
 							value={search}
 						/>
@@ -219,7 +266,7 @@ export function CommandSearch() {
 							</div>
 						</CommandPrimitive.Empty>
 
-						{groups.map((group) => (
+						{filteredGroups.map((group) => (
 							<CommandPrimitive.Group
 								className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:text-muted-foreground **:[[cmdk-group-heading]]:text-xs"
 								heading={group.category}

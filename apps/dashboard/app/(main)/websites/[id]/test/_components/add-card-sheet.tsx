@@ -23,6 +23,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { StatCardDisplayMode } from "@/components/analytics/stat-card";
 import { StatCard } from "@/components/analytics/stat-card";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -60,7 +61,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { operatorOptions } from "@/hooks/use-filters";
 import { useAutocompleteData } from "@/hooks/use-funnels";
 import { cn } from "@/lib/utils";
-import { AutocompleteInput } from "../../funnels/_components/funnel-components";
 import { CustomQueryBuilder } from "./custom-query-builder";
 import { useDashboardData } from "./hooks/use-dashboard-data";
 import type { QueryTypeOption } from "./hooks/use-query-types";

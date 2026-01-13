@@ -14,6 +14,7 @@ import {
 	TrashIcon,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,6 @@ import type {
 	FunnelStep,
 } from "@/hooks/use-funnels";
 import { cn } from "@/lib/utils";
-import { AutocompleteInput } from "./funnel-components";
 
 const defaultFilter: FunnelFilter = {
 	field: "browser_name",
@@ -189,7 +189,6 @@ export function EditFunnelDialog({
 
 	const updateStep = useCallback(
 		(index: number, field: keyof FunnelStep, value: string) => {
-			if (!formData) return;
 			setFormData((prev) =>
 				prev
 					? {
@@ -201,7 +200,7 @@ export function EditFunnelDialog({
 					: prev
 			);
 		},
-		[formData]
+		[]
 	);
 
 	const reorderSteps = useCallback(
@@ -369,7 +368,7 @@ export function EditFunnelDialog({
 											<Draggable
 												draggableId={`step-${index}`}
 												index={index}
-												key={`step-${index}-${step.name}-${step.target}-${step.type}`}
+												key={`step-${index}`}
 											>
 												{(provided, snapshot) => (
 													<div

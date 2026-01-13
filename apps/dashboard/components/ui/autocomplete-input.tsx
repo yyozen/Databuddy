@@ -3,6 +3,15 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 
+interface AutocompleteInputProps {
+	value: string;
+	onValueChange: (value: string) => void;
+	suggestions: string[];
+	placeholder?: string;
+	className?: string;
+	inputClassName?: string;
+}
+
 export const AutocompleteInput = memo(
 	({
 		value,
@@ -11,19 +20,20 @@ export const AutocompleteInput = memo(
 		placeholder,
 		className,
 		inputClassName,
-	}: {
-		value: string;
-		onValueChange: (value: string) => void;
-		suggestions: string[];
-		placeholder?: string;
-		className?: string;
-		inputClassName?: string;
-	}) => {
+	}: AutocompleteInputProps) => {
 		const [isOpen, setIsOpen] = useState(false);
 		const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>(
 			[]
 		);
+		const [localValue, setLocalValue] = useState(value);
 		const containerRef = useRef<HTMLDivElement>(null);
+		const onValueChangeRef = useRef(onValueChange);
+
+		onValueChangeRef.current = onValueChange;
+
+		useEffect(() => {
+			setLocalValue(value);
+		}, [value]);
 
 		useEffect(() => {
 			const handleClickOutside = (event: MouseEvent) => {
@@ -43,7 +53,8 @@ export const AutocompleteInput = memo(
 		}, [isOpen]);
 
 		const handleInputChange = (newValue: string) => {
-			onValueChange(newValue);
+			setLocalValue(newValue);
+			onValueChangeRef.current(newValue);
 
 			if (newValue.trim()) {
 				const filtered = suggestions
@@ -58,9 +69,9 @@ export const AutocompleteInput = memo(
 		};
 
 		const handleFocus = () => {
-			if (value.trim()) {
+			if (localValue.trim()) {
 				const filtered = suggestions
-					.filter((s) => s.toLowerCase().includes(value.toLowerCase()))
+					.filter((s) => s.toLowerCase().includes(localValue.toLowerCase()))
 					.slice(0, 8);
 				setFilteredSuggestions(filtered);
 				setIsOpen(filtered.length > 0);
@@ -71,7 +82,8 @@ export const AutocompleteInput = memo(
 		};
 
 		const handleSelect = (suggestion: string) => {
-			onValueChange(suggestion);
+			setLocalValue(suggestion);
+			onValueChangeRef.current(suggestion);
 			setIsOpen(false);
 		};
 
@@ -82,20 +94,15 @@ export const AutocompleteInput = memo(
 					onChange={(e) => handleInputChange(e.target.value)}
 					onFocus={handleFocus}
 					placeholder={placeholder}
-					value={value || ""}
+					value={localValue}
 				/>
 				{isOpen && filteredSuggestions.length > 0 && (
-					<div className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded border bg-popover shadow-lg">
+					<div className="absolute z-50 mt-1 min-w-[200px] max-h-48 w-full overflow-y-auto rounded border bg-popover shadow-lg">
 						{filteredSuggestions.map((suggestion) => (
 							<button
-								className="w-full cursor-pointer border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-accent hover:text-accent-foreground"
+								className="w-full cursor-pointer wrap-break-words border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-accent hover:text-accent-foreground"
 								key={suggestion}
 								onClick={() => handleSelect(suggestion)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										handleSelect(suggestion);
-									}
-								}}
 								type="button"
 							>
 								{suggestion}

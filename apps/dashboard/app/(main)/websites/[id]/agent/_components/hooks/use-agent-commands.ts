@@ -1,5 +1,6 @@
+import { useDebouncedCallback } from "@tanstack/react-pacer";
 import { useAtom } from "jotai";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useChat } from "@/contexts/chat-context";
 import type { AgentCommand } from "../agent-atoms";
 import {
@@ -12,21 +13,36 @@ import { filterCommands } from "../agent-commands";
 export function useAgentCommands() {
 	const [_, setInput] = useAtom(agentInputAtom);
 	const [showCommands, setShowCommands] = useAtom(showCommandsAtom);
-	const [commandQuery, setCommandQuery] = useAtom(commandQueryAtom);
+	const [, setCommandQuery] = useAtom(commandQueryAtom);
+	const [localQuery, setLocalQuery] = useState("");
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 
 	const { sendMessage } = useChat();
 
+	const debouncedSetCommandQuery = useDebouncedCallback(
+		(query: string) => {
+			setCommandQuery(query);
+			if (query) {
+				setShowCommands(true);
+			} else {
+				setShowCommands(false);
+			}
+		},
+		{ wait: 200 }
+	);
+
 	const filteredCommands = useMemo(
-		() => filterCommands(commandQuery),
-		[commandQuery]
+		() => filterCommands(localQuery),
+		[localQuery]
 	);
 
 	const hideCommands = useCallback(() => {
 		setShowCommands(false);
+		setLocalQuery("");
+		setCommandQuery("");
 		// Focus the input when commands are hidden
 		inputRef.current?.focus();
-	}, []);
+	}, [setCommandQuery]);
 
 	const handleInputChange = useCallback(
 		(value: string, cursorPosition: number) => {
@@ -37,14 +53,14 @@ export function useAgentCommands() {
 
 			if (lastSlashIndex !== -1) {
 				const query = textBeforeCursor.substring(lastSlashIndex + 1);
-				setCommandQuery(query);
-				setShowCommands(true);
+				setLocalQuery(query);
+				debouncedSetCommandQuery(query);
 			} else {
+				setLocalQuery("");
 				hideCommands();
-				setCommandQuery("");
 			}
 		},
-		[setCommandQuery, setInput, hideCommands]
+		[setInput, debouncedSetCommandQuery, hideCommands]
 	);
 
 	const executeCommand = useCallback(
@@ -55,15 +71,13 @@ export function useAgentCommands() {
 			});
 			setInput("");
 			hideCommands();
-			setCommandQuery("");
 		},
-		[sendMessage, setCommandQuery, setInput, hideCommands]
+		[sendMessage, setInput, hideCommands]
 	);
 
 	const closeCommands = useCallback(() => {
 		hideCommands();
-		setCommandQuery("");
-	}, [setCommandQuery, hideCommands]);
+	}, [hideCommands]);
 
 	return {
 		inputRef,
