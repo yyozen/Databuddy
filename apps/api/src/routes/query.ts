@@ -17,6 +17,7 @@ import {
 	getAccessibleWebsiteIds,
 	getApiKeyFromHeader,
 	hasGlobalAccess,
+	hasKeyScope,
 	isApiKeyPresent,
 } from "../lib/api-key";
 import { record, setAttributes } from "../lib/tracing";
@@ -489,6 +490,18 @@ export const query = new Elysia({ prefix: "/v1/query" })
 			auth.api.getSession({ headers: request.headers }),
 		]);
 		const user = session?.user ?? null;
+
+		if (apiKey && !hasKeyScope(apiKey, "read:data")) {
+			return {
+				auth: {
+					apiKey: null,
+					user: null,
+					isAuthenticated: false,
+					authMethod: "none",
+				},
+			};
+		}
+
 		return {
 			auth: {
 				apiKey,
