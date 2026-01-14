@@ -13,10 +13,9 @@ export const openrouter = createOpenRouter({
 	headers,
 });
 
-const apiurl = "http://localhost:4000/llm";
 
 export const { track } = databuddyLLM({
-	apiUrl: apiurl,
+	apiUrl: process.env.DATABUDDY_API_URL ?? "https://basket.databuddy.cc/llm",
 	apiKey: process.env.DATABUDDY_API_KEY,
 	computeCosts: true,
 });
