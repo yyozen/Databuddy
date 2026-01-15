@@ -1,6 +1,7 @@
 "use client";
 
-import { PaperPlaneRightIcon, StopIcon } from "@phosphor-icons/react";
+import { PaperPlaneRightIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneRight";
+import { StopIcon } from "@phosphor-icons/react/dist/ssr/Stop";
 import { useAtom } from "jotai";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";

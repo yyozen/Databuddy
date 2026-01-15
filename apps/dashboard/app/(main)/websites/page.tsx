@@ -1,11 +1,9 @@
 "use client";
 
-import {
-	ArrowClockwiseIcon,
-	GlobeIcon,
-	PlusIcon,
-	TrendUpIcon,
-} from "@phosphor-icons/react";
+import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ArrowClockwise";
+import { GlobeIcon } from "@phosphor-icons/react/dist/ssr/Globe";
+import { PlusIcon } from "@phosphor-icons/react/dist/ssr/Plus";
+import { TrendUpIcon } from "@phosphor-icons/react/dist/ssr/TrendUp";
 import { useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";

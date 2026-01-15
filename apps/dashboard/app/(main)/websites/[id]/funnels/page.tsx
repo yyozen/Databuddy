@@ -1,7 +1,8 @@
 "use client";
 
 import { GATED_FEATURES } from "@databuddy/shared/types/features";
-import { FunnelIcon, TrendDownIcon } from "@phosphor-icons/react";
+import { FunnelIcon } from "@phosphor-icons/react/dist/ssr/Funnel";
+import { TrendDownIcon } from "@phosphor-icons/react/dist/ssr/TrendDown";
 import { useAtomValue } from "jotai";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";

@@ -1,7 +1,8 @@
 "use client";
 
 import type { DynamicQueryRequest } from "@databuddy/shared/types/api";
-import { LightningIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { LightningIcon } from "@phosphor-icons/react/dist/ssr/Lightning";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/ssr/MagnifyingGlass";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
 import { StatCard } from "@/components/analytics/stat-card";

@@ -1,7 +1,8 @@
 "use client";
 
 import type { DynamicQueryRequest } from "@databuddy/shared/types/api";
-import { BugIcon, WarningIcon } from "@phosphor-icons/react";
+import { BugIcon } from "@phosphor-icons/react/dist/ssr/Bug";
+import { WarningIcon } from "@phosphor-icons/react/dist/ssr/Warning";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
 import { StatCard } from "@/components/analytics/stat-card";

@@ -1,7 +1,7 @@
 "use client";
 
 import type { DynamicQueryRequest } from "@databuddy/shared/types/api";
-import { ChartLineUpIcon } from "@phosphor-icons/react";
+import { ChartLineUpIcon } from "@phosphor-icons/react/dist/ssr/ChartLineUp";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
 import { StatCard } from "@/components/analytics/stat-card";

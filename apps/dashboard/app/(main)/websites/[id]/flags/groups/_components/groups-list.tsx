@@ -1,6 +1,6 @@
 "use client";
 
-import { UsersThreeIcon } from "@phosphor-icons/react";
+import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr/UsersThree";
 import { EmptyState } from "@/components/empty-state";
 import type { GroupsListProps } from "../../_components/types";
 import { GroupItem } from "./group-item";

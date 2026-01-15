@@ -1,7 +1,7 @@
 "use client";
 
 import { GATED_FEATURES } from "@databuddy/shared/types/features";
-import { BugIcon } from "@phosphor-icons/react";
+import { BugIcon } from "@phosphor-icons/react/dist/ssr/Bug";
 import { useAtomValue } from "jotai";
 import { use } from "react";
 import { FeatureGate } from "@/components/feature-gate";
@@ -21,7 +21,7 @@ import type {
 	ErrorSummary,
 	ErrorType,
 	ProcessedChartData,
-	RecentError,
+	RecentError,	
 } from "./types";
 
 interface ErrorsPageContentProps {

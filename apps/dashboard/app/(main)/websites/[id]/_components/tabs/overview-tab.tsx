@@ -1,13 +1,11 @@
 "use client";
 
-import {
-	ChartLineIcon,
-	CursorIcon,
-	GlobeIcon,
-	TimerIcon,
-	UsersIcon,
-	WarningIcon,
-} from "@phosphor-icons/react";
+import { ChartLineIcon } from "@phosphor-icons/react/dist/ssr/ChartLine";
+import { CursorIcon } from "@phosphor-icons/react/dist/ssr/Cursor";
+import { GlobeIcon } from "@phosphor-icons/react/dist/ssr/Globe";
+import { TimerIcon } from "@phosphor-icons/react/dist/ssr/Timer";
+import { UsersIcon } from "@phosphor-icons/react/dist/ssr/Users";
+import { WarningIcon } from "@phosphor-icons/react/dist/ssr/Warning";
 import type { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import { useAtom } from "jotai";
@@ -157,68 +155,71 @@ export function WebsiteOverviewTab({
 
 	const [visibleMetrics] = useAtom(metricVisibilityAtom);
 
-	const queries = [
-		{
-			id: "overview-summary",
-			parameters: [
-				"summary_metrics",
-				"today_metrics",
-				"events_by_date",
-				{
-					name: "summary_metrics",
-					start_date: previousPeriodRange.start_date,
-					end_date: previousPeriodRange.end_date,
-					granularity: previousPeriodRange.granularity,
-					id: "previous_summary_metrics",
-				},
-				{
-					name: "events_by_date",
-					start_date: previousPeriodRange.start_date,
-					end_date: previousPeriodRange.end_date,
-					granularity: previousPeriodRange.granularity,
-					id: "previous_events_by_date",
-				},
-			],
-			limit: QUERY_CONFIG.limit,
-			granularity: dateRange.granularity,
-			filters,
-		},
-		{
-			id: "overview-pages",
-			parameters: QUERY_CONFIG.parameters.pages,
-			limit: QUERY_CONFIG.limit,
-			granularity: dateRange.granularity,
-			filters,
-		},
-		{
-			id: "overview-traffic",
-			parameters: QUERY_CONFIG.parameters.traffic,
-			limit: QUERY_CONFIG.limit,
-			granularity: dateRange.granularity,
-			filters,
-		},
-		{
-			id: "overview-tech",
-			parameters: QUERY_CONFIG.parameters.tech,
-			limit: QUERY_CONFIG.limit,
-			granularity: dateRange.granularity,
-			filters,
-		},
-		{
-			id: "overview-custom-events",
-			parameters: QUERY_CONFIG.parameters.customEvents,
-			limit: QUERY_CONFIG.limit,
-			granularity: dateRange.granularity,
-			filters,
-		},
-		{
-			id: "overview-geo",
-			parameters: QUERY_CONFIG.parameters.geo,
-			limit: QUERY_CONFIG.limit,
-			granularity: dateRange.granularity,
-			filters,
-		},
-	];
+	const queries = useMemo(
+		() => [
+			{
+				id: "overview-summary",
+				parameters: [
+					"summary_metrics",
+					"today_metrics",
+					"events_by_date",
+					{
+						name: "summary_metrics",
+						start_date: previousPeriodRange.start_date,
+						end_date: previousPeriodRange.end_date,
+						granularity: previousPeriodRange.granularity,
+						id: "previous_summary_metrics",
+					},
+					{
+						name: "events_by_date",
+						start_date: previousPeriodRange.start_date,
+						end_date: previousPeriodRange.end_date,
+						granularity: previousPeriodRange.granularity,
+						id: "previous_events_by_date",
+					},
+				],
+				limit: QUERY_CONFIG.limit,
+				granularity: dateRange.granularity,
+				filters,
+			},
+			{
+				id: "overview-pages",
+				parameters: QUERY_CONFIG.parameters.pages,
+				limit: QUERY_CONFIG.limit,
+				granularity: dateRange.granularity,
+				filters,
+			},
+			{
+				id: "overview-traffic",
+				parameters: QUERY_CONFIG.parameters.traffic,
+				limit: QUERY_CONFIG.limit,
+				granularity: dateRange.granularity,
+				filters,
+			},
+			{
+				id: "overview-tech",
+				parameters: QUERY_CONFIG.parameters.tech,
+				limit: QUERY_CONFIG.limit,
+				granularity: dateRange.granularity,
+				filters,
+			},
+			{
+				id: "overview-custom-events",
+				parameters: QUERY_CONFIG.parameters.customEvents,
+				limit: QUERY_CONFIG.limit,
+				granularity: dateRange.granularity,
+				filters,
+			},
+			{
+				id: "overview-geo",
+				parameters: QUERY_CONFIG.parameters.geo,
+				limit: QUERY_CONFIG.limit,
+				granularity: dateRange.granularity,
+				filters,
+			},
+		],
+		[dateRange.granularity, filters, previousPeriodRange]
+	);
 
 	const { isLoading, error, getDataForQuery } = useBatchDynamicQuery(
 		websiteId,
@@ -267,66 +268,74 @@ export function WebsiteOverviewTab({
 		return <PercentageBadge percentage={percentage} />;
 	};
 
-	const referrerTabs = [
-		{
-			id: "referrers",
-			label: "Referrers",
-			data: analytics.top_referrers || [],
-			columns: createReferrerColumns() as ColumnDef<
-				AnalyticsRowData,
-				unknown
-			>[],
-			getFilter: (row: AnalyticsRowData) => ({
-				field: "referrer",
-				value: row.referrer || "",
-			}),
-		},
-		{
-			id: "utm_sources",
-			label: "UTM Sources",
-			data: analytics.utm_sources || [],
-			columns: createMetricColumns({
-				includeName: true,
-				nameLabel: "Source",
-				visitorsLabel: "Visitors",
-				pageviewsLabel: "Views",
-			}) as ColumnDef<AnalyticsRowData, unknown>[],
-			getFilter: (row: AnalyticsRowData) => ({
-				field: "utm_source",
-				value: row.name,
-			}),
-		},
-		{
-			id: "utm_mediums",
-			label: "UTM Mediums",
-			data: analytics.utm_mediums || [],
-			columns: createMetricColumns({
-				includeName: true,
-				nameLabel: "Medium",
-				visitorsLabel: "Visitors",
-				pageviewsLabel: "Views",
-			}) as ColumnDef<AnalyticsRowData, unknown>[],
-			getFilter: (row: AnalyticsRowData) => ({
-				field: "utm_medium",
-				value: row.name,
-			}),
-		},
-		{
-			id: "utm_campaigns",
-			label: "UTM Campaigns",
-			data: analytics.utm_campaigns || [],
-			columns: createMetricColumns({
-				includeName: true,
-				nameLabel: "Campaign",
-				visitorsLabel: "Visitors",
-				pageviewsLabel: "Views",
-			}) as ColumnDef<AnalyticsRowData, unknown>[],
-			getFilter: (row: AnalyticsRowData) => ({
-				field: "utm_campaign",
-				value: row.name,
-			}),
-		},
-	];
+	const referrerTabs = useMemo(
+		() => [
+			{
+				id: "referrers",
+				label: "Referrers",
+				data: analytics.top_referrers || [],
+				columns: createReferrerColumns() as ColumnDef<
+					AnalyticsRowData,
+					unknown
+				>[],
+				getFilter: (row: AnalyticsRowData) => ({
+					field: "referrer",
+					value: row.referrer || "",
+				}),
+			},
+			{
+				id: "utm_sources",
+				label: "UTM Sources",
+				data: analytics.utm_sources || [],
+				columns: createMetricColumns({
+					includeName: true,
+					nameLabel: "Source",
+					visitorsLabel: "Visitors",
+					pageviewsLabel: "Views",
+				}) as ColumnDef<AnalyticsRowData, unknown>[],
+				getFilter: (row: AnalyticsRowData) => ({
+					field: "utm_source",
+					value: row.name,
+				}),
+			},
+			{
+				id: "utm_mediums",
+				label: "UTM Mediums",
+				data: analytics.utm_mediums || [],
+				columns: createMetricColumns({
+					includeName: true,
+					nameLabel: "Medium",
+					visitorsLabel: "Visitors",
+					pageviewsLabel: "Views",
+				}) as ColumnDef<AnalyticsRowData, unknown>[],
+				getFilter: (row: AnalyticsRowData) => ({
+					field: "utm_medium",
+					value: row.name,
+				}),
+			},
+			{
+				id: "utm_campaigns",
+				label: "UTM Campaigns",
+				data: analytics.utm_campaigns || [],
+				columns: createMetricColumns({
+					includeName: true,
+					nameLabel: "Campaign",
+					visitorsLabel: "Visitors",
+					pageviewsLabel: "Views",
+				}) as ColumnDef<AnalyticsRowData, unknown>[],
+				getFilter: (row: AnalyticsRowData) => ({
+					field: "utm_campaign",
+					value: row.name,
+				}),
+			},
+		],
+		[
+			analytics.top_referrers,
+			analytics.utm_sources,
+			analytics.utm_mediums,
+			analytics.utm_campaigns,
+		]
+	);
 
 	const dateFrom = dayjs(dateRange.start_date);
 	const dateTo = dayjs(dateRange.end_date);
@@ -568,107 +577,116 @@ export function WebsiteOverviewTab({
 		]
 	);
 
-	const deviceColumns = [
-		{
-			id: "device_type",
-			accessorKey: "device_type",
-			header: "Device Type",
-			cell: (info: CellInfo) => {
-				const row = info.row.original as { name: string };
-				return <DeviceTypeCell device_type={row.name} />;
+	const deviceColumns = useMemo(
+		() => [
+			{
+				id: "device_type",
+				accessorKey: "device_type",
+				header: "Device Type",
+				cell: (info: CellInfo) => {
+					const row = info.row.original as { name: string };
+					return <DeviceTypeCell device_type={row.name} />;
+				},
 			},
-		},
-		{
-			id: "visitors",
-			accessorKey: "visitors",
-			header: "Visitors",
-			cell: (info: CellInfo) => (
-				<span className="font-medium">
-					{formatNumber(info.getValue() as number)}
-				</span>
-			),
-		},
-		{
-			id: "percentage",
-			accessorKey: "percentage",
-			header: "Share",
-			cell: createPercentageCell(),
-		},
-	];
+			{
+				id: "visitors",
+				accessorKey: "visitors",
+				header: "Visitors",
+				cell: (info: CellInfo) => (
+					<span className="font-medium">
+						{formatNumber(info.getValue() as number)}
+					</span>
+				),
+			},
+			{
+				id: "percentage",
+				accessorKey: "percentage",
+				header: "Share",
+				cell: createPercentageCell(),
+			},
+		],
+		[formatNumber]
+	);
 
-	const browserColumns = [
-		{
-			id: "name",
-			accessorKey: "name",
-			header: "Browser",
-			cell: createTechnologyCell("browser"),
-			size: 180,
-			minSize: 120,
-		},
-		{
-			id: "visitors",
-			accessorKey: "visitors",
-			header: "Visitors",
-			cell: (info: CellInfo) => (
-				<span className="font-medium">
-					{formatNumber(info.getValue() as number)}
-				</span>
-			),
-		},
-		{
-			id: "pageviews",
-			accessorKey: "pageviews",
-			header: "Pageviews",
-			cell: (info: CellInfo) => (
-				<span className="font-medium">
-					{formatNumber(info.getValue() as number)}
-				</span>
-			),
-		},
-		{
-			id: "percentage",
-			accessorKey: "percentage",
-			header: "Share",
-			cell: createPercentageCell(),
-		},
-	];
+	const browserColumns = useMemo(
+		() => [
+			{
+				id: "name",
+				accessorKey: "name",
+				header: "Browser",
+				cell: createTechnologyCell("browser"),
+				size: 180,
+				minSize: 120,
+			},
+			{
+				id: "visitors",
+				accessorKey: "visitors",
+				header: "Visitors",
+				cell: (info: CellInfo) => (
+					<span className="font-medium">
+						{formatNumber(info.getValue() as number)}
+					</span>
+				),
+			},
+			{
+				id: "pageviews",
+				accessorKey: "pageviews",
+				header: "Pageviews",
+				cell: (info: CellInfo) => (
+					<span className="font-medium">
+						{formatNumber(info.getValue() as number)}
+					</span>
+				),
+			},
+			{
+				id: "percentage",
+				accessorKey: "percentage",
+				header: "Share",
+				cell: createPercentageCell(),
+			},
+		],
+		[formatNumber]
+	);
 
-	const osColumns = [
-		{
-			id: "name",
-			accessorKey: "name",
-			header: "Operating System",
-			cell: createTechnologyCell("os"),
-			size: 200,
-			minSize: 140,
-		},
-		{
-			id: "visitors",
-			accessorKey: "visitors",
-			header: "Visitors",
-			cell: (info: CellInfo) => (
-				<span className="font-medium">
-					{formatNumber(info.getValue() as number)}
-				</span>
-			),
-		},
-		{
-			id: "pageviews",
-			accessorKey: "pageviews",
-			header: "Pageviews",
-			cell: (info: CellInfo) => (
-				<span className="font-medium">
-					{formatNumber(info.getValue() as number)}
-				</span>
-			),
-		},
-		{
-			id: "percentage",
-			accessorKey: "percentage",
-			header: "Share",
-			cell: createPercentageCell(),
-		},
-	];
+	const osColumns = useMemo(
+		() => [
+			{
+				id: "name",
+				accessorKey: "name",
+				header: "Operating System",
+				cell: createTechnologyCell("os"),
+				size: 200,
+				minSize: 140,
+			},
+			{
+				id: "visitors",
+				accessorKey: "visitors",
+				header: "Visitors",
+				cell: (info: CellInfo) => (
+					<span className="font-medium">
+						{formatNumber(info.getValue() as number)}
+					</span>
+				),
+			},
+			{
+				id: "pageviews",
+				accessorKey: "pageviews",
+				header: "Pageviews",
+				cell: (info: CellInfo) => (
+					<span className="font-medium">
+						{formatNumber(info.getValue() as number)}
+					</span>
+				),
+			},
+			{
+				id: "percentage",
+				accessorKey: "percentage",
+				header: "Share",
+				cell: createPercentageCell(),
+			},
+		],
+		[formatNumber]
+	);
 
 	const todayDate = dayjs().format("YYYY-MM-DD");
 	const todayEvent = analytics.events_by_date.find(
@@ -678,7 +696,7 @@ export function WebsiteOverviewTab({
 	const todaySessions = todayEvent?.sessions ?? 0;
 	const todayPageviews = todayEvent?.pageviews ?? 0;
 
-	const calculateTrends = (() => {
+	const calculateTrends = useMemo(() => {
 		const currentSummary = analytics.summary;
 		const previousSummary = getDataForQuery(
 			"overview-summary",
@@ -714,6 +732,7 @@ export function WebsiteOverviewTab({
 			previousMetrics.sessions > 0
 				? previousMetrics.pageviews / previousMetrics.sessions
 				: 0;
+
 		const calculateTrendPercentage = (
 			current: number,
 			previous: number,
@@ -728,6 +747,7 @@ export function WebsiteOverviewTab({
 			const change = calculatePercentChange(current, previous);
 			return Math.max(-100, Math.min(1000, Math.round(change)));
 		};
+
 		const canShowSessionBasedTrend =
 			previousMetrics.sessions >= MIN_PREVIOUS_SESSIONS_FOR_TREND;
 
@@ -792,11 +812,17 @@ export function WebsiteOverviewTab({
 					)
 				: undefined,
 		};
-	})();
+	}, [
+		analytics.summary,
+		getDataForQuery,
+		dateRange.start_date,
+		dateRange.end_date,
+		previousPeriodRange.start_date,
+		previousPeriodRange.end_date,
+	]);
 
 	const onAddFilter = useCallback(
 		(field: string, value: string) => {
-			// The field parameter now contains the correct filter field from the tab configuration
 			const filter = {
 				field,
 				operator: "eq" as const,

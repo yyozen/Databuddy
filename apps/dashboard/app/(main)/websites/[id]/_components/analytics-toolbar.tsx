@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowClockwiseIcon } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ArrowClockwise";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import { useAtom } from "jotai";
@@ -17,12 +17,12 @@ import { FiltersSection } from "./filters/filters-section";
 
 const MAX_HOURLY_DAYS = 7;
 
-type QuickRange = {
+interface QuickRange {
 	label: string;
 	fullLabel: string;
 	hours?: number;
 	days?: number;
-};
+}
 
 const QUICK_RANGES: QuickRange[] = [
 	{ label: "24h", fullLabel: "Last 24 hours", hours: 24 },
@@ -42,13 +42,13 @@ const getStartDateForRange = (range: QuickRange) => {
 				.toDate();
 };
 
-type AnalyticsToolbarProps = {
+interface AnalyticsToolbarProps {
 	isDisabled?: boolean;
 	isLoading?: boolean;
 	isRefreshing: boolean;
 	onRefreshAction: () => void;
 	websiteId: string;
-};
+}
 
 export function AnalyticsToolbar({
 	isDisabled = false,

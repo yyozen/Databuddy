@@ -1,6 +1,7 @@
 "use client";
 
-import { ChartLineIcon, SpinnerIcon } from "@phosphor-icons/react";
+import { ChartLineIcon } from "@phosphor-icons/react/dist/ssr/ChartLine";
+import { SpinnerIcon } from "@phosphor-icons/react/dist/ssr/Spinner";
 import dayjs from "dayjs";
 import { useMemo } from "react";
 import {
@@ -14,21 +15,21 @@ import {
 } from "recharts";
 import { EmptyState } from "@/components/empty-state";
 
-type RetentionRate = {
+interface RetentionRate {
 	date: string;
 	new_users: number;
 	returning_users: number;
 	retention_rate: number;
-};
+}
 
-type RetentionRateChartProps = {
+interface RetentionRateChartProps {
 	data: RetentionRate[];
 	isLoading: boolean;
-};
+}
 
-type TooltipPayload = {
+interface TooltipPayload {
 	payload: RetentionRate & { fullDate?: string };
-};
+}
 
 function CustomTooltip({
 	active,

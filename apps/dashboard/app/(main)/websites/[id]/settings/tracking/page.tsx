@@ -1,6 +1,6 @@
 "use client";
 
-import { CodeIcon } from "@phosphor-icons/react";
+import { CodeIcon } from "@phosphor-icons/react/dist/ssr/Code";
 import { useParams } from "next/navigation";
 import { PageHeader } from "../../../_components/page-header";
 import { WebsiteTrackingSetupTab } from "../../_components/tabs/tracking-setup-tab";

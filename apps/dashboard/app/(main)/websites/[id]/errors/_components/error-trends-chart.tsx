@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowCounterClockwiseIcon, BugIcon } from "@phosphor-icons/react";
+import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ArrowCounterClockwise";
+import { BugIcon } from "@phosphor-icons/react/dist/ssr/Bug";
 import dynamic from "next/dynamic";
 import { useCallback, useState } from "react";
 import {

@@ -1,7 +1,8 @@
 "use client";
 
 import type { DynamicQueryRequest } from "@databuddy/shared/types/api";
-import { CurrencyDollarIcon, LightningIcon } from "@phosphor-icons/react";
+import { CurrencyDollarIcon } from "@phosphor-icons/react/dist/ssr/CurrencyDollar";
+import { LightningIcon } from "@phosphor-icons/react/dist/ssr/Lightning";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";

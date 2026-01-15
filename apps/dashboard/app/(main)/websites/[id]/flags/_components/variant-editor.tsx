@@ -1,7 +1,8 @@
 "use client";
 
 import type { Variant } from "@databuddy/shared/flags";
-import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { PlusIcon } from "@phosphor-icons/react/dist/ssr/Plus";
+import { TrashIcon } from "@phosphor-icons/react/dist/ssr/Trash";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

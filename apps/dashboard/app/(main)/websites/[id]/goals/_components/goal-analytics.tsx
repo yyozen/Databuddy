@@ -1,6 +1,9 @@
 "use client";
 
-import { ArrowClockwise, Target, TrendUp, Users } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon as ArrowClockwise } from "@phosphor-icons/react/dist/ssr/ArrowClockwise";
+import { TargetIcon as Target } from "@phosphor-icons/react/dist/ssr/Target";
+import { TrendUpIcon as TrendUp } from "@phosphor-icons/react/dist/ssr/TrendUp";
+import { UsersIcon as Users } from "@phosphor-icons/react/dist/ssr/Users";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 

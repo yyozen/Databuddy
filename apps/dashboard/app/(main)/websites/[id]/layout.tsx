@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useAtom, useSetAtom } from "jotai";
 import { useParams, usePathname } from "next/navigation";
-import { useLayoutEffect } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { WebsiteErrorState } from "@/components/website-error-state";
 import { useTrackingSetup } from "@/hooks/use-tracking-setup";
@@ -38,7 +38,7 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 	const [isRefreshing, setIsRefreshing] = useAtom(isAnalyticsRefreshingAtom);
 	const setCurrentFilterWebsiteId = useSetAtom(currentFilterWebsiteIdAtom);
 
-	useLayoutEffect(() => {
+	useEffect(() => {
 		setCurrentFilterWebsiteId(websiteId);
 	}, [websiteId, setCurrentFilterWebsiteId]);
 

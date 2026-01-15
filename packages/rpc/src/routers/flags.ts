@@ -227,7 +227,7 @@ function sanitizeFlagForDemo<T extends FlagWithTargetGroups>(flag: T): T {
 		...flag,
 		rules: Array.isArray(flag.rules) && flag.rules.length > 0 ? [] : flag.rules,
 		targetGroups: flag.targetGroups?.map(
-			(group: { rules?: unknown; [key: string]: unknown }) => ({
+			(group: { rules?: unknown;[key: string]: unknown }) => ({
 				...group,
 				rules:
 					Array.isArray(group.rules) && group.rules.length > 0
@@ -558,10 +558,12 @@ export const flagsRouter = {
 					);
 				}
 
-				await flagsCache.invalidateByTables([
-					"flags",
-					"flags_to_target_groups",
-				]);
+				await invalidateFlagCache(
+					restoredFlag.id,
+					input.websiteId,
+					input.organizationId,
+					input.key
+				);
 
 				return restoredFlag;
 			}
@@ -618,7 +620,12 @@ export const flagsRouter = {
 				);
 			}
 
-			await flagsCache.invalidateByTables(["flags", "flags_to_target_groups"]);
+			await invalidateFlagCache(
+				newFlag.id,
+				input.websiteId,
+				input.organizationId,
+				input.key
+			);
 
 			return newFlag;
 		}),

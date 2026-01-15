@@ -1,6 +1,7 @@
 "use client";
 
-import { CaretDownIcon, CaretRightIcon } from "@phosphor-icons/react";
+import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
+import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr/CaretRight";
 import { useCallback, useMemo, useState } from "react";
 import { DataTable } from "@/components/table/data-table";
 import type {

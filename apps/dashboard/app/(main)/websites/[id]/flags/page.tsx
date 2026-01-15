@@ -1,17 +1,17 @@
 "use client";
 
 import { GATED_FEATURES } from "@databuddy/shared/types/features";
+import { FlagIcon } from "@phosphor-icons/react/dist/ssr/Flag";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { FeatureGate } from "@/components/feature-gate";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { orpc } from "@/lib/orpc";
 import { isFlagSheetOpenAtom } from "@/stores/jotai/flagsAtoms";
-import { FlagIcon } from "@phosphor-icons/react";
-import { EmptyState } from "@/components/empty-state";
 import { FlagSheet } from "./_components/flag-sheet";
 import { FlagsList, FlagsListSkeleton } from "./_components/flags-list";
 import type { Flag, TargetGroup } from "./_components/types";

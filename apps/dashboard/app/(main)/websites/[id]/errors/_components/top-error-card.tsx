@@ -1,4 +1,6 @@
-import { BugIcon, UsersIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { BugIcon } from "@phosphor-icons/react/dist/ssr/Bug";
+import { UsersIcon } from "@phosphor-icons/react/dist/ssr/Users";
+import { WarningCircleIcon } from "@phosphor-icons/react/dist/ssr/WarningCircle";
 import { Badge } from "@/components/ui/badge";
 import type { ErrorType } from "./types";
 

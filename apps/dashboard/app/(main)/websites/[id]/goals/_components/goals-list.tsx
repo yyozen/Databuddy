@@ -1,6 +1,6 @@
 "use client";
 
-import { TargetIcon } from "@phosphor-icons/react";
+import { TargetIcon } from "@phosphor-icons/react/dist/ssr/Target";
 import { EmptyState } from "@/components/empty-state";
 import type { Goal } from "@/hooks/use-goals";
 import { GoalItem } from "./goal-item";

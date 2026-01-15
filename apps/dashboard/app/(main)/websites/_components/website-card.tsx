@@ -2,18 +2,16 @@ import type {
 	ProcessedMiniChartData,
 	Website,
 } from "@databuddy/shared/types/website";
-import {
-	ArrowSquareOutIcon,
-	CodeIcon,
-	CopyIcon,
-	EyeIcon,
-	GearIcon,
-	MinusIcon,
-	PencilSimpleIcon,
-	TrashIcon,
-	TrendDownIcon,
-	TrendUpIcon,
-} from "@phosphor-icons/react";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
+import { CodeIcon } from "@phosphor-icons/react/dist/ssr/Code";
+import { CopyIcon } from "@phosphor-icons/react/dist/ssr/Copy";
+import { EyeIcon } from "@phosphor-icons/react/dist/ssr/Eye";
+import { GearIcon } from "@phosphor-icons/react/dist/ssr/Gear";
+import { MinusIcon } from "@phosphor-icons/react/dist/ssr/Minus";
+import { PencilSimpleIcon } from "@phosphor-icons/react/dist/ssr/PencilSimple";
+import { TrashIcon } from "@phosphor-icons/react/dist/ssr/Trash";
+import { TrendDownIcon } from "@phosphor-icons/react/dist/ssr/TrendDown";
+import { TrendUpIcon } from "@phosphor-icons/react/dist/ssr/TrendUp";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { memo, useCallback, useState } from "react";

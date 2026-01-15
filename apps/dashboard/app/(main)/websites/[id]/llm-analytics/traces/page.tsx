@@ -1,7 +1,8 @@
 "use client";
 
 import type { DynamicQueryRequest } from "@databuddy/shared/types/api";
-import { RoadHorizonIcon, UsersThreeIcon } from "@phosphor-icons/react";
+import { RoadHorizonIcon } from "@phosphor-icons/react/dist/ssr/RoadHorizon";
+import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr/UsersThree";
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
 import { StatCard } from "@/components/analytics/stat-card";
