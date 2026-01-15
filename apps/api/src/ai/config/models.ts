@@ -14,7 +14,7 @@ export const openrouter = createOpenRouter({
 });
 
 
-export const { track, transport } = databuddyLLM({
+export const { track } = databuddyLLM({
 	apiUrl: process.env.DATABUDDY_API_URL ?? "https://basket.databuddy.cc/llm",
 	apiKey: process.env.DATABUDDY_API_KEY,
 	computeCosts: true,
@@ -30,10 +30,10 @@ const modelNames = {
 } as const;
 
 const baseModels = {
-	triage: openrouter.chat(modelNames.triage),
-	analytics: openrouter.chat(modelNames.analytics),
-	advanced: openrouter.chat(modelNames.advanced),
-	perplexity: openrouter.chat(modelNames.perplexity),
+	triage: track(openrouter.chat(modelNames.triage)),
+	analytics: track(openrouter.chat(modelNames.analytics)),
+	advanced: track(openrouter.chat(modelNames.advanced)),
+	perplexity: track(openrouter.chat(modelNames.perplexity)),
 } as const;
 
 export const models = {
