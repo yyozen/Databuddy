@@ -8,7 +8,8 @@ import {
 	RobotIcon,
 	WarningIcon,
 } from "@phosphor-icons/react";
-import { use, useMemo } from "react";
+import { useParams } from "next/navigation";
+import { useMemo } from "react";
 import { StatCard } from "@/components/analytics/stat-card";
 import { EmptyState } from "@/components/empty-state";
 import { useChartPreferences } from "@/hooks/use-chart-preferences";
@@ -24,7 +25,6 @@ import {
 import { LlmLoadingSkeleton } from "./llm-loading-skeleton";
 
 interface LlmTabPageWrapperProps {
-	params: Promise<{ id: string }>;
 	children: (websiteId: string, dateRange: DateRange) => React.ReactNode;
 }
 
@@ -54,12 +54,9 @@ interface LlmTimeSeriesRow {
 	error_rate: number;
 }
 
-export function LlmTabPageWrapper({
-	params,
-	children,
-}: LlmTabPageWrapperProps) {
-	const resolvedParams = use(params);
-	const websiteId = resolvedParams.id;
+export function LlmTabPageWrapper({ children }: LlmTabPageWrapperProps) {
+	const params = useParams();
+	const websiteId = params.id as string;
 
 	const { chartType, chartStepType } = useChartPreferences("llm-analytics");
 	const { dateRange } = useDateFilters();
@@ -149,25 +146,7 @@ export function LlmTabPageWrapper({
 		<div className="space-y-3 p-3 sm:space-y-4 sm:p-4">
 			{isLoading ? (
 				<LlmLoadingSkeleton />
-			) : !hasData ? (
-				<div className="flex flex-1 items-center justify-center py-16">
-					<EmptyState
-						description={
-							<>
-								LLM analytics will appear here once you start tracking AI
-								calls. Use the{" "}
-								<code className="rounded bg-muted px-1 py-0.5 text-xs">
-									databuddy.llm()
-								</code>{" "}
-								SDK method to track LLM requests.
-							</>
-						}
-						icon={<RobotIcon />}
-						title="No LLM data yet"
-						variant="minimal"
-					/>
-				</div>
-			) : (
+			) : hasData ? (
 				<>
 					<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
 						<StatCard
@@ -233,6 +212,24 @@ export function LlmTabPageWrapper({
 
 					{children(websiteId, dateRange)}
 				</>
+			) : (
+				<div className="flex flex-1 items-center justify-center py-16">
+					<EmptyState
+						description={
+							<>
+								LLM analytics will appear here once you start tracking AI calls.
+								Use the{" "}
+								<code className="rounded bg-muted px-1 py-0.5 text-xs">
+									databuddy.llm()
+								</code>{" "}
+								SDK method to track LLM requests.
+							</>
+						}
+						icon={<RobotIcon />}
+						title="No LLM data yet"
+						variant="minimal"
+					/>
+				</div>
 			)}
 		</div>
 	);

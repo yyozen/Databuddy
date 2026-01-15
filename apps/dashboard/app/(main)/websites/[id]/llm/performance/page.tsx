@@ -1,13 +1,11 @@
+"use client";
+
 import { LlmPerformanceTab } from "../_components/llm-performance-tab";
 import { LlmTabPageWrapper } from "../_components/llm-tab-page-wrapper";
 
-export default function LlmPerformancePage({
-	params,
-}: {
-	params: Promise<{ id: string }>;
-}) {
+export default function LlmPerformancePage() {
 	return (
-		<LlmTabPageWrapper params={params}>
+		<LlmTabPageWrapper>
 			{(websiteId, dateRange) => (
 				<LlmPerformanceTab dateRange={dateRange} websiteId={websiteId} />
 			)}

@@ -1,13 +1,11 @@
+"use client";
+
 import { LlmErrorsTab } from "../_components/llm-errors-tab";
 import { LlmTabPageWrapper } from "../_components/llm-tab-page-wrapper";
 
-export default function LlmErrorsPage({
-	params,
-}: {
-	params: Promise<{ id: string }>;
-}) {
+export default function LlmErrorsPage() {
 	return (
-		<LlmTabPageWrapper params={params}>
+		<LlmTabPageWrapper>
 			{(websiteId, dateRange) => (
 				<LlmErrorsTab dateRange={dateRange} websiteId={websiteId} />
 			)}

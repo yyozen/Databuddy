@@ -1,13 +1,11 @@
+"use client";
+
 import { LlmTabPageWrapper } from "../_components/llm-tab-page-wrapper";
 import { LlmTracesTab } from "../_components/llm-traces-tab";
 
-export default function LlmTracesPage({
-	params,
-}: {
-	params: Promise<{ id: string }>;
-}) {
+export default function LlmTracesPage() {
 	return (
-		<LlmTabPageWrapper params={params}>
+		<LlmTabPageWrapper>
 			{(websiteId, dateRange) => (
 				<LlmTracesTab dateRange={dateRange} websiteId={websiteId} />
 			)}
