@@ -77,6 +77,58 @@ const getOwnerId = cacheable(
 	}
 );
 
+/**
+ * Resolves the billing owner's user ID for an API key.
+ * For personal API keys, returns the userId.
+ * For org API keys, returns the organization owner's userId.
+ */
+async function _resolveApiKeyOwnerId(
+	organizationId: string | null,
+	userId: string | null
+): Promise<string | null> {
+	if (userId && !organizationId) {
+		return userId;
+	}
+
+	if (organizationId) {
+		try {
+			const orgMember = await db.query.member.findFirst({
+				where: and(
+					eq(member.organizationId, organizationId),
+					eq(member.role, "owner")
+				),
+				columns: {
+					userId: true,
+				},
+			});
+
+			if (orgMember) {
+				return orgMember.userId;
+			}
+		} catch (error) {
+			captureError(error, {
+				message: "Failed to fetch organization owner for API key",
+				organizationId,
+			});
+		}
+	}
+
+	return null;
+}
+
+export const resolveApiKeyOwnerId = cacheable(
+	async (
+		organizationId: string | null,
+		userId: string | null
+	): Promise<string | null> => _resolveApiKeyOwnerId(organizationId, userId),
+	{
+		expireInSec: 300,
+		prefix: "api_key_owner_id",
+		staleWhileRevalidate: true,
+		staleTime: 60,
+	}
+);
+
 // Cache the website lookup and owner lookup
 export const getWebsiteById = cacheable(
 	async (id: string): Promise<WebsiteWithOwner | null> => {

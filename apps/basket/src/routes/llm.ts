@@ -1,3 +1,4 @@
+import { resolveApiKeyOwnerId } from "@hooks/auth";
 import { getApiKeyFromHeader, hasKeyScope } from "@lib/api-key";
 import { insertAICallSpans } from "@lib/event-service";
 import { captureError, record, setAttributes } from "@lib/tracing";
@@ -79,6 +80,7 @@ const app = new Elysia().post("/llm", async (context) => {
 			);
 		}
 
+		// owner_id for ClickHouse storage (org or user ID)
 		const ownerId = apiKey.organizationId ?? apiKey.userId;
 		if (!ownerId) {
 			return new Response(
@@ -93,11 +95,28 @@ const app = new Elysia().post("/llm", async (context) => {
 			);
 		}
 
-		// Always run autumn check using API key owner's ID
+		const billingOwnerId = await resolveApiKeyOwnerId(
+			apiKey.organizationId ?? null,
+			apiKey.userId ?? null
+		);
+		if (!billingOwnerId) {
+			return new Response(
+				JSON.stringify({
+					status: "error",
+					message: "Could not resolve billing owner",
+				}),
+				{
+					status: 400,
+					headers: { "Content-Type": "application/json" },
+				}
+			);
+		}
+
+		// Always run autumn check using the billing owner's user ID
 		try {
 			const result = await record("autumn.check", () =>
 				autumn.check({
-					customer_id: ownerId,
+					customer_id: billingOwnerId,
 					feature_id: "events",
 					send_event: true,
 					// @ts-expect-error autumn types are not up to date
