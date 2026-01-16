@@ -114,15 +114,13 @@ function generateOgHtml(link: CachedLink, requestUrl: string): string {
 	<meta property="og:type" content="website">
 	${description ? `<meta property="og:description" content="${escapeHtml(description)}">` : ""}
 	${image ? `<meta property="og:image" content="${escapeHtml(image)}">` : ""}
+	${image ? `<meta property="og:image:secure_url" content="${escapeHtml(image)}">` : ""}
 	<meta name="twitter:card" content="${image ? "summary_large_image" : "summary"}">
 	<meta name="twitter:title" content="${escapeHtml(title)}">
 	${description ? `<meta name="twitter:description" content="${escapeHtml(description)}">` : ""}
 	${image ? `<meta name="twitter:image" content="${escapeHtml(image)}">` : ""}
-	<meta http-equiv="refresh" content="0; url=${escapeHtml(link.targetUrl)}">
 </head>
-<body>
-	<p>Redirecting to <a href="${escapeHtml(link.targetUrl)}">${escapeHtml(link.targetUrl)}</a></p>
-</body>
+<body></body>
 </html>`;
 }
 
@@ -135,7 +133,6 @@ export const redirectRoute = new Elysia().get(
 			return Response.json({ error: "Link not found" }, { status: 404 });
 		}
 
-		// Check if link has expired
 		if (isLinkExpired(link)) {
 			const expiredUrl = link.expiredRedirectUrl ?? DEFAULT_EXPIRED_URL;
 			return redirect(expiredUrl, 302);
@@ -145,7 +142,6 @@ export const redirectRoute = new Elysia().get(
 		const userAgent = request.headers.get("user-agent");
 		const ip = extractIp(request);
 
-		// If this is a social bot and we have custom OG metadata, serve HTML
 		const hasCustomOg = link.ogTitle ?? link.ogDescription ?? link.ogImageUrl;
 		if (hasCustomOg && isSocialBot(userAgent)) {
 			const requestUrl = request.url;
