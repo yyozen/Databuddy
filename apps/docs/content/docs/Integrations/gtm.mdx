@@ -3,6 +3,8 @@ title: Google Tag Manager
 description: Add Databuddy analytics through Google Tag Manager
 ---
 
+import { Card, Cards } from "@/components/docs";
+
 Integrate Databuddy with Google Tag Manager for centralized tag management while maintaining privacy-first analytics. Perfect for teams managing multiple tracking tools.
 
 > TL;DR: In GTM, create a Custom HTML tag with an inline loader that appends `https://cdn.databuddy.cc/databuddy.js` and sets `data-client-id`. Enable desired flags (e.g., `data-track-screen-views`, `data-track-attributes`, `data-track-errors`). Trigger on All Pages and publish.
@@ -456,5 +458,19 @@ Map GA4 events to Databuddy equivalents:
 4. ✅ No JavaScript errors in console
 5. ✅ Events appear in Databuddy dashboard
 6. ✅ Privacy settings respected
+
+## Related Integrations
+
+<Cards>
+  <Card title="Shopify" href="/docs/Integrations/shopify">
+    Complete e-commerce tracking with purchase analytics.
+  </Card>
+  <Card title="Stripe" href="/docs/Integrations/stripe">
+    Payment tracking for comprehensive conversion analytics.
+  </Card>
+  <Card title="WordPress" href="/docs/Integrations/wordpress">
+    Plugin or manual setup for WordPress sites.
+  </Card>
+</Cards>
 
 Need help with your GTM integration? Contact us at [help@databuddy.cc](mailto:help@databuddy.cc).

@@ -6,6 +6,7 @@ description: Add privacy-first analytics to your SvelteKit application
 import { Steps, Step } from "@/components/docs";
 import { Callout } from "@/components/docs";
 import { CodeBlock } from "@/components/docs";
+import { Card, Cards } from "@/components/docs";
 
 This guide explains how to integrate Databuddy with your SvelteKit application for analytics tracking.
 
@@ -378,6 +379,20 @@ Then use them in your code:
 - Never call `window.databuddy` during SSR (server-side rendering)
 - Always wrap tracking calls in `typeof window !== 'undefined'` checks
 - Use `onMount` or `afterNavigate` for client-only tracking
+
+## Related Integrations
+
+<Cards>
+  <Card title="Svelte" href="/docs/Integrations/svelte">
+    Lightweight Svelte integration for client-side apps.
+  </Card>
+  <Card title="Next.js" href="/docs/Integrations/nextjs">
+    App Router and Pages Router support with SSR.
+  </Card>
+  <Card title="React" href="/docs/Integrations/react">
+    TypeScript support with React hooks and components.
+  </Card>
+</Cards>
 
 Need help with your SvelteKit integration? Contact us at [help@databuddy.cc](mailto:help@databuddy.cc).
 

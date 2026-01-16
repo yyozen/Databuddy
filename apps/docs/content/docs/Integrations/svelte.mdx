@@ -6,6 +6,7 @@ description: Add privacy-first analytics to your Svelte application
 import { Steps, Step } from "@/components/docs";
 import { Callout } from "@/components/docs";
 import { CodeBlock } from "@/components/docs";
+import { Card, Cards } from "@/components/docs";
 
 This guide explains how to integrate Databuddy with your standard client-side Svelte applications, typically built using Vite (e.g., via `npm create vite@latest -- --template svelte`).
 
@@ -310,6 +311,20 @@ Or add it directly to `src/app.html`:
 - Databuddy automatically tracks route changes for most routers
 - If using a custom router, manually call `window.databuddy.screenView()` on route changes
 - Check that your router triggers browser history changes
+
+## Related Integrations
+
+<Cards>
+  <Card title="SvelteKit" href="/docs/Integrations/sveltekit">
+    Full SvelteKit support with SSR and automatic route tracking.
+  </Card>
+  <Card title="React" href="/docs/Integrations/react">
+    TypeScript support with React hooks and components.
+  </Card>
+  <Card title="Angular" href="/docs/Integrations/angular">
+    Angular integration with service-based tracking.
+  </Card>
+</Cards>
 
 Need help with your Svelte integration? Contact us at [help@databuddy.cc](mailto:help@databuddy.cc).
 

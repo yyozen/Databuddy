@@ -6,6 +6,7 @@ description: Add privacy-first analytics to your Angular application
 import { Steps, Step } from "@/components/docs";
 import { Callout } from "@/components/docs";
 import { CodeBlock } from "@/components/docs";
+import { Card, Cards } from "@/components/docs";
 
 This guide explains how to integrate Databuddy with your Angular application.
 
@@ -470,6 +471,20 @@ Then use it in your `index.html`:
 - Ensure you've declared `window.databuddy` types (see TypeScript Declaration section)
 - Add the declaration file to your `tsconfig.json` includes
 - Use optional chaining: `window.databuddy?.track(...)`
+
+## Related Integrations
+
+<Cards>
+  <Card title="React" href="/docs/Integrations/react">
+    TypeScript support with React hooks and components.
+  </Card>
+  <Card title="Next.js" href="/docs/Integrations/nextjs">
+    App Router and Pages Router support with SSR.
+  </Card>
+  <Card title="Svelte" href="/docs/Integrations/svelte">
+    Lightweight Svelte integration with reactive tracking.
+  </Card>
+</Cards>
 
 Need help with your Angular integration? Contact us at [help@databuddy.cc](mailto:help@databuddy.cc).
 

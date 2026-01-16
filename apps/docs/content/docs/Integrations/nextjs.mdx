@@ -3,6 +3,8 @@ title: Next.js
 description: Add privacy-first analytics to your Next.js application
 ---
 
+import { Card, Cards } from "@/components/docs";
+
 Integrate Databuddy with your Next.js application for server-side rendering support, automatic page tracking, and optimal performance.
 
 ## Installation
@@ -372,5 +374,19 @@ import { Databuddy } from '@databuddy/sdk/react';
 **Events Not Tracking**: Check browser console for any JavaScript errors and verify the Databuddy script is loaded.
 
 **Route Tracking**: If using custom route tracking, make sure the Analytics component is properly added to your layout.
+
+## Related Integrations
+
+<Cards>
+  <Card title="React" href="/docs/Integrations/react">
+    TypeScript support with React hooks and components.
+  </Card>
+  <Card title="SvelteKit" href="/docs/Integrations/sveltekit">
+    Full SvelteKit support with SSR and automatic route tracking.
+  </Card>
+  <Card title="Vercel + Stripe" href="/docs/Integrations/stripe">
+    Payment tracking for comprehensive conversion analytics.
+  </Card>
+</Cards>
 
 Need help with your Next.js integration? Contact us at [help@databuddy.cc](mailto:help@databuddy.cc).

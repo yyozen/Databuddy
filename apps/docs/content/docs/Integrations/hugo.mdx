@@ -6,6 +6,7 @@ description: Add privacy-first analytics to your Hugo static site
 import { Steps, Step } from "@/components/docs";
 import { Callout } from "@/components/docs";
 import { CodeBlock } from "@/components/docs";
+import { Card, Cards } from "@/components/docs";
 
 Add Databuddy's privacy-first analytics to your Hugo static site by adding the tracking script to your site's templates. The best way to do this is by creating a partial template for the script and including it in your site's footer.
 
@@ -223,3 +224,19 @@ if (window.databuddy) {
 </script>
 {{ end }}`}
 />
+
+## Related Integrations
+
+<Cards>
+  <Card title="Jekyll" href="/docs/Integrations/jekyll">
+    Jekyll integration with include files and GitHub Pages.
+  </Card>
+  <Card title="WordPress" href="/docs/Integrations/wordpress">
+    Plugin or manual setup for WordPress sites.
+  </Card>
+  <Card title="React" href="/docs/Integrations/react">
+    TypeScript support with React hooks and components.
+  </Card>
+</Cards>
+
+Need help with your Hugo integration? Contact us at [help@databuddy.cc](mailto:help@databuddy.cc).

@@ -2,6 +2,8 @@
 title: React
 description: Integrate privacy-first analytics in your React application
 ---
+
+import { Card, Cards } from "@/components/docs";
   
 Add Databuddy's privacy-first analytics to your React application with TypeScript support and modern best practices.
 
@@ -438,5 +440,19 @@ export function useAnalytics() {
   return { trackButtonClick, trackPageView, trackError: handleError };
 }
 ```
+
+## Related Integrations
+
+<Cards>
+  <Card title="Next.js" href="/docs/Integrations/nextjs">
+    App Router and Pages Router support with SSR compatibility.
+  </Card>
+  <Card title="Angular" href="/docs/Integrations/angular">
+    Angular integration with service-based tracking.
+  </Card>
+  <Card title="Svelte" href="/docs/Integrations/svelte">
+    Lightweight Svelte integration with reactive tracking.
+  </Card>
+</Cards>
 
 Need help with React integration? Contact us at [help@databuddy.cc](mailto:help@databuddy.cc). 

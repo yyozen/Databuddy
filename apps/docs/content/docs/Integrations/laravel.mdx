@@ -6,6 +6,7 @@ description: Add privacy-first analytics to your Laravel application
 import { Steps, Step } from "@/components/docs";
 import { Callout } from "@/components/docs";
 import { CodeBlock } from "@/components/docs";
+import { Card, Cards } from "@/components/docs";
 
 Add Databuddy's privacy-first analytics to your Laravel application by adding the tracking script to your main Blade layout file.
 
@@ -353,6 +354,20 @@ Track form submissions:
 - The script only loads in production by default (due to `@if(app()->environment('production'))`)
 - For local testing, temporarily remove the environment check or set `APP_ENV=production` in your `.env`
 - Remember to restore the environment check before deploying
+
+## Related Integrations
+
+<Cards>
+  <Card title="React" href="/docs/Integrations/react">
+    TypeScript support with React hooks and components.
+  </Card>
+  <Card title="Next.js" href="/docs/Integrations/nextjs">
+    App Router and Pages Router support with SSR.
+  </Card>
+  <Card title="WordPress" href="/docs/Integrations/wordpress">
+    Plugin or manual setup for WordPress sites.
+  </Card>
+</Cards>
 
 Need help with your Laravel integration? Contact us at [help@databuddy.cc](mailto:help@databuddy.cc).
 

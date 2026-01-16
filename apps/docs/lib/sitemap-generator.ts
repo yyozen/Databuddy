@@ -30,6 +30,8 @@ const priorityRules = [
 	{ pattern: "/ambassadors", priority: 0.6 },
 	{ pattern: "/privacy", priority: 0.5 },
 	{ pattern: "/terms", priority: 0.5 },
+	{ pattern: "/data-policy", priority: 0.5 },
+	{ pattern: "/dpa", priority: 0.5 },
 	{ pattern: "/llms.txt", priority: 0.4 },
 ];
 
@@ -47,7 +49,12 @@ function getPriority(url: string): number {
 
 // Simple change frequency rules
 function getChangeFrequency(url: string): "weekly" | "monthly" | "yearly" {
-	if (url.includes("/privacy") || url.includes("/terms")) {
+	if (
+		url.includes("/privacy") ||
+		url.includes("/terms") ||
+		url.includes("/data-policy") ||
+		url.includes("/dpa")
+	) {
 		return "yearly";
 	}
 	if (
@@ -104,6 +111,8 @@ export async function generateSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 			"/terms",
 			"/ambassadors",
 			"/compare",
+			"/data-policy",
+			"/dpa",
 		];
 		entries.push(
 			...staticPages.map((page) => ({
@@ -129,10 +138,10 @@ export async function generateSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 			const latestPostDate =
 				blogEntries.length > 0
 					? blogEntries.reduce(
-							(latest, entry) =>
-								entry.lastModified > latest ? entry.lastModified : latest,
-							blogEntries[0].lastModified
-						)
+						(latest, entry) =>
+							entry.lastModified > latest ? entry.lastModified : latest,
+						blogEntries[0].lastModified
+					)
 					: lastModified;
 
 			entries.push({
@@ -153,7 +162,6 @@ export async function generateSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 		entries.push(...comparisonEntries);
 	} catch (error) {
 		console.warn("Sitemap generation failed, using minimal fallback:", error);
-		// Minimal fallback - just the main docs page
 		entries.push({
 			url: `${SITE_URL}/docs`,
 			lastModified,

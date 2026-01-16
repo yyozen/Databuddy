@@ -6,6 +6,7 @@ description: Add privacy-first analytics to your Jekyll static site
 import { Steps, Step } from "@/components/docs";
 import { Callout } from "@/components/docs";
 import { CodeBlock } from "@/components/docs";
+import { Card, Cards } from "@/components/docs";
 
 Add Databuddy's privacy-first analytics to your Jekyll static site by adding the tracking script to your site's main layout file or by creating an include file.
 
@@ -226,3 +227,19 @@ if (window.databuddy) {
 </script>
 {% raw %}{% endif %}{% endraw %}`}
 />
+
+## Related Integrations
+
+<Cards>
+  <Card title="Hugo" href="/docs/Integrations/hugo">
+    Hugo static site integration with partial templates.
+  </Card>
+  <Card title="WordPress" href="/docs/Integrations/wordpress">
+    Plugin or manual setup for WordPress sites.
+  </Card>
+  <Card title="React" href="/docs/Integrations/react">
+    TypeScript support with React hooks and components.
+  </Card>
+</Cards>
+
+Need help with your Jekyll integration? Contact us at [help@databuddy.cc](mailto:help@databuddy.cc).
