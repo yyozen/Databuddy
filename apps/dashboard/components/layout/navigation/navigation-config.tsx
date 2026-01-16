@@ -134,10 +134,10 @@ export const createWebsitesNavigation = (
 		(website) => ({ domain: website.domain })
 	),
 	createNavSection("Observability", ActivityIcon, [
-		createNavItem("LLM Analytics", BrainIcon, "/llm", {
-			highlight: true,
-			flag: "llm",
-		}),
+		// createNavItem("LLM Analytics", BrainIcon, "/llm", {
+		// 	highlight: true,
+		// 	flag: "llm",
+		// }),
 		createNavItem("Links", LinkIcon, "/links", {
 			highlight: true,
 			flag: "links",
