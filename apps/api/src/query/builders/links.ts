@@ -440,6 +440,105 @@ export const LinkShortenerBuilders: Record<string, SimpleQueryConfig> = {
 		customizable: false,
 		plugins: { normalizeGeo: true },
 	},
+
+	link_top_devices: {
+		meta: {
+			title: "Link Top Devices",
+			description: "Device type breakdown for a shortened link (mobile, desktop, tablet).",
+			category: "Links",
+			tags: ["links", "shortener", "devices", "mobile", "desktop"],
+			output_fields: [
+				{
+					name: "name",
+					type: "string",
+					label: "Device Type",
+					description: "The device type (mobile, desktop, tablet)",
+				},
+				{
+					name: "clicks",
+					type: "number",
+					label: "Clicks",
+					description: "Number of clicks from this device type",
+				},
+			],
+			default_visualization: "pie",
+			supports_granularity: [],
+			version: "1.0",
+		},
+		customSql: (
+			linkId: string,
+			startDate: string,
+			endDate: string,
+		) => ({
+			sql: `
+				SELECT
+					coalesce(nullIf(device_type, ''), 'Unknown') as name,
+					count() as clicks
+				FROM analytics.link_visits
+				WHERE link_id = {linkId:String}
+					AND timestamp >= toDateTime({startDate:String})
+					AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
+				GROUP BY device_type
+				ORDER BY clicks DESC
+			`,
+			params: { linkId, startDate, endDate },
+		}),
+		timeField: "timestamp",
+		customizable: false,
+	},
+
+	link_top_browsers: {
+		meta: {
+			title: "Link Top Browsers",
+			description: "Browser breakdown for a shortened link.",
+			category: "Links",
+			tags: ["links", "shortener", "browsers"],
+			output_fields: [
+				{
+					name: "name",
+					type: "string",
+					label: "Browser",
+					description: "The browser name",
+				},
+				{
+					name: "clicks",
+					type: "number",
+					label: "Clicks",
+					description: "Number of clicks from this browser",
+				},
+			],
+			default_visualization: "table",
+			supports_granularity: [],
+			version: "1.0",
+		},
+		customSql: (
+			linkId: string,
+			startDate: string,
+			endDate: string,
+			_filters?: Filter[],
+			_granularity?: TimeUnit,
+			_limit?: number,
+		) => {
+			const limit = _limit || 10;
+			return {
+				sql: `
+					SELECT
+						coalesce(nullIf(browser_name, ''), 'Unknown') as name,
+						count() as clicks
+					FROM analytics.link_visits
+					WHERE link_id = {linkId:String}
+						AND timestamp >= toDateTime({startDate:String})
+						AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
+					GROUP BY browser_name
+					ORDER BY clicks DESC
+					LIMIT {limit:UInt32}
+				`,
+				params: { linkId, startDate, endDate, limit },
+			};
+		},
+		timeField: "timestamp",
+		customizable: false,
+	},
 };
 
 // ============================================================================

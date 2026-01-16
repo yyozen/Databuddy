@@ -4,6 +4,9 @@ import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr/ArrowLeft";
 import { ChartLineIcon } from "@phosphor-icons/react/dist/ssr/ChartLine";
 import { CopyIcon } from "@phosphor-icons/react/dist/ssr/Copy";
 import { CursorClickIcon } from "@phosphor-icons/react/dist/ssr/CursorClick";
+import { DesktopIcon } from "@phosphor-icons/react/dist/ssr/Desktop";
+import { DeviceMobileIcon } from "@phosphor-icons/react/dist/ssr/DeviceMobile";
+import { DeviceTabletIcon } from "@phosphor-icons/react/dist/ssr/DeviceTablet";
 import { GlobeIcon } from "@phosphor-icons/react/dist/ssr/Globe";
 import { LinkIcon } from "@phosphor-icons/react/dist/ssr/Link";
 import { MapPinIcon } from "@phosphor-icons/react/dist/ssr/MapPin";
@@ -39,11 +42,11 @@ import { formatMetricNumber } from "@/lib/formatters";
 
 const LINKS_BASE_URL = "https://dby.sh";
 
-interface ReferrerEntry {
+interface SourceEntry {
 	name: string;
-	referrer: string;
 	clicks: number;
 	percentage: number;
+	referrer?: string;
 	domain?: string;
 }
 
@@ -83,6 +86,17 @@ interface ChartDataPoint {
 interface MiniChartDataPoint {
 	date: string;
 	value: number;
+}
+
+function getDeviceIcon(deviceType: string) {
+	const lower = deviceType.toLowerCase();
+	if (lower.includes("mobile") || lower.includes("phone")) {
+		return <DeviceMobileIcon className="size-4" weight="duotone" />;
+	}
+	if (lower.includes("tablet")) {
+		return <DeviceTabletIcon className="size-4" weight="duotone" />;
+	}
+	return <DesktopIcon className="size-4" weight="duotone" />;
 }
 
 function formatNumber(value: number): string {
@@ -297,13 +311,13 @@ function ClicksChart({
 	);
 }
 
-function createReferrerColumns(): ColumnDef<ReferrerEntry>[] {
+function createReferrerColumns(): ColumnDef<SourceEntry>[] {
 	return [
 		{
 			id: "name",
 			accessorKey: "name",
 			header: "Source",
-			cell: ({ row }: CellContext<ReferrerEntry, unknown>) => {
+			cell: ({ row }: CellContext<SourceEntry, unknown>) => {
 				const entry = row.original;
 				const domain =
 					entry.domain || extractDomain(entry.referrer || entry.name);
@@ -320,7 +334,7 @@ function createReferrerColumns(): ColumnDef<ReferrerEntry>[] {
 			id: "clicks",
 			accessorKey: "clicks",
 			header: "Clicks",
-			cell: ({ getValue }: CellContext<ReferrerEntry, unknown>) => (
+			cell: ({ getValue }: CellContext<SourceEntry, unknown>) => (
 				<span className="font-medium text-foreground tabular-nums">
 					{formatNumber(getValue() as number)}
 				</span>
@@ -330,7 +344,7 @@ function createReferrerColumns(): ColumnDef<ReferrerEntry>[] {
 			id: "percentage",
 			accessorKey: "percentage",
 			header: "Share",
-			cell: ({ getValue }: CellContext<ReferrerEntry, unknown>) => {
+			cell: ({ getValue }: CellContext<SourceEntry, unknown>) => {
 				const percentage = getValue() as number;
 				return <PercentageBadge percentage={percentage} />;
 			},
@@ -407,6 +421,46 @@ function createGeoColumns(
 	];
 }
 
+function createDeviceColumns(): ColumnDef<SourceEntry>[] {
+	return [
+		{
+			id: "name",
+			accessorKey: "name",
+			header: "Device",
+			cell: ({ row }: CellContext<SourceEntry, unknown>) => {
+				const entry = row.original;
+				return (
+					<div className="flex items-center gap-2">
+						{getDeviceIcon(entry.name)}
+						<span className="font-medium capitalize">
+							{entry.name || "Unknown"}
+						</span>
+					</div>
+				);
+			},
+		},
+		{
+			id: "clicks",
+			accessorKey: "clicks",
+			header: "Clicks",
+			cell: ({ getValue }: CellContext<SourceEntry, unknown>) => (
+				<span className="font-medium tabular-nums">
+					{formatNumber(getValue() as number)}
+				</span>
+			),
+		},
+		{
+			id: "percentage",
+			accessorKey: "percentage",
+			header: "Share",
+			cell: ({ getValue }: CellContext<SourceEntry, unknown>) => {
+				const percentage = getValue() as number;
+				return <PercentageBadge percentage={percentage} />;
+			},
+		},
+	];
+}
+
 export function LinkStatsContent() {
 	const params = useParams();
 	const linkId = params.id as string;
@@ -464,7 +518,7 @@ export function LinkStatsContent() {
 		return todayData?.clicks ?? 0;
 	}, [chartData]);
 
-	const referrerData = useMemo<ReferrerEntry[]>(() => {
+	const referrerData = useMemo<SourceEntry[]>(() => {
 		return stats?.topReferrers ?? [];
 	}, [stats?.topReferrers]);
 
@@ -480,12 +534,17 @@ export function LinkStatsContent() {
 		return stats?.topCities ?? [];
 	}, [stats?.topCities]);
 
+	const deviceData = useMemo<SourceEntry[]>(() => {
+		return stats?.topDevices ?? [];
+	}, [stats?.topDevices]);
+
 	const referrerColumns = useMemo(() => createReferrerColumns(), []);
 	const countryColumns = useMemo(() => createGeoColumns("country"), []);
 	const regionColumns = useMemo(() => createGeoColumns("region"), []);
 	const cityColumns = useMemo(() => createGeoColumns("city"), []);
+	const deviceColumns = useMemo(() => createDeviceColumns(), []);
 
-	const referrerTabs = useMemo(
+	const sourceTabs = useMemo(
 		() => [
 			{
 				id: "referrers",
@@ -493,8 +552,14 @@ export function LinkStatsContent() {
 				data: referrerData,
 				columns: referrerColumns,
 			},
+			{
+				id: "devices",
+				label: "Devices",
+				data: deviceData,
+				columns: deviceColumns,
+			},
 		],
-		[referrerData, referrerColumns]
+		[referrerData, referrerColumns, deviceData, deviceColumns]
 	);
 
 	const geoTabs = useMemo(
@@ -664,7 +729,7 @@ export function LinkStatsContent() {
 					initialPageSize={8}
 					isLoading={isLoading}
 					minHeight={350}
-					tabs={referrerTabs}
+					tabs={sourceTabs}
 					title="Traffic Sources"
 				/>
 				<DataTable

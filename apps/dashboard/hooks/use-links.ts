@@ -32,6 +32,12 @@ interface TimeSeriesEntry {
 	value: number;
 }
 
+interface DeviceEntry {
+	name: string;
+	clicks: number;
+	percentage: number;
+}
+
 export interface LinkStats {
 	totalClicks: number;
 	clicksByDay: Array<{ date: string; clicks: number }>;
@@ -41,6 +47,7 @@ export interface LinkStats {
 	topCountries: GeoEntry[];
 	topRegions: GeoEntry[];
 	topCities: GeoEntry[];
+	topDevices: DeviceEntry[];
 }
 
 export const getLinksListKey = (organizationId?: string): QueryKey =>
@@ -137,6 +144,7 @@ export function useLinkStats(linkId: string, dateRange: DateRange) {
 					"link_top_countries",
 					"link_top_regions",
 					"link_top_cities",
+					"link_top_devices",
 				],
 				limit: 100,
 				granularity: dateRange.granularity,
@@ -161,6 +169,7 @@ export function useLinkStats(linkId: string, dateRange: DateRange) {
 		const topCountriesData = getDataForQuery("link-stats", "link_top_countries") as Array<{ name: string; country_code: string; country_name: string; clicks: number }>;
 		const topRegionsData = getDataForQuery("link-stats", "link_top_regions") as Array<{ name: string; country_code: string; country_name: string; clicks: number }>;
 		const topCitiesData = getDataForQuery("link-stats", "link_top_cities") as Array<{ name: string; country_code: string; country_name: string; clicks: number }>;
+		const topDevicesData = getDataForQuery("link-stats", "link_top_devices") as Array<{ name: string; clicks: number }>;
 
 		return {
 			totalClicks: (totalClicksData[0] as { total?: number })?.total ?? 0,
@@ -171,6 +180,7 @@ export function useLinkStats(linkId: string, dateRange: DateRange) {
 			topCountries: addPercentages(topCountriesData),
 			topRegions: addPercentages(topRegionsData),
 			topCities: addPercentages(topCitiesData),
+			topDevices: addPercentages(topDevicesData ?? []),
 		};
 	}, [getDataForQuery]);
 
