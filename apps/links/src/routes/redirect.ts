@@ -1,26 +1,32 @@
 import { and, clickHouse, db, eq, isNull, links } from "@databuddy/db";
 import { Elysia, redirect, t } from "elysia";
+import { extractIp, getGeo } from "../utils/geo";
 import { hashIp } from "../utils/hash";
+import { parseUserAgent } from "../utils/user-agent";
 
 export const redirectRoute = new Elysia().get(
 	"/:slug",
-	async ({ params, request, error }) => {
+	async ({ params, request }) => {
 		const link = await db.query.links.findFirst({
 			where: and(eq(links.slug, params.slug), isNull(links.deletedAt)),
+			columns: {
+				id: true,
+				targetUrl: true,
+			},
 		});
 
 		if (!link) {
-			return error(404, { error: "Link not found" });
+			return Response.json({ error: "Link not found" }, { status: 404 });
 		}
 
 		const referrer = request.headers.get("referer");
 		const userAgent = request.headers.get("user-agent");
-		const forwardedFor = request.headers.get("x-forwarded-for");
-		const ip = forwardedFor?.split(",")[0]?.trim() || "unknown";
+		const ip = extractIp(request);
 
-		const country = request.headers.get("cf-ipcountry");
-		const city = request.headers.get("cf-ipcity");
-		const region = request.headers.get("cf-ipregion");
+		const [geo, ua] = await Promise.all([
+			getGeo(ip),
+			Promise.resolve(parseUserAgent(userAgent)),
+		]);
 
 		clickHouse
 			.insert({
@@ -36,11 +42,11 @@ export const redirectRoute = new Elysia().get(
 						referrer,
 						user_agent: userAgent,
 						ip_hash: hashIp(ip),
-						country,
-						region,
-						city,
-						browser_name: null,
-						device_type: null,
+						country: geo.country,
+						region: geo.region,
+						city: geo.city,
+						browser_name: ua.browserName,
+						device_type: ua.deviceType,
 					},
 				],
 				format: "JSONEachRow",
