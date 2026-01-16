@@ -7,7 +7,7 @@ import {
 	LinkIcon,
 	QrCodeIcon,
 } from "@phosphor-icons/react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -130,14 +130,23 @@ export function LinkSheet({
 		[form]
 	);
 
+	// Reset form when sheet opens or link changes
+	const prevOpenRef = useRef(open);
+	useEffect(() => {
+		const wasOpen = prevOpenRef.current;
+		prevOpenRef.current = open;
+
+		// Reset when opening (transition from closed to open)
+		if (open && !wasOpen) {
+			resetForm(link);
+		}
+	}, [open, link, resetForm]);
+
 	const handleOpenChange = useCallback(
 		(isOpen: boolean) => {
-			if (isOpen) {
-				resetForm(link);
-			}
 			onOpenChange(isOpen);
 		},
-		[link, onOpenChange, resetForm]
+		[onOpenChange]
 	);
 
 	const slugValue = form.watch("slug");
@@ -367,12 +376,18 @@ export function LinkSheet({
 								defaultValue="details"
 								variant="underline"
 							>
-								<TabsList className="shrink-0 px-5">
-									<TabsTrigger value="details">
+								<TabsList className="shrink-0">
+									<TabsTrigger
+										className="focus-visible:ring-0 focus-visible:ring-offset-0"
+										value="details"
+									>
 										<LinkIcon size={16} weight="duotone" />
 										Details
 									</TabsTrigger>
-									<TabsTrigger value="qr-code">
+									<TabsTrigger
+										className="focus-visible:ring-0 focus-visible:ring-offset-0"
+										value="qr-code"
+									>
 										<QrCodeIcon size={16} weight="duotone" />
 										QR Code
 									</TabsTrigger>
