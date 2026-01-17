@@ -12,6 +12,7 @@ import { hashIp } from "../utils/hash";
 import { parseUserAgent } from "../utils/user-agent";
 
 const DEFAULT_EXPIRED_URL = "https://dby.sh/expired";
+const DEFAULT_NOT_FOUND_URL = "https://dby.sh/not-found";
 
 async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
 	// Try cache first
@@ -35,7 +36,6 @@ async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
 	});
 
 	if (!dbLink) {
-		// Cache negative result with short TTL
 		await setCachedLinkNotFound(slug).catch(() => { });
 		return null;
 	}
@@ -98,7 +98,11 @@ function escapeHtml(text: string): string {
 		.replace(/'/g, "&#039;");
 }
 
-function generateOgHtml(link: CachedLink, requestUrl: string): string {
+function generateOgHtml(
+	link: CachedLink,
+	requestUrl: string,
+	destinationUrl: string
+): string {
 	const title = link.ogTitle ?? "Shared Link";
 	const description = link.ogDescription ?? "";
 	const image = link.ogImageUrl ?? "";
@@ -120,7 +124,10 @@ function generateOgHtml(link: CachedLink, requestUrl: string): string {
 	${description ? `<meta name="twitter:description" content="${escapeHtml(description)}">` : ""}
 	${image ? `<meta name="twitter:image" content="${escapeHtml(image)}">` : ""}
 </head>
-<body></body>
+<body>
+	<script>window.location.replace("${escapeHtml(destinationUrl)}")</script>
+	<noscript><a href="${escapeHtml(destinationUrl)}">Click here to continue</a></noscript>
+</body>
 </html>`;
 }
 
@@ -130,7 +137,7 @@ export const redirectRoute = new Elysia().get(
 		const link = await getLinkBySlug(params.slug);
 
 		if (!link) {
-			return Response.json({ error: "Link not found" }, { status: 404 });
+			return redirect(DEFAULT_NOT_FOUND_URL, 302);
 		}
 
 		if (isLinkExpired(link)) {
@@ -141,15 +148,19 @@ export const redirectRoute = new Elysia().get(
 		const referrer = request.headers.get("referer");
 		const userAgent = request.headers.get("user-agent");
 		const ip = extractIp(request);
+		const isBot = isSocialBot(userAgent);
 
 		const hasCustomOg = link.ogTitle ?? link.ogDescription ?? link.ogImageUrl;
-		if (hasCustomOg && isSocialBot(userAgent)) {
-			const requestUrl = request.url;
-			const html = generateOgHtml(link, requestUrl);
+		if (hasCustomOg && isBot) {
+			const html = generateOgHtml(link, request.url, link.targetUrl);
 			return new Response(html, {
 				status: 200,
 				headers: { "Content-Type": "text/html; charset=utf-8" },
 			});
+		}
+
+		if (isBot) {
+			return redirect(link.targetUrl, 302);
 		}
 
 		const [geo, ua] = await Promise.all([
