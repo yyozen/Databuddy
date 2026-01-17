@@ -18,19 +18,7 @@ import { CodeBlock } from "@/components/docs";
 
 All API requests require authentication using either session cookies (for browser-based requests) or API keys (for programmatic access). The API supports both authentication methods seamlessly.
 
-### Session Cookie Authentication
-
-For browser-based requests, use your session cookies from the dashboard:
-
-<CodeBlock 
-  language="bash"
-  code={`curl -H "Cookie: your-session-cookie" \\
-  https://api.databuddy.cc/v1/query/websites`}
-/>
-
-### API Key Authentication
-
-For programmatic access, use your API key in the `x-api-key` header:
+Use your API key in the `x-api-key` header:
 
 <CodeBlock 
   language="bash"
@@ -38,10 +26,8 @@ For programmatic access, use your API key in the `x-api-key` header:
   https://api.databuddy.cc/v1/query/websites`}
 />
 
-**API Key Scopes:**
-- `read:analytics` - Read analytics data and query types
-- `write:custom-sql` - Execute custom SQL queries
-- `read:data` - Access specific website data (requires website-specific or global access)
+**Required Scope:**
+- `read:data` - Required for all query endpoints
 
 **API Key Access Levels:**
 - **Global Access**: Access all websites in your account/organization
@@ -102,92 +88,18 @@ Get all available query types and their configurations.
   language="json"
   code={`{
     "success": true,
-    "types": ["summary", "pages", "traffic", "devices", "geo", "errors", "performance", "sessions", "custom_events", "profiles", "outbound_links", "outbound_domains", "engagement", "link_total_clicks", "link_clicks_by_day", "link_top_referrers", "link_top_countries", "link_top_devices", "link_top_browsers"],
+    "types": ["summary", "pages", "traffic", "browser_name", "os_name", "device_types", "countries", "cities", "errors", "performance", "sessions", "custom_events", "profiles", "outbound_links", "outbound_domains", "engagement", "link_total_clicks", "link_clicks_by_day", "link_top_referrers", "link_top_countries", "link_top_devices", "link_top_browsers"],
     "configs": {
       "summary": {
-        "allowedFilters": ["date", "country", "device", "browser"],
+        "allowedFilters": ["country", "device_type", "browser_name"],
         "customizable": true,
         "defaultLimit": 100
-      },
-      "outbound_links": {
-        "allowedFilters": ["path", "country", "device_type", "browser_name", "href", "text"],
-        "customizable": true,
-        "defaultLimit": 100,
-        "meta": {
-          "title": "Outbound Links",
-          "description": "Track external links clicked by users.",
-          "category": "Behavior",
-          "tags": ["links", "outbound", "external", "clicks"],
-          "output_fields": [
-            {
-              "name": "href",
-              "type": "string",
-              "label": "Destination URL",
-              "description": "The external URL that was clicked"
-            },
-            {
-              "name": "total_clicks",
-              "type": "number",
-              "label": "Total Clicks",
-              "description": "Total number of clicks on this link"
-            }
-          ],
-          "default_visualization": "table",
-          "supports_granularity": ["hour", "day"],
-          "version": "1.0"
-        }
-      },
-      "link_total_clicks": {
-        "customizable": false,
-        "defaultLimit": 100,
-        "meta": {
-          "title": "Link Total Clicks",
-          "description": "Total clicks for a shortened link within the date range.",
-          "category": "Links",
-          "tags": ["links", "shortener", "clicks", "total"],
-          "output_fields": [
-            {
-              "name": "total",
-              "type": "number",
-              "label": "Total Clicks",
-              "description": "Total number of clicks on this link"
-            }
-          ],
-          "default_visualization": "metric",
-          "version": "1.0"
-        }
-      },
-      "browser_name": {
-        "allowedFilters": ["date", "browser", "country"],
-        "customizable": true,
-        "defaultLimit": 100,
-        "meta": {
-          "title": "Browser Usage",
-          "description": "Website traffic breakdown by browser type showing which browsers your visitors use most.",
-          "category": "Technology",
-          "tags": ["browsers", "technology", "devices", "compatibility"],
-          "output_fields": [
-            {
-              "name": "name",
-              "type": "string",
-              "label": "Browser Name",
-              "description": "The browser name (Chrome, Firefox, Safari, etc.)"
-            },
-            {
-              "name": "pageviews",
-              "type": "number",
-              "label": "Pageviews",
-              "description": "Total pageviews from this browser"
-            }
-          ],
-          "default_visualization": "pie",
-          "supports_granularity": ["hour", "day"],
-          "version": "1.0"
-        }
       }
     }
   }`}
 />
+
+Use `include_meta=true` to get detailed metadata including descriptions, output fields, and visualization hints for each query type.
 
 ### Execute Dynamic Analytics Query
 
@@ -201,19 +113,20 @@ Execute analytics queries with advanced parameter support, including batch proce
 **Query Parameters:**
 - `website_id` (required for website analytics) - The website ID to query
 - `link_id` (required for link shortener analytics) - The link ID to query
-- `start_date` or `startDate` (optional) - Default start date for all parameters
-- `end_date` or `endDate` (optional) - Default end date for all parameters  
-- `timezone` (optional) - Timezone for date calculations
+- `schedule_id` (required for uptime monitor analytics) - The uptime schedule ID to query
+- `timezone` (optional) - Timezone for date calculations (defaults to UTC)
 
-Note: Use either `website_id` for standard website analytics or `link_id` for link shortener analytics. The parameter you use determines which query types are available.
+Use one of `website_id`, `link_id`, or `schedule_id` depending on what you're querying.
 
-**Single Query Request:**
+**Request Body:**
 
 <CodeBlock 
   language="json"
   code={`{
     "id": "my-query-123",
     "parameters": ["summary", "pages", "browser_name"],
+    "startDate": "2024-01-01",
+    "endDate": "2024-01-31",
     "limit": 100,
     "page": 1,
     "filters": [
@@ -221,44 +134,45 @@ Note: Use either `website_id` for standard website analytics or `link_id` for li
         "field": "country",
         "op": "in",
         "value": ["US", "CA"]
-      },
-      {
-        "field": "device_type",
-        "op": "eq",
-        "value": "desktop"
       }
     ],
     "granularity": "daily"
   }`}
 />
 
-**Advanced Parameter Objects:**
+**Request Body Fields:**
+- `parameters` (required) - Array of query type names or parameter objects
+- `startDate` (required) - Start date in ISO 8601 format
+- `endDate` (required) - End date in ISO 8601 format
+- `id` (optional) - Query identifier returned in response
+- `limit` (optional) - Max results per parameter (default: 100)
+- `page` (optional) - Page number for pagination (default: 1)
+- `filters` (optional) - Array of filter objects
+- `granularity` (optional) - `"hourly"` or `"daily"` (default: daily)
+- `groupBy` (optional) - Field(s) to group results by
+
+Parameters can also be objects with their own date ranges:
 
 <CodeBlock 
   language="json"
   code={`{
-    "id": "advanced-query",
     "parameters": [
       "summary",
       {
         "name": "pages",
         "start_date": "2024-01-01",
-        "end_date": "2024-01-07",
-        "granularity": "hourly",
-        "id": "pages-last-week"
-      },
-      {
-        "name": "browser_name",
-        "start_date": "2024-01-15",
-        "end_date": "2024-01-31",
-        "id": "browsers-recent"
+        "end_date": "2024-01-15",
+        "id": "pages-first-half"
       }
     ],
-    "limit": 50
+    "startDate": "2024-01-01",
+    "endDate": "2024-01-31"
   }`}
 />
 
 **Batch Query Request:**
+
+Send an array of query objects to execute multiple queries in a single request:
 
 <CodeBlock 
   language="json"
@@ -266,19 +180,16 @@ Note: Use either `website_id` for standard website analytics or `link_id` for li
     {
       "id": "query-1",
       "parameters": ["summary", "pages"],
+      "startDate": "2024-01-01",
+      "endDate": "2024-01-31",
       "limit": 100
     },
     {
       "id": "query-2", 
       "parameters": ["browser_name", "os_name"],
-      "limit": 50,
-      "filters": [
-        {
-          "field": "country",
-          "op": "eq",
-          "value": "US"
-        }
-      ]
+      "startDate": "2024-01-01",
+      "endDate": "2024-01-31",
+      "limit": 50
     }
   ]`}
 />
@@ -316,11 +227,11 @@ Note: Use either `website_id` for standard website analytics or `link_id` for li
 **Filter Operations:**
 - `eq` - Equals
 - `ne` - Not equals
-- `like` - Contains (case-insensitive)
-- `gt` - Greater than
-- `lt` - Less than
-- `in` - In array
-- `notIn` - Not in array
+- `contains` - Contains substring (case-insensitive)
+- `not_contains` - Does not contain substring
+- `starts_with` - Starts with prefix
+- `in` - Value is in array
+- `not_in` - Value is not in array
 
 **Single Query Response:**
 
@@ -373,134 +284,25 @@ Note: Use either `website_id` for standard website analytics or `link_id` for li
     "batch": true,
     "results": [
       {
-        "success": true,
         "queryId": "query-1",
-        "data": [...]
-      },
-      {
-        "success": true,
-        "queryId": "query-2", 
-        "data": [...]
+        "data": [
+          {
+            "parameter": "summary",
+            "success": true,
+            "data": [...]
+          }
+        ],
+        "meta": {
+          "parameters": ["summary", "pages"],
+          "total_parameters": 2,
+          "page": 1,
+          "limit": 100,
+          "filters_applied": 0
+        }
       }
     ]
   }`}
 />
-
-### Compile Query (Advanced)
-
-Compile a query to see the generated SQL without executing it. Useful for debugging and understanding query structure.
-
-<CodeBlock 
-  language="http"
-  code="POST /v1/query/compile"
-/>
-
-**Query Parameters:**
-- `website_id` (optional) - Website ID for domain-specific compilation
-
-**Request:**
-
-<CodeBlock 
-  language="json"
-  code={`{
-    "projectId": "web_123",
-    "type": "summary",
-    "from": "2024-01-01",
-    "to": "2024-01-31",
-    "timeUnit": "day",
-    "filters": [
-      {
-        "field": "country",
-        "op": "in",
-        "value": ["US", "CA"]
-      }
-    ],
-    "limit": 100,
-    "offset": 0
-  }`}
-/>
-
-**Response:**
-
-<CodeBlock 
-  language="json"
-  code={`{
-    "success": true,
-    "sql": "SELECT toDate(time) as date, count(*) as pageviews, count(distinct anonymous_id) as visitors FROM analytics.events WHERE time >= '2024-01-01' AND time <= '2024-01-31' AND country IN ('US', 'CA') GROUP BY date ORDER BY date LIMIT 100",
-    "parameters": {
-      "projectId": "web_123",
-      "from": "2024-01-01",
-      "to": "2024-01-31",
-      "filters": [{"field": "country", "op": "in", "value": ["US", "CA"]}]
-    }
-  }`}
-/>
-
-## AI Assistant
-
-### Stream Analytics Query
-
-Use natural language to query your analytics data with streaming responses.
-
-<CodeBlock 
-  language="http"
-  code="POST /v1/assistant/stream"
-/>
-
-**Request:**
-
-<CodeBlock 
-  language="json"
-  code={`{
-    "websiteId": "web_123",
-    "message": "Show me the top pages by pageviews last week",
-    "context": {
-      "dateRange": {
-        "start": "2024-01-01",
-        "end": "2024-01-07"
-      }
-    }
-  }`}
-/>
-
-**Response (Server-Sent Events):**
-
-<CodeBlock 
-  language="json"
-  code={`data: {"type": "thinking", "content": "Analyzing your page views..."}
-
-data: {"type": "query", "content": "SELECT path, COUNT(*) as pageviews FROM analytics.events..."}
-
-data: {"type": "complete", "content": "Here are your top pages:", "data": {"results": [{"path": "/", "pageviews": 1250}]}}`}
-/>
-
-## Data Export
-
-### Export Analytics Data
-
-Export analytics data in various formats (CSV, JSON).
-
-<CodeBlock 
-  language="http"
-  code="POST /v1/export"
-/>
-
-**Request:**
-
-<CodeBlock 
-  language="json"
-  code={`{
-    "websiteId": "web_123",
-    "type": "summary",
-    "format": "csv",
-    "startDate": "2024-01-01",
-    "endDate": "2024-01-31",
-    "timezone": "UTC"
-  }`}
-/>
-
-**Response:**
-Returns a downloadable file in the requested format.
 
 ## Event Tracking
 
@@ -693,15 +495,12 @@ All errors follow a consistent format:
 
 **Common Error Codes:**
 
-- `AUTH_REQUIRED` - Authentication required (missing session cookie or API key)
-- `WEBSITE_NOT_FOUND` - Website not found or no access
-- `INVALID_QUERY_TYPE` - Unknown query type
+- `AUTH_REQUIRED` - Authentication required (missing API key or session)
+- `ACCESS_DENIED` - Authenticated but no access to the requested resource
+- `MISSING_PROJECT_ID` - Missing `website_id`, `link_id`, or `schedule_id` parameter
 - `VALIDATION_ERROR` - Request validation failed
 - `RATE_LIMIT_EXCEEDED` - Too many requests
 - `INTERNAL_SERVER_ERROR` - Server error occurred
-- `CLIENT_ACCESS_DENIED` - API key does not have access to specified resource
-- `INSUFFICIENT_SCOPE` - API key lacks required scopes
-- `FORBIDDEN_OPERATION` - Operation not allowed with current permissions
 
 ## Practical Examples
 
@@ -730,62 +529,12 @@ All errors follow a consistent format:
   code={`curl -X POST -H "x-api-key: dbdy_your_api_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "id": "dashboard-summary",
     "parameters": ["summary", "pages", "browser_name"],
+    "startDate": "2024-01-01",
+    "endDate": "2024-01-31",
     "limit": 10
   }' \\
-  "https://api.databuddy.cc/v1/query?website_id=web_123&start_date=2024-01-01&end_date=2024-01-31&timezone=UTC"`}
-/>
-
-### Advanced Multi-Period Analysis
-
-Compare different time periods with parameter-specific date ranges:
-
-<CodeBlock 
-  language="bash"
-  code={`curl -X POST -H "x-api-key: dbdy_your_api_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "id": "period-comparison",
-    "parameters": [
-      {
-        "name": "summary",
-        "start_date": "2024-01-01",
-        "end_date": "2024-01-15",
-        "id": "first-half-jan"
-      },
-      {
-        "name": "summary", 
-        "start_date": "2024-01-16",
-        "end_date": "2024-01-31",
-        "id": "second-half-jan"
-      }
-    ]
-  }' \\
-  "https://api.databuddy.cc/v1/query?website_id=web_123&timezone=America/New_York"`}
-/>
-
-### Batch Processing Multiple Websites
-
-Process multiple queries for different websites simultaneously:
-
-<CodeBlock 
-  language="bash"
-  code={`curl -X POST -H "x-api-key: dbdy_your_api_key_here" \\
-  -H "Content-Type: application/json" \\
-  -d '[
-    {
-      "id": "website-1-analysis",
-      "parameters": ["summary", "pages"],
-      "filters": [{"field": "country", "op": "eq", "value": "US"}]
-    },
-    {
-      "id": "website-2-analysis", 
-      "parameters": ["browser_name", "os_name"],
-      "limit": 20
-    }
-  ]' \\
-  "https://api.databuddy.cc/v1/query?website_id=web_123&start_date=2024-01-01&end_date=2024-01-31"`}
+  "https://api.databuddy.cc/v1/query?website_id=web_123"`}
 />
 
 ### Link Shortener Analytics
@@ -797,11 +546,12 @@ Query analytics for a specific shortened link using `link_id` instead of `websit
   code={`curl -X POST -H "x-api-key: dbdy_your_api_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "id": "link-analytics",
     "parameters": ["link_total_clicks", "link_clicks_by_day", "link_top_referrers"],
+    "startDate": "2024-01-01",
+    "endDate": "2024-01-31",
     "limit": 10
   }' \\
-  "https://api.databuddy.cc/v1/query?link_id=link_abc123&start_date=2024-01-01&end_date=2024-01-31"`}
+  "https://api.databuddy.cc/v1/query?link_id=link_abc123"`}
 />
 
 **Link Analytics Response:**
@@ -810,7 +560,7 @@ Query analytics for a specific shortened link using `link_id` instead of `websit
   language="json"
   code={`{
     "success": true,
-    "queryId": "link-analytics",
+    "queryId": "",
     "data": [
       {
         "parameter": "link_total_clicks",
@@ -851,7 +601,14 @@ Query analytics for a specific shortened link using `link_id` instead of `websit
           }
         ]
       }
-    ]
+    ],
+    "meta": {
+      "parameters": ["link_total_clicks", "link_clicks_by_day", "link_top_referrers"],
+      "total_parameters": 3,
+      "page": 1,
+      "limit": 10,
+      "filters_applied": 0
+    }
   }`}
 />
 
@@ -864,11 +621,12 @@ Track which external links users click on your website:
   code={`curl -X POST -H "x-api-key: dbdy_your_api_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "id": "outbound-analysis",
     "parameters": ["outbound_links", "outbound_domains"],
+    "startDate": "2024-01-01",
+    "endDate": "2024-01-31",
     "limit": 20
   }' \\
-  "https://api.databuddy.cc/v1/query?website_id=web_123&start_date=2024-01-01&end_date=2024-01-31"`}
+  "https://api.databuddy.cc/v1/query?website_id=web_123"`}
 />
 
 **Outbound Links Response:**
@@ -877,7 +635,7 @@ Track which external links users click on your website:
   language="json"
   code={`{
     "success": true,
-    "queryId": "outbound-analysis",
+    "queryId": "",
     "data": [
       {
         "parameter": "outbound_links",
@@ -907,6 +665,13 @@ Track which external links users click on your website:
           }
         ]
       }
-    ]
+    ],
+    "meta": {
+      "parameters": ["outbound_links", "outbound_domains"],
+      "total_parameters": 2,
+      "page": 1,
+      "limit": 20,
+      "filters_applied": 0
+    }
   }`}
 />
