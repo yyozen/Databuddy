@@ -47,6 +47,7 @@ Notes:
 
 - For private websites, include the `website_id` query or path parameter and ensure the key has `read:data` for that site.
 - For public websites, `website_id` may be optional depending on the endpoint semantics.
+- For link shortener analytics, use `link_id` instead of `website_id` to query analytics for specific shortened links.
 
 ### Scopes
 
@@ -81,13 +82,17 @@ Access can be scoped to different resource types:
 
 - **global**: Applies to all resources
 - **website**: Applies to a specific website (use the `website_id` in requests)
+- **link**: Applies to a specific shortened link (use the `link_id` in requests)
 - **analytics_data**: Analytics events and metrics data
 - **error_data**: JavaScript errors and exceptions
 - **web_vitals**: Core Web Vitals performance metrics
 - **custom_events**: Custom event tracking data
 - **export_data**: Data export operations
+- **link_analytics**: Link shortener click analytics
 
 Example: a key with `read:data` on a single website can read analytics only for that website, not others. A key with `read:analytics` scoped to `analytics_data` can access detailed analytics but not error data.
+
+For link shortener analytics, access is determined by organization membership. If you have access to an organization's links, you can query analytics for those links using the `link_id` parameter.
 
 ### Errors
 

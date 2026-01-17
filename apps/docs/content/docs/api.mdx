@@ -102,17 +102,60 @@ Get all available query types and their configurations.
   language="json"
   code={`{
     "success": true,
-    "types": ["summary", "pages", "traffic", "devices", "geo", "errors", "performance", "sessions", "custom_events", "profiles", "links", "engagement"],
+    "types": ["summary", "pages", "traffic", "devices", "geo", "errors", "performance", "sessions", "custom_events", "profiles", "outbound_links", "outbound_domains", "engagement", "link_total_clicks", "link_clicks_by_day", "link_top_referrers", "link_top_countries", "link_top_devices", "link_top_browsers"],
     "configs": {
       "summary": {
         "allowedFilters": ["date", "country", "device", "browser"],
         "customizable": true,
         "defaultLimit": 100
       },
-      "pages": {
-        "allowedFilters": ["date", "path"],
+      "outbound_links": {
+        "allowedFilters": ["path", "country", "device_type", "browser_name", "href", "text"],
         "customizable": true,
-        "defaultLimit": 50
+        "defaultLimit": 100,
+        "meta": {
+          "title": "Outbound Links",
+          "description": "Track external links clicked by users.",
+          "category": "Behavior",
+          "tags": ["links", "outbound", "external", "clicks"],
+          "output_fields": [
+            {
+              "name": "href",
+              "type": "string",
+              "label": "Destination URL",
+              "description": "The external URL that was clicked"
+            },
+            {
+              "name": "total_clicks",
+              "type": "number",
+              "label": "Total Clicks",
+              "description": "Total number of clicks on this link"
+            }
+          ],
+          "default_visualization": "table",
+          "supports_granularity": ["hour", "day"],
+          "version": "1.0"
+        }
+      },
+      "link_total_clicks": {
+        "customizable": false,
+        "defaultLimit": 100,
+        "meta": {
+          "title": "Link Total Clicks",
+          "description": "Total clicks for a shortened link within the date range.",
+          "category": "Links",
+          "tags": ["links", "shortener", "clicks", "total"],
+          "output_fields": [
+            {
+              "name": "total",
+              "type": "number",
+              "label": "Total Clicks",
+              "description": "Total number of clicks on this link"
+            }
+          ],
+          "default_visualization": "metric",
+          "version": "1.0"
+        }
       },
       "browser_name": {
         "allowedFilters": ["date", "browser", "country"],
@@ -156,10 +199,13 @@ Execute analytics queries with advanced parameter support, including batch proce
 />
 
 **Query Parameters:**
-- `website_id` (required) - The website ID to query
+- `website_id` (required for website analytics) - The website ID to query
+- `link_id` (required for link shortener analytics) - The link ID to query
 - `start_date` or `startDate` (optional) - Default start date for all parameters
 - `end_date` or `endDate` (optional) - Default end date for all parameters  
 - `timezone` (optional) - Timezone for date calculations
+
+Note: Use either `website_id` for standard website analytics or `link_id` for link shortener analytics. The parameter you use determines which query types are available.
 
 **Single Query Request:**
 
@@ -237,7 +283,7 @@ Execute analytics queries with advanced parameter support, including batch proce
   ]`}
 />
 
-**Available Query Types:**
+**Available Query Types (Website Analytics - requires `website_id`):**
 - `summary` - Overall website metrics and KPIs
 - `pages` - Page views and performance data
 - `traffic` - Traffic sources and referrers  
@@ -251,8 +297,21 @@ Execute analytics queries with advanced parameter support, including batch proce
 - `sessions` - Session-based analytics
 - `custom_events` - Custom event tracking data
 - `profiles` - User profile analytics
-- `links` - Outgoing link tracking
+- `outbound_links` - Outgoing link clicks with destination URLs, link text, and click counts
+- `outbound_domains` - Outgoing link clicks aggregated by destination domain
 - `engagement` - User engagement metrics
+
+**Available Query Types (Link Shortener Analytics - requires `link_id`):**
+- `link_total_clicks` - Total clicks for a shortened link
+- `link_clicks_by_day` - Daily breakdown of clicks
+- `link_referrers_by_day` - Daily count of unique referrers
+- `link_countries_by_day` - Daily count of unique countries
+- `link_top_referrers` - Top referrers for the link
+- `link_top_countries` - Top countries for the link
+- `link_top_regions` - Top regions for the link
+- `link_top_cities` - Top cities for the link
+- `link_top_devices` - Device type breakdown (mobile, desktop, tablet)
+- `link_top_browsers` - Browser breakdown for the link
 
 **Filter Operations:**
 - `eq` - Equals
@@ -727,4 +786,127 @@ Process multiple queries for different websites simultaneously:
     }
   ]' \\
   "https://api.databuddy.cc/v1/query?website_id=web_123&start_date=2024-01-01&end_date=2024-01-31"`}
+/>
+
+### Link Shortener Analytics
+
+Query analytics for a specific shortened link using `link_id` instead of `website_id`:
+
+<CodeBlock 
+  language="bash"
+  code={`curl -X POST -H "x-api-key: dbdy_your_api_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "id": "link-analytics",
+    "parameters": ["link_total_clicks", "link_clicks_by_day", "link_top_referrers"],
+    "limit": 10
+  }' \\
+  "https://api.databuddy.cc/v1/query?link_id=link_abc123&start_date=2024-01-01&end_date=2024-01-31"`}
+/>
+
+**Link Analytics Response:**
+
+<CodeBlock 
+  language="json"
+  code={`{
+    "success": true,
+    "queryId": "link-analytics",
+    "data": [
+      {
+        "parameter": "link_total_clicks",
+        "success": true,
+        "data": [
+          {
+            "total": 1542
+          }
+        ]
+      },
+      {
+        "parameter": "link_clicks_by_day",
+        "success": true,
+        "data": [
+          {
+            "date": "2024-01-01",
+            "clicks": 125
+          },
+          {
+            "date": "2024-01-02",
+            "clicks": 143
+          }
+        ]
+      },
+      {
+        "parameter": "link_top_referrers",
+        "success": true,
+        "data": [
+          {
+            "name": "twitter.com",
+            "referrer": "twitter.com",
+            "clicks": 523
+          },
+          {
+            "name": "Direct",
+            "referrer": "Direct",
+            "clicks": 412
+          }
+        ]
+      }
+    ]
+  }`}
+/>
+
+### Outbound Links Analytics
+
+Track which external links users click on your website:
+
+<CodeBlock 
+  language="bash"
+  code={`curl -X POST -H "x-api-key: dbdy_your_api_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "id": "outbound-analysis",
+    "parameters": ["outbound_links", "outbound_domains"],
+    "limit": 20
+  }' \\
+  "https://api.databuddy.cc/v1/query?website_id=web_123&start_date=2024-01-01&end_date=2024-01-31"`}
+/>
+
+**Outbound Links Response:**
+
+<CodeBlock 
+  language="json"
+  code={`{
+    "success": true,
+    "queryId": "outbound-analysis",
+    "data": [
+      {
+        "parameter": "outbound_links",
+        "success": true,
+        "data": [
+          {
+            "href": "https://github.com/example/repo",
+            "text": "View on GitHub",
+            "total_clicks": 245,
+            "unique_users": 189,
+            "unique_sessions": 210,
+            "percentage": 15.2,
+            "last_clicked": "2024-01-31T15:42:00.000Z"
+          }
+        ]
+      },
+      {
+        "parameter": "outbound_domains",
+        "success": true,
+        "data": [
+          {
+            "domain": "github.com",
+            "total_clicks": 523,
+            "unique_users": 412,
+            "unique_links": 8,
+            "percentage": 32.5
+          }
+        ]
+      }
+    ]
+  }`}
 />
