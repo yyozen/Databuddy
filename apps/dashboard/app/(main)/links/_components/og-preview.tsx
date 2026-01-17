@@ -2,13 +2,16 @@
 
 import {
 	ArrowCounterClockwiseIcon,
+	ArrowsClockwiseIcon,
+	CheckCircleIcon,
 	CircleNotchIcon,
+	XIcon as CloseIcon,
 	ImageIcon,
 	VideoIcon,
-	XIcon as CloseIcon,
+	WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,6 +63,36 @@ async function fetchOgData(url: string): Promise<FetchedOgData> {
 	};
 }
 
+type ImageStatus = "idle" | "loading" | "success" | "error";
+
+function useImageValidation(imageUrl: string) {
+	const [status, setStatus] = useState<ImageStatus>("idle");
+	const [retryKey, setRetryKey] = useState(0);
+
+	useEffect(() => {
+		if (!imageUrl) {
+			setStatus("idle");
+			return;
+		}
+
+		setStatus("loading");
+
+		const img = new Image();
+		img.onload = () => setStatus("success");
+		img.onerror = () => setStatus("error");
+		img.src = imageUrl;
+
+		return () => {
+			img.onload = null;
+			img.onerror = null;
+		};
+	}, [imageUrl, retryKey]);
+
+	const retry = useCallback(() => setRetryKey((k) => k + 1), []);
+
+	return { status, retry };
+}
+
 const TITLE_MAX = 120;
 const DESCRIPTION_MAX = 240;
 
@@ -70,8 +103,6 @@ export function OgPreview({
 	useCustomOg,
 	onUseCustomOgChange,
 }: OgPreviewProps) {
-	const [imageError, setImageError] = useState(false);
-
 	const { data: fetchedOg, isLoading } = useQuery({
 		queryKey: ["og-preview", targetUrl],
 		queryFn: () => fetchOgData(targetUrl),
@@ -79,6 +110,10 @@ export function OgPreview({
 		staleTime: 5 * 60 * 1000,
 		retry: 1,
 	});
+
+	const customImageUrl = value.ogImageUrl;
+	const { status: imageStatus, retry: retryImage } =
+		useImageValidation(customImageUrl);
 
 	const displayData = useMemo<FetchedOgData>(() => {
 		if (useCustomOg) {
@@ -107,11 +142,15 @@ export function OgPreview({
 		});
 	}, [onChange]);
 
-	const handleImageLoad = useCallback(() => setImageError(false), []);
-	const handleImageError = useCallback(() => setImageError(true), []);
-
 	const hasCustomValues =
-		value.ogTitle || value.ogDescription || value.ogImageUrl || value.ogVideoUrl;
+		value.ogTitle ||
+		value.ogDescription ||
+		value.ogImageUrl ||
+		value.ogVideoUrl;
+
+	const showCustomImage = useCustomOg && customImageUrl;
+	const showFetchedImage = displayData.image && !showCustomImage;
+	const showNoImage = !(showCustomImage || showFetchedImage);
 
 	return (
 		<div className="space-y-4">
@@ -128,32 +167,85 @@ export function OgPreview({
 					</div>
 				) : (
 					<>
-						{displayData.image && !imageError ? (
+						{/* Custom image preview with status */}
+						{showCustomImage && (
 							<div className="group relative aspect-video w-full overflow-hidden bg-muted">
-								{/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: img onLoad/onError are valid for tracking load state */}
+								{imageStatus === "loading" && (
+									<div className="flex size-full flex-col items-center justify-center gap-2">
+										<CircleNotchIcon className="size-8 animate-spin text-muted-foreground" />
+										<p className="text-muted-foreground text-xs">
+											Loading image…
+										</p>
+									</div>
+								)}
+
+								{imageStatus === "error" && (
+									<div className="flex size-full flex-col items-center justify-center gap-2 bg-destructive/10">
+										<WarningCircleIcon className="size-8 text-destructive" />
+										<p className="text-destructive text-xs">
+											Failed to load image
+										</p>
+										<Button
+											className="h-7"
+											onClick={retryImage}
+											size="sm"
+											type="button"
+											variant="outline"
+										>
+											<ArrowsClockwiseIcon className="mr-1.5 size-3.5" />
+											Retry
+										</Button>
+									</div>
+								)}
+
+								{imageStatus === "success" && (
+									<>
+										<img
+											alt="OG Preview"
+											className="size-full object-cover"
+											height={630}
+											src={customImageUrl}
+											width={1200}
+										/>
+										<button
+											className="absolute top-2 right-2 rounded bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100"
+											onClick={() => handleFieldChange("ogImageUrl", "")}
+											type="button"
+										>
+											<CloseIcon className="size-4 text-white" />
+										</button>
+										<div className="absolute right-2 bottom-2 rounded bg-black/60 px-1.5 py-0.5 text-white text-xs">
+											1200 × 630
+										</div>
+									</>
+								)}
+
+								{imageStatus === "idle" && (
+									<div className="flex size-full items-center justify-center">
+										<ImageIcon
+											className="size-10 text-muted-foreground/50"
+											weight="duotone"
+										/>
+									</div>
+								)}
+							</div>
+						)}
+
+						{/* Fetched image preview (when no custom image) */}
+						{showFetchedImage && (
+							<div className="relative aspect-video w-full overflow-hidden bg-muted">
 								<img
 									alt="OG Preview"
 									className="size-full object-cover"
 									height={630}
-									onError={handleImageError}
-									onLoad={handleImageLoad}
 									src={displayData.image}
 									width={1200}
 								/>
-								{useCustomOg && value.ogImageUrl && (
-									<button
-										className="absolute top-2 right-2 rounded bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100"
-										onClick={() => handleFieldChange("ogImageUrl", "")}
-										type="button"
-									>
-										<CloseIcon className="size-4 text-white" />
-									</button>
-								)}
-								<div className="absolute right-2 bottom-2 rounded bg-black/60 px-1.5 py-0.5 text-white text-xs">
-									1200 × 630
-								</div>
 							</div>
-						) : (
+						)}
+
+						{/* No image placeholder */}
+						{showNoImage && (
 							<div className="flex aspect-video w-full flex-col items-center justify-center gap-2 bg-muted">
 								<ImageIcon
 									className="size-10 text-muted-foreground/50"
@@ -164,6 +256,7 @@ export function OgPreview({
 								</p>
 							</div>
 						)}
+
 						<div className="space-y-1 p-3">
 							<p className="line-clamp-1 font-medium text-sm">
 								{displayData.title || "No title"}
@@ -238,9 +331,46 @@ export function OgPreview({
 
 					{/* Image URL */}
 					<div className="grid gap-1.5">
-						<Label className="text-xs" htmlFor="og-image">
-							Image URL
-						</Label>
+						<div className="flex items-center justify-between">
+							<Label className="text-xs" htmlFor="og-image">
+								Image URL
+							</Label>
+							{customImageUrl && (
+								<span className="flex items-center gap-1 text-xs">
+									{imageStatus === "loading" && (
+										<>
+											<CircleNotchIcon className="size-3 animate-spin text-muted-foreground" />
+											<span className="text-muted-foreground">Checking…</span>
+										</>
+									)}
+									{imageStatus === "success" && (
+										<>
+											<CheckCircleIcon
+												className="size-3 text-green-600"
+												weight="fill"
+											/>
+											<span className="text-green-600">Valid</span>
+										</>
+									)}
+									{imageStatus === "error" && (
+										<>
+											<WarningCircleIcon
+												className="size-3 text-destructive"
+												weight="fill"
+											/>
+											<span className="text-destructive">Invalid</span>
+											<button
+												className="ml-1 text-muted-foreground hover:text-foreground"
+												onClick={retryImage}
+												type="button"
+											>
+												<ArrowsClockwiseIcon className="size-3" />
+											</button>
+										</>
+									)}
+								</span>
+							)}
+						</div>
 						<Input
 							className="h-8 text-sm"
 							id="og-image"
@@ -250,7 +380,7 @@ export function OgPreview({
 							value={value.ogImageUrl}
 						/>
 						<p className="text-muted-foreground text-xs">
-							Recommended: 1200 × 630 pixels
+							Recommended: 1200 × 630 pixels (PNG or JPG)
 						</p>
 					</div>
 
@@ -271,6 +401,9 @@ export function OgPreview({
 							type="url"
 							value={value.ogVideoUrl}
 						/>
+						<p className="text-muted-foreground text-xs">
+							MP4 format recommended for best compatibility
+						</p>
 					</div>
 
 					{/* Reset Button */}
