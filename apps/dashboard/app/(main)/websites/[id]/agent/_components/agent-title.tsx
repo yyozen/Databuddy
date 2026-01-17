@@ -1,7 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { useAtomValue } from "jotai";
+import { AnimatePresence, motion } from "motion/react";
 import { agentTitleAtom } from "./agent-atoms";
 
 export function AgentTitle() {
@@ -9,12 +9,12 @@ export function AgentTitle() {
 
 	return (
 		<AnimatePresence mode="wait">
-			{chatTitle && (
+			{chatTitle ? (
 				<motion.div
-					animate={{ width: "auto", opacity: 1 }}
-					className="overflow-hidden"
-					exit={{ width: 0, opacity: 0 }}
-					initial={{ width: 0, opacity: 0 }}
+					animate={{ opacity: 1, scale: 1 }}
+					className="origin-left"
+					exit={{ opacity: 0, scale: 0.95 }}
+					initial={{ opacity: 0, scale: 0.95 }}
 					key={chatTitle}
 					transition={{ duration: 0.2, ease: "easeOut" }}
 				>
@@ -22,7 +22,7 @@ export function AgentTitle() {
 						{chatTitle}
 					</div>
 				</motion.div>
-			)}
+			) : null}
 		</AnimatePresence>
 	);
 }

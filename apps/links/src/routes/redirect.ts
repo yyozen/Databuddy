@@ -15,13 +15,11 @@ const DEFAULT_EXPIRED_URL = "https://dby.sh/expired";
 const DEFAULT_NOT_FOUND_URL = "https://dby.sh/not-found";
 
 async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
-	// Try cache first
 	const cached = await getCachedLink(slug).catch(() => null);
 	if (cached) {
 		return cached;
 	}
 
-	// Fetch from database
 	const dbLink = await db.query.links.findFirst({
 		where: and(eq(links.slug, slug), isNull(links.deletedAt)),
 		columns: {

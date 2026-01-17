@@ -4,9 +4,9 @@ import { ChatProvider } from "@/contexts/chat-context";
 import { getServerRPCClient } from "@/lib/orpc-server";
 import { AgentPageClient } from "../_components/agent-page-client";
 
-type Props = {
+interface Props {
 	params: Promise<{ id: string; chatId: string }>;
-};
+}
 
 export default async function AgentPage(props: Props) {
 	const { id, chatId } = await props.params;
@@ -22,13 +22,11 @@ export default async function AgentPage(props: Props) {
 	}
 
 	return (
-		// <FeatureGate feature={GATED_FEATURES.AI_AGENT}>
 		<ChatProvider chatId={chatId} initialMessages={initialMessages}>
 			<Suspense fallback={<AgentPageSkeleton />}>
 				<AgentPageClient chatId={chatId} websiteId={id} />
 			</Suspense>
 		</ChatProvider>
-		// </FeatureGate>
 	);
 }
 

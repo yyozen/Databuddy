@@ -1,12 +1,10 @@
 "use client";
 
-import {
-	ArrowRightIcon,
-	BrainIcon,
-	ChartBarIcon,
-	LightningIcon,
-	TableIcon,
-} from "@phosphor-icons/react";
+import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr/ArrowRight";
+import { BrainIcon } from "@phosphor-icons/react/dist/ssr/Brain";
+import { ChartBarIcon } from "@phosphor-icons/react/dist/ssr/ChartBar";
+import { LightningIcon } from "@phosphor-icons/react/dist/ssr/Lightning";
+import { TableIcon } from "@phosphor-icons/react/dist/ssr/Table";
 import { useSetAtom } from "jotai";
 import {
 	Conversation,

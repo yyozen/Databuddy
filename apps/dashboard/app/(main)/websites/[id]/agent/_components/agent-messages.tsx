@@ -1,7 +1,7 @@
 "use client";
 
 import type { UIMessage } from "ai";
-import { useEffect, useState } from "react";
+import { useRef } from "react";
 import {
 	ChainOfThought,
 	ChainOfThoughtContent,
@@ -24,6 +24,21 @@ import { useChatStatus } from "./hooks/use-chat-status";
 
 type MessagePart = UIMessage["parts"][number];
 
+type ToolMessagePart = MessagePart & {
+	output?: unknown;
+};
+
+function isToolPart(part: MessagePart): part is ToolMessagePart {
+	return part.type?.includes("tool") ?? false;
+}
+
+function getToolOutput(part: MessagePart): unknown {
+	if (isToolPart(part)) {
+		return part.output;
+	}
+	return undefined;
+}
+
 function getReasoningText(part: MessagePart): string {
 	const reasoning = part as {
 		text?: string;
@@ -38,41 +53,54 @@ function getReasoningText(part: MessagePart): string {
 	);
 }
 
+function getResultCount(obj: Record<string, unknown>): number | null {
+	if ("data" in obj && Array.isArray(obj.data)) {
+		return obj.data.length;
+	}
+	if ("pages" in obj && Array.isArray(obj.pages)) {
+		return obj.pages.length;
+	}
+	return null;
+}
+
+function getErrorText(obj: Record<string, unknown>): string | null {
+	if ("errorText" in obj && typeof obj.errorText === "string") {
+		return obj.errorText;
+	}
+	return null;
+}
+
 function formatToolOutput(output: unknown) {
 	if (output === undefined) {
 		return null;
 	}
 
-	console.log(output);
-
-	if (typeof output === "object" && "data" in output) {
-		return <p>Found {output.data.length} results.</p>;
-	}
-
-	if (typeof output === "object" && "pages" in output) {
-		return <p>Found {output.pages.length} results.</p>;
-	}
-
-	if (typeof output === "object" && "errorText" in output) {
-		return <p>Error: {output.errorText}</p>;
+	if (typeof output === "object" && output !== null) {
+		const obj = output as Record<string, unknown>;
+		const errorText = getErrorText(obj);
+		if (errorText) {
+			return <p>Error: {errorText}</p>;
+		}
+		const count = getResultCount(obj);
+		if (count !== null) {
+			return <p>Found {count} results.</p>;
+		}
 	}
 
 	if (typeof output === "string") {
-		const obj = JSON.parse(output);
-
-		if ("data" in obj) {
-			return <p>Found {obj.data.length} results.</p>;
+		try {
+			const obj = JSON.parse(output) as Record<string, unknown>;
+			const errorText = getErrorText(obj);
+			if (errorText) {
+				return <p>Error: {errorText}</p>;
+			}
+			const count = getResultCount(obj);
+			if (count !== null) {
+				return <p>Found {count} results.</p>;
+			}
+		} catch {
+			return <p>Found 0 results.</p>;
 		}
-
-		if ("pages" in obj) {
-			return <p>Found {obj.pages.length} results.</p>;
-		}
-
-		if ("errorText" in obj) {
-			return <p>Error: {obj.errorText}</p>;
-		}
-
-		return <p>Found 0 results.</p>;
 	}
 
 	return <p>Found 0 results.</p>;
@@ -85,16 +113,16 @@ function ReasoningMessage({
 	part: MessagePart;
 	isStreaming: boolean;
 }) {
-	const [hasBeenStreaming, setHasBeenStreaming] = useState(isStreaming);
-
-	useEffect(() => {
-		if (isStreaming) {
-			setHasBeenStreaming(true);
-		}
-	}, [isStreaming]);
+	const hasBeenStreamingRef = useRef(isStreaming);
+	if (isStreaming) {
+		hasBeenStreamingRef.current = true;
+	}
 
 	return (
-		<Reasoning defaultOpen={hasBeenStreaming} isStreaming={isStreaming}>
+		<Reasoning
+			defaultOpen={hasBeenStreamingRef.current}
+			isStreaming={isStreaming}
+		>
 			<ReasoningTrigger />
 			<ReasoningContent>{getReasoningText(part)}</ReasoningContent>
 		</Reasoning>
@@ -154,7 +182,7 @@ function renderMessagePart(
 							label={`Running ${toolPart.type}`}
 							status="complete"
 						>
-							{formatToolOutput(toolPart.output)}
+							{formatToolOutput(getToolOutput(toolPart))}
 						</ChainOfThoughtStep>
 					))}
 				</ChainOfThoughtContent>
@@ -184,8 +212,6 @@ function renderMessagePart(
 			</MessageResponse>
 		);
 	}
-
-	console.log(part);
 
 	if (part.type?.includes("tool")) {
 		return (
@@ -241,17 +267,17 @@ export function AgentMessages() {
 								)
 							)}
 
-							{showError && <ErrorMessage />}
+							{showError ? <ErrorMessage /> : null}
 						</MessageContent>
 					</Message>
 				);
 			})}
 
-			{!!isStreaming && (
+			{isStreaming ? (
 				<StreamingIndicator
 					statusText={chatStatus.displayMessage ?? undefined}
 				/>
-			)}
+			) : null}
 		</>
 	);
 }

@@ -1,5 +1,5 @@
 import { useDebouncedCallback } from "@tanstack/react-pacer";
-import { useAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useChat } from "@/contexts/chat-context";
 import type { AgentCommand } from "../agent-atoms";
@@ -11,9 +11,9 @@ import {
 import { filterCommands } from "../agent-commands";
 
 export function useAgentCommands() {
-	const [_, setInput] = useAtom(agentInputAtom);
+	const setInput = useSetAtom(agentInputAtom);
 	const [showCommands, setShowCommands] = useAtom(showCommandsAtom);
-	const [, setCommandQuery] = useAtom(commandQueryAtom);
+	const setCommandQuery = useSetAtom(commandQueryAtom);
 	const [localQuery, setLocalQuery] = useState("");
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 

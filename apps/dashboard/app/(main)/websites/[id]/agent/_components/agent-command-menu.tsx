@@ -1,12 +1,10 @@
 "use client";
 
-import {
-	ChartBarIcon,
-	FileTextIcon,
-	LightbulbIcon,
-	MagnifyingGlassIcon,
-	TableIcon,
-} from "@phosphor-icons/react";
+import { ChartBarIcon } from "@phosphor-icons/react/dist/ssr/ChartBar";
+import { FileTextIcon } from "@phosphor-icons/react/dist/ssr/FileText";
+import { LightbulbIcon } from "@phosphor-icons/react/dist/ssr/Lightbulb";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/ssr/MagnifyingGlass";
+import { TableIcon } from "@phosphor-icons/react/dist/ssr/Table";
 import { Button } from "@/components/ui/button";
 import {
 	Command,

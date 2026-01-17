@@ -16,6 +16,7 @@ import { executeQueryBuilderTool } from "./tools/execute-query-builder";
 import { executeSqlQueryTool } from "./tools/execute-sql-query";
 import { createFunnelTools } from "./tools/funnels";
 import { getTopPagesTool } from "./tools/get-top-pages";
+import { createLinksTools } from "./tools/links";
 
 /**
  * Creates analytics tools with context-aware funnels tools.
@@ -38,6 +39,7 @@ function createAnalyticsTools(context: {
 	};
 	const funnelTools = createFunnelTools(appContext);
 	const annotationTools = createAnnotationTools(appContext);
+	const linksTools = createLinksTools(appContext);
 
 	return {
 		get_top_pages: getTopPagesTool,
@@ -45,6 +47,7 @@ function createAnalyticsTools(context: {
 		execute_sql_query: executeSqlQueryTool,
 		...funnelTools,
 		...annotationTools,
+		...linksTools,
 	} as const;
 }
 

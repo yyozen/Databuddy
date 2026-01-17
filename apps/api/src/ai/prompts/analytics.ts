@@ -43,6 +43,18 @@ const ANALYTICS_RULES = `<agent-specific-rules>
   1. First call: create_funnel({ websiteId: "...", name: "...", steps: [...], confirmed: false }) - shows preview
   2. Show preview to user and ask: "Do you want to create this funnel? Please confirm."
   3. Only after user explicitly confirms: create_funnel({ websiteId: "...", name: "...", steps: [...], confirmed: true })
+- Use links tools when users ask about short links, URL shortening, or link management:
+  - list_links: List all short links for the organization
+  - get_link: Get details of a specific link by ID
+  - search_links: Search links by name, slug, or target URL
+  - create_link: Create a new short link (CRITICAL: Always call with confirmed=false first to show preview)
+  - update_link: Update an existing link (CRITICAL: Always call with confirmed=false first to show changes)
+  - delete_link: Delete a link (CRITICAL: Always call with confirmed=false first to confirm deletion)
+- Example links: list_links({ websiteId: "<use website_id from context>" })
+- Example create link (TWO-STEP PROCESS):
+  1. First call: create_link({ websiteId: "...", name: "Black Friday Sale", targetUrl: "https://example.com/sale", slug: "bf24", confirmed: false })
+  2. Show preview to user and ask: "Do you want to create this link? Please confirm."
+  3. Only after user explicitly confirms: create_link({ ..., confirmed: true })
 
 **Insights & Recommendations:**
 - Provide 2-3 actionable recommendations based on findings
@@ -60,7 +72,7 @@ const ANALYTICS_RULES = `<agent-specific-rules>
  * Builds the instruction prompt for the analytics agent.
  */
 export function buildAnalyticsInstructions(ctx: AppContext): string {
-	return `You are Databunny, an analytics assistant for ${ctx.websiteDomain}. Your goal is to analyze website traffic, user behavior, and performance metrics.
+  return `You are Databunny, an analytics assistant for ${ctx.websiteDomain}. Your goal is to analyze website traffic, user behavior, and performance metrics.
 
 ${COMMON_AGENT_RULES}
 

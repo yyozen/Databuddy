@@ -1,11 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
-type ChatRecord = {
+interface ChatRecord {
 	id: string;
 	websiteId: string;
 	title: string;
 	updatedAt: string;
-};
+}
+
+interface ChatListState {
+	chats: ChatRecord[];
+	isLoading: boolean;
+}
 
 const DB_NAME = "databunny-agent";
 const DB_VERSION = 1;
@@ -94,28 +99,84 @@ const deleteChat = async (chatId: string) => {
 	await runStoreRequest(db, "readwrite", (store) => store.delete(chatId));
 };
 
-export function useChatList(websiteId: string) {
-	const [chats, setChats] = useState<ChatRecord[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+const chatListCache = new Map<string, ChatListState>();
+const chatListSubscribers = new Map<string, Set<() => void>>();
 
-	const refresh = useCallback(async () => {
-		setIsLoading(true);
-		try {
-			const records = await listChats(websiteId);
-			setChats(records);
-		} catch {
-			setChats([]);
-		} finally {
-			setIsLoading(false);
+function notifySubscribers(websiteId: string) {
+	const subscribers = chatListSubscribers.get(websiteId);
+	if (subscribers) {
+		for (const callback of subscribers) {
+			callback();
 		}
+	}
+}
+
+async function refreshChatList(websiteId: string) {
+	chatListCache.set(websiteId, {
+		chats: chatListCache.get(websiteId)?.chats ?? [],
+		isLoading: true,
+	});
+	notifySubscribers(websiteId);
+
+	try {
+		const records = await listChats(websiteId);
+		chatListCache.set(websiteId, { chats: records, isLoading: false });
+	} catch {
+		chatListCache.set(websiteId, { chats: [], isLoading: false });
+	}
+	notifySubscribers(websiteId);
+}
+
+function subscribeToChatList(websiteId: string, callback: () => void) {
+	let subscribers = chatListSubscribers.get(websiteId);
+	if (!subscribers) {
+		subscribers = new Set();
+		chatListSubscribers.set(websiteId, subscribers);
+		// Initial fetch when first subscriber joins
+		refreshChatList(websiteId);
+	}
+	subscribers.add(callback);
+
+	return () => {
+		subscribers.delete(callback);
+		if (subscribers.size === 0) {
+			chatListSubscribers.delete(websiteId);
+		}
+	};
+}
+
+function getChatListSnapshot(websiteId: string): ChatListState {
+	return chatListCache.get(websiteId) ?? { chats: [], isLoading: true };
+}
+
+export function useChatList(websiteId: string) {
+	const subscribe = useCallback(
+		(callback: () => void) => subscribeToChatList(websiteId, callback),
+		[websiteId]
+	);
+
+	const getSnapshot = useCallback(
+		() => getChatListSnapshot(websiteId),
+		[websiteId]
+	);
+
+	const getServerSnapshot = useCallback(
+		(): ChatListState => ({ chats: [], isLoading: true }),
+		[]
+	);
+
+	const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+	const refresh = useCallback(() => {
+		refreshChatList(websiteId);
 	}, [websiteId]);
 
 	const removeChat = useCallback(
 		async (chatId: string) => {
 			await deleteChat(chatId);
-			await refresh();
+			await refreshChatList(websiteId);
 		},
-		[refresh]
+		[websiteId]
 	);
 
 	const saveChat = useCallback(
@@ -125,23 +186,19 @@ export function useChatList(websiteId: string) {
 				websiteId,
 				updatedAt: chat.updatedAt ?? new Date().toISOString(),
 			});
-			await refresh();
+			await refreshChatList(websiteId);
 		},
-		[refresh, websiteId]
+		[websiteId]
 	);
-
-	useEffect(() => {
-		refresh();
-	}, [refresh]);
 
 	return useMemo(
 		() => ({
-			chats,
-			isLoading,
+			chats: state.chats,
+			isLoading: state.isLoading,
 			removeChat,
 			refresh,
 			saveChat,
 		}),
-		[chats, isLoading, refresh, removeChat, saveChat]
+		[state.chats, state.isLoading, refresh, removeChat, saveChat]
 	);
 }
