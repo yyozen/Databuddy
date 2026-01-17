@@ -80,6 +80,7 @@ const createLinkSchema = z.object({
 	ogTitle: z.string().max(200).nullable().optional(),
 	ogDescription: z.string().max(500).nullable().optional(),
 	ogImageUrl: z.url().nullable().optional(),
+	ogVideoUrl: z.url().nullable().optional(),
 	iosUrl: z.url().nullable().optional(),
 	androidUrl: z.url().nullable().optional(),
 });
@@ -102,6 +103,7 @@ const updateLinkSchema = z.object({
 	ogTitle: z.string().max(200).nullable().optional(),
 	ogDescription: z.string().max(500).nullable().optional(),
 	ogImageUrl: z.url().nullable().optional(),
+	ogVideoUrl: z.url().nullable().optional(),
 	iosUrl: z.url().nullable().optional(),
 	androidUrl: z.url().nullable().optional(),
 });
@@ -180,6 +182,7 @@ export const linksRouter = {
 				ogTitle: input.ogTitle ?? null,
 				ogDescription: input.ogDescription ?? null,
 				ogImageUrl: input.ogImageUrl ?? null,
+				ogVideoUrl: input.ogVideoUrl ?? null,
 				iosUrl: input.iosUrl ?? null,
 				androidUrl: input.androidUrl ?? null,
 			};

@@ -165,6 +165,7 @@ const DEFAULT_OG_DATA: OgData = {
 	ogTitle: "",
 	ogDescription: "",
 	ogImageUrl: "",
+	ogVideoUrl: "",
 };
 
 interface LinkSheetProps {
@@ -232,6 +233,7 @@ export function LinkSheet({
 					ogTitle: linkData.ogTitle ?? "",
 					ogDescription: linkData.ogDescription ?? "",
 					ogImageUrl: linkData.ogImageUrl ?? "",
+					ogVideoUrl: linkData.ogVideoUrl ?? "",
 				});
 
 				form.reset({
@@ -363,6 +365,8 @@ export function LinkSheet({
 			useCustomOg && ogData.ogDescription ? ogData.ogDescription : undefined;
 		const ogImageUrl =
 			useCustomOg && ogData.ogImageUrl ? ogData.ogImageUrl : undefined;
+		const ogVideoUrl =
+			useCustomOg && ogData.ogVideoUrl ? ogData.ogVideoUrl : undefined;
 
 		// Handle device targeting URLs
 		let iosUrl: string | undefined = formData.iosUrl?.trim() || undefined;
@@ -388,6 +392,7 @@ export function LinkSheet({
 					ogTitle,
 					ogDescription,
 					ogImageUrl,
+					ogVideoUrl,
 					iosUrl,
 					androidUrl,
 				});
@@ -406,6 +411,7 @@ export function LinkSheet({
 					ogTitle,
 					ogDescription,
 					ogImageUrl,
+					ogVideoUrl,
 					iosUrl,
 					androidUrl,
 				});

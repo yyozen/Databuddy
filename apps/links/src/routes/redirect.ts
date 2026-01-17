@@ -37,6 +37,7 @@ async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
 			ogTitle: true,
 			ogDescription: true,
 			ogImageUrl: true,
+			ogVideoUrl: true,
 			iosUrl: true,
 			androidUrl: true,
 		},
@@ -55,6 +56,7 @@ async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
 		ogTitle: dbLink.ogTitle,
 		ogDescription: dbLink.ogDescription,
 		ogImageUrl: dbLink.ogImageUrl,
+		ogVideoUrl: dbLink.ogVideoUrl,
 		iosUrl: dbLink.iosUrl,
 		androidUrl: dbLink.androidUrl,
 	};
@@ -100,7 +102,7 @@ export const redirectRoute = new Elysia().get(
 		const userAgent = request.headers.get("user-agent");
 		const targetUrl = getTargetUrl(link, userAgent);
 
-		const hasOg = link.ogTitle ?? link.ogDescription ?? link.ogImageUrl;
+		const hasOg = link.ogTitle ?? link.ogDescription ?? link.ogImageUrl ?? link.ogVideoUrl;
 		if (hasOg && isSocialBot(userAgent)) {
 			set.headers = { ...headers, "Content-Type": "text/html; charset=utf-8" };
 			return new Response(generateOgHtml(link, request.url, targetUrl), { status: 200 });

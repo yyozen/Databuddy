@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleNotchIcon, ImageIcon } from "@phosphor-icons/react";
+import { CircleNotchIcon, ImageIcon, VideoIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ export interface OgData {
 	ogTitle: string;
 	ogDescription: string;
 	ogImageUrl: string;
+	ogVideoUrl: string;
 }
 
 interface OgPreviewProps {
@@ -209,6 +210,24 @@ export function OgPreview({
 							placeholder={fetchedOg?.image || "https://example.com/image.jpg"}
 							type="url"
 							value={value.ogImageUrl}
+						/>
+					</div>
+
+					<div className="grid gap-1.5">
+						<Label
+							className="flex items-center gap-1.5 text-xs"
+							htmlFor="og-video"
+						>
+							<VideoIcon size={12} weight="duotone" />
+							Video URL (optional)
+						</Label>
+						<Input
+							className="h-8 text-sm"
+							id="og-video"
+							onChange={(e) => handleFieldChange("ogVideoUrl", e.target.value)}
+							placeholder="https://example.com/video.mp4"
+							type="url"
+							value={value.ogVideoUrl}
 						/>
 					</div>
 				</div>

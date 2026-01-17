@@ -868,6 +868,7 @@ export const links = pgTable(
 		ogTitle: text("og_title"),
 		ogDescription: text("og_description"),
 		ogImageUrl: text("og_image_url"),
+		ogVideoUrl: text("og_video_url"),
 		iosUrl: text("ios_url"),
 		androidUrl: text("android_url"),
 		deletedAt: timestamp("deleted_at", { withTimezone: true }),

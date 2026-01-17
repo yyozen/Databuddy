@@ -11,6 +11,7 @@ export interface CachedLink {
 	ogTitle: string | null;
 	ogDescription: string | null;
 	ogImageUrl: string | null;
+	ogVideoUrl: string | null;
 	iosUrl: string | null;
 	androidUrl: string | null;
 }
