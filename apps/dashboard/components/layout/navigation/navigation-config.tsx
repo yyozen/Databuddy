@@ -140,10 +140,8 @@ export const createWebsitesNavigation = (
 		// }),
 		createNavItem("Links", LinkIcon, "/links", {
 			highlight: true,
-			flag: "links",
 		}),
-
-	])
+	]),
 ];
 
 export const personalNavigation: NavigationSection[] = [

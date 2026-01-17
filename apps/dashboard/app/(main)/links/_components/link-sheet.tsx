@@ -2,9 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+	AndroidLogoIcon,
+	AppleLogoIcon,
 	CalendarIcon,
 	CircleNotchIcon,
 	CopyIcon,
+	DeviceMobileIcon,
 	LinkIcon,
 	QrCodeIcon,
 } from "@phosphor-icons/react";
@@ -108,6 +111,44 @@ const formSchema = z.object({
 			},
 			{ message: "Please enter a valid URL" }
 		),
+	iosUrl: z
+		.string()
+		.optional()
+		.or(z.literal(""))
+		.refine(
+			(val) => {
+				if (!val || val === "") {
+					return true;
+				}
+				try {
+					const urlToTest = val.startsWith("http") ? val : `https://${val}`;
+					const url = new URL(urlToTest);
+					return url.protocol === "http:" || url.protocol === "https:";
+				} catch {
+					return false;
+				}
+			},
+			{ message: "Please enter a valid URL" }
+		),
+	androidUrl: z
+		.string()
+		.optional()
+		.or(z.literal(""))
+		.refine(
+			(val) => {
+				if (!val || val === "") {
+					return true;
+				}
+				try {
+					const urlToTest = val.startsWith("http") ? val : `https://${val}`;
+					const url = new URL(urlToTest);
+					return url.protocol === "http:" || url.protocol === "https:";
+				} catch {
+					return false;
+				}
+			},
+			{ message: "Please enter a valid URL" }
+		),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -161,6 +202,8 @@ export function LinkSheet({
 			slug: "",
 			expiresAt: "",
 			expiredRedirectUrl: "",
+			iosUrl: "",
+			androidUrl: "",
 		},
 	});
 
@@ -199,6 +242,8 @@ export function LinkSheet({
 						? dayjs(linkData.expiresAt).format("YYYY-MM-DDTHH:mm")
 						: "",
 					expiredRedirectUrl: linkData.expiredRedirectUrl ?? "",
+					iosUrl: linkData.iosUrl ?? "",
+					androidUrl: linkData.androidUrl ?? "",
 				});
 			} else {
 				form.reset({
@@ -207,6 +252,8 @@ export function LinkSheet({
 					slug: "",
 					expiresAt: "",
 					expiredRedirectUrl: "",
+					iosUrl: "",
+					androidUrl: "",
 				});
 				setUtmParams(DEFAULT_UTM_PARAMS);
 				setOgData(DEFAULT_OG_DATA);
@@ -295,8 +342,11 @@ export function LinkSheet({
 
 		const slug = formData.slug?.trim() || undefined;
 
-		// Handle expiration date - pass undefined if not set
-		const expiresAt = formData.expiresAt
+		// Handle expiration date - pass Date for create, string for update
+		const expiresAtDate = formData.expiresAt
+			? new Date(formData.expiresAt)
+			: undefined;
+		const expiresAtString = formData.expiresAt
 			? new Date(formData.expiresAt).toISOString()
 			: undefined;
 
@@ -314,6 +364,18 @@ export function LinkSheet({
 		const ogImageUrl =
 			useCustomOg && ogData.ogImageUrl ? ogData.ogImageUrl : undefined;
 
+		// Handle device targeting URLs
+		let iosUrl: string | undefined = formData.iosUrl?.trim() || undefined;
+		if (iosUrl && !iosUrl.startsWith("http")) {
+			iosUrl = `https://${iosUrl}`;
+		}
+
+		let androidUrl: string | undefined =
+			formData.androidUrl?.trim() || undefined;
+		if (androidUrl && !androidUrl.startsWith("http")) {
+			androidUrl = `https://${androidUrl}`;
+		}
+
 		try {
 			if (link?.id) {
 				const result = await updateLinkMutation.mutateAsync({
@@ -321,11 +383,13 @@ export function LinkSheet({
 					name: formData.name,
 					targetUrl,
 					slug,
-					expiresAt,
+					expiresAt: expiresAtString,
 					expiredRedirectUrl,
 					ogTitle,
 					ogDescription,
 					ogImageUrl,
+					iosUrl,
+					androidUrl,
 				});
 				if (onSave) {
 					onSave(result);
@@ -337,11 +401,13 @@ export function LinkSheet({
 					name: formData.name,
 					targetUrl,
 					slug,
-					expiresAt,
+					expiresAt: expiresAtDate,
 					expiredRedirectUrl,
 					ogTitle,
 					ogDescription,
 					ogImageUrl,
+					iosUrl,
+					androidUrl,
 				});
 				if (onSave) {
 					onSave(result);
@@ -523,6 +589,71 @@ export function LinkSheet({
 								<FormDescription className="text-xs">
 									Where to redirect after expiration (optional)
 								</FormDescription>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				</div>
+
+				<div className="h-px bg-border" />
+
+				{/* Device Targeting */}
+				<div className="space-y-3">
+					<div className="flex items-center gap-2">
+						<DeviceMobileIcon size={16} weight="duotone" />
+						<span className="font-medium text-sm">Device Targeting</span>
+					</div>
+					<p className="text-muted-foreground text-xs">
+						Redirect mobile users to device-specific URLs (e.g., app stores)
+					</p>
+
+					<FormField
+						control={form.control}
+						name="iosUrl"
+						render={({ field }) => (
+							<FormItem>
+								<Label
+									className="flex items-center gap-1.5 text-xs"
+									htmlFor="ios-url"
+								>
+									<AppleLogoIcon size={14} weight="fill" />
+									iOS URL
+								</Label>
+								<FormControl>
+									<Input
+										className="h-8 text-sm"
+										id="ios-url"
+										placeholder="apps.apple.com/app/..."
+										prefix="https://"
+										{...field}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="androidUrl"
+						render={({ field }) => (
+							<FormItem>
+								<Label
+									className="flex items-center gap-1.5 text-xs"
+									htmlFor="android-url"
+								>
+									<AndroidLogoIcon size={14} weight="fill" />
+									Android URL
+								</Label>
+								<FormControl>
+									<Input
+										className="h-8 text-sm"
+										id="android-url"
+										placeholder="play.google.com/store/apps/..."
+										prefix="https://"
+										{...field}
+									/>
+								</FormControl>
 								<FormMessage />
 							</FormItem>
 						)}
