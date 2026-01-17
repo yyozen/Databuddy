@@ -45,6 +45,15 @@ const config = {
 		];
 	},
 
+	async rewrites() {
+		return [
+			{
+				source: "/docs/:path*.md",
+				destination: "/api/docs/raw/:path*",
+			},
+		];
+	},
+
 	async redirects() {
 		return await [
 			{

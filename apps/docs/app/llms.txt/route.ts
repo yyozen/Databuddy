@@ -1,48 +1,65 @@
-// Thanks to better-auth for the code
-
 import fs from "node:fs/promises";
+import path from "node:path";
 import fg from "fast-glob";
-import { remarkInstall } from "fumadocs-docgen";
 import matter from "gray-matter";
-import { remark } from "remark";
-import remarkGfm from "remark-gfm";
-import remarkMdx from "remark-mdx";
-import remarkStringify from "remark-stringify";
 
 export const revalidate = false;
 
+const BASE_URL = "https://www.databuddy.cc/docs";
+
+const HEADER = `# Databuddy Documentation
+
+> Privacy-first web analytics. 65x faster than Google Analytics, GDPR compliant, no cookies required.
+
+`;
+
+const SECTION_ORDER = ["root", "Integrations", "hooks", "features", "performance", "privacy", "compliance"];
+const SECTION_LABELS: Record<string, string> = {
+	root: "Core",
+	Integrations: "Integrations",
+	hooks: "React Hooks",
+	features: "Features",
+	performance: "Performance",
+	privacy: "Privacy",
+	compliance: "Compliance",
+};
+
 export async function GET() {
-	// all scanned content
 	const files = await fg(["./content/docs/**/*.mdx"]);
 
-	const scan = files.map(async (file) => {
-		const fileContent = await fs.readFile(file);
-		const { content, data } = matter(fileContent.toString());
+	const entries = await Promise.all(
+		files.map(async (file) => {
+			const content = await fs.readFile(file);
+			const { data } = matter(content.toString());
+			const relativePath = file.replace("./content/docs/", "").replace(".mdx", "");
+			const section = path.dirname(relativePath);
 
-		const processed = await processContent(content);
-		return `file: ${file}
-meta: ${JSON.stringify(data, null, 2)}
-        
-${processed}`;
-	});
+			return {
+				section: section === "." ? "root" : section,
+				title: data.title || path.basename(file, ".mdx"),
+				description: data.description || "",
+				url: `${BASE_URL}/${relativePath}.md`,
+			};
+		}),
+	);
 
-	const scanned = await Promise.all(scan);
+	const grouped = entries.reduce<Record<string, typeof entries>>((acc, entry) => {
+		acc[entry.section] = acc[entry.section] || [];
+		acc[entry.section].push(entry);
+		return acc;
+	}, {});
 
-	return new Response(scanned.join("\n\n"), {
+	const sections = SECTION_ORDER.filter((s) => grouped[s])
+		.map((section) => {
+			const label = SECTION_LABELS[section] || section;
+			const items = grouped[section]
+				.map((i) => `- [${i.title}](${i.url}): ${i.description}`)
+				.join("\n");
+			return `## ${label}\n${items}`;
+		})
+		.join("\n\n");
+
+	return new Response(HEADER + sections, {
 		headers: { "Content-Type": "text/plain; charset=utf-8" },
 	});
-}
-
-async function processContent(content: string): Promise<string> {
-	const file = await remark()
-		.use(remarkMdx)
-		// gfm styles
-		.use(remarkGfm)
-		// your remark plugins
-		.use(remarkInstall, { persist: { id: "package-manager" } })
-		// to string
-		.use(remarkStringify)
-		.process(content);
-
-	return String(file);
 }
