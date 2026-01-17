@@ -12,3 +12,8 @@ createdAt: '2026-01-17'
 - Extracted redirect logic into `bot-detection.ts`, `device-targeting.ts`, `og-html.ts`
 - Added integration tests for links RPC router validation schemas
 - Device targeting UI in link creation sheet with Apple/Android icons
+- Fixed OG tags with proper `og:image:width`, `og:image:height`, `og:image:type` for Facebook/Twitter
+- Added `ogVideoUrl` field for video embeds with `og:video` and `twitter:player` support
+- OG preview now shows image validation status (loading, valid, invalid) with retry button
+- Added character counters for title (120) and description (240)
+- Added reset to default button for custom OG fields
