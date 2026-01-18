@@ -77,7 +77,7 @@ function createErrorResponse(
 }
 
 /**
- * Get the owner ID for a website (organizationId or userId)
+ * Get the owner ID for a website (organizationId)
  * Used for LLM queries which are scoped by owner, not website
  */
 async function getWebsiteOwnerId(websiteId: string): Promise<string | null> {
@@ -85,7 +85,6 @@ async function getWebsiteOwnerId(websiteId: string): Promise<string | null> {
 		where: eq(websites.id, websiteId),
 		columns: {
 			organizationId: true,
-			userId: true,
 		},
 	});
 
@@ -93,7 +92,7 @@ async function getWebsiteOwnerId(websiteId: string): Promise<string | null> {
 		return null;
 	}
 
-	return website.organizationId ?? website.userId ?? null;
+	return website.organizationId ?? null;
 }
 
 async function verifyWebsiteAccess(
@@ -105,7 +104,6 @@ async function verifyWebsiteAccess(
 		columns: {
 			id: true,
 			isPublic: true,
-			userId: true,
 			organizationId: true,
 		},
 	});
@@ -122,13 +120,15 @@ async function verifyWebsiteAccess(
 		return false;
 	}
 
+	// Website must belong to a workspace
+	if (!website.organizationId) {
+		return false;
+	}
+
 	if (ctx.apiKey) {
 		if (hasGlobalAccess(ctx.apiKey)) {
 			if (ctx.apiKey.organizationId) {
 				return website.organizationId === ctx.apiKey.organizationId;
-			}
-			if (ctx.apiKey.userId) {
-				return website.userId === ctx.apiKey.userId && !website.organizationId;
 			}
 			return false;
 		}
@@ -138,27 +138,17 @@ async function verifyWebsiteAccess(
 	}
 
 	if (ctx.user) {
-		// Direct ownership (personal websites)
-		if (website.userId === ctx.user.id && !website.organizationId) {
-			return true;
-		}
+		const membership = await db.query.member.findFirst({
+			where: and(
+				eq(member.userId, ctx.user.id),
+				eq(member.organizationId, website.organizationId)
+			),
+			columns: {
+				id: true,
+			},
+		});
 
-		// Organization access - check if user is a member of the website's organization
-		if (website.organizationId) {
-			const membership = await db.query.member.findFirst({
-				where: and(
-					eq(member.userId, ctx.user.id),
-					eq(member.organizationId, website.organizationId)
-				),
-				columns: {
-					id: true,
-				},
-			});
-
-			return !!membership;
-		}
-
-		return false;
+		return !!membership;
 	}
 
 	return false;

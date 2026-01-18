@@ -1,18 +1,7 @@
 import { websitesApi } from "@databuddy/auth";
-import {
-	and,
-	chQuery,
-	db,
-	eq,
-	inArray,
-	isNull,
-	member,
-	or,
-	websites,
-} from "@databuddy/db";
+import { chQuery, db, eq, inArray, member, websites } from "@databuddy/db";
 import { createDrizzleCache, redis } from "@databuddy/redis";
 import {
-	buildWebsiteFilter,
 	DuplicateDomainError,
 	ValidationError,
 	type Website,
@@ -260,7 +249,7 @@ export const websitesRouter = {
 	list: protectedProcedure
 		.input(z.object({ organizationId: z.string().optional() }).default({}))
 		.handler(({ context, input }) => {
-			const listCacheKey = `list:${context.user.id}:${input.organizationId || ""}`;
+			const listCacheKey = `list:${context.user.id}:${input.organizationId || "all"}`;
 			return websiteCache.withCache({
 				key: listCacheKey,
 				ttl: CACHE_DURATION,
@@ -276,13 +265,24 @@ export const websitesRouter = {
 								message: "Missing organization permissions.",
 							});
 						}
+						return context.db.query.websites.findMany({
+							where: eq(websites.organizationId, input.organizationId),
+							orderBy: (table, { desc }) => [desc(table.createdAt)],
+						});
 					}
-					const whereClause = buildWebsiteFilter(
-						context.user.id,
-						input.organizationId
-					);
+
+					const userMemberships = await context.db.query.member.findMany({
+						where: eq(member.userId, context.user.id),
+						columns: { organizationId: true },
+					});
+					const orgIds = userMemberships.map((m) => m.organizationId);
+
+					if (orgIds.length === 0) {
+						return [];
+					}
+
 					return context.db.query.websites.findMany({
-						where: whereClause,
+						where: inArray(websites.organizationId, orgIds),
 						orderBy: (table, { desc }) => [desc(table.createdAt)],
 					});
 				},
@@ -296,30 +296,20 @@ export const websitesRouter = {
 			ttl: CACHE_DURATION,
 			tables: ["websites"],
 			queryFn: async () => {
-				// 1. Get user's organization memberships
+				// Get user's organization memberships
 				const userMemberships = await context.db.query.member.findMany({
 					where: eq(member.userId, context.user.id),
 					columns: { organizationId: true },
 				});
 				const orgIds = userMemberships.map((m) => m.organizationId);
 
-				// 2. Build filter: (userId = me AND orgId is null) OR (orgId IN myOrgs)
-				const personalSites = and(
-					eq(websites.userId, context.user.id),
-					isNull(websites.organizationId)
-				);
-
-				const orgSites =
-					orgIds.length > 0
-						? inArray(websites.organizationId, orgIds)
-						: undefined;
-
-				const whereClause = orgSites
-					? or(personalSites, orgSites)
-					: personalSites;
+				// Only show websites from user's workspaces
+				if (orgIds.length === 0) {
+					return [];
+				}
 
 				return context.db.query.websites.findMany({
-					where: whereClause,
+					where: inArray(websites.organizationId, orgIds),
 					orderBy: (table, { desc }) => [desc(table.createdAt)],
 				});
 			},
@@ -329,6 +319,10 @@ export const websitesRouter = {
 	listWithCharts: protectedProcedure
 		.input(z.object({ organizationId: z.string().optional() }).default({}))
 		.handler(async ({ context, input }) => {
+			let websitesList: Awaited<
+				ReturnType<typeof context.db.query.websites.findMany>
+			>;
+
 			if (input.organizationId) {
 				const { success } = await websitesApi.hasPermission({
 					headers: context.headers,
@@ -339,25 +333,35 @@ export const websitesRouter = {
 						message: "Missing organization permissions.",
 					});
 				}
+				websitesList = await context.db.query.websites.findMany({
+					where: eq(websites.organizationId, input.organizationId),
+					orderBy: (table, { desc }) => [desc(table.createdAt)],
+				});
+			} else {
+				const userMemberships = await context.db.query.member.findMany({
+					where: eq(member.userId, context.user.id),
+					columns: { organizationId: true },
+				});
+				const orgIds = userMemberships.map((m) => m.organizationId);
+
+				if (orgIds.length === 0) {
+					return { websites: [], chartData: {}, activeUsers: {} };
+				}
+
+				websitesList = await context.db.query.websites.findMany({
+					where: inArray(websites.organizationId, orgIds),
+					orderBy: (table, { desc }) => [desc(table.createdAt)],
+				});
 			}
-			const whereClause = buildWebsiteFilter(
-				context.user.id,
-				input.organizationId
-			);
 
-			const websites = await context.db.query.websites.findMany({
-				where: whereClause,
-				orderBy: (table, { desc }) => [desc(table.createdAt)],
-			});
-
-			const websiteIds = websites.map((site) => site.id);
+			const websiteIds = websitesList.map((site) => site.id);
 			const [chartData, activeUsers] = await Promise.all([
 				fetchChartData(websiteIds),
 				fetchActiveUsers(websiteIds),
 			]);
 
 			return {
-				websites,
+				websites: websitesList,
 				chartData,
 				activeUsers,
 			};
@@ -403,16 +407,20 @@ export const websitesRouter = {
 	create: protectedProcedure
 		.input(createWebsiteSchema)
 		.handler(async ({ context, input }) => {
-			if (input.organizationId) {
-				const { success } = await websitesApi.hasPermission({
-					headers: context.headers,
-					body: { permissions: { website: ["create"] } },
+			if (!input.organizationId) {
+				throw new ORPCError("BAD_REQUEST", {
+					message: "Website must belong to a workspace",
 				});
-				if (!success) {
-					throw new ORPCError("FORBIDDEN", {
-						message: "Missing organization permissions.",
-					});
-				}
+			}
+
+			const { success } = await websitesApi.hasPermission({
+				headers: context.headers,
+				body: { permissions: { website: ["create"] } },
+			});
+			if (!success) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "Missing workspace permissions.",
+				});
 			}
 
 			const serviceInput = {
@@ -588,24 +596,28 @@ export const websitesRouter = {
 		.handler(async ({ context, input }) => {
 			await authorizeWebsiteAccess(context, input.websiteId, "update");
 
-			if (input.organizationId) {
-				const { success } = await websitesApi.hasPermission({
-					headers: context.headers,
-					body: {
-						organizationId: input.organizationId,
-						permissions: { website: ["create"] },
-					},
+			if (!input.organizationId) {
+				throw new ORPCError("BAD_REQUEST", {
+					message: "Website must be transferred to a workspace",
 				});
-				if (!success) {
-					throw new ORPCError("FORBIDDEN", {
-						message: "Missing organization permissions.",
-					});
-				}
+			}
+
+			const { success } = await websitesApi.hasPermission({
+				headers: context.headers,
+				body: {
+					organizationId: input.organizationId,
+					permissions: { website: ["create"] },
+				},
+			});
+			if (!success) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "Missing workspace permissions.",
+				});
 			}
 
 			try {
 				return await websiteService.updateById(input.websiteId, {
-					organizationId: input.organizationId ?? null,
+					organizationId: input.organizationId,
 				});
 			} catch (error) {
 				if (error instanceof DuplicateDomainError) {

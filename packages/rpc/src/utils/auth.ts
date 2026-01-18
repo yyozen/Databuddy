@@ -75,19 +75,19 @@ export async function authorizeWebsiteAccess(
 		return website;
 	}
 
-	if (website.organizationId) {
-		const { success } = await websitesApi.hasPermission({
-			headers: ctx.headers,
-			body: { permissions: { website: [permission] } },
-		});
-		if (!success) {
-			throw new ORPCError("FORBIDDEN", {
-				message: "You do not have permission to perform this action",
-			});
-		}
-	} else if (website.userId !== ctx.user.id) {
+	if (!website.organizationId) {
 		throw new ORPCError("FORBIDDEN", {
-			message: "You are not the owner of this website",
+			message: "Website must belong to a workspace",
+		});
+	}
+
+	const { success } = await websitesApi.hasPermission({
+		headers: ctx.headers,
+		body: { permissions: { website: [permission] } },
+	});
+	if (!success) {
+		throw new ORPCError("FORBIDDEN", {
+			message: "You do not have permission to perform this action",
 		});
 	}
 
@@ -119,17 +119,17 @@ export async function isFullyAuthorized(
 			return true;
 		}
 
-		// Check organization permissions
-		if (website.organizationId) {
-			const { success } = await websitesApi.hasPermission({
-				headers: ctx.headers,
-				body: { permissions: { website: ["read"] } },
-			});
-			return success;
+		// Website must belong to a workspace
+		if (!website.organizationId) {
+			return false;
 		}
 
-		// Check direct ownership
-		return website.userId === ctx.user.id;
+		// Check organization permissions
+		const { success } = await websitesApi.hasPermission({
+			headers: ctx.headers,
+			body: { permissions: { website: ["read"] } },
+		});
+		return success;
 	} catch {
 		return false;
 	}

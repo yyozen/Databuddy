@@ -44,11 +44,6 @@ export class ValidationError extends Error {
 	}
 }
 
-export const buildWebsiteFilter = (userId: string, organizationId?: string) =>
-	organizationId
-		? eq(websites.organizationId, organizationId)
-		: and(eq(websites.userId, userId), isNull(websites.organizationId));
-
 export class WebsiteService {
 	private readonly database: typeof db;
 	private readonly cache: WebsiteCache | null;
@@ -94,12 +89,6 @@ export class WebsiteService {
 						{ organizationId: website.organizationId },
 						website
 					);
-				} else if (website.userId) {
-					await this.cache?.setWebsiteByDomain(
-						website.domain,
-						{ userId: website.userId },
-						website
-					);
 				}
 			}
 
@@ -120,13 +109,6 @@ export class WebsiteService {
 			if (filter?.organizationId) {
 				const cached = await this.cache?.getWebsiteByDomain(normalizedDomain, {
 					organizationId: filter.organizationId,
-				});
-				if (cached) {
-					return cached;
-				}
-			} else if (filter?.userId) {
-				const cached = await this.cache?.getWebsiteByDomain(normalizedDomain, {
-					userId: filter.userId,
 				});
 				if (cached) {
 					return cached;
@@ -184,12 +166,6 @@ export class WebsiteService {
 					await this.cache?.setWebsiteByDomain(
 						website.domain,
 						{ organizationId: website.organizationId },
-						website
-					);
-				} else if (website.userId) {
-					await this.cache?.setWebsiteByDomain(
-						website.domain,
-						{ userId: website.userId },
 						website
 					);
 				}
@@ -307,26 +283,12 @@ export class WebsiteService {
 					{ organizationId: created.organizationId },
 					created
 				);
-			} else if (created.userId) {
-				await this.cache?.setWebsiteByDomain(
-					created.domain,
-					{ userId: created.userId },
-					created
-				);
 			}
 
 			await this.cache?.invalidateLists({
-				userIds: created.userId ? [created.userId] : [],
+				userIds: [],
 				organizationIds: created.organizationId ? [created.organizationId] : [],
-				userOrgPairs:
-					created.userId && created.organizationId
-						? [
-								{
-									userId: created.userId,
-									organizationId: created.organizationId,
-								},
-							]
-						: [],
+				userOrgPairs: [],
 			});
 
 			return created;
@@ -400,22 +362,14 @@ export class WebsiteService {
 			await this.cache?.setWebsite(updated);
 
 			if (before) {
-				const scopeChanged =
-					before.organizationId !== updated.organizationId ||
-					before.userId !== updated.userId;
+				const scopeChanged = before.organizationId !== updated.organizationId;
 				const domainChanged =
 					before.domain.toLowerCase() !== updated.domain.toLowerCase();
 
-				if (scopeChanged || domainChanged) {
-					if (before.organizationId) {
-						await this.cache?.deleteWebsiteByDomain(before.domain, {
-							organizationId: before.organizationId,
-						});
-					} else if (before.userId) {
-						await this.cache?.deleteWebsiteByDomain(before.domain, {
-							userId: before.userId,
-						});
-					}
+				if ((scopeChanged || domainChanged) && before.organizationId) {
+					await this.cache?.deleteWebsiteByDomain(before.domain, {
+						organizationId: before.organizationId,
+					});
 				}
 			}
 
@@ -423,12 +377,6 @@ export class WebsiteService {
 				await this.cache?.setWebsiteByDomain(
 					updated.domain,
 					{ organizationId: updated.organizationId },
-					updated
-				);
-			} else if (updated.userId) {
-				await this.cache?.setWebsiteByDomain(
-					updated.domain,
-					{ userId: updated.userId },
 					updated
 				);
 			}
@@ -507,24 +455,12 @@ export class WebsiteService {
 				await this.cache?.deleteWebsiteByDomain(deleted.domain, {
 					organizationId: deleted.organizationId,
 				});
-			} else if (deleted.userId) {
-				await this.cache?.deleteWebsiteByDomain(deleted.domain, {
-					userId: deleted.userId,
-				});
 			}
 
 			await this.cache?.invalidateLists({
-				userIds: deleted.userId ? [deleted.userId] : [],
+				userIds: [],
 				organizationIds: deleted.organizationId ? [deleted.organizationId] : [],
-				userOrgPairs:
-					deleted.userId && deleted.organizationId
-						? [
-								{
-									userId: deleted.userId,
-									organizationId: deleted.organizationId,
-								},
-							]
-						: [],
+				userOrgPairs: [],
 			});
 		} catch (error) {
 			if (

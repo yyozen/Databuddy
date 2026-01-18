@@ -1,4 +1,4 @@
-import { isNotNull, isNull } from "drizzle-orm";
+import { isNotNull } from "drizzle-orm";
 import {
 	boolean,
 	foreignKey,
@@ -319,16 +319,14 @@ export const websites = pgTable(
 		createdAt: timestamp({ precision: 3 }).defaultNow().notNull(),
 		updatedAt: timestamp({ precision: 3 }).defaultNow().notNull(),
 		deletedAt: timestamp({ precision: 3 }),
-		organizationId: text("organization_id"),
+		organizationId: text("organization_id").notNull(),
 		integrations: jsonb(),
 	},
 	(table) => [
-		uniqueIndex("websites_user_domain_unique")
-			.on(table.userId, table.domain)
-			.where(isNull(table.organizationId)),
-		uniqueIndex("websites_org_domain_unique")
-			.on(table.organizationId, table.domain)
-			.where(isNotNull(table.organizationId)),
+		uniqueIndex("websites_org_domain_unique").on(
+			table.organizationId,
+			table.domain
+		),
 		foreignKey({
 			columns: [table.userId],
 			foreignColumns: [user.id],
@@ -464,7 +462,24 @@ export const team = pgTable(
 );
 
 export const apiKeyType = pgEnum("api_key_type", ["user", "sdk", "automation"]);
-export const apiScope = pgEnum("api_scope", ["read:data", "write:llm", "write:data", "read:analytics", "write:custom-sql", "read:export", "write:otel", "admin:apikeys", "admin:users", "admin:organizations", "admin:websites", "rate:standard", "rate:premium", "rate:enterprise", "read:experiments", "track:events"]);
+export const apiScope = pgEnum("api_scope", [
+	"read:data",
+	"write:llm",
+	"write:data",
+	"read:analytics",
+	"write:custom-sql",
+	"read:export",
+	"write:otel",
+	"admin:apikeys",
+	"admin:users",
+	"admin:organizations",
+	"admin:websites",
+	"rate:standard",
+	"rate:premium",
+	"rate:enterprise",
+	"read:experiments",
+	"track:events",
+]);
 
 // Resource type for flexible, future-proof per-resource access control
 export const apiResourceType = pgEnum("api_resource_type", [

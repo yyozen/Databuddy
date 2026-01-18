@@ -96,8 +96,7 @@ const app = new Elysia().post("/llm", async (context) => {
 		}
 
 		const billingOwnerId = await resolveApiKeyOwnerId(
-			apiKey.organizationId ?? null,
-			apiKey.userId ?? null
+			apiKey.organizationId ?? null
 		);
 		if (!billingOwnerId) {
 			return new Response(

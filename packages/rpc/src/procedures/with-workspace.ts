@@ -432,57 +432,42 @@ export async function withWebsite(
 	// Validate plan requirements
 	validatePlan(plan, requiredPlans);
 
-	// Organization-owned website
-	if (website.organizationId) {
-		const role = await getOrganizationRole(
-			context.user.id,
-			website.organizationId
-		);
-
-		if (!role) {
-			throw new ORPCError("FORBIDDEN", {
-				message: "You are not a member of this organization",
-			});
-		}
-
-		const hasPermission = await checkPermissions(
-			context.headers,
-			"website",
-			permissions
-		);
-
-		if (!hasPermission) {
-			throw new ORPCError("FORBIDDEN", {
-				message: `You do not have the required permissions: ${permissions.join(", ")}`,
-			});
-		}
-
-		return {
-			workspace: {
-				organizationId: website.organizationId,
-				user: context.user,
-				role,
-				isPersonal: false,
-				plan,
-				isPublicAccess: false,
-			},
-			website,
-		};
+	// Website must belong to a workspace
+	if (!website.organizationId) {
+		throw new ORPCError("FORBIDDEN", {
+			message: "Website must belong to a workspace",
+		});
 	}
 
-	// Personal website - check ownership
-	if (website.userId !== context.user.id) {
+	const role = await getOrganizationRole(
+		context.user.id,
+		website.organizationId
+	);
+
+	if (!role) {
 		throw new ORPCError("FORBIDDEN", {
-			message: "You do not have access to this website",
+			message: "You are not a member of this workspace",
+		});
+	}
+
+	const hasPermission = await checkPermissions(
+		context.headers,
+		"website",
+		permissions
+	);
+
+	if (!hasPermission) {
+		throw new ORPCError("FORBIDDEN", {
+			message: `You do not have the required permissions: ${permissions.join(", ")}`,
 		});
 	}
 
 	return {
 		workspace: {
-			organizationId: null,
+			organizationId: website.organizationId,
 			user: context.user,
-			role: null,
-			isPersonal: true,
+			role,
+			isPersonal: false,
 			plan,
 			isPublicAccess: false,
 		},
