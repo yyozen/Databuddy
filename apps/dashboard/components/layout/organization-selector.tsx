@@ -7,7 +7,6 @@ import {
 	CheckIcon,
 	PlusIcon,
 	SpinnerGapIcon,
-	UserIcon,
 } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
@@ -108,28 +107,20 @@ function OrganizationSelectorTrigger({
 					<div className="rounded">
 						<Avatar className="size-7">
 							<AvatarImage
-								alt={activeOrganization?.name || "Personal"}
+								alt={activeOrganization?.name ?? "Workspace"}
 								className="rounded"
-								src={
-									activeOrganization
-										? getDicebearUrl(
-												activeOrganization.logo || activeOrganization.id
-											)
-										: getDicebearUrl("personal")
-								}
+								src={getDicebearUrl(
+									activeOrganization?.logo || activeOrganization?.id
+								)}
 							/>
 							<AvatarFallback className="bg-secondary">
 								<Image
-									alt={activeOrganization?.name || "Personal"}
+									alt={activeOrganization?.name ?? "Workspace"}
 									className="rounded"
 									height={28}
-									src={
-										activeOrganization
-											? getDicebearUrl(
-													activeOrganization.logo || activeOrganization.id
-												)
-											: getDicebearUrl("personal")
-									}
+									src={getDicebearUrl(
+										activeOrganization?.logo || activeOrganization?.id
+									)}
 									unoptimized
 									width={28}
 								/>
@@ -139,7 +130,7 @@ function OrganizationSelectorTrigger({
 					<div className="flex min-w-0 flex-1 flex-col items-start gap-1">
 						<div className="flex items-center gap-2">
 							<span className="truncate text-left font-semibold text-sidebar-accent-foreground text-sm">
-								{activeOrganization?.name || "Personal"}
+								{activeOrganization?.name ?? "Select workspace"}
 							</span>
 							<Badge
 								className="shrink-0 py-1 text-xs leading-none"
@@ -149,7 +140,7 @@ function OrganizationSelectorTrigger({
 							</Badge>
 						</div>
 						<p className="truncate text-left text-sidebar-accent-foreground/70 text-xs">
-							{activeOrganization?.slug || "Your workspace"}
+							{activeOrganization?.slug ?? "No workspace selected"}
 						</p>
 					</div>
 				</div>
@@ -182,12 +173,8 @@ export function OrganizationSelector() {
 	const [query, setQuery] = useState("");
 	const [isSwitching, setIsSwitching] = useState(false);
 
-	const handleSelectOrganization = async (organizationId: string | null) => {
-		const isAlreadySelected =
-			organizationId === activeOrganization?.id ||
-			(organizationId === null && !activeOrganization);
-
-		if (isAlreadySelected) {
+	const handleSelectOrganization = async (organizationId: string) => {
+		if (organizationId === activeOrganization?.id) {
 			return;
 		}
 
@@ -267,30 +254,6 @@ export function OrganizationSelector() {
 					className="w-72 rounded-none border-t-0 border-r border-l-0 bg-sidebar p-0"
 					sideOffset={0}
 				>
-					<DropdownMenuItem
-						className={cn(
-							"flex h-10 cursor-pointer items-center gap-3 border-b px-4 text-sm",
-							"text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-							!activeOrganization &&
-								"bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-						)}
-						onClick={() => handleSelectOrganization(null)}
-					>
-						<UserIcon
-							className="size-5 text-accent-foreground"
-							weight="duotone"
-						/>
-						<div className="flex min-w-0 flex-1 flex-col items-start text-left">
-							<span className="text-left font-medium text-sm">Personal</span>
-							<span className="text-left text-sidebar-foreground/70 text-xs">
-								Your workspace
-							</span>
-						</div>
-						{!activeOrganization && (
-							<CheckIcon className="size-4 text-accent-foreground" />
-						)}
-					</DropdownMenuItem>
-
 					{filteredOrganizations.length > 0 && (
 						<div className="flex flex-col">
 							{filteredOrganizations.map((org) => (
