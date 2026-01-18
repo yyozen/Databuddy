@@ -1,5 +1,13 @@
 import { sso } from "@better-auth/sso";
-import { db, eq, inArray, user, websites } from "@databuddy/db";
+import {
+    db,
+    eq,
+    inArray,
+    member as memberTable,
+    organization as organizationTable,
+    user,
+    websites,
+} from "@databuddy/db";
 import {
     InvitationEmail,
     MagicLinkEmail,
@@ -9,6 +17,7 @@ import {
     VerificationEmail,
 } from "@databuddy/email";
 import { getRedisCache } from "@databuddy/redis";
+import { createId } from "@databuddy/shared/utils/ids";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
 import {
@@ -22,6 +31,23 @@ import {
 } from "better-auth/plugins";
 import { Resend } from "resend";
 import { ac, admin, member, owner, viewer } from "./permissions";
+
+function generateOrgSlug(name: string): string {
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .slice(0, 48);
+}
+
+function getOrgNameFromUser(userName: string, email: string): string {
+    if (userName?.trim()) {
+        return `${userName.trim()}'s Workspace`;
+    }
+    const emailPrefix = email.split("@").at(0) ?? "user";
+    return `${emailPrefix}'s Workspace`;
+}
 
 function isProduction() {
     return process.env.NODE_ENV === "production";
@@ -40,14 +66,66 @@ export const auth = betterAuth({
     databaseHooks: {
         user: {
             create: {
-                after: async () => {
-                    // const resend = new Resend(process.env.RESEND_API_KEY as string);
-                    // await resend.emails.send({
-                    //     from: "Databuddy <noreply@databuddy.cc>",
-                    //     to: user.email,
-                    //     subject: "Welcome to Databuddy",
-                    //     react: WelcomeEmail({ username: user.name, url: process.env.BETTER_AUTH_URL as string }),
-                    // });
+                after: async (createdUser) => {
+                    try {
+                        const orgId = createId();
+                        const orgName = getOrgNameFromUser(
+                            createdUser.name,
+                            createdUser.email
+                        );
+
+                        await db.insert(organizationTable).values({
+                            id: orgId,
+                            name: orgName,
+                            slug: generateOrgSlug(orgName),
+                            createdAt: new Date(),
+                        });
+
+                        await db.insert(memberTable).values({
+                            id: createId(),
+                            organizationId: orgId,
+                            userId: createdUser.id,
+                            role: "owner",
+                            createdAt: new Date(),
+                        });
+                    } catch (error) {
+                        console.error(
+                            "Failed to create default organization for user:",
+                            error
+                        );
+                    }
+                },
+            },
+        },
+        session: {
+            create: {
+                before: async (sessionData) => {
+                    if (sessionData.activeOrganizationId) {
+                        return { data: sessionData };
+                    }   
+
+                    try {
+                        const userOrg = await db.query.member.findFirst({
+                            where: eq(memberTable.userId, sessionData.userId),
+                            columns: { organizationId: true },
+                        });
+
+                        if (userOrg) {
+                            return {
+                                data: {
+                                    ...sessionData,
+                                    activeOrganizationId: userOrg.organizationId,
+                                },
+                            };
+                        }
+                    } catch (error) {
+                        console.error(
+                            "Failed to set active organization for session:",
+                            error
+                        );
+                    }
+
+                    return { data: sessionData };
                 },
             },
         },
