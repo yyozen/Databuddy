@@ -102,9 +102,9 @@ function OrganizationSelectorTrigger({
 				isOpen ? "bg-sidebar-accent/60" : ""
 			)}
 		>
-			<div className="flex w-full items-center justify-between">
-				<div className="flex items-center gap-3">
-					<div className="rounded">
+			<div className="flex w-full min-w-0 items-center justify-between">
+				<div className="flex min-w-0 items-center gap-3">
+					<div className="shrink-0 rounded">
 						<Avatar className="size-7">
 							<AvatarImage
 								alt={activeOrganization?.name ?? "Workspace"}
@@ -128,8 +128,8 @@ function OrganizationSelectorTrigger({
 						</Avatar>
 					</div>
 					<div className="flex min-w-0 flex-1 flex-col items-start gap-1">
-						<div className="flex items-center gap-2">
-							<span className="truncate text-left font-semibold text-sidebar-accent-foreground text-sm">
+						<div className="flex min-w-0 items-center gap-2">
+							<span className="min-w-0 truncate text-left font-semibold text-sidebar-accent-foreground text-sm">
 								{activeOrganization?.name ?? "Select workspace"}
 							</span>
 							<Badge
@@ -147,13 +147,13 @@ function OrganizationSelectorTrigger({
 				{isSettingActiveOrganization ? (
 					<SpinnerGapIcon
 						aria-label="Switching workspace"
-						className="size-4 animate-spin text-sidebar-accent-foreground/60"
+						className="size-4 shrink-0 animate-spin text-sidebar-accent-foreground/60"
 						weight="duotone"
 					/>
 				) : (
 					<CaretDownIcon
 						className={cn(
-							"size-4 text-sidebar-accent-foreground/60 transition-transform duration-200",
+							"size-4 shrink-0 text-sidebar-accent-foreground/60 transition-transform duration-200",
 							isOpen ? "rotate-180" : ""
 						)}
 					/>
@@ -205,9 +205,9 @@ export function OrganizationSelector() {
 	if (isLoading) {
 		return (
 			<div className="flex h-12 w-full items-center bg-sidebar-accent px-3 py-3">
-				<div className="flex w-full items-center justify-between">
-					<div className="flex items-center gap-3">
-						<div className="rounded-lg border bg-sidebar/80 p-1.5">
+				<div className="flex w-full min-w-0 items-center justify-between">
+					<div className="flex min-w-0 items-center gap-3">
+						<div className="shrink-0 rounded-lg border bg-sidebar/80 p-1.5">
 							<Skeleton className="size-5 rounded" />
 						</div>
 						<div className="flex min-w-0 flex-1 flex-col items-start">
@@ -215,7 +215,7 @@ export function OrganizationSelector() {
 							<Skeleton className="mt-1 h-3 w-16 rounded" />
 						</div>
 					</div>
-					<Skeleton className="size-4 rounded" />
+					<Skeleton className="size-4 shrink-0 rounded" />
 				</div>
 			</div>
 		);
