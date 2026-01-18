@@ -426,7 +426,6 @@ export const websitesRouter = {
 			const serviceInput = {
 				name: input.name,
 				domain: input.domain,
-				userId: context.user.id,
 				organizationId: input.organizationId,
 				status: "ACTIVE" as const,
 			};

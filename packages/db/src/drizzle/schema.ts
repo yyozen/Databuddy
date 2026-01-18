@@ -314,7 +314,6 @@ export const websites = pgTable(
 		domain: text().notNull(),
 		name: text(),
 		status: websiteStatus().default("ACTIVE").notNull(),
-		userId: text(),
 		isPublic: boolean().default(false).notNull(),
 		createdAt: timestamp({ precision: 3 }).defaultNow().notNull(),
 		updatedAt: timestamp({ precision: 3 }).defaultNow().notNull(),
@@ -327,13 +326,6 @@ export const websites = pgTable(
 			table.organizationId,
 			table.domain
 		),
-		foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "websites_userId_fkey",
-		})
-			.onUpdate("cascade")
-			.onDelete("set null"),
 		foreignKey({
 			columns: [table.organizationId],
 			foreignColumns: [organization.id],

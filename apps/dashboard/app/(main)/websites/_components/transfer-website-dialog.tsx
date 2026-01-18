@@ -51,13 +51,10 @@ export function TransferWebsiteDialog({
 	const [selectedOrgId, setSelectedOrgId] = useState<string>("");
 	const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-	const websiteOrgId =
-		"organizationId" in website ? website.organizationId : null;
-
 	const currentOrg = organizations?.find(
-		(org: Organization) => org.id === websiteOrgId
+		(org: Organization) => org.id === website.organizationId
 	) || {
-		id: websiteOrgId ?? "",
+		id: website.organizationId,
 		name: "Current Workspace",
 		slug: "",
 		logo: null as string | null,
@@ -65,7 +62,9 @@ export function TransferWebsiteDialog({
 	};
 
 	const availableOrgs =
-		organizations?.filter((org: Organization) => org.id !== websiteOrgId) || [];
+		organizations?.filter(
+			(org: Organization) => org.id !== website.organizationId
+		) || [];
 
 	const selectedOrg = selectedOrgId
 		? organizations?.find((org: Organization) => org.id === selectedOrgId) ||

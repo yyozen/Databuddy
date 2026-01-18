@@ -94,10 +94,6 @@ export const userPreferencesRelations = relations(
 );
 
 export const websitesRelations = relations(websites, ({ one, many }) => ({
-	user: one(user, {
-		fields: [websites.userId],
-		references: [user.id],
-	}),
 	organization_organizationId: one(organization, {
 		fields: [websites.organizationId],
 		references: [organization.id],
