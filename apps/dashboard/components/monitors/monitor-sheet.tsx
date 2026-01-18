@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CodeIcon, InfoIcon } from "@phosphor-icons/react";
+import { CodeIcon, GearIcon, InfoIcon } from "@phosphor-icons/react";
 import { useMutation } from "@tanstack/react-query";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
@@ -58,6 +58,8 @@ const monitorFormSchema = z.object({
 		"hour",
 		"six_hours",
 	]),
+	timeout: z.number().int().min(1000).max(120_000).nullable(),
+	cacheBust: z.boolean(),
 	jsonParsingEnabled: z.boolean(),
 	jsonParsingMode: z.enum(["auto", "manual"]),
 	jsonParsingFields: z.array(z.string()),
@@ -68,13 +70,15 @@ type MonitorFormData = z.infer<typeof monitorFormSchema>;
 interface MonitorSheetProps {
 	open: boolean;
 	onCloseAction: (open: boolean) => void;
-	websiteId?: string; // Optional now
+	websiteId?: string;
 	onSaveAction?: () => void;
 	schedule?: {
 		id: string;
 		url: string;
 		name?: string | null;
 		granularity: string;
+		timeout?: number | null;
+		cacheBust?: boolean;
 		jsonParsingConfig?: {
 			enabled: boolean;
 			mode: "auto" | "manual";
@@ -103,6 +107,8 @@ export function MonitorSheet({
 			granularity:
 				(schedule?.granularity as MonitorFormData["granularity"]) ||
 				"ten_minutes",
+			timeout: schedule?.timeout ?? null,
+			cacheBust: schedule?.cacheBust ?? false,
 			jsonParsingEnabled: schedule?.jsonParsingConfig?.enabled ?? false,
 			jsonParsingMode: schedule?.jsonParsingConfig?.mode ?? "auto",
 			jsonParsingFields: schedule?.jsonParsingConfig?.fields ?? [],
@@ -140,11 +146,17 @@ export function MonitorSheet({
 				granularity:
 					(schedule?.granularity as MonitorFormData["granularity"]) ||
 					"ten_minutes",
+				timeout: schedule?.timeout ?? null,
+				cacheBust: schedule?.cacheBust ?? false,
 				jsonParsingEnabled: jsonConfig?.enabled ?? false,
 				jsonParsingMode: jsonConfig?.mode ?? "auto",
 				jsonParsingFields: jsonConfig?.fields ?? [],
 			});
-			setIsAdvancedOpen(jsonConfig?.enabled ?? false);
+			const hasAdvancedSettings =
+				(jsonConfig?.enabled ?? false) ||
+				schedule?.timeout !== null ||
+				(schedule?.cacheBust ?? false);
+			setIsAdvancedOpen(hasAdvancedSettings);
 		}
 	}, [open, schedule, form, website, isEditing]);
 
@@ -199,6 +211,8 @@ export function MonitorSheet({
 				await updateMutation.mutateAsync({
 					scheduleId: schedule.id,
 					granularity: data.granularity,
+					timeout: data.timeout,
+					cacheBust: data.cacheBust,
 					jsonParsingConfig,
 				});
 				toast.success("Monitor updated successfully");
@@ -208,6 +222,8 @@ export function MonitorSheet({
 					url: data.url,
 					name: data.name || undefined,
 					granularity: data.granularity,
+					timeout: data.timeout ?? undefined,
+					cacheBust: data.cacheBust,
 					jsonParsingConfig,
 				});
 				toast.success("Monitor created successfully");
@@ -342,7 +358,91 @@ export function MonitorSheet({
 
 							<div className="h-px bg-border" />
 
-							<div className="space-y-1">
+							<div className="space-y-4">
+								<CollapsibleSection
+									badge={
+										(form.watch("timeout") ? 1 : 0) +
+										(form.watch("cacheBust") ? 1 : 0)
+									}
+									icon={GearIcon}
+									isExpanded={isAdvancedOpen}
+									onToggleAction={() => setIsAdvancedOpen(!isAdvancedOpen)}
+									title="Request Settings"
+								>
+									<div className="space-y-3">
+										<FormField
+											control={form.control}
+											name="timeout"
+											render={({ field }) => (
+												<FormItem className="flex items-center justify-between gap-4 space-y-0 rounded border p-3">
+													<div className="space-y-1">
+														<FormLabel className="flex items-center gap-2 font-normal text-sm">
+															Timeout
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<InfoIcon
+																		className="size-4"
+																		weight="duotone"
+																	/>
+																</TooltipTrigger>
+																<TooltipContent className="max-w-xs">
+																	<p className="text-xs leading-relaxed">
+																		Maximum time to wait for a response. Default
+																		is 30 seconds.
+																	</p>
+																</TooltipContent>
+															</Tooltip>
+														</FormLabel>
+														<p className="text-muted-foreground text-xs">
+															How long to wait before timing out
+														</p>
+													</div>
+													<FormControl>
+														<Input
+															className="w-20 tabular-nums"
+															max={120}
+															min={1}
+															onChange={(e) => {
+																const val = e.target.value;
+																field.onChange(val ? Number(val) * 1000 : null);
+															}}
+															placeholder="30"
+															suffix="sec"
+															type="number"
+															value={field.value ? field.value / 1000 : ""}
+															wrapperClassName="w-fit flex-none"
+														/>
+													</FormControl>
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+
+										<FormField
+											control={form.control}
+											name="cacheBust"
+											render={({ field }) => (
+												<FormItem className="flex items-center justify-between gap-4 space-y-0 rounded border p-3">
+													<div className="space-y-1">
+														<FormLabel className="font-normal text-sm">
+															Cache Busting
+														</FormLabel>
+														<p className="text-muted-foreground text-xs">
+															Add a random query parameter to bypass CDN caches
+														</p>
+													</div>
+													<FormControl>
+														<Switch
+															checked={field.value}
+															onCheckedChange={field.onChange}
+														/>
+													</FormControl>
+												</FormItem>
+											)}
+										/>
+									</div>
+								</CollapsibleSection>
+
 								<CollapsibleSection
 									badge={form.watch("jsonParsingEnabled") ? 1 : 0}
 									icon={CodeIcon}

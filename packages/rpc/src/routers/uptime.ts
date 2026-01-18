@@ -51,7 +51,6 @@ async function getScheduleAndAuthorize(
 	scheduleId: string,
 	context: Parameters<typeof authorizeUptimeScheduleAccess>[0]
 ) {
-
 	const schedule = await db.query.uptimeSchedules.findFirst({
 		where: eq(uptimeSchedules.id, scheduleId),
 	});
@@ -228,6 +227,8 @@ export const uptimeRouter = {
 				name: z.string().optional(),
 				websiteId: z.string().optional(),
 				granularity: granularityEnum,
+				timeout: z.number().int().min(1000).max(120_000).optional(),
+				cacheBust: z.boolean().optional(),
 				jsonParsingConfig: z
 					.object({
 						enabled: z.boolean(),
@@ -271,6 +272,8 @@ export const uptimeRouter = {
 				granularity: input.granularity,
 				cron: CRON_GRANULARITIES[input.granularity],
 				isPaused: false,
+				timeout: input.timeout ?? null,
+				cacheBust: input.cacheBust ?? false,
 				jsonParsingConfig: input.jsonParsingConfig ?? null,
 			});
 
@@ -308,6 +311,8 @@ export const uptimeRouter = {
 			z.object({
 				scheduleId: z.string(),
 				granularity: granularityEnum.optional(),
+				timeout: z.number().int().min(1000).max(120_000).nullish(),
+				cacheBust: z.boolean().optional(),
 				jsonParsingConfig: z
 					.object({
 						enabled: z.boolean(),
@@ -323,6 +328,8 @@ export const uptimeRouter = {
 			const updateData: {
 				granularity?: string;
 				cron?: string;
+				timeout?: number | null;
+				cacheBust?: boolean;
 				jsonParsingConfig?: unknown;
 				updatedAt: Date;
 			} = {
@@ -334,6 +341,14 @@ export const uptimeRouter = {
 				await createQStashSchedule(input.scheduleId, input.granularity);
 				updateData.granularity = input.granularity;
 				updateData.cron = CRON_GRANULARITIES[input.granularity];
+			}
+
+			if (input.timeout !== undefined) {
+				updateData.timeout = input.timeout;
+			}
+
+			if (input.cacheBust !== undefined) {
+				updateData.cacheBust = input.cacheBust;
 			}
 
 			if (input.jsonParsingConfig !== undefined) {

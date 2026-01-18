@@ -1,7 +1,7 @@
 import { Receiver } from "@upstash/qstash";
 import { Elysia } from "elysia";
 import { z } from "zod";
-import { checkUptime, lookupSchedule } from "./actions";
+import { type CheckOptions, checkUptime, lookupSchedule } from "./actions";
 import type { JsonParsingConfig } from "./json-parser";
 import { sendUptimeEvent } from "./lib/producer";
 import {
@@ -24,14 +24,12 @@ process.on("uncaughtException", (error) => {
 });
 
 process.on("SIGTERM", async () => {
-    await shutdownTracing().catch(() => {
-    });
+    await shutdownTracing().catch(() => { });
     process.exit(0);
 });
 
 process.on("SIGINT", async () => {
-    await shutdownTracing().catch(() => {
-    });
+    await shutdownTracing().catch(() => { });
     process.exit(0);
 });
 
@@ -149,17 +147,19 @@ const app = new Elysia()
                 ? Number.parseInt(parsed.data["upstash-retried"], 10) + 3
                 : 3;
 
-            const jsonParsingConfig = schedule.data.jsonParsingConfig as
-                | JsonParsingConfig
-                | null
-                | undefined;
+            const options: CheckOptions = {
+                timeout: schedule.data.timeout ?? undefined,
+                cacheBust: schedule.data.cacheBust,
+                jsonParsingConfig: schedule.data
+                    .jsonParsingConfig as JsonParsingConfig | null,
+            };
 
             const result = await checkUptime(
                 monitorId,
                 schedule.data.url,
                 1,
                 maxRetries,
-                jsonParsingConfig
+                options
             );
 
             if (!result.success) {

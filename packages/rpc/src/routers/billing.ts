@@ -24,7 +24,7 @@ const EVENT_CATEGORIES = {
 
 type EventCategory = (typeof EVENT_CATEGORIES)[keyof typeof EVENT_CATEGORIES];
 
-type EventSource = {
+interface EventSource {
 	table: string;
 	dateColumn: string;
 	category: EventCategory;
