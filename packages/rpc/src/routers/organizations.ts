@@ -59,9 +59,7 @@ async function getBillingOwnerId(
 }
 
 /**
- * Gets the billing owner ID for a specific website.
- * If website belongs to an organization, returns the org owner's ID.
- * Otherwise, returns the website owner's ID.
+ * Gets the billing owner ID for a specific website (workspace owner).
  */
 async function getBillingOwnerFromWebsite(websiteId: string): Promise<{
 	customerId: string | null;
@@ -69,40 +67,30 @@ async function getBillingOwnerFromWebsite(websiteId: string): Promise<{
 }> {
 	const [website] = await db
 		.select({
-			userId: websites.userId,
 			organizationId: websites.organizationId,
 		})
 		.from(websites)
 		.where(eq(websites.id, websiteId))
 		.limit(1);
 
-	if (!website) {
+	if (!website?.organizationId) {
 		return { customerId: null, isOrganization: false };
 	}
 
-	// If website belongs to an organization, get the org owner
-	if (website.organizationId) {
-		const [orgOwner] = await db
-			.select({ ownerId: member.userId })
-			.from(member)
-			.where(
-				and(
-					eq(member.organizationId, website.organizationId),
-					eq(member.role, "owner")
-				)
+	const [orgOwner] = await db
+		.select({ ownerId: member.userId })
+		.from(member)
+		.where(
+			and(
+				eq(member.organizationId, website.organizationId),
+				eq(member.role, "owner")
 			)
-			.limit(1);
+		)
+		.limit(1);
 
-		return {
-			customerId: orgOwner?.ownerId ?? null,
-			isOrganization: true,
-		};
-	}
-
-	// Otherwise, use the website owner
 	return {
-		customerId: website.userId,
-		isOrganization: false,
+		customerId: orgOwner?.ownerId ?? null,
+		isOrganization: true,
 	};
 }
 
@@ -328,14 +316,14 @@ export const organizationsRouter = {
 
 			const debugInfo = isDev
 				? {
-						_debug: {
-							userId: context.user?.id ?? null,
-							activeOrganizationId: activeOrgId ?? null,
-							customerId,
-							websiteId: input?.websiteId ?? null,
-							sessionId: context.session?.id ?? null,
-						},
-					}
+					_debug: {
+						userId: context.user?.id ?? null,
+						activeOrganizationId: activeOrgId ?? null,
+						customerId,
+						websiteId: input?.websiteId ?? null,
+						sessionId: context.session?.id ?? null,
+					},
+				}
 				: {};
 
 			// No customer ID means we can't look up billing

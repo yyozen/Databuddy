@@ -4,8 +4,7 @@ import {
 	db,
 	eq,
 	inArray,
-	isNull,
-	or,
+	member,
 	uptimeSchedules,
 	websites,
 } from "@databuddy/db";
@@ -134,11 +133,11 @@ export const uptimeRouter = {
 				});
 				if (!success) {
 					throw new ORPCError("FORBIDDEN", {
-						message: "Missing organization permissions.",
+						message: "Missing workspace permissions.",
 					});
 				}
 
-				// Get websites for this organization
+				// Get websites for this workspace
 				const orgWebsites = await db.query.websites.findMany({
 					where: eq(websites.organizationId, input.organizationId),
 					columns: { id: true },
@@ -157,38 +156,30 @@ export const uptimeRouter = {
 				});
 			}
 
-			// Personal monitors only (no organizationId)
-			// Get personal websites
-			const personalWebsites = await db.query.websites.findMany({
-				where: and(
-					eq(websites.userId, context.user.id),
-					isNull(websites.organizationId)
-				),
-				columns: { id: true },
+			// No workspace specified - get monitors from all user's workspaces
+			const userMemberships = await db.query.member.findMany({
+				where: eq(member.userId, context.user.id),
+				columns: { organizationId: true },
 			});
+			const orgIds = userMemberships.map((m) => m.organizationId);
 
-			const personalWebsiteIds = personalWebsites.map((w) => w.id);
-
-			// Filter schedules:
-			// 1. Personal monitors (no websiteId) created by user
-			// 2. Monitors for personal websites
-			const scheduleConditions = [
-				and(
-					eq(uptimeSchedules.userId, context.user.id),
-					isNull(uptimeSchedules.websiteId)
-				),
-			];
-
-			if (personalWebsiteIds.length > 0) {
-				scheduleConditions.push(
-					inArray(uptimeSchedules.websiteId, personalWebsiteIds)
-				);
+			if (orgIds.length === 0) {
+				return [];
 			}
 
-			const conditions = [or(...scheduleConditions)];
+			// Get all websites from user's workspaces
+			const userWebsites = await db.query.websites.findMany({
+				where: inArray(websites.organizationId, orgIds),
+				columns: { id: true },
+			});
+			const websiteIds = userWebsites.map((w) => w.id);
+
+			if (websiteIds.length === 0) {
+				return [];
+			}
 
 			return await db.query.uptimeSchedules.findMany({
-				where: and(...conditions),
+				where: inArray(uptimeSchedules.websiteId, websiteIds),
 				orderBy: (table, { desc }) => [desc(table.createdAt)],
 				with: { website: true },
 			});

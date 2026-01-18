@@ -2,11 +2,9 @@ import { sso } from "@better-auth/sso";
 import {
     db,
     eq,
-    inArray,
     member as memberTable,
     organization as organizationTable,
     user,
-    websites,
 } from "@databuddy/db";
 import {
     InvitationEmail,
@@ -102,7 +100,7 @@ export const auth = betterAuth({
                 before: async (sessionData) => {
                     if (sessionData.activeOrganizationId) {
                         return { data: sessionData };
-                    }   
+                    }
 
                     try {
                         const userOrg = await db.query.member.findFirst({
@@ -133,24 +131,6 @@ export const auth = betterAuth({
     user: {
         deleteUser: {
             enabled: true,
-            beforeDelete: async (user) => {
-                try {
-                    const userWebsites = await db.query.websites.findMany({
-                        where: eq(websites.userId, user.id),
-                    });
-
-                    if (userWebsites.length > 0) {
-                        await db.delete(websites).where(
-                            inArray(
-                                websites.id,
-                                userWebsites.map((w) => w.id)
-                            )
-                        );
-                    }
-                } catch (error) {
-                    console.error(error);
-                }
-            },
         },
     },
     appName: "databuddy.cc",

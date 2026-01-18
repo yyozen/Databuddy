@@ -310,7 +310,7 @@ async function resolveProjectAccess(
 	};
 }
 
-function getAccessibleWebsites(authCtx: AuthContext) {
+async function getAccessibleWebsites(authCtx: AuthContext) {
 	const select = {
 		id: websites.id,
 		name: websites.name,
@@ -320,32 +320,32 @@ function getAccessibleWebsites(authCtx: AuthContext) {
 	};
 
 	if (authCtx.user) {
+		const userMemberships = await db.query.member.findMany({
+			where: eq(member.userId, authCtx.user.id),
+			columns: { organizationId: true },
+		});
+		const orgIds = userMemberships.map((m) => m.organizationId);
+
+		if (orgIds.length === 0) {
+			return [];
+		}
+
 		return db
 			.select(select)
 			.from(websites)
-			.where(
-				and(
-					eq(websites.userId, authCtx.user.id),
-					isNull(websites.organizationId)
-				)
-			)
+			.where(inArray(websites.organizationId, orgIds))
 			.orderBy((t) => t.createdAt);
 	}
 
 	if (authCtx.apiKey) {
 		if (hasGlobalAccess(authCtx.apiKey)) {
-			const filter = authCtx.apiKey.organizationId
-				? eq(websites.organizationId, authCtx.apiKey.organizationId)
-				: authCtx.apiKey.userId
-					? and(
-						eq(websites.userId, authCtx.apiKey.userId),
-						isNull(websites.organizationId)
-					)
-					: eq(websites.id, "");
+			if (!authCtx.apiKey.organizationId) {
+				return [];
+			}
 			return db
 				.select(select)
 				.from(websites)
-				.where(filter)
+				.where(eq(websites.organizationId, authCtx.apiKey.organizationId))
 				.orderBy((t) => t.createdAt);
 		}
 

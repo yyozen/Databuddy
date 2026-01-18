@@ -103,16 +103,12 @@ export const agent = new Elysia({ prefix: "/v1/agent" })
 					const { website } = websiteValidation;
 
 					let authorized = website.isPublic;
-					if (!authorized) {
-						if (website.organizationId) {
-							const { success } = await websitesApi.hasPermission({
-								headers: request.headers,
-								body: { permissions: { website: ["read"] } },
-							});
-							authorized = success;
-						} else {
-							authorized = website.userId === user?.id;
-						}
+					if (!authorized && website.organizationId) {
+						const { success } = await websitesApi.hasPermission({
+							headers: request.headers,
+							body: { permissions: { website: ["read"] } },
+						});
+						authorized = success;
 					}
 
 					if (!authorized) {
