@@ -39,17 +39,15 @@ type PlanId = "free" | "pro" | "team" | "enterprise";
 type Website = NonNullable<Awaited<ReturnType<typeof getWebsiteById>>>;
 
 /**
- * Workspace context - the organization or personal context for the user.
+ * Workspace context for the user.
  */
 interface Workspace {
-	/** Organization ID if in org context, null for personal */
+	/** Organization ID (workspace) */
 	organizationId: string | null;
 	/** The authenticated user (null for public access without auth) */
 	user: User | null;
-	/** User's role in the organization (null for personal workspace or public access) */
+	/** User's role in the workspace (null for public access) */
 	role: string | null;
-	/** Whether this is a personal workspace (no org) */
-	isPersonal: boolean;
 	/** The billing plan for this workspace */
 	plan: PlanId;
 	/** Whether this is public/anonymous access (no authenticated user) */
@@ -291,19 +289,14 @@ export async function withWorkspace<R extends ResourceType = "organization">(
 	// Validate plan requirements
 	validatePlan(plan, requiredPlans);
 
-	// Personal workspace (no org)
+	// Workspace is required
 	if (!organizationId) {
-		return {
-			organizationId: null,
-			user: context.user,
-			role: null,
-			isPersonal: true,
-			plan,
-			isPublicAccess: false,
-		};
+		throw new ORPCError("BAD_REQUEST", {
+			message: "Workspace is required",
+		});
 	}
 
-	// Organization workspace - check membership and permissions
+	// Check workspace membership and permissions
 	const role = await getOrganizationRole(context.user.id, organizationId);
 
 	if (!role) {
@@ -331,7 +324,6 @@ export async function withWorkspace<R extends ResourceType = "organization">(
 		organizationId,
 		user: context.user,
 		role,
-		isPersonal: false,
 		plan,
 		isPublicAccess: false,
 	};
@@ -412,7 +404,6 @@ export async function withWebsite(
 				organizationId: website.organizationId,
 				user: context.user ?? null,
 				role: null,
-				isPersonal: !website.organizationId,
 				plan,
 				isPublicAccess,
 			},
@@ -467,7 +458,6 @@ export async function withWebsite(
 			organizationId: website.organizationId,
 			user: context.user,
 			role,
-			isPersonal: false,
 			plan,
 			isPublicAccess: false,
 		},

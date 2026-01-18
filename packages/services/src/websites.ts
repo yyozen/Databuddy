@@ -43,6 +43,9 @@ export class ValidationError extends Error {
 	}
 }
 
+export const buildWebsiteFilter = (organizationId: string) =>
+	eq(websites.organizationId, organizationId);
+
 export class WebsiteService {
 	private readonly database: typeof db;
 	private readonly cache: WebsiteCache | null;

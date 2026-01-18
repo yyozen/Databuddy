@@ -269,12 +269,12 @@ export const organizationsRouter = {
 	}),
 
 	/**
-	 * Get billing context for the current user/organization/website.
-	 * Returns the correct plan based on ownership.
+	 * Get billing context for the current user/workspace/website.
+	 * Returns the correct plan based on workspace ownership.
 	 *
 	 * Priority:
-	 * 1. If websiteId is provided, use the website/org owner's plan
-	 * 2. If user is authenticated, use their org/personal plan
+	 * 1. If websiteId is provided, use the workspace owner's plan
+	 * 2. If user is authenticated, use their workspace plan
 	 * 3. Otherwise, return free tier defaults
 	 */
 	getBillingContext: publicProcedure

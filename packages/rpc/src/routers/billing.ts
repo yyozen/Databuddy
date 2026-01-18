@@ -1,6 +1,5 @@
 import { websitesApi } from "@databuddy/auth";
-import { chQuery } from "@databuddy/db";
-import { buildWebsiteFilter } from "@databuddy/services/websites";
+import { chQuery, eq, inArray, member, websites } from "@databuddy/db";
 import type {
 	DailyUsageByTypeRow,
 	DailyUsageRow,
@@ -185,19 +184,38 @@ export const billingRouter = {
 			}
 
 			try {
-				const whereClause = buildWebsiteFilter(
-					context.user.id,
-					organizationId ?? undefined
-				);
+				let websiteIds: string[];
 
-				const userWebsites = await context.db.query.websites.findMany({
-					where: whereClause,
-					columns: {
-						id: true,
-					},
-				});
+				if (organizationId) {
+					const userWebsites = await context.db.query.websites.findMany({
+						where: eq(websites.organizationId, organizationId),
+						columns: { id: true },
+					});
+					websiteIds = userWebsites.map((site) => site.id);
+				} else {
+					const userMemberships = await context.db.query.member.findMany({
+						where: eq(member.userId, context.user.id),
+						columns: { organizationId: true },
+					});
+					const orgIds = userMemberships.map((m) => m.organizationId);
 
-				const websiteIds = userWebsites.map((site) => site.id);
+					if (orgIds.length === 0) {
+						return {
+							totalEvents: 0,
+							dailyUsage: [],
+							dailyUsageByType: [],
+							eventTypeBreakdown: [],
+							websiteCount: 0,
+							dateRange: { startDate, endDate },
+						};
+					}
+
+					const userWebsites = await context.db.query.websites.findMany({
+						where: inArray(websites.organizationId, orgIds),
+						columns: { id: true },
+					});
+					websiteIds = userWebsites.map((site) => site.id);
+				}
 
 				if (websiteIds.length === 0) {
 					return {
