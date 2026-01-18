@@ -178,9 +178,9 @@ export const uptimeSchedulesRelations = relations(
 			fields: [uptimeSchedules.websiteId],
 			references: [websites.id],
 		}),
-		user: one(user, {
-			fields: [uptimeSchedules.userId],
-			references: [user.id],
+		organization: one(organization, {
+			fields: [uptimeSchedules.organizationId],
+			references: [organization.id],
 		}),
 	})
 );

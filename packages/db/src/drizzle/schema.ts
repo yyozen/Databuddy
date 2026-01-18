@@ -833,7 +833,7 @@ export const uptimeSchedules = pgTable(
 	{
 		id: text().primaryKey().notNull(),
 		websiteId: text("website_id"),
-		userId: text("user_id").notNull(),
+		organizationId: text("organization_id").notNull(),
 		url: text().notNull(),
 		name: text(),
 		granularity: text("granularity").notNull(),
@@ -850,9 +850,9 @@ export const uptimeSchedules = pgTable(
 			"btree",
 			table.websiteId.asc().nullsLast().op("text_ops")
 		),
-		index("uptime_schedules_user_id_idx").using(
+		index("uptime_schedules_organization_id_idx").using(
 			"btree",
-			table.userId.asc().nullsLast().op("text_ops")
+			table.organizationId.asc().nullsLast().op("text_ops")
 		),
 		foreignKey({
 			columns: [table.websiteId],
@@ -862,12 +862,10 @@ export const uptimeSchedules = pgTable(
 			.onUpdate("cascade")
 			.onDelete("cascade"),
 		foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "uptime_schedules_user_id_fkey",
-		})
-			.onUpdate("cascade")
-			.onDelete("cascade"),
+			columns: [table.organizationId],
+			foreignColumns: [organization.id],
+			name: "uptime_schedules_organization_id_organization_id_fk",
+		}).onDelete("cascade"),
 	]
 );
 

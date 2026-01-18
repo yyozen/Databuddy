@@ -1,23 +1,12 @@
 import { websitesApi } from "@databuddy/auth";
-import {
-	and,
-	db,
-	eq,
-	inArray,
-	member,
-	uptimeSchedules,
-	websites,
-} from "@databuddy/db";
+import { and, db, eq, inArray, member, uptimeSchedules } from "@databuddy/db";
 import { logger } from "@databuddy/shared/logger";
 import { ORPCError } from "@orpc/server";
 import { Client } from "@upstash/qstash";
 import { randomUUIDv7 } from "bun";
 import { z } from "zod";
 import { protectedProcedure } from "../orpc";
-import {
-	authorizeUptimeScheduleAccess,
-	authorizeWebsiteAccess,
-} from "../utils/auth";
+import { authorizeUptimeScheduleAccess } from "../utils/auth";
 
 const client = new Client({ token: process.env.UPSTASH_QSTASH_TOKEN });
 
@@ -59,8 +48,7 @@ async function getScheduleAndAuthorize(
 	}
 
 	await authorizeUptimeScheduleAccess(context, {
-		websiteId: schedule.websiteId,
-		userId: schedule.userId,
+		organizationId: schedule.organizationId,
 	});
 
 	return schedule;
@@ -99,7 +87,16 @@ export const uptimeRouter = {
 	getScheduleByWebsiteId: protectedProcedure
 		.input(z.object({ websiteId: z.string() }))
 		.handler(async ({ context, input }) => {
-			await authorizeWebsiteAccess(context, input.websiteId, "read");
+			const { success } = await websitesApi.hasPermission({
+				headers: context.headers,
+				body: { permissions: { website: ["read"] } },
+			});
+			if (!success) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "Missing workspace permissions.",
+				});
+			}
+
 			const schedule = await db.query.uptimeSchedules.findFirst({
 				where: eq(uptimeSchedules.websiteId, input.websiteId),
 				orderBy: (table, { desc }) => [desc(table.createdAt)],
@@ -111,21 +108,11 @@ export const uptimeRouter = {
 		.input(
 			z
 				.object({
-					websiteId: z.string().optional(),
 					organizationId: z.string().optional(),
 				})
 				.default({})
 		)
 		.handler(async ({ context, input }) => {
-			if (input.websiteId) {
-				await authorizeWebsiteAccess(context, input.websiteId, "read");
-				return await db.query.uptimeSchedules.findMany({
-					where: eq(uptimeSchedules.websiteId, input.websiteId),
-					orderBy: (table, { desc }) => [desc(table.createdAt)],
-					with: { website: true },
-				});
-			}
-
 			if (input.organizationId) {
 				const { success } = await websitesApi.hasPermission({
 					headers: context.headers,
@@ -137,20 +124,8 @@ export const uptimeRouter = {
 					});
 				}
 
-				// Get websites for this workspace
-				const orgWebsites = await db.query.websites.findMany({
-					where: eq(websites.organizationId, input.organizationId),
-					columns: { id: true },
-				});
-
-				const orgWebsiteIds = orgWebsites.map((w) => w.id);
-
-				if (orgWebsiteIds.length === 0) {
-					return [];
-				}
-
 				return await db.query.uptimeSchedules.findMany({
-					where: inArray(uptimeSchedules.websiteId, orgWebsiteIds),
+					where: eq(uptimeSchedules.organizationId, input.organizationId),
 					orderBy: (table, { desc }) => [desc(table.createdAt)],
 					with: { website: true },
 				});
@@ -167,19 +142,8 @@ export const uptimeRouter = {
 				return [];
 			}
 
-			// Get all websites from user's workspaces
-			const userWebsites = await db.query.websites.findMany({
-				where: inArray(websites.organizationId, orgIds),
-				columns: { id: true },
-			});
-			const websiteIds = userWebsites.map((w) => w.id);
-
-			if (websiteIds.length === 0) {
-				return [];
-			}
-
 			return await db.query.uptimeSchedules.findMany({
-				where: inArray(uptimeSchedules.websiteId, websiteIds),
+				where: inArray(uptimeSchedules.organizationId, orgIds),
 				orderBy: (table, { desc }) => [desc(table.createdAt)],
 				with: { website: true },
 			});
@@ -201,8 +165,7 @@ export const uptimeRouter = {
 			}
 
 			await authorizeUptimeScheduleAccess(context, {
-				websiteId: dbSchedule.websiteId,
-				userId: dbSchedule.userId,
+				organizationId: dbSchedule.organizationId,
 			});
 
 			return {
@@ -216,6 +179,7 @@ export const uptimeRouter = {
 			z.object({
 				url: z.string().url(),
 				name: z.string().optional(),
+				organizationId: z.string(),
 				websiteId: z.string().optional(),
 				granularity: granularityEnum,
 				timeout: z.number().int().min(1000).max(120_000).optional(),
@@ -230,34 +194,35 @@ export const uptimeRouter = {
 			})
 		)
 		.handler(async ({ context, input }) => {
-			if (input.websiteId) {
-				await authorizeWebsiteAccess(context, input.websiteId, "update");
+			const { success } = await websitesApi.hasPermission({
+				headers: context.headers,
+				body: { permissions: { website: ["update"] } },
+			});
+			if (!success) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "Missing workspace permissions.",
+				});
 			}
 
 			const existing = await db.query.uptimeSchedules.findFirst({
 				where: and(
 					eq(uptimeSchedules.url, input.url),
-					eq(uptimeSchedules.userId, context.user.id),
-					...(input.websiteId
-						? [eq(uptimeSchedules.websiteId, input.websiteId)]
-						: [])
+					eq(uptimeSchedules.organizationId, input.organizationId)
 				),
 			});
 
 			if (existing) {
 				throw new ORPCError("CONFLICT", {
-					message: input.websiteId
-						? "Monitor already exists for this website"
-						: "Monitor already exists for this URL",
+					message: "Monitor already exists for this URL in this workspace",
 				});
 			}
 
-			const scheduleId = input.websiteId || randomUUIDv7();
+			const scheduleId = randomUUIDv7();
 
 			await db.insert(uptimeSchedules).values({
 				id: scheduleId,
+				organizationId: input.organizationId,
 				websiteId: input.websiteId ?? null,
-				userId: context.user.id,
 				url: input.url,
 				name: input.name ?? null,
 				granularity: input.granularity,

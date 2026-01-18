@@ -162,8 +162,7 @@ async function verifyScheduleAccess(
 		where: eq(uptimeSchedules.id, scheduleId),
 		columns: {
 			id: true,
-			userId: true,
-			websiteId: true,
+			organizationId: true,
 		},
 	});
 
@@ -175,19 +174,20 @@ async function verifyScheduleAccess(
 		return false;
 	}
 
-	// If schedule has a websiteId, verify website access instead
-	if (schedule.websiteId) {
-		return verifyWebsiteAccess(ctx, schedule.websiteId);
-	}
-
-	// For custom monitors (no websiteId), check user ownership
+	// Check workspace membership
 	if (ctx.user) {
-		return schedule.userId === ctx.user.id;
+		const membership = await db.query.member.findFirst({
+			where: and(
+				eq(member.userId, ctx.user.id),
+				eq(member.organizationId, schedule.organizationId)
+			),
+			columns: { id: true },
+		});
+		return !!membership;
 	}
 
 	if (ctx.apiKey) {
-		// API key must belong to the same user who owns the schedule
-		return ctx.apiKey.userId === schedule.userId;
+		return ctx.apiKey.organizationId === schedule.organizationId;
 	}
 
 	return false;
