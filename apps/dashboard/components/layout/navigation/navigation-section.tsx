@@ -129,10 +129,10 @@ export const NavigationSection = memo(function NavigationSectionComponent({
 			<button
 				className={clsx(
 					className,
-					"flex h-10 w-full min-w-0 items-center gap-3 px-3 text-left font-medium text-sidebar-foreground text-sm focus:outline-none",
+					"flex h-10 w-full min-w-0 items-center gap-3 border-b px-3 text-left font-medium text-sidebar-foreground text-sm transition-all focus:outline-none",
 					isExpanded
-						? "border-sidebar-border border-b bg-sidebar-accent-brighter"
-						: "hover:bg-sidebar-accent-brighter"
+						? "border-b-border bg-sidebar-accent-brighter"
+						: "border-b-transparent hover:bg-sidebar-accent-brighter"
 				)}
 				data-section={title}
 				data-track="navigation-section-toggle"

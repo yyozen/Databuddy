@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useOrganizationsContext } from "@/components/providers/organizations-provider";
 import { Button } from "@/components/ui/button";
 import {
 	Form,
@@ -97,6 +98,7 @@ export function MonitorSheet({
 	const isEditing = !!schedule;
 	// Only fetch website if websiteId is provided
 	const { data: website } = useWebsite(websiteId || "");
+	const { activeOrganization } = useOrganizationsContext();
 	const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
 	const form = useForm<MonitorFormData>({
@@ -160,37 +162,6 @@ export function MonitorSheet({
 		}
 	}, [open, schedule, form, website, isEditing]);
 
-	const getErrorMessage = (error: unknown): string => {
-		const defaultMessage = "Failed to create monitor.";
-
-		const rpcError = error as {
-			data?: { code?: string };
-			message?: string;
-		};
-
-		if (rpcError?.data?.code) {
-			switch (rpcError.data.code) {
-				case "FORBIDDEN":
-					return (
-						rpcError.message ||
-						"You do not have permission to perform this action."
-					);
-				case "UNAUTHORIZED":
-					return "You must be logged in to perform this action.";
-				case "BAD_REQUEST":
-					return (
-						rpcError.message || "Invalid request. Please check your input."
-					);
-				case "CONFLICT":
-					return rpcError.message || "A monitor for this URL already exists.";
-				default:
-					return rpcError.message || defaultMessage;
-			}
-		}
-
-		return rpcError?.message || defaultMessage;
-	};
-
 	const handleSubmit = async () => {
 		const data = form.getValues();
 
@@ -217,7 +188,14 @@ export function MonitorSheet({
 				});
 				toast.success("Monitor updated successfully");
 			} else {
+				if (!activeOrganization?.id) {
+					toast.error(
+						"No workspace selected. Please select a workspace first."
+					);
+					return;
+				}
 				await createMutation.mutateAsync({
+					organizationId: activeOrganization.id,
 					websiteId,
 					url: data.url,
 					name: data.name || undefined,
@@ -230,9 +208,8 @@ export function MonitorSheet({
 			}
 			onSaveAction?.();
 			onCloseAction(false);
-		} catch (error: unknown) {
-			const message = getErrorMessage(error);
-			toast.error(message);
+		} catch {
+			// Error toast is handled by the global MutationCache onError handler
 		}
 	};
 
