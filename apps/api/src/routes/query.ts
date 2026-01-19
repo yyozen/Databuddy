@@ -617,14 +617,9 @@ export const query = new Elysia({ prefix: "/v1/query" })
 		"/types",
 		({
 			query: params,
-			auth: ctx,
 		}: {
 			query: { include_meta?: string };
-			auth: AuthContext;
 		}) => {
-			if (!ctx.isAuthenticated) {
-				return AUTH_FAILED_RESPONSE;
-			}
 			const includeMeta = params.include_meta === "true";
 			const configs = Object.fromEntries(
 				Object.entries(QueryBuilders).map(([key, cfg]) => [
