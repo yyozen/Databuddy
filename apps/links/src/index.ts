@@ -3,6 +3,7 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-node";
 import { Elysia } from "elysia";
 import { disconnectProducer } from "./lib/producer";
+import { shutdownTracing } from "./lib/tracing";
 import { expiredRoute } from "./routes/expired";
 import { redirectRoute } from "./routes/redirect";
 
@@ -14,7 +15,12 @@ const exporter = new OTLPTraceExporter({
 	},
 });
 
-const batchSpanProcessor = new BatchSpanProcessor(exporter);
+const batchSpanProcessor = new BatchSpanProcessor(exporter, {
+	scheduledDelayMillis: 1000,
+	exportTimeoutMillis: 30_000,
+	maxExportBatchSize: 512,
+	maxQueueSize: 2048,
+});
 
 const app = new Elysia()
 	.use(
@@ -23,22 +29,23 @@ const app = new Elysia()
 			serviceName: "links",
 		})
 	)
-	.get("/", () => ({ status: "ok" }))
-	.get("/health", () => ({ status: "ok" }))
+	.get("/", function healthCheck() {
+		return { status: "ok" };
+	})
+	.get("/health", function healthCheck() {
+		return { status: "ok" };
+	})
 	.use(expiredRoute)
 	.use(redirectRoute);
 
-process.on("SIGTERM", async () => {
-	console.log("SIGTERM received, shutting down gracefully...");
-	await disconnectProducer();
+async function gracefulShutdown(signal: string) {
+	console.log(`${signal} received, shutting down gracefully...`);
+	await Promise.all([disconnectProducer(), shutdownTracing()]);
 	process.exit(0);
-});
+}
 
-process.on("SIGINT", async () => {
-	console.log("SIGINT received, shutting down gracefully...");
-	await disconnectProducer();
-	process.exit(0);
-});
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 export default {
 	port: 2500,

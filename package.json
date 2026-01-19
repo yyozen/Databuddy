@@ -89,5 +89,11 @@
       "drizzle-orm": "^0.42.0",
       "nanoid": "^5.1.6"
     }
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/resources": "^2.4.0",
+    "@opentelemetry/sdk-node": "^0.210.0",
+    "@opentelemetry/semantic-conventions": "^1.39.0"
   }
 }
