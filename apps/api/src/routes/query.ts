@@ -979,11 +979,12 @@ export const query = new Elysia({ prefix: "/v1/query" })
 					...compileQuery(body as QueryRequest, domain, q.timezone || "UTC"),
 				};
 			} catch (e) {
-				return {
-					success: false,
-					requestId,
-					error: e instanceof Error ? e.message : "Compilation failed",
-				};
+				return createErrorResponse(
+					e instanceof Error ? e.message : "Compilation failed",
+					"COMPILATION_ERROR",
+					400,
+					requestId
+				);
 			}
 		},
 		{ body: CompileRequestSchema }
@@ -1016,12 +1017,12 @@ export const query = new Elysia({ prefix: "/v1/query" })
 				});
 
 				if (!accessResult.success) {
-					return {
-						success: false,
-						requestId,
-						error: accessResult.error,
-						code: accessResult.code,
-					};
+					return createErrorResponse(
+						accessResult.error,
+						accessResult.code,
+						accessResult.status,
+						requestId
+					);
 				}
 
 				const isBatch = Array.isArray(body);
@@ -1141,12 +1142,15 @@ export const query = new Elysia({ prefix: "/v1/query" })
 			auth: AuthContext;
 		}) =>
 			record("executeCustomQuery", async () => {
+				const requestId = generateRequestId();
+
 				if (!q.website_id) {
-					return {
-						success: false,
-						error: "website_id is required",
-						code: "MISSING_WEBSITE_ID",
-					};
+					return createErrorResponse(
+						"website_id is required",
+						"MISSING_WEBSITE_ID",
+						400,
+						requestId
+					);
 				}
 
 				const accessResult = await resolveProjectAccess(ctx, {
@@ -1154,11 +1158,12 @@ export const query = new Elysia({ prefix: "/v1/query" })
 				});
 
 				if (!accessResult.success) {
-					return {
-						success: false,
-						error: accessResult.error,
-						code: accessResult.code,
-					};
+					return createErrorResponse(
+						accessResult.error,
+						accessResult.code,
+						accessResult.status,
+						requestId
+					);
 				}
 
 				setAttributes({
@@ -1167,7 +1172,18 @@ export const query = new Elysia({ prefix: "/v1/query" })
 					custom_query_filters: body.query.filters?.length || 0,
 				});
 
-				return executeCustomQuery(body, accessResult.projectId);
+				const result = await executeCustomQuery(body, accessResult.projectId);
+
+				if (!result.success) {
+					return createErrorResponse(
+						result.error ?? "Query execution failed",
+						"QUERY_ERROR",
+						400,
+						requestId
+					);
+				}
+
+				return { ...result, requestId };
 			}),
 		{
 			body: t.Object({
