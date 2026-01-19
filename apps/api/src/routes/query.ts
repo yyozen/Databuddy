@@ -36,7 +36,7 @@ import {
 	type DynamicQueryRequestType,
 } from "../schemas/query-schemas";
 
-const MAX_HOURLY_DAYS = 7;
+const MAX_HOURLY_DAYS = 30;
 const MS_PER_DAY = 86_400_000;
 const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_DATETIME_REGEX = /^\d{4}-\d{2}-\d{2}T/;
@@ -753,7 +753,7 @@ async function executeDynamicQuery(
 		| { id: string; request: QueryRequest & { type: string } };
 
 	const prepared: PreparedParameter[] = request.parameters.map((param) => {
-		const { name, id, start, end, granularity, dimension } = parseQueryParameter(param);
+		const { name, id, start, end, granularity } = parseQueryParameter(param);
 		const paramFrom = start || from;
 		const paramTo = end || to;
 
@@ -791,7 +791,6 @@ async function executeDynamicQuery(
 				limit: request.limit || 100,
 				offset: request.page ? (request.page - 1) * (request.limit || 100) : 0,
 				timezone,
-				dimension,
 			},
 		};
 	});
