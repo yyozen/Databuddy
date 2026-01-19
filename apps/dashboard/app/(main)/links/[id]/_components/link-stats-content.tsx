@@ -4,9 +4,6 @@ import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr/ArrowLeft";
 import { ChartLineIcon } from "@phosphor-icons/react/dist/ssr/ChartLine";
 import { CopyIcon } from "@phosphor-icons/react/dist/ssr/Copy";
 import { CursorClickIcon } from "@phosphor-icons/react/dist/ssr/CursorClick";
-import { DesktopIcon } from "@phosphor-icons/react/dist/ssr/Desktop";
-import { DeviceMobileIcon } from "@phosphor-icons/react/dist/ssr/DeviceMobile";
-import { DeviceTabletIcon } from "@phosphor-icons/react/dist/ssr/DeviceTablet";
 import { GlobeIcon } from "@phosphor-icons/react/dist/ssr/Globe";
 import { LinkIcon } from "@phosphor-icons/react/dist/ssr/Link";
 import { MapPinIcon } from "@phosphor-icons/react/dist/ssr/MapPin";
@@ -26,7 +23,7 @@ import {
 	YAxis,
 } from "recharts";
 import { toast } from "sonner";
-import { StatCard } from "@/components/analytics";
+import { DeviceTypeCell, StatCard } from "@/components/analytics";
 import { ReferrerSourceCell } from "@/components/atomic/ReferrerSourceCell";
 import { EmptyState } from "@/components/empty-state";
 import { CountryFlag } from "@/components/icon";
@@ -86,17 +83,6 @@ interface ChartDataPoint {
 interface MiniChartDataPoint {
 	date: string;
 	value: number;
-}
-
-function getDeviceIcon(deviceType: string) {
-	const lower = deviceType.toLowerCase();
-	if (lower.includes("mobile") || lower.includes("phone")) {
-		return <DeviceMobileIcon className="size-4" weight="duotone" />;
-	}
-	if (lower.includes("tablet")) {
-		return <DeviceTabletIcon className="size-4" weight="duotone" />;
-	}
-	return <DesktopIcon className="size-4" weight="duotone" />;
 }
 
 function formatNumber(value: number): string {
@@ -435,12 +421,9 @@ function createDeviceColumns(): ColumnDef<SourceEntry>[] {
 			cell: ({ row }: CellContext<SourceEntry, unknown>) => {
 				const entry = row.original;
 				return (
-					<div className="flex items-center gap-2">
-						{getDeviceIcon(entry.name)}
-						<span className="font-medium capitalize">
-							{entry.name || "Unknown"}
-						</span>
-					</div>
+					<DeviceTypeCell
+						device_type={entry.name?.toLowerCase() || "unknown"}
+					/>
 				);
 			},
 		},
