@@ -38,11 +38,12 @@ Access your analytics data programmatically with Databuddy's REST API. All endpo
   -H "Content-Type: application/json" \\
   -d '{
     "parameters": ["summary", "pages"],
-    "startDate": "2024-01-01",
-    "endDate": "2024-01-31"
+    "preset": "last_30d"
   }' \\
   "https://api.databuddy.cc/v1/query?website_id=web_123"`}
 />
+
+Use date presets like `last_7d`, `last_30d`, `this_month` instead of explicit dates for convenience.
 
 ## API Sections
 
