@@ -189,9 +189,11 @@ function StatsLoadingSkeleton() {
 function ClicksChart({
 	data,
 	height = 350,
+	isHourly = false,
 }: {
 	data: ChartDataPoint[];
 	height?: number;
+	isHourly?: boolean;
 }) {
 	if (data.length === 0) {
 		return (
@@ -216,6 +218,9 @@ function ClicksChart({
 			</div>
 		);
 	}
+
+	const xAxisFormat = isHourly ? "MMM D, HH:mm" : "MMM D";
+	const tooltipFormat = isHourly ? "MMM D, YYYY HH:mm" : "MMM D, YYYY";
 
 	return (
 		<div style={{ height: `${height}px`, width: "100%" }}>
@@ -248,7 +253,7 @@ function ClicksChart({
 						axisLine={false}
 						dataKey="date"
 						tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-						tickFormatter={(value) => dayjs(value).format("MMM D")}
+						tickFormatter={(value) => dayjs(value).format(xAxisFormat)}
 						tickLine={false}
 					/>
 					<YAxis
@@ -265,7 +270,7 @@ function ClicksChart({
 									<div className="mb-2 flex items-center gap-2 border-b pb-2">
 										<div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
 										<p className="font-medium text-foreground text-xs">
-											{dayjs(label).format("MMM D, YYYY")}
+											{dayjs(label).format(tooltipFormat)}
 										</p>
 									</div>
 									<div className="flex items-center justify-between gap-3">
@@ -465,9 +470,10 @@ export function LinkStatsContent() {
 	const params = useParams();
 	const linkId = params.id as string;
 	const { activeOrganization } = useOrganizationsContext();
-	const { dateRange } = useDateFilters();
+	const { dateRange, currentGranularity } = useDateFilters();
 
 	const isMobile = useMediaQuery("(max-width: 640px)");
+	const isHourly = currentGranularity === "hourly";
 
 	const { data: link, isLoading: isLoadingLink } = useLink(
 		linkId,
@@ -719,7 +725,11 @@ export function LinkStatsContent() {
 
 			{/* Clicks Over Time Chart */}
 			<div className="overflow-hidden rounded border bg-card">
-				<ClicksChart data={chartData} height={isMobile ? 280 : 380} />
+				<ClicksChart
+					data={chartData}
+					height={isMobile ? 280 : 380}
+					isHourly={isHourly}
+				/>
 			</div>
 
 			{/* Data Tables */}

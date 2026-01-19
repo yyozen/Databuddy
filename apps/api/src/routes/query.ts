@@ -753,7 +753,7 @@ async function executeDynamicQuery(
 		| { id: string; request: QueryRequest & { type: string } };
 
 	const prepared: PreparedParameter[] = request.parameters.map((param) => {
-		const { name, id, start, end, granularity } = parseQueryParameter(param);
+		const { name, id, start, end, granularity, dimension } = parseQueryParameter(param);
 		const paramFrom = start || from;
 		const paramTo = end || to;
 
@@ -791,6 +791,7 @@ async function executeDynamicQuery(
 				limit: request.limit || 100,
 				offset: request.page ? (request.page - 1) * (request.limit || 100) : 0,
 				timezone,
+				dimension,
 			},
 		};
 	});
