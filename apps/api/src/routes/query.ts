@@ -39,6 +39,29 @@ import {
 const MAX_HOURLY_DAYS = 7;
 const MS_PER_DAY = 86_400_000;
 const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const ISO_DATETIME_REGEX = /^\d{4}-\d{2}-\d{2}T/;
+
+/**
+ * Normalize date input to YYYY-MM-DD format
+ * Accepts: "2024-01-15", "2024-01-15T14:30:00.000Z", etc.
+ */
+function normalizeDate(input: string): string {
+	// Already in correct format
+	if (DATE_FORMAT_REGEX.test(input)) {
+		return input;
+	}
+	// ISO datetime format - extract date part
+	if (ISO_DATETIME_REGEX.test(input)) {
+		return input.split("T")[0] as string;
+	}
+	// Try to parse as date
+	const parsed = new Date(input);
+	if (!Number.isNaN(parsed.getTime())) {
+		return parsed.toISOString().split("T")[0] as string;
+	}
+	// Return as-is (will fail validation)
+	return input;
+}
 
 // ============================================================================
 // Date Preset Resolution
@@ -195,8 +218,9 @@ function validateQueryRequest(
 	}
 
 	// Resolve dates from preset or explicit values
-	let startDate = request.startDate;
-	let endDate = request.endDate;
+	// Normalize dates to YYYY-MM-DD (accepts ISO datetime strings too)
+	let startDate = request.startDate ? normalizeDate(request.startDate) : undefined;
+	let endDate = request.endDate ? normalizeDate(request.endDate) : undefined;
 
 	if (request.preset) {
 		if (DatePresets[request.preset]) {
@@ -230,17 +254,17 @@ function validateQueryRequest(
 		});
 	}
 
-	// Validate date format if provided
+	// Validate normalized date format
 	if (startDate && !DATE_FORMAT_REGEX.test(startDate)) {
 		errors.push({
 			field: "startDate",
-			message: `Invalid date format: ${startDate}. Expected YYYY-MM-DD`,
+			message: `Invalid date: ${request.startDate}. Could not parse as a valid date`,
 		});
 	}
 	if (endDate && !DATE_FORMAT_REGEX.test(endDate)) {
 		errors.push({
 			field: "endDate",
-			message: `Invalid date format: ${endDate}. Expected YYYY-MM-DD`,
+			message: `Invalid date: ${request.endDate}. Could not parse as a valid date`,
 		});
 	}
 
