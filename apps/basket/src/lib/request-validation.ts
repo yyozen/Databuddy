@@ -1,5 +1,6 @@
 import { getWebsiteByIdV2, isValidOrigin } from "@hooks/auth";
 import { logBlockedTraffic } from "@lib/blocked-traffic";
+import { sendEvent } from "@lib/producer";
 import { captureError, record, setAttributes } from "@lib/tracing";
 import { extractIpFromRequest } from "@utils/ip-geo";
 import { detectBot } from "@utils/user-agent";
@@ -253,6 +254,8 @@ export function validateRequest(
 }
 /**
  * Check if request is from a bot
+ * AI crawlers/assistants are logged to ai_traffic_spans
+ * Regular bots are logged to blocked_traffic
  * Returns error object if bot detected, undefined otherwise
  */
 export function checkForBot(
@@ -264,7 +267,42 @@ export function checkForBot(
 ): Promise<{ error?: Response } | undefined> {
 	return record("checkForBot", () => {
 		const botCheck = detectBot(userAgent, request);
-		if (botCheck.isBot) {
+
+		if (!botCheck.isBot) {
+			return;
+		}
+
+		const isAITraffic =
+			botCheck.category === "AI Crawler" ||
+			botCheck.category === "AI Assistant";
+
+		if (isAITraffic) {
+			const path =
+				body?.path ||
+				body?.url ||
+				query?.path ||
+				request.headers.get("referer") ||
+				"";
+			const referrer =
+				body?.referrer || request.headers.get("referer") || undefined;
+
+			sendEvent("analytics-ai-traffic-spans", {
+				client_id: clientId,
+				timestamp: Date.now(),
+				bot_type: botCheck.category === "AI Crawler" ? "ai_crawler" : "ai_assistant",
+				bot_name: botCheck.botName || "unknown",
+				user_agent: userAgent,
+				path,
+				referrer,
+			});
+
+			setAttributes({
+				validation_failed: true,
+				validation_reason: "ai_traffic",
+				bot_type: botCheck.category === "AI Crawler" ? "ai_crawler" : "ai_assistant",
+				bot_name: botCheck.botName || "unknown",
+			});
+		} else {
 			logBlockedTraffic(
 				request,
 				body,
@@ -274,6 +312,7 @@ export function checkForBot(
 				botCheck.botName,
 				clientId
 			);
+
 			setAttributes({
 				validation_failed: true,
 				validation_reason: "bot_detected",
@@ -281,13 +320,13 @@ export function checkForBot(
 				bot_category: botCheck.category || "Bot Detection",
 				bot_detection_reason: botCheck.reason || "unknown_bot",
 			});
-			return {
-				error: new Response(JSON.stringify({ status: "ignored" }), {
-					status: 200,
-					headers: { "Content-Type": "application/json" },
-				}),
-			};
 		}
-		return;
+
+		return {
+			error: new Response(JSON.stringify({ status: "ignored" }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			}),
+		};
 	});
 }

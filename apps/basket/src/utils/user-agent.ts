@@ -5,9 +5,9 @@
  * and platform identification.
  */
 
-import { bots } from "@databuddy/shared/lists/bots";
 import { captureError, record } from "@lib/tracing";
 import { UAParser } from "ua-parser-js";
+import { isAIAssistant, isAICrawler, isBot } from "ua-parser-js/bot-detection";
 
 export interface UserAgentInfo {
 	bot: {
@@ -73,27 +73,21 @@ export function parseUserAgent(userAgent: string): Promise<{
 	});
 }
 
+function extractBotName(userAgent: string): string | undefined {
+	const parser = new UAParser(userAgent);
+	const result = parser.getResult();
+	return result.browser.name || undefined;
+}
+
 export function detectBot(
 	userAgent: string,
-	request: Request
+	_request: Request
 ): {
 	isBot: boolean;
 	reason?: string;
 	category?: string;
 	botName?: string;
 } {
-	const ua = userAgent || "";
-
-	const detectedBot = bots.find((bot) => new RegExp(bot.regex, "i").test(ua));
-	if (detectedBot) {
-		return {
-			isBot: true,
-			reason: "known_bot_user_agent",
-			category: "Known Bot",
-			botName: detectedBot.name,
-		};
-	}
-
 	if (!userAgent) {
 		return {
 			isBot: true,
@@ -102,19 +96,30 @@ export function detectBot(
 		};
 	}
 
-	if (!request.headers.get("accept")) {
+	if (isAICrawler(userAgent)) {
 		return {
 			isBot: true,
-			reason: "missing_accept_header",
-			category: "Missing Headers",
+			reason: "ai_crawler_user_agent",
+			category: "AI Crawler",
+			botName: extractBotName(userAgent),
 		};
 	}
 
-	if (ua.length < 10) {
+	if (isAIAssistant(userAgent)) {
 		return {
 			isBot: true,
-			reason: "user_agent_too_short",
-			category: "Suspicious Pattern",
+			reason: "ai_assistant_user_agent",
+			category: "AI Assistant",
+			botName: extractBotName(userAgent),
+		};
+	}
+
+	if (isBot(userAgent)) {
+		return {
+			isBot: true,
+			reason: "known_bot_user_agent",
+			category: "Known Bot",
+			botName: extractBotName(userAgent),
 		};
 	}
 
