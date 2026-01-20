@@ -78,13 +78,17 @@ export function BillingProvider({
 	const pathname = usePathname();
 
 	const isDemoRoute = useMemo(() => pathname?.startsWith("/demo/"), [pathname]);
+	const isWebsiteRoute = useMemo(
+		() => pathname?.startsWith("/websites/"),
+		[pathname]
+	);
 
 	const websiteId = useMemo(() => {
 		if (propWebsiteId) {
 			return propWebsiteId;
 		}
 
-		if (isDemoRoute) {
+		if (isDemoRoute || isWebsiteRoute) {
 			const routeId = params?.id;
 			if (typeof routeId === "string" && routeId) {
 				return routeId;
@@ -92,7 +96,7 @@ export function BillingProvider({
 		}
 
 		return;
-	}, [propWebsiteId, params?.id, isDemoRoute]);
+	}, [propWebsiteId, params?.id, isDemoRoute, isWebsiteRoute]);
 
 	const {
 		customer,
