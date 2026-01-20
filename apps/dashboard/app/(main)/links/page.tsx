@@ -1,9 +1,10 @@
 "use client";
 
+import { SparkleIcon, TrendDownIcon } from "@phosphor-icons/react/dist/ssr";
 import { LinkIcon } from "@phosphor-icons/react/dist/ssr/Link";
-import { TrendDownIcon } from "@phosphor-icons/react/dist/ssr/TrendDown";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
+import { NoticeBanner } from "@/app/(main)/websites/_components/notice-banner";
 import { Card, CardContent } from "@/components/ui/card";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { type Link, useDeleteLink, useLinks } from "@/hooks/use-links";
@@ -106,6 +107,14 @@ export default function LinksPage() {
 				title="Links"
 			/>
 
+			<div className="px-3 pt-3 sm:px-4">
+				<NoticeBanner
+					description="Free while in beta"
+					icon={<SparkleIcon />}
+					title="Early Access"
+				/>
+			</div>
+
 			{!isLoading && links.length > 0 && (
 				<LinksSearchBar
 					links={links}
@@ -155,7 +164,9 @@ export default function LinksPage() {
 			<QrCodeDialog
 				link={qrLink}
 				onOpenChange={(open) => {
-					if (!open) setQrLink(null);
+					if (!open) {
+						setQrLink(null);
+					}
 				}}
 				open={!!qrLink}
 			/>
