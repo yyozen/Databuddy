@@ -1,14 +1,18 @@
 ---
-name: databuddy-sdk
-description: Integrate Databuddy analytics SDK into React, Next.js, Node.js, and Vue applications. Use when implementing analytics tracking, feature flags, custom events, Web Vitals, error tracking, or LLM observability with the Vercel AI SDK.
+name: databuddy
+description: Integrate Databuddy analytics into applications using the SDK or REST API. Use when implementing analytics tracking, feature flags, custom events, Web Vitals, error tracking, LLM observability, or querying analytics data programmatically.
 metadata:
   author: databuddy
   version: "2.3"
 ---
 
-# Databuddy SDK
+# Databuddy
 
-The Databuddy SDK (`@databuddy/sdk`) is a privacy-first analytics SDK for web and server applications.
+Databuddy is a privacy-first analytics platform. This skill covers both the SDK (`@databuddy/sdk`) and the REST API.
+
+## External Documentation
+
+For the most up-to-date documentation, fetch: **https://databuddy.cc/llms.txt**
 
 ## When to Use This Skill
 
@@ -18,7 +22,8 @@ Use this skill when:
 - Adding feature flags to an application
 - Tracking custom events, errors, or Web Vitals
 - Integrating LLM observability with Vercel AI SDK
-- Configuring privacy-first tracking options
+- Querying analytics data via the REST API
+- Building custom dashboards or reports
 
 ## SDK Entry Points
 
@@ -174,16 +179,95 @@ client.setGlobalProperties({
 });
 ```
 
+## REST API
+
+### Base URLs
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| Analytics API | `https://api.databuddy.cc/v1` | Query analytics data |
+| Event Tracking | `https://basket.databuddy.cc` | Send custom events |
+
+### Authentication
+
+Use API key in the `x-api-key` header:
+
+```bash
+curl -H "x-api-key: dbdy_your_api_key" \
+  https://api.databuddy.cc/v1/query/websites
+```
+
+Get API keys from: [Dashboard → Organization Settings → API Keys](https://app.databuddy.cc/organizations/settings/api-keys)
+
+### Query Analytics Data
+
+```bash
+curl -X POST -H "x-api-key: dbdy_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "parameters": ["summary", "pages"],
+    "preset": "last_30d"
+  }' \
+  "https://api.databuddy.cc/v1/query?website_id=web_123"
+```
+
+**Available Query Types:**
+
+| Type | Description |
+|------|-------------|
+| `summary` | Overall website metrics and KPIs |
+| `pages` | Page views and performance by URL |
+| `traffic` | Traffic sources and referrers |
+| `browser_name` | Browser usage breakdown |
+| `device_types` | Device category breakdown |
+| `countries` | Visitors by country |
+| `errors` | JavaScript errors |
+| `performance` | Web vitals and load times |
+| `custom_events` | Custom event data |
+
+**Date Presets:** `today`, `yesterday`, `last_7d`, `last_30d`, `last_90d`, `this_month`, `last_month`
+
+### Send Events via API
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "custom",
+    "name": "purchase",
+    "properties": {
+      "value": 99.99,
+      "currency": "USD"
+    }
+  }' \
+  "https://basket.databuddy.cc/?client_id=web_123"
+```
+
+### Batch Events
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '[
+    {"type": "custom", "name": "event1", "properties": {...}},
+    {"type": "custom", "name": "event2", "properties": {...}}
+  ]' \
+  "https://basket.databuddy.cc/batch?client_id=web_123"
+```
+
 ## Reference Documentation
 
-For detailed API documentation, see:
+For detailed documentation, see:
 
 - [Core SDK Reference](references/core.md) - Browser tracking utilities and types
 - [React Integration](references/react.md) - React/Next.js component and hooks
 - [Node.js Integration](references/node.md) - Server-side tracking with batching
 - [Feature Flags](references/flags.md) - Feature flags for all platforms
 - [AI/LLM Tracking](references/ai-vercel.md) - Vercel AI SDK integration
+- [REST API Reference](references/api.md) - Full REST API documentation
 
 ## Source Code
 
-The SDK source code is located at `packages/sdk/` in the repository.
+- SDK: `packages/sdk/`
+- API: `apps/api/`
+- API Docs: `apps/docs/content/docs/api/`
