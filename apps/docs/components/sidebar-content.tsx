@@ -1,6 +1,7 @@
 import {
 	AtomIcon,
 	BookOpenIcon,
+	BrainIcon,
 	CalendarIcon,
 	ChartBarIcon,
 	CircleIcon,
@@ -10,12 +11,13 @@ import {
 	DiamondIcon,
 	FileTextIcon,
 	FlagIcon,
+	GearIcon,
 	GlobeIcon,
 	GoogleLogoIcon,
+	HardDrivesIcon,
 	HexagonIcon,
 	type IconWeight,
 	KeyIcon,
-	LightningAIcon,
 	LightningIcon,
 	LockIcon,
 	MonitorIcon,
@@ -29,26 +31,27 @@ import {
 	SpeedometerIcon,
 	SquareIcon,
 	StarIcon,
+	TerminalIcon,
 	TrendUpIcon,
 	TriangleIcon,
 	UserCheckIcon,
 } from "@phosphor-icons/react";
 
-export type SidebarItem = {
+export interface SidebarItem {
 	title: string;
 	href?: string;
 	icon?: React.ComponentType<{ className?: string; weight?: IconWeight }>;
 	isNew?: boolean;
 	group?: boolean;
 	children?: SidebarItem[];
-};
+}
 
-export type SidebarSection = {
+export interface SidebarSection {
 	title: string;
 	Icon: React.ComponentType<{ className?: string; weight?: IconWeight }>;
 	isNew?: boolean;
 	list: SidebarItem[];
-};
+}
 
 export const contents: SidebarSection[] = [
 	{
@@ -72,20 +75,61 @@ export const contents: SidebarSection[] = [
 		Icon: CodeIcon,
 		list: [
 			{
-				title: "SDK",
-				href: "/docs/sdk",
+				title: "SDK Reference",
 				icon: AtomIcon,
-			},
-			{
-				title: "Vanilla JavaScript",
-				href: "/docs/vanilla-js",
-				icon: FileTextIcon,
-			},
-			{
-				title: "Node SDK",
-				href: "/docs/node-sdk",
-				icon: CodeIcon,
-				isNew: true,
+				children: [
+					{
+						title: "Overview",
+						href: "/docs/sdk",
+						icon: FileTextIcon,
+					},
+					{
+						title: "React / Next.js",
+						href: "/docs/sdk/react",
+						icon: AtomIcon,
+					},
+					{
+						title: "Vue",
+						href: "/docs/sdk/vue",
+						icon: DiamondIcon,
+					},
+					{
+						title: "Vanilla JavaScript",
+						href: "/docs/sdk/vanilla-js",
+						icon: FileTextIcon,
+					},
+					{
+						title: "Node.js",
+						href: "/docs/sdk/node",
+						icon: HardDrivesIcon,
+					},
+					{
+						title: "Tracker Helpers",
+						href: "/docs/sdk/tracker",
+						icon: TerminalIcon,
+					},
+					{
+						title: "AI / LLM Analytics",
+						href: "/docs/sdk/ai",
+						icon: BrainIcon,
+						isNew: true,
+					},
+					{
+						title: "Feature Flags",
+						href: "/docs/sdk/feature-flags",
+						icon: FlagIcon,
+					},
+					{
+						title: "Server Flags",
+						href: "/docs/sdk/server-flags",
+						icon: HardDrivesIcon,
+					},
+					{
+						title: "Configuration",
+						href: "/docs/sdk/configuration",
+						icon: GearIcon,
+					},
+				],
 			},
 			{
 				title: "API Reference",
@@ -137,18 +181,6 @@ export const contents: SidebarSection[] = [
 				title: "API Keys",
 				href: "/docs/api-keys",
 				icon: KeyIcon,
-			},
-		],
-	},
-	{
-		title: "Features",
-		Icon: LightningAIcon,
-		isNew: true,
-		list: [
-			{
-				title: "Feature Flags",
-				href: "/docs/features/feature-flags",
-				icon: FlagIcon,
 			},
 		],
 	},

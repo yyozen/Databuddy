@@ -1,11 +1,12 @@
 ---
-title: Feature Flags
-description: Control feature rollouts and A/B testing with Databuddy's feature flag system
+title: Feature Flags (Client)
+description: Control feature rollouts and A/B testing with React and Vue hooks
 ---
 
 import { Tab, Tabs } from "@/components/docs";
 import { Callout } from "@/components/docs";
 import { CodeBlock } from "@/components/docs";
+import { Card, Cards } from "@/components/docs";
 
 Feature flags allow you to control feature rollouts and conduct A/B testing without deploying new code. Enable or disable features instantly from your dashboard.
 
@@ -619,6 +620,23 @@ Enable debug mode to see flag evaluation in the console:
     // ... other props
   >`}
 </CodeBlock>
+
+## Related
+
+<Cards>
+  <Card title="Server-Side Flags" href="/docs/sdk/server-flags">
+    Feature flags for Node.js and API routes
+  </Card>
+  <Card title="React SDK" href="/docs/sdk/react">
+    React component and integration
+  </Card>
+  <Card title="Vue SDK" href="/docs/sdk/vue">
+    Vue component and composables
+  </Card>
+  <Card title="Configuration" href="/docs/sdk/configuration">
+    All configuration options
+  </Card>
+</Cards>
 
 ---
 

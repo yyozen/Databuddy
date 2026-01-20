@@ -1,26 +1,27 @@
 ---
-title: Vanilla JavaScript Setup
-description: Use the Databuddy script directly in vanilla JavaScript without any SDK
+title: Vanilla JavaScript
+description: Use the Databuddy script directly in vanilla JavaScript without any framework
 ---
 
-import { Tab, Tabs } from "@/components/docs";
-import { Callout } from "@/components/docs";
-import { Card, Cards } from "@/components/docs";
-import { CodeBlock } from "@/components/docs";
+import { Callout, Card, Cards, CodeBlock } from "@/components/docs";
 
 The Databuddy script can be used directly in vanilla JavaScript projects without any framework dependencies. This is perfect for static sites, traditional HTML pages, or any environment where you want minimal overhead.
+
+<Callout type="info">
+  **CDN**: `https://cdn.databuddy.cc/databuddy.js` | **Size**: ~15KB gzipped
+</Callout>
 
 ## Quick Setup
 
 Add the script tag to your HTML before the closing `</body>` tag:
 
-```html
-<script
+<CodeBlock language="html">
+  {`<script
   src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
   async
-></script>
-```
+></script>`}
+</CodeBlock>
 
 The script automatically initializes and starts tracking page views.
 
@@ -28,8 +29,8 @@ The script automatically initializes and starts tracking page views.
 
 Configure the tracker using data attributes on the script tag:
 
-```html
-<script
+<CodeBlock language="html">
+  {`<script
   src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
   data-track-performance
@@ -37,42 +38,33 @@ Configure the tracker using data attributes on the script tag:
   data-enable-batching
   data-batch-size="20"
   async
-></script>
-```
+></script>`}
+</CodeBlock>
 
 ## Available Options
 
-<Cards>
-  <Card title="trackHashChanges" description="Track hash changes in URL (default: false)" />
-  <Card title="trackAttributes" description="Track data-track attributes (default: false)" />
-  <Card title="trackOutgoingLinks" description="Track clicks on external links (default: false)" />
-  <Card title="trackInteractions" description="Track button clicks and form submissions (default: false)" />
-  <Card title="trackScrollDepth" description="Track scroll depth milestones (default: false)" />
-  <Card title="trackPerformance" description="Include performance metrics (default: true)" />
-  <Card title="trackWebVitals" description="Track Core Web Vitals (default: false)" />
-  <Card title="trackErrors" description="Track JavaScript errors (default: false)" />
-  <Card title="enableBatching" description="Batch events before sending (default: false)" />
-  <Card title="batchSize" description="Events per batch when batching enabled (default: 10)" />
-  <Card title="samplingRate" description="Sample rate 0.0-1.0 (default: 1.0)" />
-</Cards>
+| Option | Default | Description |
+|--------|---------|-------------|
+| `data-track-hash-changes` | `false` | Track hash changes in URL |
+| `data-track-attributes` | `false` | Track data-track attributes |
+| `data-track-outgoing-links` | `false` | Track clicks on external links |
+| `data-track-interactions` | `false` | Track button clicks and form submissions |
+| `data-track-scroll-depth` | `false` | Track scroll depth milestones |
+| `data-track-performance` | `true` | Include performance metrics |
+| `data-track-web-vitals` | `false` | Track Core Web Vitals |
+| `data-track-errors` | `false` | Track JavaScript errors |
+| `data-enable-batching` | `false` | Batch events before sending |
+| `data-batch-size` | `10` | Events per batch when batching enabled |
+| `data-sampling-rate` | `1.0` | Sample rate 0.0-1.0 |
 
 ## Tracking Events
-
-### Automatic Tracking
-
-The script automatically tracks page views when enabled:
-
-```html
-<!-- Navigate to /about -->
-window.location.href = '/about'; // Automatically tracked
-```
 
 ### Manual Tracking
 
 Use the global `window.databuddy` object to track custom events:
 
-```javascript
-// Track a custom event
+<CodeBlock language="jsx">
+  {`// Track a custom event
 window.databuddy.track('button_click', {
   button_text: 'Sign Up',
   button_id: 'header-cta'
@@ -82,37 +74,37 @@ window.databuddy.track('button_click', {
 window.databuddy.track('feature_used', {
   feature: 'export_data',
   user_tier: 'premium'
-});
-```
+});`}
+</CodeBlock>
 
 ### Screen Views
 
 Manually track page views (useful for SPAs):
 
-```javascript
-window.databuddy.screenView('/dashboard');
+<CodeBlock language="jsx">
+  {`window.databuddy.screenView('/dashboard');
 
 // With properties
 window.databuddy.screenView('/dashboard', {
   section: 'analytics'
-});
-```
+});`}
+</CodeBlock>
 
 ### Using Shorthand
 
 For convenience, use the shorter `window.db` alias:
 
-```javascript
-window.db.track('button_click', { button_id: 'cta' });
-window.db.screenView('/dashboard');
-```
+<CodeBlock language="jsx">
+  {`window.db.track('button_click', { button_id: 'cta' });
+window.db.screenView('/dashboard');`}
+</CodeBlock>
 
 ## Getting Tracking IDs
 
 The tracker provides access to anonymous and session IDs for attribution tracking:
 
-```javascript
-// Get anonymous ID
+<CodeBlock language="jsx">
+  {`// Get anonymous ID
 const anonId = window.databuddy.anonymousId;
 console.log('Anonymous ID:', anonId);
 
@@ -121,33 +113,33 @@ const sessionId = window.databuddy.sessionId;
 console.log('Session ID:', sessionId);
 
 // Use for redirect attribution
-const signupUrl = `https://app.databuddy.cc/register?anonId=${anonId}&sessionId=${sessionId}`;
-window.location.href = signupUrl;
-```
+const signupUrl = \`https://app.databuddy.cc/register?anonId=\${anonId}&sessionId=\${sessionId}\`;
+window.location.href = signupUrl;`}
+</CodeBlock>
 
 ### Reading from Storage
 
 IDs are also stored in browser storage for persistence:
 
-```javascript
-// Get from localStorage
+<CodeBlock language="jsx">
+  {`// Get from localStorage
 const anonId = localStorage.getItem('did');
 
 // Get from sessionStorage
-const sessionId = sessionStorage.getItem('did_session');
-```
+const sessionId = sessionStorage.getItem('did_session');`}
+</CodeBlock>
 
 ## Global Properties
 
 Set properties that attach to all future events:
 
-```javascript
-window.databuddy.setGlobalProperties({
+<CodeBlock language="jsx">
+  {`window.databuddy.setGlobalProperties({
   user_id: 'user-123',
   plan: 'premium',
   version: '2.0'
-});
-```
+});`}
+</CodeBlock>
 
 ## Session Management
 
@@ -155,35 +147,35 @@ window.databuddy.setGlobalProperties({
 
 Clear current session and generate new IDs:
 
-```javascript
-window.databuddy.clear();
-```
+<CodeBlock language="jsx">
+  {`window.databuddy.clear();`}
+</CodeBlock>
 
 ### Flush Events
 
 Force immediate sending of queued events:
 
-```javascript
-window.databuddy.flush();
-```
+<CodeBlock language="jsx">
+  {`window.databuddy.flush();`}
+</CodeBlock>
 
 ## Error Tracking
 
 Automatically track JavaScript errors:
 
-```html
-<script
+<CodeBlock language="html">
+  {`<script
   src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
   data-track-errors
   async
-></script>
-```
+></script>`}
+</CodeBlock>
 
 Or track manually:
 
-```javascript
-try {
+<CodeBlock language="jsx">
+  {`try {
   // Your code
 } catch (error) {
   window.databuddy.track('error', {
@@ -192,15 +184,15 @@ try {
     lineno: error.lineno,
     error_type: error.name
   });
-}
-```
+}`}
+</CodeBlock>
 
 ## Data Attributes Tracking
 
 Track clicks on elements with `data-track` attributes:
 
-```html
-<!-- Enable tracking -->
+<CodeBlock language="html">
+  {`<!-- Enable tracking -->
 <script
   src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
@@ -215,15 +207,15 @@ Track clicks on elements with `data-track` attributes:
 
 <a href="/pricing" data-track="link_click" data-link-type="pricing">
   View Pricing
-</a>
-```
+</a>`}
+</CodeBlock>
 
 ## Outgoing Links
 
 Track clicks on external links:
 
-```html
-<script
+<CodeBlock language="html">
+  {`<script
   src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
   data-track-outgoing-links
@@ -231,36 +223,36 @@ Track clicks on external links:
 ></script>
 
 <!-- External links are automatically tracked -->
-<a href="https://github.com/databuddy-analytics/Databuddy">GitHub</a>
-```
+<a href="https://github.com/databuddy-analytics/Databuddy">GitHub</a>`}
+</CodeBlock>
 
 ## Batch Events
 
 Enable batching to reduce network requests:
 
-```html
-<script
+<CodeBlock language="html">
+  {`<script
   src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
   data-enable-batching
   data-batch-size="20"
   data-batch-timeout="2000"
   async
-></script>
-```
+></script>`}
+</CodeBlock>
 
 ## Sampling
 
 Reduce event volume with sampling:
 
-```html
-<script
+<CodeBlock language="html">
+  {`<script
   src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
   data-sampling-rate="0.5"
   async
-></script>
-```
+></script>`}
+</CodeBlock>
 
 Set to `0.5` to track 50% of events, `0.1` for 10%, etc.
 
@@ -268,33 +260,33 @@ Set to `0.5` to track 50% of events, `0.1` for 10%, etc.
 
 Skip tracking on specific paths:
 
-```html
-<script
+<CodeBlock language="html">
+  {`<script
   src="https://cdn.databuddy.cc/databuddy.js"
   data-client-id="your-client-id"
   data-skip-patterns='["/admin/**", "/internal/*"]'
   async
-></script>
-```
+></script>`}
+</CodeBlock>
 
 ## Opt Out
 
 Allow users to opt out of tracking:
 
-```javascript
-// User opts out
+<CodeBlock language="jsx">
+  {`// User opts out
 window.databuddyOptOut();
 
 // User opts back in
-window.databuddyOptIn();
-```
+window.databuddyOptIn();`}
+</CodeBlock>
 
 Opt-out is stored in localStorage and persists across sessions.
 
 ## Complete Example
 
-```html
-<!DOCTYPE html>
+<CodeBlock language="html" filename="index.html">
+  {`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -326,12 +318,12 @@ Opt-out is stored in localStorage and persists across sessions.
       // Redirect with attribution
       const anonId = window.databuddy.anonymousId;
       const sessionId = window.databuddy.sessionId;
-      window.location.href = `https://app.databuddy.cc/register?anonId=${anonId}&sessionId=${sessionId}`;
+      window.location.href = \`https://app.databuddy.cc/register?anonId=\${anonId}&sessionId=\${sessionId}\`;
     }
   </script>
 </body>
-</html>
-```
+</html>`}
+</CodeBlock>
 
 ## Browser Compatibility
 
@@ -344,9 +336,22 @@ The script works in all modern browsers:
 
 Use the official CDN URL for best performance:
 
-```
-https://cdn.databuddy.cc/databuddy.js
-```
+<CodeBlock language="text">
+  {`https://cdn.databuddy.cc/databuddy.js`}
+</CodeBlock>
 
 The script is automatically minified and gzipped for optimal performance (~15KB).
 
+## Related
+
+<Cards>
+  <Card title="Tracker Helpers" href="/docs/sdk/tracker">
+    Helper functions for the SDK
+  </Card>
+  <Card title="Configuration" href="/docs/sdk/configuration">
+    All configuration options
+  </Card>
+  <Card title="React SDK" href="/docs/sdk/react">
+    React component integration
+  </Card>
+</Cards>
