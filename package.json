@@ -87,7 +87,8 @@
       "ultracite": "5.3.10",
       "turbo": "^2.5.2",
       "drizzle-orm": "^0.42.0",
-      "nanoid": "^5.1.6"
+      "nanoid": "^5.1.6",
+      "ua-parser-js": "^2.0.8"
     }
   },
   "dependencies": {
