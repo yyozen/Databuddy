@@ -1,4 +1,3 @@
-import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -7,9 +6,6 @@ const nextConfig: NextConfig = {
 	},
 	typescript: {
 		ignoreBuildErrors: true,
-	},
-	turbopack: {
-		root: path.join(__dirname, "../../../"),
 	},
 	images: {
 		remotePatterns: [
@@ -35,14 +31,6 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
-	serverExternalPackages: [
-		"pg",
-		"pg-pool",
-		"pino",
-		"pino-pretty",
-		"@axiomhq/pino",
-		"thread-stream",
-	],
 	transpilePackages: [],
 	output: "standalone",
 	async rewrites() {
