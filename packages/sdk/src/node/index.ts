@@ -145,14 +145,33 @@ export class Databuddy {
 		return { success: true };
 	}
 
+	/**
+	 * Convert BatchEventInput to CustomEventSpan format expected by /events endpoint
+	 */
+	private toCustomEventSpan(event: BatchEventInput) {
+		const timestamp = event.timestamp
+			? Math.floor(event.timestamp)
+			: Date.now();
+
+		return {
+			timestamp,
+			path: "",
+			eventName: event.name,
+			anonymousId: event.anonymousId ?? null,
+			sessionId: event.sessionId ?? null,
+			properties: event.properties ?? null,
+		};
+	}
+
 	private async send(event: BatchEventInput): Promise<EventResponse> {
 		try {
-			const url = `${this.apiUrl}/?client_id=${encodeURIComponent(this.clientId)}`;
+			const url = `${this.apiUrl}/events?client_id=${encodeURIComponent(this.clientId)}`;
+			const customEventSpan = this.toCustomEventSpan(event);
 
 			this.logger.info("📤 SENDING SINGLE EVENT:", {
-				name: event.name,
-				properties: JSON.stringify(event.properties, null, 2),
-				propertiesCount: Object.keys(event.properties || {}).length,
+				eventName: customEventSpan.eventName,
+				properties: JSON.stringify(customEventSpan.properties, null, 2),
+				propertiesCount: Object.keys(customEventSpan.properties || {}).length,
 			});
 
 			const response = await fetch(url, {
@@ -160,7 +179,7 @@ export class Databuddy {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify(event),
+				body: JSON.stringify([customEventSpan]),
 			});
 
 			if (!response.ok) {
@@ -329,18 +348,21 @@ export class Databuddy {
 		}
 
 		try {
-			const url = `${this.apiUrl}/batch?client_id=${encodeURIComponent(this.clientId)}`;
+			const url = `${this.apiUrl}/events?client_id=${encodeURIComponent(this.clientId)}`;
+			const customEventSpans = processedEvents.map((event) =>
+				this.toCustomEventSpan(event)
+			);
 
 			this.logger.info("📦 SENDING BATCH EVENTS:", {
-				count: processedEvents.length,
-				firstEventName: processedEvents[0]?.name,
+				count: customEventSpans.length,
+				firstEventName: customEventSpans[0]?.eventName,
 				firstEventProperties: JSON.stringify(
-					processedEvents[0]?.properties,
+					customEventSpans[0]?.properties,
 					null,
 					2
 				),
 				firstEventPropertiesCount: Object.keys(
-					processedEvents[0]?.properties || {}
+					customEventSpans[0]?.properties || {}
 				).length,
 			});
 
@@ -349,7 +371,7 @@ export class Databuddy {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify(processedEvents),
+				body: JSON.stringify(customEventSpans),
 			});
 
 			if (!response.ok) {
