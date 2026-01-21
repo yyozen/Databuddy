@@ -152,12 +152,15 @@ const app = new Elysia()
         }
 
         const errorMessage = error instanceof Error ? error.message : String(error);
+        const isDevelopment = process.env.NODE_ENV === "development";
         logger.error({ error, code }, errorMessage);
 
         return new Response(
             JSON.stringify({
                 success: false,
-                error: errorMessage,
+                error: isDevelopment
+                    ? errorMessage
+                    : "An internal server error occurred",
                 code: code ?? "INTERNAL_SERVER_ERROR",
             }),
             { status: 500, headers: { "Content-Type": "application/json" } }

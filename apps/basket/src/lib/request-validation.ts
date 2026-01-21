@@ -279,7 +279,7 @@ export function checkForBot(
 			setAttributes({
 				bot_detected: true,
 				bot_action: "allow",
-				bot_category: botCheck.category,
+				bot_category: botCheck.category || "unknown",
 				bot_name: botCheck.botName || "unknown",
 			});
 			return; // Process as normal traffic
