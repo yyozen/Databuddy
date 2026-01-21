@@ -286,7 +286,7 @@ export function checkForBot(
 		}
 
 		// Handle TRACK_ONLY action - log to AI traffic table
-		if (action === "track_only") {
+		if (action === "track_only") {	
 			const path =
 				body?.path ||
 				body?.url ||
