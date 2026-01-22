@@ -71,7 +71,7 @@ const nextConfig: NextConfig = {
 			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 			"font-src 'self' https://fonts.gstatic.com",
 			"img-src 'self' data: blob: https://cdn.databuddy.cc https://icons.duckduckgo.com https://flagcdn.com https://api.dicebear.com",
-			"connect-src 'self' https://cdn.databuddy.cc https://*.databuddy.cc wss://*.databuddy.cc",
+			"connect-src 'self' https://cdn.databuddy.cc https://*.databuddy.cc wss://*.databuddy.cc https://api.microlink.io",
 			"frame-ancestors 'none'",
 			"base-uri 'self'",
 			"form-action 'self'",

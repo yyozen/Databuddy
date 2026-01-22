@@ -25,6 +25,21 @@ export interface OgData {
 	ogVideoUrl: string;
 }
 
+function getProxiedImageUrl(url: string): string {
+	if (!url) {
+		return "";
+	}
+	// Skip proxy for internal/CDN images
+	if (
+		url.startsWith("/") ||
+		url.includes("cdn.databuddy.cc") ||
+		url.includes("api.dicebear.com")
+	) {
+		return url;
+	}
+	return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
 interface OgPreviewProps {
 	targetUrl: string;
 	value: OgData;
@@ -80,7 +95,7 @@ function useImageValidation(imageUrl: string) {
 		const img = new Image();
 		img.onload = () => setStatus("success");
 		img.onerror = () => setStatus("error");
-		img.src = imageUrl;
+		img.src = getProxiedImageUrl(imageUrl);
 
 		return () => {
 			img.onload = null;
@@ -204,7 +219,7 @@ export function OgPreview({
 											alt="OG Preview"
 											className="size-full object-cover"
 											height={630}
-											src={customImageUrl}
+											src={getProxiedImageUrl(customImageUrl)}
 											width={1200}
 										/>
 										<button
@@ -231,14 +246,13 @@ export function OgPreview({
 							</div>
 						)}
 
-						{/* Fetched image preview (when no custom image) */}
 						{showFetchedImage && (
 							<div className="relative aspect-video w-full overflow-hidden bg-muted">
 								<img
 									alt="OG Preview"
 									className="size-full object-cover"
 									height={630}
-									src={displayData.image}
+									src={getProxiedImageUrl(displayData.image)}
 									width={1200}
 								/>
 							</div>
