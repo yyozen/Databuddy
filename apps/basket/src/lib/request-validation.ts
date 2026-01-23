@@ -151,33 +151,44 @@ export function validateRequest(
 				);
 				const data = result.data;
 
-				if (data && !(data.allowed || data.overage_allowed)) {
-					logBlockedTraffic(
-						request,
-						body,
-						query,
-						"exceeded_event_limit",
-						"Validation Error",
-						undefined,
-						clientId
-					);
-					setAttributes({
-						validation_failed: true,
-						validation_reason: "exceeded_event_limit",
-						autumn_allowed: false,
-					});
-					return {
-						error: new Response(
-							JSON.stringify({
-								status: "error",
-								message: "Exceeded event limit",
-							}),
-							{
-								status: 429,
-								headers: { "Content-Type": "application/json" },
-							}
-						),
-					};
+				if (data) {
+					const usage = data.usage ?? 0;
+					const usageLimit = data.usage_limit ?? data.included_usage ?? 0;
+					const isUnlimited = data.unlimited ?? false;
+					const usageExceeds150Percent = !isUnlimited && usageLimit > 0 && usage >= usageLimit * 1.5;
+
+					// Block only if usage exceeds 1.5x the limit
+					if (usageExceeds150Percent) {
+						logBlockedTraffic(
+							request,
+							body,
+							query,
+							"exceeded_event_limit",
+							"Validation Error",
+							undefined,
+							clientId
+						);
+						setAttributes({
+							validation_failed: true,
+							validation_reason: "exceeded_event_limit",
+							autumn_allowed: false,
+							usage_exceeded_150_percent: true,
+							usage,
+							usage_limit: usageLimit,
+						});
+						return {
+							error: new Response(
+								JSON.stringify({
+									status: "error",
+									message: "Exceeded event limit",
+								}),
+								{
+									status: 429,
+									headers: { "Content-Type": "application/json" },
+								}
+							),
+						};
+					}
 				}
 
 				setAttributes({
