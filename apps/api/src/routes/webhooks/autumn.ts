@@ -2,14 +2,13 @@ import { and, db, eq, gt, usageAlertLog, user } from "@databuddy/db";
 import { UsageLimitEmail } from "@databuddy/email";
 import { logger } from "@databuddy/shared/logger";
 import { createId } from "@databuddy/shared/utils/ids";
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
 import { Resend } from "resend";
 import { Webhook } from "svix";
 import { record, setAttributes } from "../../lib/tracing";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const SVIX_WEBHOOK_SECRET = process.env.AUTUMN_WEBHOOK_SECRET;
-
 const ALERT_COOLDOWN_DAYS = 7;
 
 interface AutumnCustomer {
@@ -37,45 +36,35 @@ interface AutumnFeature {
 	type: string;
 }
 
-interface ThresholdReachedPayload {
-	type: "customer.threshold_reached";
-	data: {
-		customer: AutumnCustomer;
-		feature: AutumnFeature;
-		threshold_type: "limit_reached" | "allowance_used";
-	};
+type ThresholdType = "limit_reached" | "allowance_used";
+
+type ProductScenario =
+	| "new"
+	| "upgrade"
+	| "downgrade"
+	| "renew"
+	| "cancel"
+	| "expired"
+	| "past_due"
+	| "scheduled";
+
+interface ThresholdData {
+	customer: AutumnCustomer;
+	feature: AutumnFeature;
+	threshold_type: ThresholdType;
 }
 
-interface ProductsUpdatedPayload {
-	type: "customer.products.updated";
-	data: {
-		scenario:
-		| "new"
-		| "upgrade"
-		| "downgrade"
-		| "renew"
-		| "cancel"
-		| "expired"
-		| "past_due"
-		| "scheduled";
-		customer: AutumnCustomer;
-		updated_product: {
-			id: string;
-			name: string;
-		};
-	};
+interface ProductsUpdatedData {
+	scenario: ProductScenario;
+	customer: AutumnCustomer;
+	updated_product: { id: string; name: string };
 }
-
-type AutumnWebhookPayload = ThresholdReachedPayload | ProductsUpdatedPayload;
 
 async function getUserEmail(customerId: string): Promise<string | null> {
 	const dbUser = await db.query.user.findFirst({
 		where: eq(user.id, customerId),
-		columns: {
-			email: true,
-		},
+		columns: { email: true },
 	});
-
 	return dbUser?.email ?? null;
 }
 
@@ -111,9 +100,7 @@ async function wasAlertSentRecently(
 			eq(usageAlertLog.featureId, featureId),
 			gt(usageAlertLog.createdAt, cooldownDate)
 		),
-		columns: {
-			id: true,
-		},
+		columns: { id: true },
 	});
 
 	return Boolean(recentAlert);
@@ -135,11 +122,10 @@ async function logAlertSent(
 }
 
 async function handleThresholdReached(
-	payload: ThresholdReachedPayload["data"]
+	payload: ThresholdData
 ): Promise<{ success: boolean; message: string }> {
 	const { customer, feature, threshold_type } = payload;
 
-	// Skip sandbox events in production
 	if (process.env.NODE_ENV === "production" && customer.env === "sandbox") {
 		logger.info(
 			{ customerId: customer.id, feature: feature.id },
@@ -148,7 +134,6 @@ async function handleThresholdReached(
 		return { success: true, message: "Skipped sandbox event" };
 	}
 
-	// Check if alert was sent recently
 	const recentlySent = await wasAlertSentRecently(customer.id, feature.id);
 	if (recentlySent) {
 		logger.info(
@@ -161,13 +146,11 @@ async function handleThresholdReached(
 		};
 	}
 
-	// Get user email from database if not in payload
 	const email = customer.email ?? (await getUserEmail(customer.id));
-
 	if (!email) {
 		logger.warn(
 			{ customerId: customer.id, feature: feature.id },
-			"No email found for customer, cannot send usage alert"
+			"No email found for customer"
 		);
 		return { success: false, message: "No email found for customer" };
 	}
@@ -206,7 +189,6 @@ async function handleThresholdReached(
 		return { success: false, message: result.error.message };
 	}
 
-	// Log the alert to prevent duplicates
 	await logAlertSent(customer.id, feature.id, threshold_type, email);
 
 	logger.info(
@@ -217,22 +199,16 @@ async function handleThresholdReached(
 	return { success: true, message: "Email sent successfully" };
 }
 
-function handleProductsUpdated(payload: ProductsUpdatedPayload["data"]): {
-	success: boolean;
-	message: string;
-} {
+function handleProductsUpdated(
+	payload: ProductsUpdatedData
+): { success: boolean; message: string } {
 	const { scenario, customer, updated_product } = payload;
 
 	logger.info(
-		{
-			customerId: customer.id,
-			scenario,
-			product: updated_product.id,
-		},
+		{ customerId: customer.id, scenario, product: updated_product.id },
 		"Received products updated webhook"
 	);
 
-	// Future: Handle different scenarios (upgrade emails, cancellation surveys, etc.)
 	return { success: true, message: `Processed ${scenario} event` };
 }
 
@@ -268,13 +244,22 @@ function verifyWebhookSignature(
 	}
 }
 
+type WebhookBody =
+	| { type: string; data: ThresholdData | ProductsUpdatedData }
+	| {
+		customer: AutumnCustomer;
+		feature?: AutumnFeature;
+		threshold_type?: ThresholdType;
+		scenario?: ProductScenario;
+		updated_product?: { id: string; name: string };
+	};
+
 export const autumnWebhook = new Elysia().post(
 	"/autumn",
-	({ body, headers }) => {
-		// Get raw body for signature verification
-		const rawBody = JSON.stringify(body);
+	async ({ headers, request }) => {
+		const rawBody = await request.text();
+		const parsedBody = JSON.parse(rawBody) as WebhookBody;
 
-		// Verify webhook signature
 		const isValid = verifyWebhookSignature(rawBody, {
 			"svix-id": headers["svix-id"] ?? null,
 			"svix-timestamp": headers["svix-timestamp"] ?? null,
@@ -289,69 +274,62 @@ export const autumnWebhook = new Elysia().post(
 		}
 
 		return record("autumnWebhook", async () => {
-			const webhookPayload = body as AutumnWebhookPayload;
+			// Svix-wrapped format: { type: "...", data: {...} }
+			if ("type" in parsedBody && "data" in parsedBody) {
+				const { type, data } = parsedBody;
 
-			setAttributes({
-				webhook_type: webhookPayload.type,
-				svix_id: headers["svix-id"] ?? "unknown",
-			});
+				setAttributes({
+					webhook_type: type,
+					svix_id: headers["svix-id"] ?? "unknown",
+				});
 
-			logger.info({ type: webhookPayload.type }, "Received Autumn webhook");
+				logger.info({ type }, "Received Autumn webhook");
 
-			switch (webhookPayload.type) {
-				case "customer.threshold_reached":
-					return await handleThresholdReached(webhookPayload.data);
+				if (type === "customer.threshold_reached") {
+					return await handleThresholdReached(data as ThresholdData);
+				}
+				if (type === "customer.products.updated") {
+					return handleProductsUpdated(data as ProductsUpdatedData);
+				}
 
-				case "customer.products.updated":
-					return handleProductsUpdated(webhookPayload.data);
-
-				default:
-					logger.warn(
-						{ type: (webhookPayload as { type: string }).type },
-						"Unknown webhook type received"
-					);
-					return { success: true, message: "Unknown event type, ignored" };
+				logger.warn({ type }, "Unknown webhook type");
+				return { success: true, message: "Unknown event type, ignored" };
 			}
+
+			// Direct format: { customer: {...}, feature: {...}, threshold_type: "..." }
+			if ("customer" in parsedBody) {
+				const { customer, feature, threshold_type, scenario, updated_product } =
+					parsedBody;
+
+				setAttributes({
+					webhook_type: threshold_type
+						? "customer.threshold_reached"
+						: "customer.products.updated",
+					svix_id: headers["svix-id"] ?? "unknown",
+				});
+
+				if (threshold_type && feature) {
+					logger.info({ threshold_type }, "Received Autumn threshold webhook");
+					return await handleThresholdReached({
+						customer,
+						feature,
+						threshold_type,
+					});
+				}
+
+				if (scenario && updated_product) {
+					logger.info({ scenario }, "Received Autumn products updated webhook");
+					return handleProductsUpdated({
+						scenario,
+						customer,
+						updated_product,
+					});
+				}
+			}
+
+			logger.warn({ body: parsedBody }, "Unknown webhook payload format");
+			return { success: true, message: "Unknown payload format, ignored" };
 		});
 	},
-	{
-		body: t.Object({
-			type: t.String(),
-			data: t.Object({
-				customer: t.Object({
-					id: t.String(),
-					email: t.Nullable(t.String()),
-					name: t.Nullable(t.String()),
-					env: t.String(),
-					features: t.Record(
-						t.String(),
-						t.Object({
-							id: t.String(),
-							name: t.String(),
-							balance: t.Number(),
-							usage: t.Number(),
-							included_usage: t.Number(),
-							unlimited: t.Boolean(),
-							interval: t.Nullable(t.String()),
-						})
-					),
-				}),
-				feature: t.Optional(
-					t.Object({
-						id: t.String(),
-						name: t.String(),
-						type: t.String(),
-					})
-				),
-				threshold_type: t.Optional(t.String()),
-				scenario: t.Optional(t.String()),
-				updated_product: t.Optional(
-					t.Object({
-						id: t.String(),
-						name: t.String(),
-					})
-				),
-			}),
-		}),
-	}
+	{ parse: "none" }
 );
