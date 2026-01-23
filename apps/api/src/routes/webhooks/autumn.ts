@@ -86,16 +86,6 @@ function formatFeatureName(featureId: string, featureName: string): string {
 		.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function formatNumber(num: number): string {
-	if (num >= 1_000_000) {
-		return `${(num / 1_000_000).toFixed(1)}M`;
-	}
-	if (num >= 1000) {
-		return `${(num / 1000).toFixed(1)}K`;
-	}
-	return num.toLocaleString();
-}
-
 async function wasAlertSentRecently(
 	userId: string,
 	featureId: string
@@ -199,8 +189,8 @@ async function handleThresholdReached(
 		subject: `You've reached your ${featureName} limit`,
 		react: UsageLimitEmail({
 			featureName,
-			usageAmount: formatNumber(usageAmount),
-			limitAmount: formatNumber(limitAmount),
+			usageAmount,
+			limitAmount,
 			userName: customer.name ?? undefined,
 			thresholdType: threshold_type,
 		}),

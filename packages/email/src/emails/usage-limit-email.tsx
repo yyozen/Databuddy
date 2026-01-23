@@ -4,26 +4,36 @@ import { EmailLayout } from "./email-layout";
 
 interface UsageLimitEmailProps {
 	featureName?: string;
-	usageAmount?: string;
-	limitAmount?: string;
+	usageAmount?: number;
+	limitAmount?: number;
 	userName?: string;
 	thresholdType?: "limit_reached" | "allowance_used";
 }
 
+function formatNumber(num: number): string {
+	if (num >= 1_000_000) {
+		return `${(num / 1_000_000).toFixed(1)}M`;
+	}
+	if (num >= 1000) {
+		return `${(num / 1000).toFixed(1)}K`;
+	}
+	return num.toLocaleString();
+}
+
 export const UsageLimitEmail = ({
 	featureName = "Events",
-	usageAmount = "10,000",
-	limitAmount = "10,000",
+	usageAmount = 10_000,
+	limitAmount = 10_000,
 	userName,
 	thresholdType = "limit_reached",
 }: UsageLimitEmailProps) => {
 	const greeting = userName ? `Hi ${userName},` : "Hi there,";
 	const isLimitReached = thresholdType === "limit_reached";
 
-	// Calculate grace period limit (1.5x)
-	const limitNum = Number.parseInt(limitAmount.replace(/,/g, ""), 10) || 0;
-	const gracePeriodLimit = limitNum > 0 ? Math.floor(limitNum * 1.5) : 0;
-	const gracePeriodLimitFormatted = gracePeriodLimit.toLocaleString();
+	const usageFormatted = formatNumber(usageAmount);
+	const limitFormatted = formatNumber(limitAmount);
+	const gracePeriodLimit = Math.floor(limitAmount * 1.5);
+	const gracePeriodFormatted = formatNumber(gracePeriodLimit);
 
 	return (
 		<EmailLayout
@@ -53,8 +63,8 @@ export const UsageLimitEmail = ({
 					style={{ color: "#717175" }}
 				>
 					{isLimitReached
-						? `You've used all ${limitAmount} of your included ${featureName.toLowerCase()} for this billing period. You can continue using up to ${gracePeriodLimitFormatted} (1.5x your limit) before tracking is paused.`
-						: `You've exhausted your ${featureName.toLowerCase()} allowance for this period. You can continue using up to ${gracePeriodLimitFormatted} (1.5x your limit) before tracking is paused.`}
+						? `You've used all ${limitFormatted} of your included ${featureName.toLowerCase()} for this billing period. You can continue using up to ${gracePeriodFormatted} (1.5x your limit) before tracking is paused.`
+						: `You've exhausted your ${featureName.toLowerCase()} allowance for this period. You can continue using up to ${gracePeriodFormatted} (1.5x your limit) before tracking is paused.`}
 				</Text>
 			</Section>
 
@@ -72,16 +82,16 @@ export const UsageLimitEmail = ({
 					className="m-0 text-center font-semibold text-2xl"
 					style={{ color: "#d7d7dd" }}
 				>
-					{usageAmount}{" "}
+					{usageFormatted}{" "}
 					<span style={{ color: "#717175", fontWeight: "normal" }}>
-						/ {limitAmount}
+						/ {limitFormatted}
 					</span>
 				</Text>
 				<Text
 					className="m-0 mt-2 text-center text-xs"
 					style={{ color: "#717175" }}
 				>
-					Grace period: up to {gracePeriodLimitFormatted} before blocking
+					Grace period: up to {gracePeriodFormatted} before blocking
 				</Text>
 			</Section>
 
