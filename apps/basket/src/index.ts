@@ -1,6 +1,6 @@
 import "./polyfills/compression";
 
-import { disconnectProducer, getProducerStats } from "@lib/producer";
+import { disconnectProducer } from "@lib/producer";
 import {
 	captureError,
 	endRequestSpan,
@@ -45,33 +45,6 @@ process.on("SIGINT", async () => {
 	closeGeoIPReader();
 	process.exit(0);
 });
-
-function getKafkaHealth() {
-	const stats = getProducerStats();
-
-	if (!stats.kafkaEnabled) {
-		return {
-			status: "disabled",
-			enabled: false,
-		};
-	}
-
-	if (stats.connected) {
-		return {
-			status: "healthy",
-			enabled: true,
-			connected: true,
-		};
-	}
-
-	return {
-		status: "unhealthy",
-		enabled: true,
-		connected: false,
-		failed: stats.failed,
-		lastErrorTime: stats.lastErrorTime,
-	};
-}
 
 const app = new Elysia()
 	.state("tracing", {
@@ -136,15 +109,7 @@ const app = new Elysia()
 	.use(emailRouter)
 	.use(llmRouter)
 	.get("/health", function healthCheck() {
-		return new Response(
-			JSON.stringify({
-				status: "ok",
-				version: "1.0.0",
-				producer_stats: getProducerStats(),
-				kafka: getKafkaHealth(),
-			}),
-			{ status: 200 }
-		);
+		return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
 	});
 
 const port = process.env.PORT || 4000;
