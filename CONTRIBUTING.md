@@ -2,6 +2,11 @@
 
 Thank you for your interest in contributing!
 
+## AI Usage
+
+The Databuddy project has strict rules for AI usage. Please see
+the [AI Usage Policy](AI_POLICY.md). **This is very important.**
+
 ## 🚀 Getting Started
 
 ### Installation
