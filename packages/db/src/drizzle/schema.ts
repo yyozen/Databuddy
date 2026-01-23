@@ -911,3 +911,37 @@ export const links = pgTable(
 		}).onDelete("cascade"),
 	]
 );
+
+export const usageAlertLog = pgTable(
+	"usage_alert_log",
+	{
+		id: text().primaryKey().notNull(),
+		userId: text("user_id").notNull(),
+		featureId: text("feature_id").notNull(),
+		alertType: text("alert_type").notNull(),
+		emailSentTo: text("email_sent_to").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		index("usage_alert_log_user_id_idx").using(
+			"btree",
+			table.userId.asc().nullsLast().op("text_ops")
+		),
+		index("usage_alert_log_user_feature_idx").using(
+			"btree",
+			table.userId.asc().nullsLast().op("text_ops"),
+			table.featureId.asc().nullsLast().op("text_ops")
+		),
+		index("usage_alert_log_created_at_idx").using(
+			"btree",
+			table.createdAt.asc().nullsLast()
+		),
+		foreignKey({
+			columns: [table.userId],
+			foreignColumns: [user.id],
+			name: "usage_alert_log_user_id_fkey",
+		}).onDelete("cascade"),
+	]
+);

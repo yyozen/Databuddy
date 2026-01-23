@@ -24,6 +24,7 @@ import { agent } from "./routes/agent";
 import { health } from "./routes/health";
 import { publicApi } from "./routes/public";
 import { query } from "./routes/query";
+import { webhooks } from "./routes/webhooks/index";
 
 initTracing();
 setupUncaughtErrorHandlers();
@@ -56,6 +57,7 @@ const app = new Elysia()
     )
     .use(publicApi)
     .use(health)
+    .use(webhooks)
     .onBeforeHandle(function startTrace({ request, path, store }) {
         const method = request.method;
         const startTime = Date.now();

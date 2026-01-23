@@ -14,6 +14,7 @@ import {
 	team,
 	twoFactor,
 	uptimeSchedules,
+	usageAlertLog,
 	user,
 	userPreferences,
 	websites,
@@ -29,6 +30,14 @@ export const userRelations = relations(user, ({ many }) => ({
 	websites: many(websites),
 	funnelDefinitions: many(funnelDefinitions),
 	apikeys: many(apikey),
+	usageAlertLogs: many(usageAlertLog),
+}));
+
+export const usageAlertLogRelations = relations(usageAlertLog, ({ one }) => ({
+	user: one(user, {
+		fields: [usageAlertLog.userId],
+		references: [user.id],
+	}),
 }));
 
 export const organizationRelations = relations(organization, ({ many }) => ({
