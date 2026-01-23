@@ -26,55 +26,52 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Set up Docker Builder
+        uses: useblacksmith/setup-docker-builder@v1
+
+      - name: Build API Docker image
+        uses: useblacksmith/build-push-action@v2
         with:
-          bun-version: latest
+          context: .
+          file: ./api.Dockerfile
+          push: false
+          tags: api:test
 
-      - name: Cache Bun dependencies
-        uses: actions/cache@v4
+      - name: Build Basket Docker image
+        uses: useblacksmith/build-push-action@v2
         with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Build SDK packages
-        run: bun run sdk:build
+          context: .
+          file: ./basket.Dockerfile
+          push: false
+          tags: basket:test
 
       - name: Run API health check
-        env:
-          NODE_ENV: test
-          PORT: 3001
-          # Database URLs (dummy for startup test)
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/databuddy_test
-          REDIS_URL: redis://localhost:6379
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          CLICKHOUSE_URL: http://localhost:8123
-          CLICKHOUSE_HOST: localhost
-          CLICKHOUSE_PORT: 8123
-          CLICKHOUSE_DATABASE: databuddy_test
-          # Auth secrets
-          BETTER_AUTH_SECRET: test-auth-secret-for-ci
-          BETTER_AUTH_URL: http://localhost:3000
-          # Dummy service keys
-          GITHUB_CLIENT_ID: test-github-client-id
-          GITHUB_CLIENT_SECRET: test-github-client-secret
-          GOOGLE_CLIENT_ID: test-google-client-id
-          GOOGLE_CLIENT_SECRET: test-google-client-secret
-          RESEND_API_KEY: test-resend-api-key
-          AUTUMN_SECRET_KEY: test-autumn-secret-key
-          EMAIL_API_KEY: test-email-api-key
-          IP_HASH_SALT: test-ip-hash-salt
-          UPSTASH_QSTASH_TOKEN: test-upstash-qstash-token
         run: |
-          cd apps/api
-          bun run src/index.ts &
-          API_PID=$!
+          docker run -d \
+            --name api-health-check \
+            --network host \
+            -e NODE_ENV=test \
+            -e PORT=3001 \
+            -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/databuddy_test \
+            -e REDIS_URL=redis://localhost:6379 \
+            -e REDIS_HOST=localhost \
+            -e REDIS_PORT=6379 \
+            -e CLICKHOUSE_URL=http://localhost:8123 \
+            -e CLICKHOUSE_HOST=localhost \
+            -e CLICKHOUSE_PORT=8123 \
+            -e CLICKHOUSE_DATABASE=databuddy_test \
+            -e BETTER_AUTH_SECRET=test-auth-secret-for-ci \
+            -e BETTER_AUTH_URL=http://localhost:3000 \
+            -e GITHUB_CLIENT_ID=test-github-client-id \
+            -e GITHUB_CLIENT_SECRET=test-github-client-secret \
+            -e GOOGLE_CLIENT_ID=test-google-client-id \
+            -e GOOGLE_CLIENT_SECRET=test-google-client-secret \
+            -e RESEND_API_KEY=test-resend-api-key \
+            -e AUTUMN_SECRET_KEY=test-autumn-secret-key \
+            -e EMAIL_API_KEY=test-email-api-key \
+            -e IP_HASH_SALT=test-ip-hash-salt \
+            -e UPSTASH_QSTASH_TOKEN=test-upstash-qstash-token \
+            api:test
           
           echo "Waiting for API to start..."
           for i in {1..30}; do
@@ -84,7 +81,8 @@ jobs:
             fi
             if [ $i -eq 30 ]; then
               echo "API failed to start within 30 seconds"
-              kill $API_PID 2>/dev/null || true
+              docker logs api-health-check
+              docker rm -f api-health-check
               exit 1
             fi
             sleep 1
@@ -99,34 +97,31 @@ jobs:
             echo "API health endpoint structure is valid"
           else
             echo "API health endpoint response missing expected fields"
-            kill $API_PID 2>/dev/null || true
+            docker logs api-health-check
+            docker rm -f api-health-check
             exit 1
           fi
           
-          kill $API_PID 2>/dev/null || true
+          docker rm -f api-health-check
           echo "API health check passed!"
 
       - name: Run Basket health check
-        env:
-          NODE_ENV: test
-          PORT: 4000
-          # Redis
-          REDIS_URL: redis://localhost:6379
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          # Database (for validation)
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/databuddy_test
-          # ClickHouse
-          CLICKHOUSE_URL: http://localhost:8123
-          CLICKHOUSE_HOST: localhost
-          CLICKHOUSE_PORT: 8123
-          # Other
-          IP_HASH_SALT: test-ip-hash-salt
-          KAFKA_ENABLED: "false"
         run: |
-          cd apps/basket
-          bun run src/index.ts &
-          BASKET_PID=$!
+          docker run -d \
+            --name basket-health-check \
+            --network host \
+            -e NODE_ENV=test \
+            -e PORT=4000 \
+            -e REDIS_URL=redis://localhost:6379 \
+            -e REDIS_HOST=localhost \
+            -e REDIS_PORT=6379 \
+            -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/databuddy_test \
+            -e CLICKHOUSE_URL=http://localhost:8123 \
+            -e CLICKHOUSE_HOST=localhost \
+            -e CLICKHOUSE_PORT=8123 \
+            -e IP_HASH_SALT=test-ip-hash-salt \
+            -e KAFKA_ENABLED=false \
+            basket:test
           
           echo "Waiting for Basket to start..."
           for i in {1..30}; do
@@ -136,7 +131,8 @@ jobs:
             fi
             if [ $i -eq 30 ]; then
               echo "Basket failed to start within 30 seconds"
-              kill $BASKET_PID 2>/dev/null || true
+              docker logs basket-health-check
+              docker rm -f basket-health-check
               exit 1
             fi
             sleep 1
@@ -151,9 +147,10 @@ jobs:
             echo "Basket health endpoint structure is valid"
           else
             echo "Basket health endpoint response missing expected fields"
-            kill $BASKET_PID 2>/dev/null || true
+            docker logs basket-health-check
+            docker rm -f basket-health-check
             exit 1
           fi
           
-          kill $BASKET_PID 2>/dev/null || true
+          docker rm -f basket-health-check
           echo "Basket health check passed!"
