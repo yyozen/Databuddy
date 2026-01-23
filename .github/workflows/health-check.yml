@@ -95,7 +95,7 @@ jobs:
           echo "API Health Response: $RESPONSE"
           
           # Verify response has expected fields
-          if echo "$RESPONSE" | grep -q '"timestamp"'; then
+          if echo "$RESPONSE" | grep -q '"status"'; then
             echo "API health endpoint structure is valid"
           else
             echo "API health endpoint response missing expected fields"
