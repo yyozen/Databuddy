@@ -9,7 +9,7 @@ on:
 jobs:
   health-check:
     name: App Health Checks
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     services:
       redis:
