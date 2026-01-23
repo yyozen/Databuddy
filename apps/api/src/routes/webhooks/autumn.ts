@@ -1,5 +1,6 @@
 import { and, db, eq, gt, usageAlertLog, user } from "@databuddy/db";
 import { UsageLimitEmail } from "@databuddy/email";
+import { cacheable } from "@databuddy/redis";
 import { logger } from "@databuddy/shared/logger";
 import { createId } from "@databuddy/shared/utils/ids";
 import { Elysia } from "elysia";
@@ -25,6 +26,7 @@ interface AutumnCustomer {
 			usage: number;
 			included_usage: number;
 			unlimited: boolean;
+			overage_allowed: boolean;
 			interval: string | null;
 		}
 	>;
@@ -60,13 +62,20 @@ interface ProductsUpdatedData {
 	updated_product: { id: string; name: string };
 }
 
-async function getUserEmail(customerId: string): Promise<string | null> {
+async function _getUserEmail(customerId: string): Promise<string | null> {
 	const dbUser = await db.query.user.findFirst({
 		where: eq(user.id, customerId),
 		columns: { email: true },
 	});
 	return dbUser?.email ?? null;
 }
+
+const getUserEmail = cacheable(_getUserEmail, {
+	expireInSec: 300,
+	prefix: "user_email",
+	staleWhileRevalidate: true,
+	staleTime: 60,
+});
 
 function formatFeatureName(featureId: string, featureName: string): string {
 	if (featureName) {
@@ -134,6 +143,23 @@ async function handleThresholdReached(
 		return { success: true, message: "Skipped sandbox event" };
 	}
 
+	const featureData = customer.features[feature.id];
+	if (featureData?.overage_allowed) {
+		logger.info(
+			{ customerId: customer.id, feature: feature.id },
+			"Skipping alert - overage allowed (paid plan)"
+		);
+		return { success: true, message: "Skipped - overage allowed" };
+	}
+
+	if (featureData?.unlimited) {
+		logger.info(
+			{ customerId: customer.id, feature: feature.id },
+			"Skipping alert - unlimited feature"
+		);
+		return { success: true, message: "Skipped - unlimited feature" };
+	}
+
 	const recentlySent = await wasAlertSentRecently(customer.id, feature.id);
 	if (recentlySent) {
 		logger.info(
@@ -155,7 +181,6 @@ async function handleThresholdReached(
 		return { success: false, message: "No email found for customer" };
 	}
 
-	const featureData = customer.features[feature.id];
 	const usageAmount = featureData?.usage ?? 0;
 	const limitAmount = featureData?.included_usage ?? 0;
 	const featureName = formatFeatureName(feature.id, feature.name);
