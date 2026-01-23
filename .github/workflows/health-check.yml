@@ -26,6 +26,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Mount Docker build cache
+        uses: useblacksmith/stickydisk@v1
+        with:
+          key: ${{ github.repository }}-docker-build-cache
+          path: /tmp/docker-build-cache
+
       - name: Set up Docker Builder
         uses: useblacksmith/setup-docker-builder@v1
 
@@ -35,6 +41,7 @@ jobs:
           context: .
           file: ./api.Dockerfile
           push: false
+          load: true
           tags: api:test
 
       - name: Build Basket Docker image
@@ -43,6 +50,7 @@ jobs:
           context: .
           file: ./basket.Dockerfile
           push: false
+          load: true
           tags: basket:test
 
       - name: Run API health check
