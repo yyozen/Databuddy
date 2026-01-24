@@ -73,6 +73,8 @@ export function LinksSearchBar({
 			case "name-desc":
 				result.sort((a, b) => b.name.localeCompare(a.name));
 				break;
+			default:
+				break;
 		}
 
 		return result;
@@ -97,6 +99,8 @@ export function LinksSearchBar({
 				return "Name (A-Z)";
 			case "name-desc":
 				return "Name (Z-A)";
+			default:
+				return "Newest first";
 		}
 	};
 
@@ -106,8 +110,8 @@ export function LinksSearchBar({
 		<div className="flex items-center gap-2 border-b px-4 py-3">
 			<div className="relative flex-1">
 				<MagnifyingGlassIcon
-					className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-					weight="duotone"
+					className="absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground"
+					weight="bold"
 				/>
 				<Input
 					className="pr-8 pl-9"
@@ -135,7 +139,7 @@ export function LinksSearchBar({
 						size="sm"
 						variant="outline"
 					>
-						<SortAscendingIcon size={16} weight="duotone" />
+						<SortAscendingIcon size={16} weight="bold" />
 						<span className="hidden sm:inline">{getSortLabel(sortBy)}</span>
 					</Button>
 				</DropdownMenuTrigger>
@@ -171,7 +175,7 @@ export function LinksSearchBar({
 					size="sm"
 					variant="ghost"
 				>
-					<FunnelIcon size={16} />
+					<FunnelIcon size={16} weight="duotone" />
 					Clear
 				</Button>
 			)}

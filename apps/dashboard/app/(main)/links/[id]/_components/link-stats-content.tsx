@@ -1,8 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr/ArrowLeft";
 import { ChartLineIcon } from "@phosphor-icons/react/dist/ssr/ChartLine";
-import { CopyIcon } from "@phosphor-icons/react/dist/ssr/Copy";
 import { CursorClickIcon } from "@phosphor-icons/react/dist/ssr/CursorClick";
 import { GlobeIcon } from "@phosphor-icons/react/dist/ssr/Globe";
 import { LinkIcon } from "@phosphor-icons/react/dist/ssr/Link";
@@ -10,9 +8,8 @@ import { MapPinIcon } from "@phosphor-icons/react/dist/ssr/MapPin";
 import { UsersIcon } from "@phosphor-icons/react/dist/ssr/Users";
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import {
 	Area,
 	AreaChart,
@@ -22,22 +19,18 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { toast } from "sonner";
 import { DeviceTypeCell, StatCard } from "@/components/analytics";
 import { ReferrerSourceCell } from "@/components/atomic/ReferrerSourceCell";
 import { EmptyState } from "@/components/empty-state";
 import { CountryFlag } from "@/components/icon";
 import { useOrganizationsContext } from "@/components/providers/organizations-provider";
 import { DataTable } from "@/components/table/data-table";
-import { Button } from "@/components/ui/button";
 import { PercentageBadge } from "@/components/ui/percentage-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDateFilters } from "@/hooks/use-date-filters";
 import { useLink, useLinkStats } from "@/hooks/use-links";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { formatMetricNumber } from "@/lib/formatters";
-
-const LINKS_BASE_URL = "https://dby.sh";
 
 interface SourceEntry {
 	name: string;
@@ -97,25 +90,7 @@ function formatNumber(value: number): string {
 
 function StatsLoadingSkeleton() {
 	return (
-		<div className="space-y-3 sm:space-y-4">
-			{/* Header skeleton */}
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div className="min-w-0 flex-1">
-					<Skeleton className="mb-2 h-4 w-24" />
-					<div className="flex items-center gap-3">
-						<Skeleton className="size-9 shrink-0 rounded" />
-						<div className="min-w-0">
-							<Skeleton className="mb-1 h-6 w-48" />
-							<div className="flex items-center gap-2">
-								<Skeleton className="h-5 w-24" />
-								<Skeleton className="h-4 w-48" />
-							</div>
-						</div>
-					</div>
-				</div>
-				<Skeleton className="h-8 w-24" />
-			</div>
-
+		<div className="space-y-3 p-3 sm:space-y-4 sm:p-4">
 			{/* Stats cards skeleton */}
 			<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
 				{[1, 2, 3].map((i) => (
@@ -582,18 +557,6 @@ export function LinkStatsContent() {
 		]
 	);
 
-	const handleCopy = useCallback(async () => {
-		if (!link) {
-			return;
-		}
-		try {
-			await navigator.clipboard.writeText(`${LINKS_BASE_URL}/${link.slug}`);
-			toast.success("Link copied to clipboard");
-		} catch {
-			toast.error("Failed to copy link");
-		}
-	}, [link]);
-
 	if (isLoading) {
 		return <StatsLoadingSkeleton />;
 	}
@@ -617,55 +580,8 @@ export function LinkStatsContent() {
 		);
 	}
 
-	const shortUrl = `${LINKS_BASE_URL.replace("https://", "")}/${link.slug}`;
-
 	return (
-		<div className="space-y-3 sm:space-y-4">
-			{/* Header */}
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div className="min-w-0 flex-1">
-					<Link
-						className="mb-2 inline-flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground"
-						href="/links"
-					>
-						<ArrowLeftIcon className="size-4" weight="fill" />
-						Back to Links
-					</Link>
-					<div className="flex items-center gap-3">
-						<div className="shrink-0 rounded bg-accent p-2">
-							<LinkIcon className="size-5 text-primary" weight="duotone" />
-						</div>
-						<div className="min-w-0">
-							<h1 className="text-balance font-semibold text-foreground text-lg sm:text-xl">
-								{link.name}
-							</h1>
-							<div className="flex items-center gap-2">
-								<button
-									className="flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-mono text-xs transition-colors hover:bg-muted/80"
-									onClick={handleCopy}
-									type="button"
-								>
-									<span className="text-foreground">{shortUrl}</span>
-									<CopyIcon
-										className="size-3 text-muted-foreground"
-										weight="duotone"
-									/>
-								</button>
-								<span className="text-muted-foreground text-xs">→</span>
-								<span className="max-w-xs truncate text-muted-foreground text-xs">
-									{link.targetUrl}
-								</span>
-							</div>
-						</div>
-					</div>
-				</div>
-				<Button asChild size="sm" variant="outline">
-					<a href={link.targetUrl} rel="noopener noreferrer" target="_blank">
-						Visit Target
-					</a>
-				</Button>
-			</div>
-
+		<div className="space-y-3 p-3 sm:space-y-4 sm:p-4">
 			{/* Stats Cards */}
 			<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
 				<StatCard

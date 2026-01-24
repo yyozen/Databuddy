@@ -18,8 +18,8 @@ import { hashIp } from "../utils/hash";
 import { generateOgHtml } from "../utils/og-html";
 import { parseUserAgent } from "../utils/user-agent";
 
-const EXPIRED_URL = "https://dby.sh/expired";
-const NOT_FOUND_URL = "https://dby.sh/not-found";
+const EXPIRED_URL = "https://app.databuddy.cc/dby/expired";
+const NOT_FOUND_URL = "https://app.databuddy.cc/dby/not-found";
 const RATE_LIMIT = { requests: 100, windowSeconds: 60 };
 
 function lookupLinkFromCache(

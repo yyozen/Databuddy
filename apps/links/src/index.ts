@@ -1,7 +1,7 @@
 import { opentelemetry } from "@elysiajs/opentelemetry";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-node";
-import { Elysia } from "elysia";
+import { Elysia, redirect } from "elysia";
 import { disconnectProducer } from "./lib/producer";
 import { shutdownTracing } from "./lib/tracing";
 import { expiredRoute } from "./routes/expired";
@@ -29,8 +29,8 @@ const app = new Elysia()
 			serviceName: "links",
 		})
 	)
-	.get("/", function healthCheck() {
-		return { status: "ok" };
+	.get("/", function rootRedirect() {
+		return redirect("https://databuddy.cc", 302);
 	})
 	.get("/health", function healthCheck() {
 		return { status: "ok" };

@@ -169,11 +169,6 @@ export function OgPreview({
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center gap-2">
-				<ImageIcon size={16} weight="duotone" />
-				<span className="font-medium text-sm">Social Preview</span>
-			</div>
-
 			{/* Preview Card */}
 			<div className="overflow-hidden rounded border bg-muted/30">
 				{isLoading ? (
