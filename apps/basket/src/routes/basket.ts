@@ -5,7 +5,7 @@ import {
 	batchedVitalsSchema,
 } from "@databuddy/validation";
 import {
-	insertCustomEventSpans,
+	insertCustomEvents,
 	insertErrorSpans,
 	insertIndividualVitals,
 	insertOutgoingLink,
@@ -325,7 +325,20 @@ const app = new Elysia()
 				return validation.error;
 			}
 
-			const { clientId, userAgent } = validation;
+			const { clientId, userAgent, ownerId } = validation;
+
+			if (!ownerId) {
+				return new Response(
+					JSON.stringify({
+						status: "error",
+						message: "Website missing organization",
+					}),
+					{
+						status: 400,
+						headers: { "Content-Type": "application/json" },
+					}
+				);
+			}
 
 			const parseResult = batchedCustomEventSpansSchema.safeParse(body);
 
@@ -344,7 +357,17 @@ const app = new Elysia()
 				return botError.error;
 			}
 
-			await insertCustomEventSpans(parseResult.data, clientId);
+			const events = parseResult.data.map((event) => ({
+				owner_id: ownerId,
+				website_id: clientId,
+				timestamp: event.timestamp,
+				event_name: event.eventName,
+				properties: event.properties as Record<string, unknown> | undefined,
+				anonymous_id: event.anonymousId ?? undefined,
+				session_id: event.sessionId ?? undefined,
+			}));
+
+			await insertCustomEvents(events);
 
 			return new Response(
 				JSON.stringify({
