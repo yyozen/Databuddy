@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
 	experimental: {
 		optimizePackageImports: ["@phosphor-icons/react"],
 	},
+	serverExternalPackages: ["pg"],
 	typescript: {
 		ignoreBuildErrors: true,
 	},

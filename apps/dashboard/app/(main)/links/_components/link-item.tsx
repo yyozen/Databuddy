@@ -203,12 +203,7 @@ function LinkRow({ link, onClick, onEdit, onDelete, onShowQr }: LinkRowProps) {
 			</div>
 
 			{/* Name and short URL */}
-			<div
-				className="min-w-0 flex-1"
-				onClick={(e) => e.stopPropagation()}
-				onKeyDown={(e) => e.stopPropagation()}
-				role="presentation"
-			>
+			<div className="min-w-0 flex-1">
 				<div className="flex items-center gap-2">
 					<p className="truncate font-medium text-foreground text-sm">
 						{link.name}
