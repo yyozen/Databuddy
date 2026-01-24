@@ -58,6 +58,7 @@ import {
 const LINKS_BASE_URL = "dby.sh";
 
 const slugRegex = /^[a-zA-Z0-9_-]+$/;
+const domainRegex = /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}/i;
 
 type ExpandedSection = "expiration" | "devices" | "utm" | "social" | null;
 
@@ -164,59 +165,23 @@ const formSchema = z.object({
 		.string()
 		.optional()
 		.or(z.literal(""))
-		.refine(
-			(val) => {
-				if (!val || val === "") {
-					return true;
-				}
-				try {
-					const urlToTest = val.startsWith("http") ? val : `https://${val}`;
-					const url = new URL(urlToTest);
-					return url.protocol === "http:" || url.protocol === "https:";
-				} catch {
-					return false;
-				}
-			},
-			{ message: "Please enter a valid URL" }
-		),
+		.refine((val) => !val || domainRegex.test(val.split("/").at(0) ?? ""), {
+			message: "Enter a valid URL",
+		}),
 	iosUrl: z
 		.string()
 		.optional()
 		.or(z.literal(""))
-		.refine(
-			(val) => {
-				if (!val || val === "") {
-					return true;
-				}
-				try {
-					const urlToTest = val.startsWith("http") ? val : `https://${val}`;
-					const url = new URL(urlToTest);
-					return url.protocol === "http:" || url.protocol === "https:";
-				} catch {
-					return false;
-				}
-			},
-			{ message: "Please enter a valid URL" }
-		),
+		.refine((val) => !val || domainRegex.test(val.split("/").at(0) ?? ""), {
+			message: "Enter a valid URL",
+		}),
 	androidUrl: z
 		.string()
 		.optional()
 		.or(z.literal(""))
-		.refine(
-			(val) => {
-				if (!val || val === "") {
-					return true;
-				}
-				try {
-					const urlToTest = val.startsWith("http") ? val : `https://${val}`;
-					const url = new URL(urlToTest);
-					return url.protocol === "http:" || url.protocol === "https:";
-				} catch {
-					return false;
-				}
-			},
-			{ message: "Please enter a valid URL" }
-		),
+		.refine((val) => !val || domainRegex.test(val.split("/").at(0) ?? ""), {
+			message: "Enter a valid URL",
+		}),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -255,14 +220,11 @@ export function LinkSheet({
 	const createLinkMutation = useCreateLink();
 	const updateLinkMutation = useUpdateLink();
 
-	// UTM parameters state (not part of form, handled separately)
 	const [utmParams, setUtmParams] = useState<UtmParams>(DEFAULT_UTM_PARAMS);
 
-	// OG data state
 	const [ogData, setOgData] = useState<OgData>(DEFAULT_OG_DATA);
 	const [useCustomOg, setUseCustomOg] = useState(false);
 
-	// Collapsible sections state
 	const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
 
 	const toggleSection = (section: ExpandedSection) => {
@@ -293,14 +255,11 @@ export function LinkSheet({
 					targetUrl = targetUrl.slice(7);
 				}
 
-				// Parse UTM params from the target URL
 				const parsedUtm = parseUtmFromUrl(targetUrl);
 				setUtmParams(parsedUtm);
 
-				// Strip UTM params for display in the form
 				const urlWithoutUtm = stripUtmFromUrl(targetUrl);
 
-				// Set OG data from link
 				const hasCustomOg =
 					linkData.ogTitle ?? linkData.ogDescription ?? linkData.ogImageUrl;
 				setUseCustomOg(!!hasCustomOg);
@@ -311,6 +270,19 @@ export function LinkSheet({
 					ogVideoUrl: linkData.ogVideoUrl ?? "",
 				});
 
+				const stripProtocol = (url: string | null) => {
+					if (!url) {
+						return "";
+					}
+					if (url.startsWith("https://")) {
+						return url.slice(8);
+					}
+					if (url.startsWith("http://")) {
+						return url.slice(7);
+					}
+					return url;
+				};
+
 				form.reset({
 					name: linkData.name,
 					targetUrl: urlWithoutUtm,
@@ -318,9 +290,9 @@ export function LinkSheet({
 					expiresAt: linkData.expiresAt
 						? dayjs(linkData.expiresAt).format("YYYY-MM-DDTHH:mm")
 						: "",
-					expiredRedirectUrl: linkData.expiredRedirectUrl ?? "",
-					iosUrl: linkData.iosUrl ?? "",
-					androidUrl: linkData.androidUrl ?? "",
+					expiredRedirectUrl: stripProtocol(linkData.expiredRedirectUrl),
+					iosUrl: stripProtocol(linkData.iosUrl),
+					androidUrl: stripProtocol(linkData.androidUrl),
 				});
 			} else {
 				form.reset({
@@ -344,7 +316,6 @@ export function LinkSheet({
 	const prevOpenRef = useRef(open);
 	const prevLinkRef = useRef(link);
 
-	// Reset form when sheet opens or link changes
 	if (open && (!prevOpenRef.current || prevLinkRef.current !== link)) {
 		resetForm(link);
 	}
@@ -361,7 +332,6 @@ export function LinkSheet({
 	const slugValue = form.watch("slug");
 	const targetUrlValue = form.watch("targetUrl");
 
-	// Compute full target URL with protocol for OG preview
 	const fullTargetUrl = useMemo(() => {
 		if (!targetUrlValue) {
 			return "";
@@ -415,7 +385,6 @@ export function LinkSheet({
 			targetUrl = `https://${targetUrl}`;
 		}
 
-		// Append UTM params to target URL
 		targetUrl = appendUtmToUrl(targetUrl, utmParams);
 
 		const slug = formData.slug?.trim() || undefined;
@@ -685,6 +654,15 @@ export function LinkSheet({
 											placeholder="example.com/link-expired"
 											prefix="https://"
 											{...field}
+											onChange={(e) => {
+												let url = e.target.value.trim();
+												if (url.startsWith("https://")) {
+													url = url.slice(8);
+												} else if (url.startsWith("http://")) {
+													url = url.slice(7);
+												}
+												field.onChange(url);
+											}}
 										/>
 									</FormControl>
 									<FormDescription className="text-xs">
@@ -730,6 +708,15 @@ export function LinkSheet({
 												placeholder="apps.apple.com/app/..."
 												prefix="https://"
 												{...field}
+												onChange={(e) => {
+													let url = e.target.value.trim();
+													if (url.startsWith("https://")) {
+														url = url.slice(8);
+													} else if (url.startsWith("http://")) {
+														url = url.slice(7);
+													}
+													field.onChange(url);
+												}}
 											/>
 										</FormControl>
 										<FormMessage />
@@ -756,6 +743,15 @@ export function LinkSheet({
 												placeholder="play.google.com/store/apps/..."
 												prefix="https://"
 												{...field}
+												onChange={(e) => {
+													let url = e.target.value.trim();
+													if (url.startsWith("https://")) {
+														url = url.slice(8);
+													} else if (url.startsWith("http://")) {
+														url = url.slice(7);
+													}
+													field.onChange(url);
+												}}
 											/>
 										</FormControl>
 										<FormMessage />

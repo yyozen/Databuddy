@@ -15,21 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { type Link, useDeleteLink, useLinks } from "@/hooks/use-links";
-import { LinkItemSkeleton } from "./_components/link-item";
+import { LinksListSkeleton } from "./_components/link-item";
 import { LinkSheet } from "./_components/link-sheet";
 import { LinksList } from "./_components/links-list";
 import { LinksSearchBar } from "./_components/links-search-bar";
 import { QrCodeDialog } from "./_components/qr-code-dialog";
-
-function LinksListSkeleton() {
-	return (
-		<div>
-			{[1, 2, 3].map((i) => (
-				<LinkItemSkeleton key={i} />
-			))}
-		</div>
-	);
-}
 
 export default function LinksPage() {
 	const router = useRouter();
