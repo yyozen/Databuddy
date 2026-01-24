@@ -44,7 +44,6 @@ export async function onRateDocs(
 	try {
 		const result = await client.track({
 			name: "docs_feedback",
-			websiteId: process.env.DATABUDDY_WEBSITE_ID ?? undefined,
 			properties: {
 				url,
 				opinion: feedback.opinion,
