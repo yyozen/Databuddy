@@ -111,6 +111,9 @@ export function BillingProvider({
 	} = usePricingTable();
 
 	// Get the correct billing context (handles org/website ownership)
+	// Always fetch billing context - the backend handles both:
+	// 1. When websiteId is provided: uses website owner's plan
+	// 2. When no websiteId: uses authenticated user's/org's plan
 	const {
 		data: billingContext,
 		isLoading: isBillingContextLoading,
@@ -119,7 +122,6 @@ export function BillingProvider({
 		...orpc.organizations.getBillingContext.queryOptions({
 			input: websiteId ? { websiteId } : undefined,
 		}),
-		enabled: !!websiteId,
 		retry: false,
 		throwOnError: false,
 	});
