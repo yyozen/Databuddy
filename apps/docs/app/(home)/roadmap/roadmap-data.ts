@@ -90,19 +90,14 @@ export const roadmapItems: RoadmapItem[] = [
 	{
 		id: "user-tracking",
 		title: "User Analytics",
-		description:
-			"Individual user behavior tracking with sessions and profiles",
+		description: "Individual user behavior tracking with sessions and profiles",
 		status: "completed",
 		priority: "high",
 		category: "analytics",
 		targetDate: "2025-01-15",
 		completedDate: "2025-01-15",
 		progress: 100,
-		features: [
-			"User profiles",
-			"Event history",
-			"User journey",
-		],
+		features: ["User profiles", "Event history", "User journey"],
 		assignees: ["core-team"],
 		tags: ["users", "sessions"],
 	},
@@ -150,7 +145,8 @@ export const roadmapItems: RoadmapItem[] = [
 	{
 		id: "feature-flags",
 		title: "Feature Flags",
-		description: "Type-safe feature flags with targeting, rollouts, and schedules",
+		description:
+			"Type-safe feature flags with targeting, rollouts, and schedules",
 		status: "completed",
 		priority: "high",
 		category: "developer-experience",
@@ -192,7 +188,8 @@ export const roadmapItems: RoadmapItem[] = [
 	{
 		id: "smart-insights",
 		title: "Smart Insights",
-		description: "Automated insights for anomalies, errors, and performance issues",
+		description:
+			"Automated insights for anomalies, errors, and performance issues",
 		status: "completed",
 		priority: "medium",
 		category: "AI",
@@ -314,8 +311,7 @@ export const roadmapItems: RoadmapItem[] = [
 	{
 		id: "ab-testing",
 		title: "A/B Testing",
-		description:
-			"Experimentation framework with statistical analysis",
+		description: "Experimentation framework with statistical analysis",
 		status: "planned",
 		priority: "high",
 		category: "analytics",
@@ -476,7 +472,12 @@ export const roadmapMilestones: RoadmapMilestone[] = [
 		description: "Analytics, SDKs, performance monitoring, and error tracking",
 		targetDate: "2025-01-15",
 		status: "completed",
-		items: ["core-analytics", "lightweight-sdks", "web-vitals", "error-tracking"],
+		items: [
+			"core-analytics",
+			"lightweight-sdks",
+			"web-vitals",
+			"error-tracking",
+		],
 		progress: 100,
 	},
 	{
@@ -509,7 +510,8 @@ export const roadmapMilestones: RoadmapMilestone[] = [
 	{
 		id: "experimentation-platform",
 		title: "Experimentation Platform",
-		description: "A/B testing and statistical analysis for data-driven decisions",
+		description:
+			"A/B testing and statistical analysis for data-driven decisions",
 		targetDate: "2026-06-30",
 		status: "upcoming",
 		items: ["ab-testing"],

@@ -219,7 +219,9 @@ function validateQueryRequest(
 
 	// Resolve dates from preset or explicit values
 	// Normalize dates to YYYY-MM-DD (accepts ISO datetime strings too)
-	let startDate = request.startDate ? normalizeDate(request.startDate) : undefined;
+	let startDate = request.startDate
+		? normalizeDate(request.startDate)
+		: undefined;
 	let endDate = request.endDate ? normalizeDate(request.endDate) : undefined;
 
 	if (request.preset) {
@@ -315,15 +317,15 @@ interface AuthContext {
 
 type ProjectAccessResult =
 	| {
-		success: true;
-		projectId: string;
-	}
+			success: true;
+			projectId: string;
+	  }
 	| {
-		success: false;
-		error: string;
-		code: string;
-		status?: number;
-	};
+			success: false;
+			error: string;
+			code: string;
+			status?: number;
+	  };
 
 function createAuthFailedResponse(requestId: string): Response {
 	return new Response(
@@ -686,12 +688,12 @@ function getTimeUnit(
 type ParameterInput =
 	| string
 	| {
-		name: string;
-		start_date?: string;
-		end_date?: string;
-		granularity?: string;
-		id?: string;
-	};
+			name: string;
+			start_date?: string;
+			end_date?: string;
+			granularity?: string;
+			id?: string;
+	  };
 
 function parseQueryParameter(param: ParameterInput) {
 	if (typeof param === "string") {

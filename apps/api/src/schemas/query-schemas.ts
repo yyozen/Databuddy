@@ -101,15 +101,15 @@ export const CompileRequestSchema = t.Object({
 export interface FilterType {
 	field: string;
 	op:
-	| "eq"
-	| "ne"
-	| "contains"
-	| "not_contains"
-	| "starts_with"
-	| "in"
-	| "not_in";
+		| "eq"
+		| "ne"
+		| "contains"
+		| "not_contains"
+		| "starts_with"
+		| "in"
+		| "not_in";
 	value: string | number | Array<string | number>;
-};
+}
 
 export interface ParameterWithDatesType {
 	name: string;
@@ -117,7 +117,7 @@ export interface ParameterWithDatesType {
 	end_date?: string;
 	granularity?: "hourly" | "daily" | "hour" | "day";
 	id?: string;
-};
+}
 
 export interface DynamicQueryRequestType {
 	id?: string;
@@ -131,7 +131,7 @@ export interface DynamicQueryRequestType {
 	endDate?: string;
 	preset?: DatePreset;
 	timeZone?: string;
-};
+}
 
 export interface CompileRequestType {
 	projectId: string;
@@ -144,4 +144,4 @@ export interface CompileRequestType {
 	orderBy?: string;
 	limit?: number;
 	offset?: number;
-};
+}

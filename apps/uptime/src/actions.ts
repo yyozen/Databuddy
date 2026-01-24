@@ -52,7 +52,9 @@ interface ScheduleData {
 	cacheBust: boolean;
 }
 
-export function lookupSchedule(id: string): Promise<ActionResult<ScheduleData>> {
+export function lookupSchedule(
+	id: string
+): Promise<ActionResult<ScheduleData>> {
 	return record("uptime.lookup_schedule", async () => {
 		try {
 			const schedule = await db.query.uptimeSchedules.findFirst({
@@ -235,7 +237,12 @@ function pingWebsite(
 		const cacheBust = options.cacheBust ?? false;
 
 		try {
-			const result = await fetchWithRedirects(url, timeout, "gzip, deflate, br", cacheBust);
+			const result = await fetchWithRedirects(
+				url,
+				timeout,
+				"gzip, deflate, br",
+				cacheBust
+			);
 
 			if (!result.ok && isEncodingFailure(result.error)) {
 				return fetchWithRedirects(url, timeout, "gzip, deflate", cacheBust);
@@ -245,7 +252,12 @@ function pingWebsite(
 		} catch (error) {
 			if (error instanceof Error && isEncodingFailure(error.message)) {
 				try {
-					return await fetchWithRedirects(url, timeout, "gzip, deflate", cacheBust);
+					return await fetchWithRedirects(
+						url,
+						timeout,
+						"gzip, deflate",
+						cacheBust
+					);
 				} catch {
 					return {
 						ok: false,
@@ -412,10 +424,10 @@ export function checkUptime(
 
 			const jsonData = options.jsonParsingConfig
 				? parseJsonResponse(
-					pingResult.parsedJson ?? pingResult.content,
-					pingResult.contentType,
-					options.jsonParsingConfig
-				)
+						pingResult.parsedJson ?? pingResult.content,
+						pingResult.contentType,
+						options.jsonParsingConfig
+					)
 				: null;
 
 			return {

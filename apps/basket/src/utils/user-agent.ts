@@ -5,14 +5,14 @@
  * and platform identification.
  */
 
-import { captureError, record } from "@lib/tracing";
 import {
-	BotAction,
+	type BotAction,
 	BotCategory,
 	type BotDetectionResult,
 	detectBot as detectBotShared,
 	parseUserAgent as parseUserAgentShared,
 } from "@databuddy/shared/bot-detection";
+import { captureError, record } from "@lib/tracing";
 
 export interface UserAgentInfo {
 	bot: {
@@ -78,12 +78,12 @@ export function parseUserAgent(userAgent: string): Promise<{
 
 /**
  * Detect bot using new centralized system
- * 
+ *
  * Maps to legacy format for backwards compatibility
  */
 export function detectBot(
 	userAgent: string,
-	_request: Request,
+	_request: Request
 ): {
 	isBot: boolean;
 	reason?: string;

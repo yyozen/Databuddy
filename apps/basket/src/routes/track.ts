@@ -32,7 +32,11 @@ const trackEventSchema = z.union([
 
 type AuthResult =
 	| { success: true; ownerId: string; websiteId?: string }
-	| { success: false; error: { status: string; message: string }; status: number };
+	| {
+			success: false;
+			error: { status: string; message: string };
+			status: number;
+	  };
 
 function json(data: unknown, status: number): Response {
 	return new Response(JSON.stringify(data), {
@@ -41,7 +45,10 @@ function json(data: unknown, status: number): Response {
 	});
 }
 
-function parseTimestamp(value: number | string | Date | undefined, fallback: number): number {
+function parseTimestamp(
+	value: number | string | Date | undefined,
+	fallback: number
+): number {
 	if (value === undefined) {
 		return fallback;
 	}
@@ -64,7 +71,10 @@ async function resolveAuth(
 		if (!hasKeyScope(apiKey, "track:events")) {
 			return {
 				success: false,
-				error: { status: "error", message: "API key missing track:events scope" },
+				error: {
+					status: "error",
+					message: "API key missing track:events scope",
+				},
 				status: 403,
 			};
 		}
@@ -113,45 +123,57 @@ async function resolveAuth(
 	};
 }
 
-export const trackRoute = new Elysia().post("/track", async ({ body, query, request }) => {
-	const typedBody = body as unknown;
-	const typedQuery = query as Record<string, string>;
+export const trackRoute = new Elysia().post(
+	"/track",
+	async ({ body, query, request }) => {
+		const typedBody = body as unknown;
+		const typedQuery = query as Record<string, string>;
 
-	try {
-		const parseResult = trackEventSchema.safeParse(typedBody);
-		if (!parseResult.success) {
+		try {
+			const parseResult = trackEventSchema.safeParse(typedBody);
+			if (!parseResult.success) {
+				return json(
+					{
+						status: "error",
+						message: "Invalid request body",
+						issues: parseResult.error.issues,
+					},
+					400
+				);
+			}
+
+			const events = Array.isArray(parseResult.data)
+				? parseResult.data
+				: [parseResult.data];
+			const websiteIdParam = typedQuery.website_id || events[0]?.websiteId;
+
+			const auth = await resolveAuth(request.headers, websiteIdParam);
+			if (!auth.success) {
+				return json(auth.error, auth.status);
+			}
+
+			const now = Date.now();
+			const spans = events.map((event) => ({
+				owner_id: auth.ownerId,
+				website_id: event.websiteId ?? auth.websiteId,
+				timestamp: parseTimestamp(event.timestamp, now),
+				event_name: event.name,
+				namespace: event.namespace,
+				properties: event.properties,
+				anonymous_id: event.anonymousId,
+				session_id: event.sessionId,
+				source: event.source,
+			}));
+
+			await insertCustomEvents(spans);
+
 			return json(
-				{ status: "error", message: "Invalid request body", issues: parseResult.error.issues },
-				400
+				{ status: "success", type: "custom_event", count: spans.length },
+				200
 			);
+		} catch (error) {
+			captureError(error, { message: "Error processing track events" });
+			return json({ status: "error", message: "Internal server error" }, 500);
 		}
-
-		const events = Array.isArray(parseResult.data) ? parseResult.data : [parseResult.data];
-		const websiteIdParam = typedQuery.website_id || events[0]?.websiteId;
-
-		const auth = await resolveAuth(request.headers, websiteIdParam);
-		if (!auth.success) {
-			return json(auth.error, auth.status);
-		}
-
-		const now = Date.now();
-		const spans = events.map((event) => ({
-			owner_id: auth.ownerId,
-			website_id: event.websiteId ?? auth.websiteId,
-			timestamp: parseTimestamp(event.timestamp, now),
-			event_name: event.name,
-			namespace: event.namespace,
-			properties: event.properties,
-			anonymous_id: event.anonymousId,
-			session_id: event.sessionId,
-			source: event.source,
-		}));
-
-		await insertCustomEvents(spans);
-
-		return json({ status: "success", type: "custom_event", count: spans.length }, 200);
-	} catch (error) {
-		captureError(error, { message: "Error processing track events" });
-		return json({ status: "error", message: "Internal server error" }, 500);
 	}
-});
+);

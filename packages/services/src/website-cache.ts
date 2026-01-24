@@ -28,7 +28,6 @@ function fromRecord(record: WebsiteCacheRecord): Website {
 	};
 }
 
-
 export class WebsiteCache {
 	private readonly namespace = "services:websites";
 	private readonly pingIntervalMs = 30_000;

@@ -27,7 +27,7 @@ interface EventSource {
 	table: string;
 	dateColumn: string;
 	category: EventCategory;
-};
+}
 
 const EVENT_SOURCES: EventSource[] = [
 	{

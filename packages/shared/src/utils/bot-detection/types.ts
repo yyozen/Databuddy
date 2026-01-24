@@ -1,6 +1,6 @@
 /**
  * Bot Detection Types & Enums
- * 
+ *
  * Centralized bot categorization and detection configuration
  */
 

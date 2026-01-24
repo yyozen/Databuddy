@@ -316,14 +316,14 @@ export const organizationsRouter = {
 
 			const debugInfo = isDev
 				? {
-					_debug: {
-						userId: context.user?.id ?? null,
-						activeOrganizationId: activeOrgId ?? null,
-						customerId,
-						websiteId: input?.websiteId ?? null,
-						sessionId: context.session?.id ?? null,
-					},
-				}
+						_debug: {
+							userId: context.user?.id ?? null,
+							activeOrganizationId: activeOrgId ?? null,
+							customerId,
+							websiteId: input?.websiteId ?? null,
+							sessionId: context.session?.id ?? null,
+						},
+					}
 				: {};
 
 			// No customer ID means we can't look up billing

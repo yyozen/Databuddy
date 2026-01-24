@@ -130,7 +130,8 @@ const app = new Elysia().post("/llm", async (context) => {
 				const usage = data.usage ?? 0;
 				const usageLimit = data.usage_limit ?? data.included_usage ?? 0;
 				const isUnlimited = data.unlimited ?? false;
-				const usageExceeds150Percent = !isUnlimited && usageLimit > 0 && usage >= usageLimit * 1.5;
+				const usageExceeds150Percent =
+					!isUnlimited && usageLimit > 0 && usage >= usageLimit * 1.5;
 
 				// Block only if usage exceeds 1.5x the limit
 				if (usageExceeds150Percent) {

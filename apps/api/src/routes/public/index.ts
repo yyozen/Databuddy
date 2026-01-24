@@ -19,9 +19,7 @@ export const publicApi = new Elysia({ prefix: "/public" })
 
 		return {
 			success: false,
-			error: isDevelopment
-				? errorMessage
-				: "An internal server error occurred",
+			error: isDevelopment ? errorMessage : "An internal server error occurred",
 			code: code ?? "INTERNAL_SERVER_ERROR",
 		};
 	});

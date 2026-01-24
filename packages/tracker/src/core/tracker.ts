@@ -3,8 +3,8 @@ import type {
 	BaseEvent,
 	ErrorSpan,
 	EventContext,
-	TrackerOptions,
 	TrackEventPayload,
+	TrackerOptions,
 	WebVitalEvent,
 } from "./types";
 import { generateUUIDv4, isDebugMode, isLocalhost, logger } from "./utils";
@@ -120,12 +120,12 @@ export class BaseTracker {
 
 		return Boolean(
 			navigator.webdriver ||
-			window.webdriver ||
-			isHeadless ||
-			window.callPhantom ||
-			window._phantom ||
-			window.selenium ||
-			document.documentElement.getAttribute("webdriver") === "true"
+				window.webdriver ||
+				isHeadless ||
+				window.callPhantom ||
+				window._phantom ||
+				window.selenium ||
+				document.documentElement.getAttribute("webdriver") === "true"
 		);
 	}
 
@@ -306,7 +306,7 @@ export class BaseTracker {
 		let timezone: string | undefined;
 		try {
 			timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-		} catch { }
+		} catch {}
 
 		return {
 			path:
@@ -488,7 +488,10 @@ export class BaseTracker {
 		}
 	}
 
-	trackEvent(name: string, properties?: Record<string, unknown>): Promise<void> {
+	trackEvent(
+		name: string,
+		properties?: Record<string, unknown>
+	): Promise<void> {
 		if (this.shouldSkipTracking()) {
 			return Promise.resolve();
 		}
@@ -506,7 +509,10 @@ export class BaseTracker {
 		this.trackQueue.push(event);
 
 		if (this.trackTimer === null) {
-			this.trackTimer = setTimeout(() => this.flushTrack(), this.options.batchTimeout);
+			this.trackTimer = setTimeout(
+				() => this.flushTrack(),
+				this.options.batchTimeout
+			);
 		}
 
 		if (this.trackQueue.length >= 10) {
@@ -581,7 +587,7 @@ export class BaseTracker {
 		for (const callback of this.routeChangeCallbacks) {
 			try {
 				callback(path);
-			} catch { }
+			} catch {}
 		}
 	}
 

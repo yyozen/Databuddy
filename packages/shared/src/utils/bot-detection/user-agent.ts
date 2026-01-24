@@ -1,6 +1,6 @@
 /**
  * User Agent Parsing Utilities
- * 
+ *
  * Provides user agent parsing and bot name extraction
  */
 

@@ -484,7 +484,10 @@ export async function insertCustomEvents(
 			VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 		),
 		namespace: event.namespace
-			? sanitizeString(event.namespace, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH)
+			? sanitizeString(
+					event.namespace,
+					VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
+				)
 			: undefined,
 		path: event.path
 			? sanitizeString(event.path, VALIDATION_LIMITS.STRING_MAX_LENGTH)
@@ -492,9 +495,9 @@ export async function insertCustomEvents(
 		properties: event.properties ? JSON.stringify(event.properties) : "{}",
 		anonymous_id: event.anonymous_id
 			? sanitizeString(
-				event.anonymous_id,
-				VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
-			)
+					event.anonymous_id,
+					VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
+				)
 			: undefined,
 		session_id: event.session_id
 			? validateSessionId(event.session_id)

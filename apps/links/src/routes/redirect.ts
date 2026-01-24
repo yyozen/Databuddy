@@ -61,7 +61,7 @@ function lookupLinkFromDatabase(slug: string): Promise<CachedLink | null> {
 
 		if (!dbLink) {
 			setAttributes({ link_found: false });
-			await setCachedLinkNotFound(slug).catch(() => { });
+			await setCachedLinkNotFound(slug).catch(() => {});
 			return null;
 		}
 
@@ -80,7 +80,7 @@ function lookupLinkFromDatabase(slug: string): Promise<CachedLink | null> {
 			androidUrl: dbLink.androidUrl,
 		};
 
-		await setCachedLink(slug, link).catch(() => { });
+		await setCachedLink(slug, link).catch(() => {});
 		return link;
 	});
 }

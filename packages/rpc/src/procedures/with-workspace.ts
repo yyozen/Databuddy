@@ -178,7 +178,10 @@ async function checkPermissions<R extends ResourceType>(
 		});
 		return success;
 	} catch (error) {
-		logger.error({ error, resource, permissions }, "Error checking permissions");
+		logger.error(
+			{ error, resource, permissions },
+			"Error checking permissions"
+		);
 		return false;
 	}
 }

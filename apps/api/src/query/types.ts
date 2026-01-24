@@ -46,7 +46,7 @@ export interface Filter {
 	target?: string;
 	/** Apply as HAVING clause instead of WHERE */
 	having?: boolean;
-};
+}
 
 // ============================================================================
 // Field Definition Types - Declarative field building
@@ -57,7 +57,7 @@ export interface ColumnField {
 	type: "column";
 	source: string;
 	alias?: string;
-};
+}
 
 /** Aggregate field - uses aggregate function */
 export interface AggregateField {
@@ -66,14 +66,14 @@ export interface AggregateField {
 	source?: string;
 	condition?: string;
 	alias: string;
-};
+}
 
 /** Expression field - raw SQL expression */
 export interface ExpressionField {
 	type: "expression";
 	expression: string | SqlExpression;
 	alias: string;
-};
+}
 
 /** Window field - aggregate with OVER clause */
 export interface WindowField {
@@ -85,7 +85,7 @@ export interface WindowField {
 		orderBy?: string;
 	};
 	alias: string;
-};
+}
 
 /** Computed field - references pre-built computed metric */
 export interface ComputedField {
@@ -94,7 +94,7 @@ export interface ComputedField {
 	/** Fields to use as inputs (depends on metric) */
 	inputs: string[];
 	alias: string;
-};
+}
 
 /** Union type for all field definitions */
 export type FieldDefinition =
@@ -120,7 +120,7 @@ export interface CTEDefinition {
 	groupBy?: string[];
 	orderBy?: string;
 	limit?: number;
-};
+}
 
 // ============================================================================
 // Time Bucket Configuration
@@ -137,7 +137,7 @@ export interface TimeBucketConfig {
 	alias?: string;
 	/** Format output as string (for hourly data) */
 	format?: boolean;
-};
+}
 
 // ============================================================================
 // Query Configuration
@@ -150,12 +150,12 @@ export interface QueryPlugins {
 	deduplicateGeo?: boolean;
 	mapDeviceTypes?: boolean;
 	sessionAttribution?: boolean;
-};
+}
 
 export interface QueryHelpers {
 	sessionAttributionCTE: (timeField?: string) => string;
 	sessionAttributionJoin: (alias?: string) => string;
-};
+}
 
 export type CustomSqlFn = (
 	websiteId: string,
@@ -242,9 +242,9 @@ export interface QueryRequest {
 	limit?: number;
 	offset?: number;
 	timezone?: string;
-};
+}
 
 export interface CompiledQuery {
 	sql: string;
 	params: Record<string, unknown>;
-};
+}

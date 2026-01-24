@@ -1,6 +1,6 @@
 /**
  * Bot Detection for Links App
- * 
+ *
  * Uses centralized bot detection from @databuddy/shared
  */
 

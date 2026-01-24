@@ -732,16 +732,13 @@ export const websitesRouter = {
 	updateSettings: protectedProcedure
 		.input(updateWebsiteSettingsSchema)
 		.handler(async ({ context, input }) => {
-			const website = await authorizeWebsiteAccess(
-				context,
-				input.id,
-				"update"
-			);
+			const website = await authorizeWebsiteAccess(context, input.id, "update");
 
-			const currentSettings = (website.settings as {
-				allowedOrigins?: string[];
-				allowedIps?: string[];
-			}) ?? {};
+			const currentSettings =
+				(website.settings as {
+					allowedOrigins?: string[];
+					allowedIps?: string[];
+				}) ?? {};
 
 			const newSettings = {
 				...currentSettings,
@@ -767,7 +764,8 @@ export const websitesRouter = {
 			let updatedWebsite: Website;
 			try {
 				updatedWebsite = await websiteService.updateById(input.id, {
-					settings: Object.keys(cleanedSettings).length > 0 ? cleanedSettings : null,
+					settings:
+						Object.keys(cleanedSettings).length > 0 ? cleanedSettings : null,
 				});
 			} catch (error) {
 				if (error instanceof WebsiteNotFoundError) {

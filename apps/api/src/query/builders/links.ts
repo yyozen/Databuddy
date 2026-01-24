@@ -346,7 +346,8 @@ export const LinkShortenerBuilders: Record<string, SimpleQueryConfig> = {
 	link_top_devices: {
 		meta: {
 			title: "Link Top Devices",
-			description: "Device type breakdown for a shortened link (mobile, desktop, tablet).",
+			description:
+				"Device type breakdown for a shortened link (mobile, desktop, tablet).",
 			category: "Links",
 			tags: ["links", "shortener", "devices", "mobile", "desktop"],
 			output_fields: [

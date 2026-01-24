@@ -25,7 +25,7 @@ interface LinkData {
 	ogDescription: string | null;
 	ogImageUrl: string | null;
 	clickCount?: number;
-};
+}
 
 async function getOrganizationIdFromWebsite(
 	websiteId: string
@@ -87,7 +87,7 @@ async function callRPCProcedure(
 								: error.code === "CONFLICT"
 									? "This slug is already taken. Please choose a different one."
 									: error.message ||
-									"An error occurred while processing your request.";
+										"An error occurred while processing your request.";
 
 			throw new Error(userMessage);
 		}

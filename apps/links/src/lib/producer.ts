@@ -39,13 +39,13 @@ class LinksProducer {
 					clientId: "links-producer",
 					...(this.config.username &&
 						this.config.password && {
-						sasl: {
-							mechanism: "scram-sha-256",
-							username: this.config.username,
-							password: this.config.password,
-						},
-						ssl: false,
-					}),
+							sasl: {
+								mechanism: "scram-sha-256",
+								username: this.config.username,
+								password: this.config.password,
+							},
+							ssl: false,
+						}),
 				});
 
 				this.producer = kafka.producer({

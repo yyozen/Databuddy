@@ -41,7 +41,8 @@ export const statement = {
  */
 export type PermissionStatement = typeof statement;
 export type ResourceType = keyof PermissionStatement;
-export type PermissionFor<R extends ResourceType> = PermissionStatement[R][number];
+export type PermissionFor<R extends ResourceType> =
+	PermissionStatement[R][number];
 
 const ac = createAccessControl(statement);
 

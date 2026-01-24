@@ -9,7 +9,10 @@ import { randomUUIDv7 } from "bun";
 import { customAlphabet } from "nanoid";
 import { z } from "zod";
 import { protectedProcedure } from "../orpc";
-import { withWorkspace, workspaceInputSchema } from "../procedures/with-workspace";
+import {
+	withWorkspace,
+	workspaceInputSchema,
+} from "../procedures/with-workspace";
 
 const generateSlug = customAlphabet(
 	"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
@@ -209,7 +212,9 @@ export const linksRouter = {
 						})
 						.returning();
 
-					await setCachedLink(input.slug, toCachedLink(newLink)).catch(() => { });
+					await setCachedLink(input.slug, toCachedLink(newLink)).catch(
+						() => {}
+					);
 
 					return newLink;
 				} catch (error) {
@@ -244,7 +249,7 @@ export const linksRouter = {
 						})
 						.returning();
 
-					await setCachedLink(slug, toCachedLink(newLink)).catch(() => { });
+					await setCachedLink(slug, toCachedLink(newLink)).catch(() => {});
 
 					return newLink;
 				} catch (error) {
@@ -304,7 +309,12 @@ export const linksRouter = {
 					.update(links)
 					.set({
 						...updates,
-						expiresAt: expiresAt !== undefined ? (expiresAt ? new Date(expiresAt) : null) : undefined,
+						expiresAt:
+							expiresAt !== undefined
+								? expiresAt
+									? new Date(expiresAt)
+									: null
+								: undefined,
 						updatedAt: new Date(),
 					})
 					.where(eq(links.id, id))
@@ -314,11 +324,11 @@ export const linksRouter = {
 
 				// If slug changed, invalidate old slug cache
 				if (newSlug !== oldSlug) {
-					await invalidateLinkCache(oldSlug).catch(() => { });
+					await invalidateLinkCache(oldSlug).catch(() => {});
 				}
 
 				// Write-through: cache the updated link
-				await setCachedLink(newSlug, toCachedLink(updatedLink)).catch(() => { });
+				await setCachedLink(newSlug, toCachedLink(updatedLink)).catch(() => {});
 
 				return updatedLink;
 			} catch (error) {
@@ -367,7 +377,7 @@ export const linksRouter = {
 				.where(eq(links.id, input.id));
 
 			// Invalidate the cache for this slug
-			await invalidateLinkCache(link.slug).catch(() => { });
+			await invalidateLinkCache(link.slug).catch(() => {});
 
 			return { success: true };
 		}),

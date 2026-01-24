@@ -214,9 +214,10 @@ async function handleThresholdReached(
 	return { success: true, message: "Email sent successfully" };
 }
 
-function handleProductsUpdated(
-	payload: ProductsUpdatedData
-): { success: boolean; message: string } {
+function handleProductsUpdated(payload: ProductsUpdatedData): {
+	success: boolean;
+	message: string;
+} {
 	const { scenario, customer, updated_product } = payload;
 
 	logger.info(
@@ -262,12 +263,12 @@ function verifyWebhookSignature(
 type WebhookBody =
 	| { type: string; data: ThresholdData | ProductsUpdatedData }
 	| {
-		customer: AutumnCustomer;
-		feature?: AutumnFeature;
-		threshold_type?: ThresholdType;
-		scenario?: ProductScenario;
-		updated_product?: { id: string; name: string };
-	};
+			customer: AutumnCustomer;
+			feature?: AutumnFeature;
+			threshold_type?: ThresholdType;
+			scenario?: ProductScenario;
+			updated_product?: { id: string; name: string };
+	  };
 
 export const autumnWebhook = new Elysia().post(
 	"/autumn",

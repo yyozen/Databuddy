@@ -465,7 +465,6 @@ ORDER BY (client_id, bot_type, timestamp)
 SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1
 `;
 
-
 /**
  * Lean AI call spans table - stores individual AI model calls
  * owner_id: The org or user ID that owns this data (from API key)
@@ -731,7 +730,6 @@ export interface AITrafficSpan {
 	path: string;
 	referrer?: string;
 }
-
 
 export interface UptimeMonitor {
 	site_id: string;

@@ -12,8 +12,6 @@ import {
 	QrCodeIcon,
 	TrashIcon,
 } from "@phosphor-icons/react";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -27,9 +25,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Link } from "@/hooks/use-links";
+import { fromNow, localDayjs } from "@/lib/time";
 import { cn } from "@/lib/utils";
-
-dayjs.extend(relativeTime);
 
 const LINKS_BASE_URL = "https://dby.sh";
 
@@ -78,10 +75,10 @@ function ExpirationBadge({ link }: { link: Link }) {
 		return null;
 	}
 
-	const expiresAt = dayjs(link.expiresAt);
-	const isExpired = expiresAt.isBefore(dayjs());
+	const expiresAt = localDayjs(link.expiresAt);
+	const isExpired = expiresAt.isBefore(localDayjs());
 	const isExpiringSoon =
-		!isExpired && expiresAt.isBefore(dayjs().add(7, "day"));
+		!isExpired && expiresAt.isBefore(localDayjs().add(7, "day"));
 
 	return (
 		<Badge
@@ -173,7 +170,8 @@ interface LinkRowProps {
 
 function LinkRow({ link, onClick, onEdit, onDelete, onShowQr }: LinkRowProps) {
 	const displayTargetUrl = formatTargetUrl(link.targetUrl);
-	const isExpired = link.expiresAt && dayjs(link.expiresAt).isBefore(dayjs());
+	const isExpired =
+		link.expiresAt && localDayjs(link.expiresAt).isBefore(localDayjs());
 
 	const handleCopy = useCallback(
 		async (e?: React.MouseEvent) => {
@@ -226,7 +224,7 @@ function LinkRow({ link, onClick, onEdit, onDelete, onShowQr }: LinkRowProps) {
 			{/* Created date - desktop only */}
 			<div className="hidden w-24 shrink-0 text-right sm:block">
 				<span className="text-muted-foreground text-sm">
-					{dayjs(link.createdAt).fromNow()}
+					{fromNow(link.createdAt)}
 				</span>
 			</div>
 

@@ -18,10 +18,7 @@ export async function GET(request: NextRequest) {
 	}
 
 	if (!ALLOWED_PATHS.includes(path)) {
-		return NextResponse.json(
-			{ error: "Path not allowed" },
-			{ status: 403 }
-		);
+		return NextResponse.json({ error: "Path not allowed" }, { status: 403 });
 	}
 
 	const url = `https://cdn.databuddy.cc${path}`;
@@ -75,9 +72,6 @@ export async function GET(request: NextRequest) {
 		if (error instanceof Error && error.name === "AbortError") {
 			return NextResponse.json({ error: "Request timeout" }, { status: 504 });
 		}
-		return NextResponse.json(
-			{ error: "Failed to fetch" },
-			{ status: 500 }
-		);
+		return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
 	}
 }

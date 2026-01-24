@@ -464,15 +464,15 @@ export function isValidIpFromSettings(
 
 	const trimmedIp = ip.trim();
 
-		for (const allowed of allowedIps) {
-			if (allowed === trimmedIp) {
-				return true;
-			}
-
-			if (allowed.includes("/") && isIpInCidrRange(trimmedIp, allowed)) {
-				return true;
-			}
+	for (const allowed of allowedIps) {
+		if (allowed === trimmedIp) {
+			return true;
 		}
+
+		if (allowed.includes("/") && isIpInCidrRange(trimmedIp, allowed)) {
+			return true;
+		}
+	}
 
 	return false;
 }

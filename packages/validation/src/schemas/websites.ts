@@ -1,9 +1,5 @@
 import z from "zod";
-import {
-	DOMAIN_REGEX,
-	SUBDOMAIN_REGEX,
-	WEBSITE_NAME_REGEX,
-} from "../regexes";
+import { DOMAIN_REGEX, SUBDOMAIN_REGEX, WEBSITE_NAME_REGEX } from "../regexes";
 
 export const websiteNameSchema = z
 	.string()
@@ -65,8 +61,7 @@ export const transferWebsiteToOrgSchema = z.object({
 
 const ipv4Regex =
 	/^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-const ipv6Regex =
-	/^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$/;
+const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$/;
 const cidrRegex =
 	/^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/([0-9]|[1-2][0-9]|3[0-2])$/;
 
@@ -91,14 +86,12 @@ const originSchema = z
 		{ message: "Must be a valid domain (e.g., cal.com, *.cal.com) or *" }
 	);
 
-const ipSchema = z
-	.string()
-	.refine(
-		(val) => {
-			return ipv4Regex.test(val) || ipv6Regex.test(val) || cidrRegex.test(val);
-		},
-		{ message: "Must be a valid IPv4, IPv6, or CIDR notation" }
-	);
+const ipSchema = z.string().refine(
+	(val) => {
+		return ipv4Regex.test(val) || ipv6Regex.test(val) || cidrRegex.test(val);
+	},
+	{ message: "Must be a valid IPv4, IPv6, or CIDR notation" }
+);
 
 export const updateWebsiteSettingsSchema = z.object({
 	id: z.string(),
