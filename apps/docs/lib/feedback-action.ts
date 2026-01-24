@@ -3,10 +3,13 @@
 import { Databuddy } from "@databuddy/sdk/node";
 import type { ActionResponse, Feedback } from "@/components/feedback";
 
+if (!process.env.DATABUDDY_API_KEY) {
+	throw new Error("DATABUDDY_API_KEY environment variable is required");
+}
+
 const client = new Databuddy({
-	websiteId:
-		process.env.NEXT_PUBLIC_DATABUDDY_CLIENT_ID ?? "OXmNQsViBT-FOS_wZCTHc",
-	apiKey: process.env.DATABUDDY_API_KEY ?? "hi",
+	apiKey: process.env.DATABUDDY_API_KEY,
+	websiteId: process.env.DATABUDDY_WEBSITE_ID,
 	debug: process.env.NODE_ENV === "development",
 });
 
@@ -39,14 +42,23 @@ export async function onRateDocs(
 	}
 
 	try {
-		await client.track({
+		const result = await client.track({
 			name: "docs_feedback",
+			websiteId: process.env.DATABUDDY_WEBSITE_ID ?? undefined,
 			properties: {
 				url,
 				opinion: feedback.opinion,
 				message: trimmedMessage,
 			},
 		});
+
+		if (!result.success) {
+			console.error("Failed to track docs feedback:", result.error);
+			return {
+				success: false,
+				error: result.error ?? "Something went wrong. Please try again.",
+			};
+		}
 
 		await client.flush();
 
