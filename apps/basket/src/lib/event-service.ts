@@ -449,3 +449,54 @@ export async function insertAICallSpans(
 		captureError(error, { count: spans.length });
 	}
 }
+
+/**
+ * Insert organization-scoped custom events
+ * owner_id: The org or user ID that owns this data (from API key)
+ * website_id: Optional website scope
+ */
+export async function insertCustomEvents(
+	events: Array<{
+		owner_id: string;
+		website_id?: string;
+		timestamp: number;
+		event_name: string;
+		properties?: Record<string, unknown>;
+		anonymous_id?: string;
+		session_id?: string;
+		source?: string;
+	}>
+): Promise<void> {
+	if (events.length === 0) {
+		return;
+	}
+
+	const spans = events.map((event) => ({
+		owner_id: event.owner_id,
+		website_id: event.website_id,
+		timestamp: event.timestamp,
+		event_name: sanitizeString(
+			event.event_name,
+			VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
+		),
+		properties: event.properties ? JSON.stringify(event.properties) : "{}",
+		anonymous_id: event.anonymous_id
+			? sanitizeString(
+				event.anonymous_id,
+				VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
+			)
+			: undefined,
+		session_id: event.session_id
+			? validateSessionId(event.session_id)
+			: undefined,
+		source: event.source
+			? sanitizeString(event.source, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH)
+			: undefined,
+	}));
+
+	try {
+		await sendEventBatch("analytics-custom-events", spans);
+	} catch (error) {
+		captureError(error, { count: spans.length });
+	}
+}

@@ -30,7 +30,9 @@ const DEFAULT_MAX_QUEUE_SIZE = 1000;
 const DEFAULT_MAX_DEDUPLICATION_CACHE_SIZE = 10_000;
 
 export class Databuddy {
-	private readonly clientId: string;
+	private readonly apiKey: string;
+	private readonly websiteId?: string;
+	private readonly source?: string;
 	private readonly apiUrl: string;
 	private readonly logger: Logger;
 	private readonly enableBatching: boolean;
@@ -45,11 +47,13 @@ export class Databuddy {
 	private readonly maxDeduplicationCacheSize: number;
 
 	constructor(config: DatabuddyConfig) {
-		if (!config.clientId || typeof config.clientId !== "string") {
-			throw new Error("clientId is required and must be a string");
+		if (!config.apiKey || typeof config.apiKey !== "string") {
+			throw new Error("apiKey is required and must be a string");
 		}
 
-		this.clientId = config.clientId.trim();
+		this.apiKey = config.apiKey.trim();
+		this.websiteId = config.websiteId?.trim();
+		this.source = config.source?.trim();
 		this.apiUrl = config.apiUrl?.trim() || DEFAULT_API_URL;
 		this.enableBatching = config.enableBatching !== false;
 		this.batchSize = Math.min(config.batchSize || DEFAULT_BATCH_SIZE, 100);
@@ -70,7 +74,9 @@ export class Databuddy {
 		}
 
 		this.logger.info("Initialized", {
-			clientId: this.clientId,
+			hasApiKey: true,
+			websiteId: this.websiteId,
+			source: this.source,
 			apiUrl: this.apiUrl,
 			enableBatching: this.enableBatching,
 			batchSize: this.batchSize,
@@ -89,6 +95,13 @@ export class Databuddy {
 	 * await client.track({
 	 *   name: 'user_signup',
 	 *   properties: { plan: 'pro', source: 'web' }
+	 * });
+	 *
+	 * // With website scope
+	 * await client.track({
+	 *   name: 'page_view',
+	 *   websiteId: 'website-uuid',
+	 *   properties: { path: '/pricing' }
 	 * });
 	 * ```
 	 */
@@ -111,6 +124,8 @@ export class Databuddy {
 				...this.globalProperties,
 				...(event.properties || {}),
 			},
+			websiteId: event.websiteId ?? this.websiteId,
+			source: event.source ?? this.source,
 		};
 
 		const processedEvent = await this.applyMiddleware(batchEvent);
@@ -146,40 +161,43 @@ export class Databuddy {
 	}
 
 	/**
-	 * Convert BatchEventInput to CustomEventSpan format expected by /events endpoint
+	 * Convert BatchEventInput to format expected by /track endpoint
 	 */
-	private toCustomEventSpan(event: BatchEventInput) {
+	private toTrackPayload(event: BatchEventInput) {
 		const timestamp = event.timestamp
 			? Math.floor(event.timestamp)
 			: Date.now();
 
 		return {
+			name: event.name,
 			timestamp,
-			path: "",
-			eventName: event.name,
-			anonymousId: event.anonymousId ?? null,
-			sessionId: event.sessionId ?? null,
-			properties: event.properties ?? null,
+			properties: event.properties ?? undefined,
+			anonymousId: event.anonymousId ?? undefined,
+			sessionId: event.sessionId ?? undefined,
+			websiteId: event.websiteId ?? undefined,
+			source: event.source ?? undefined,
 		};
 	}
 
 	private async send(event: BatchEventInput): Promise<EventResponse> {
 		try {
-			const url = `${this.apiUrl}/events?client_id=${encodeURIComponent(this.clientId)}`;
-			const customEventSpan = this.toCustomEventSpan(event);
+			const url = `${this.apiUrl}/track`;
+			const payload = this.toTrackPayload(event);
 
 			this.logger.info("📤 SENDING SINGLE EVENT:", {
-				eventName: customEventSpan.eventName,
-				properties: JSON.stringify(customEventSpan.properties, null, 2),
-				propertiesCount: Object.keys(customEventSpan.properties || {}).length,
+				name: payload.name,
+				websiteId: payload.websiteId,
+				source: payload.source,
+				properties: JSON.stringify(payload.properties, null, 2),
 			});
 
 			const response = await fetch(url, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					Authorization: `Bearer ${this.apiKey}`,
 				},
-				body: JSON.stringify([customEventSpan]),
+				body: JSON.stringify(payload),
 			});
 
 			if (!response.ok) {
@@ -317,6 +335,8 @@ export class Databuddy {
 				...this.globalProperties,
 				...(event.properties || {}),
 			},
+			websiteId: event.websiteId ?? this.websiteId,
+			source: event.source ?? this.source,
 		}));
 
 		const processedEvents: BatchEventInput[] = [];
@@ -348,30 +368,25 @@ export class Databuddy {
 		}
 
 		try {
-			const url = `${this.apiUrl}/events?client_id=${encodeURIComponent(this.clientId)}`;
-			const customEventSpans = processedEvents.map((event) =>
-				this.toCustomEventSpan(event)
+			const url = `${this.apiUrl}/track`;
+			const payloads = processedEvents.map((event) =>
+				this.toTrackPayload(event)
 			);
 
 			this.logger.info("📦 SENDING BATCH EVENTS:", {
-				count: customEventSpans.length,
-				firstEventName: customEventSpans[0]?.eventName,
-				firstEventProperties: JSON.stringify(
-					customEventSpans[0]?.properties,
-					null,
-					2
-				),
-				firstEventPropertiesCount: Object.keys(
-					customEventSpans[0]?.properties || {}
-				).length,
+				count: payloads.length,
+				firstEventName: payloads[0]?.name,
+				firstWebsiteId: payloads[0]?.websiteId,
+				firstSource: payloads[0]?.source,
 			});
 
 			const response = await fetch(url, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					Authorization: `Bearer ${this.apiKey}`,
 				},
-				body: JSON.stringify(customEventSpans),
+				body: JSON.stringify(payloads),
 			});
 
 			if (!response.ok) {

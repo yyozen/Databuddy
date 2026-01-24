@@ -13,6 +13,7 @@ import type { context } from "@opentelemetry/api";
 import basketRouter from "@routes/basket";
 import emailRouter from "@routes/email";
 import llmRouter from "@routes/llm";
+import { trackRoute } from "@routes/track";
 import { closeGeoIPReader } from "@utils/ip-geo";
 import { Elysia } from "elysia";
 
@@ -108,6 +109,7 @@ const app = new Elysia()
 	.use(basketRouter)
 	.use(emailRouter)
 	.use(llmRouter)
+	.use(trackRoute)
 	.get("/health", function healthCheck() {
 		return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
 	});
