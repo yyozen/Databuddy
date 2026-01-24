@@ -4,8 +4,9 @@ import { Databuddy } from "@databuddy/sdk/node";
 import type { ActionResponse, Feedback } from "@/components/feedback";
 
 const client = new Databuddy({
-	clientId:
+	websiteId:
 		process.env.NEXT_PUBLIC_DATABUDDY_CLIENT_ID ?? "OXmNQsViBT-FOS_wZCTHc",
+	apiKey: process.env.DATABUDDY_API_KEY ?? "hi",
 	debug: process.env.NODE_ENV === "development",
 });
 

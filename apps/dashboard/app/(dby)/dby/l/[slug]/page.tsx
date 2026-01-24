@@ -1,4 +1,10 @@
 import { db } from "@databuddy/db";
+import {
+	type CachedLink,
+	getCachedLink,
+	setCachedLink,
+	setCachedLinkNotFound,
+} from "@databuddy/redis";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
@@ -12,19 +18,48 @@ function generateOgImageUrl(title: string, description?: string): string {
 	return `${OG_IMAGE_BASE}?${params.toString()}`;
 }
 
-async function getLinkBySlug(slug: string) {
-	const link = await db.query.links.findFirst({
+async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
+	const cached = await getCachedLink(slug).catch(() => null);
+	if (cached) {
+		return cached;
+	}
+
+	const dbLink = await db.query.links.findFirst({
 		where: (links, { and, eq, isNull }) =>
 			and(eq(links.slug, slug), isNull(links.deletedAt)),
 		columns: {
 			id: true,
 			targetUrl: true,
+			expiresAt: true,
+			expiredRedirectUrl: true,
 			ogTitle: true,
 			ogDescription: true,
 			ogImageUrl: true,
 			ogVideoUrl: true,
+			iosUrl: true,
+			androidUrl: true,
 		},
 	});
+
+	if (!dbLink) {
+		await setCachedLinkNotFound(slug).catch(() => {});
+		return null;
+	}
+
+	const link: CachedLink = {
+		id: dbLink.id,
+		targetUrl: dbLink.targetUrl,
+		expiresAt: dbLink.expiresAt?.toISOString() ?? null,
+		expiredRedirectUrl: dbLink.expiredRedirectUrl,
+		ogTitle: dbLink.ogTitle,
+		ogDescription: dbLink.ogDescription,
+		ogImageUrl: dbLink.ogImageUrl,
+		ogVideoUrl: dbLink.ogVideoUrl,
+		iosUrl: dbLink.iosUrl,
+		androidUrl: dbLink.androidUrl,
+	};
+
+	await setCachedLink(slug, link).catch(() => {});
 	return link;
 }
 
