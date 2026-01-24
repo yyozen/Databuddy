@@ -423,6 +423,7 @@ CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.custom_events (
   
   event_name LowCardinality(String) CODEC(ZSTD(1)),
   namespace LowCardinality(Nullable(String)) CODEC(ZSTD(1)),
+  path Nullable(String) CODEC(ZSTD(1)),
   properties String CODEC(ZSTD(1)),
   
   anonymous_id Nullable(String) CODEC(ZSTD(1)),
@@ -677,6 +678,8 @@ export interface CustomEvent {
 	website_id?: string;
 	timestamp: number;
 	event_name: string;
+	namespace?: string;
+	path?: string;
 	properties: string;
 	anonymous_id?: string;
 	session_id?: string;

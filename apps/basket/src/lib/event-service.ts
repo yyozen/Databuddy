@@ -464,6 +464,7 @@ export async function insertCustomEvents(
 		timestamp: number;
 		event_name: string;
 		namespace?: string;
+		path?: string;
 		properties?: Record<string, unknown>;
 		anonymous_id?: string;
 		session_id?: string;
@@ -484,6 +485,9 @@ export async function insertCustomEvents(
 		),
 		namespace: event.namespace
 			? sanitizeString(event.namespace, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH)
+			: undefined,
+		path: event.path
+			? sanitizeString(event.path, VALIDATION_LIMITS.STRING_MAX_LENGTH)
 			: undefined,
 		properties: event.properties ? JSON.stringify(event.properties) : "{}",
 		anonymous_id: event.anonymous_id

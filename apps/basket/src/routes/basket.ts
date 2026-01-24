@@ -362,6 +362,7 @@ const app = new Elysia()
 				website_id: clientId,
 				timestamp: event.timestamp,
 				event_name: event.eventName,
+				path: event.path,
 				properties: event.properties as Record<string, unknown> | undefined,
 				anonymous_id: event.anonymousId ?? undefined,
 				session_id: event.sessionId ?? undefined,
