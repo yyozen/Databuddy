@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "./logo";
 import { NavLink } from "./nav-link";
 
-export type NavbarProps = {
+export interface NavbarProps {
 	stars?: number | null;
 };
 

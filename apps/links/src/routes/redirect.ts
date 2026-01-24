@@ -15,11 +15,11 @@ import { isBot, isSocialBot } from "../utils/bot-detection";
 import { getTargetUrl } from "../utils/device-targeting";
 import { extractIp, getGeo } from "../utils/geo";
 import { hashIp } from "../utils/hash";
-import { generateOgHtml } from "../utils/og-html";
 import { parseUserAgent } from "../utils/user-agent";
 
 const EXPIRED_URL = "https://app.databuddy.cc/dby/expired";
 const NOT_FOUND_URL = "https://app.databuddy.cc/dby/not-found";
+const PROXY_URL = "https://app.databuddy.cc/dby/l";
 const RATE_LIMIT = { requests: 100, windowSeconds: 60 };
 
 function lookupLinkFromCache(
@@ -242,14 +242,11 @@ export const redirectRoute = new Elysia().get(
 			request_is_social_bot: socialBot,
 		});
 
-		const hasOg =
-			link.ogTitle ?? link.ogDescription ?? link.ogImageUrl ?? link.ogVideoUrl;
-		if (hasOg && socialBot) {
+		// Redirect social bots to proxy page for proper OG metadata
+		if (socialBot) {
 			setAttributes({ redirect_result: "og_preview" });
-			set.headers = { ...headers, "Content-Type": "text/html; charset=utf-8" };
-			return new Response(generateOgHtml(link, request.url, targetUrl), {
-				status: 200,
-			});
+			set.headers = headers;
+			return redirect(`${PROXY_URL}/${slug}`, 302);
 		}
 
 		if (bot) {
