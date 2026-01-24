@@ -147,7 +147,6 @@ export default function LinkStatsLayout({ children }: LinkStatsLayoutProps) {
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			{/* Page Header */}
 			{isLoadingLink ? (
 				<div className="box-border flex h-12 shrink-0 items-center gap-2 border-border border-b bg-accent/30 px-3">
 					<Skeleton className="h-4 w-12" />
@@ -163,11 +162,9 @@ export default function LinkStatsLayout({ children }: LinkStatsLayoutProps) {
 				/>
 			)}
 
-			{/* Date Range Toolbar */}
 			<div className="sticky top-0 right-0 left-0 z-50 shrink-0 overscroll-contain bg-background md:top-0 md:left-84">
 				<div className="flex h-10 items-center justify-between border-b pr-4">
 					<div className="flex h-full items-center">
-						{/* Granularity Toggle */}
 						<Button
 							className={clsx(getGranularityButtonClass("daily"), "border-r")}
 							onClick={() => setCurrentGranularityAtomState("daily")}
@@ -190,7 +187,6 @@ export default function LinkStatsLayout({ children }: LinkStatsLayoutProps) {
 							Hourly
 						</Button>
 
-						{/* Quick Range Buttons */}
 						{QUICK_RANGES.map((range) => {
 							const isActive = isQuickRangeActive(range);
 							return (
@@ -211,7 +207,6 @@ export default function LinkStatsLayout({ children }: LinkStatsLayoutProps) {
 							);
 						})}
 
-						{/* Date Range Picker */}
 						<div className="flex h-full items-center pl-1">
 							<DateRangePicker
 								className="w-auto"
@@ -247,7 +242,6 @@ export default function LinkStatsLayout({ children }: LinkStatsLayoutProps) {
 				</div>
 			</div>
 
-			{/* Content */}
 			<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
 				{children}
 			</div>

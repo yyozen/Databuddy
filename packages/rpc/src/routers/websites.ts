@@ -16,6 +16,7 @@ import {
 	transferWebsiteSchema,
 	transferWebsiteToOrgSchema,
 	updateWebsiteSchema,
+	updateWebsiteSettingsSchema,
 } from "@databuddy/validation";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
@@ -726,5 +727,71 @@ export const websitesRouter = {
 				);
 				throw error;
 			}
+		}),
+
+	updateSettings: protectedProcedure
+		.input(updateWebsiteSettingsSchema)
+		.handler(async ({ context, input }) => {
+			const website = await authorizeWebsiteAccess(
+				context,
+				input.id,
+				"update"
+			);
+
+			const currentSettings = (website.settings as {
+				allowedOrigins?: string[];
+				allowedIps?: string[];
+			}) ?? {};
+
+			const newSettings = {
+				...currentSettings,
+				...(input.settings?.allowedOrigins !== undefined && {
+					allowedOrigins:
+						input.settings.allowedOrigins.length > 0
+							? input.settings.allowedOrigins
+							: undefined,
+				}),
+				...(input.settings?.allowedIps !== undefined && {
+					allowedIps:
+						input.settings.allowedIps.length > 0
+							? input.settings.allowedIps
+							: undefined,
+				}),
+			};
+
+			// Remove undefined values
+			const cleanedSettings = Object.fromEntries(
+				Object.entries(newSettings).filter(([_, v]) => v !== undefined)
+			);
+
+			let updatedWebsite: Website;
+			try {
+				updatedWebsite = await websiteService.updateById(input.id, {
+					settings: Object.keys(cleanedSettings).length > 0 ? cleanedSettings : null,
+				});
+			} catch (error) {
+				if (error instanceof WebsiteNotFoundError) {
+					throw new ORPCError("NOT_FOUND", { message: error.message });
+				}
+				if (error instanceof ORPCError) {
+					throw error;
+				}
+				throw new ORPCError("INTERNAL_SERVER_ERROR", {
+					message: error instanceof Error ? error.message : String(error),
+				});
+			}
+
+			await invalidateWebsiteCaches(input.id, context.user.id);
+
+			logger.info(
+				{
+					websiteId: input.id,
+					userId: context.user.id,
+					event: "Website Settings Updated",
+				},
+				`Security settings updated for ${website.domain}`
+			);
+
+			return updatedWebsite;
 		}),
 };

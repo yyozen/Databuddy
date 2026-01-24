@@ -1,4 +1,9 @@
-import { getWebsiteByIdV2, isValidOrigin } from "@hooks/auth";
+import {
+	getWebsiteByIdV2,
+	isValidIpFromSettings,
+	isValidOrigin,
+	isValidOriginFromSettings,
+} from "@hooks/auth";
 import { logBlockedTraffic } from "@lib/blocked-traffic";
 import { sendEvent } from "@lib/producer";
 import { captureError, record, setAttributes } from "@lib/tracing";
@@ -21,6 +26,31 @@ interface ValidationResult {
 
 interface ValidationError {
 	error: Response;
+}
+
+interface WebsiteSecuritySettings {
+	allowedOrigins?: string[];
+	allowedIps?: string[];
+}
+
+export function getWebsiteSecuritySettings(
+	settings: unknown
+): WebsiteSecuritySettings | null {
+	if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+		return null;
+	}
+
+	const s = settings as Record<string, unknown>;
+	return {
+		allowedOrigins: Array.isArray(s.allowedOrigins)
+			? s.allowedOrigins.filter(
+				(item): item is string => typeof item === "string"
+			)
+			: undefined,
+		allowedIps: Array.isArray(s.allowedIps)
+			? s.allowedIps.filter((item): item is string => typeof item === "string")
+			: undefined,
+	};
 }
 
 /**
@@ -155,7 +185,8 @@ export function validateRequest(
 					const usage = data.usage ?? 0;
 					const usageLimit = data.usage_limit ?? data.included_usage ?? 0;
 					const isUnlimited = data.unlimited ?? false;
-					const usageExceeds150Percent = !isUnlimited && usageLimit > 0 && usage >= usageLimit * 1.5;
+					const usageExceeds150Percent =
+						!isUnlimited && usageLimit > 0 && usage >= usageLimit * 1.5;
 
 					// Block only if usage exceeds 1.5x the limit
 					if (usageExceeds150Percent) {
@@ -206,7 +237,47 @@ export function validateRequest(
 		}
 
 		const origin = request.headers.get("origin");
-		if (
+		const ip = extractIpFromRequest(request);
+
+		const securitySettings = getWebsiteSecuritySettings(website.settings);
+		const allowedOrigins = securitySettings?.allowedOrigins;
+		const allowedIps = securitySettings?.allowedIps;
+
+		// Check origin against settings if configured
+		if (origin && allowedOrigins && allowedOrigins.length > 0) {
+			if (
+				!(await record("isValidOriginFromSettings", () =>
+					isValidOriginFromSettings(origin, allowedOrigins)
+				))
+			) {
+				logBlockedTraffic(
+					request,
+					body,
+					query,
+					"origin_not_authorized",
+					"Security Check",
+					undefined,
+					clientId
+				);
+				setAttributes({
+					validation_failed: true,
+					validation_reason: "origin_not_authorized",
+					request_origin: origin,
+				});
+				return {
+					error: new Response(
+						JSON.stringify({
+							status: "error",
+							message: "Origin not authorized",
+						}),
+						{
+							status: 403,
+							headers: { "Content-Type": "application/json" },
+						}
+					),
+				};
+			}
+		} else if (
 			origin &&
 			!(await record("isValidOrigin", () =>
 				isValidOrigin(origin, website.domain)
@@ -240,13 +311,48 @@ export function validateRequest(
 			};
 		}
 
+		// Check IP against settings if configured
+		if (
+			ip &&
+			allowedIps &&
+			allowedIps.length > 0 &&
+			!(await record("isValidIpFromSettings", () =>
+				isValidIpFromSettings(ip, allowedIps)
+			))
+		) {
+			logBlockedTraffic(
+				request,
+				body,
+				query,
+				"ip_not_authorized",
+				"Security Check",
+				undefined,
+				clientId
+			);
+			setAttributes({
+				validation_failed: true,
+				validation_reason: "ip_not_authorized",
+				request_ip: ip,
+			});
+			return {
+				error: new Response(
+					JSON.stringify({
+						status: "error",
+						message: "IP address not authorized",
+					}),
+					{
+						status: 403,
+						headers: { "Content-Type": "application/json" },
+					}
+				),
+			};
+		}
+
 		const userAgent =
 			sanitizeString(
 				request.headers.get("user-agent"),
 				VALIDATION_LIMITS.STRING_MAX_LENGTH
 			) || "";
-
-		const ip = extractIpFromRequest(request);
 
 		setAttributes({
 			validation_success: true,
@@ -274,7 +380,7 @@ export function checkForBot(
 	body: any,
 	query: any,
 	clientId: string,
-	userAgent: string,
+	userAgent: string
 ): Promise<{ error?: Response } | undefined> {
 	return record("checkForBot", () => {
 		const botCheck = detectBot(userAgent, request);
@@ -297,7 +403,7 @@ export function checkForBot(
 		}
 
 		// Handle TRACK_ONLY action - log to AI traffic table
-		if (action === "track_only") {	
+		if (action === "track_only") {
 			const path =
 				body?.path ||
 				body?.url ||
@@ -342,7 +448,7 @@ export function checkForBot(
 			botCheck.reason || "unknown_bot",
 			botCheck.category || "Bot Detection",
 			botCheck.botName,
-			clientId,
+			clientId
 		);
 
 		setAttributes({

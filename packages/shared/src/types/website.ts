@@ -9,6 +9,11 @@ export interface Website {
 	deletedAt: Date | null;
 	organizationId: string;
 	integrations: unknown | null;
+	settings: {
+		allowedOrigins?: string[];
+		allowedIps?: string[];
+		[key: string]: unknown;
+	} | null;
 }
 
 export interface MiniChartDataPoint {

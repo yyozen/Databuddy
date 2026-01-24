@@ -320,6 +320,7 @@ export const websites = pgTable(
 		deletedAt: timestamp({ precision: 3 }),
 		organizationId: text("organization_id").notNull(),
 		integrations: jsonb(),
+		settings: jsonb(),
 	},
 	(table) => [
 		uniqueIndex("websites_org_domain_unique").on(
