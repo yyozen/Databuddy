@@ -7,7 +7,7 @@ import {
 	XIcon,
 } from "@phosphor-icons/react";
 import { useDebouncedValue } from "@tanstack/react-pacer";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -80,8 +80,7 @@ export function LinksSearchBar({
 		return result;
 	}, [links, debouncedSearch, sortBy]);
 
-	// Notify parent of filtered links
-	useMemo(() => {
+	useEffect(() => {
 		onFilteredLinksChange(filteredAndSortedLinks);
 	}, [filteredAndSortedLinks, onFilteredLinksChange]);
 
