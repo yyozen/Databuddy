@@ -135,13 +135,18 @@ Databuddy is **compliant by default** - no consent banners or cookie notices req
 
 ### Access Control Settings
 
-Configure allowed origins and IP addresses to restrict who can send analytics data to your website.
+Configure allowed origins and IP addresses to control who can send analytics data to your website.
 
 #### Allowed Origins
 
-Control which domains can send analytics events to your website. This provides an additional layer of security beyond domain verification.
+By default, Databuddy only accepts requests from your website's registered domain. To track analytics from third-party services (like [Cal.com](/docs/Integrations/cal), embedded widgets, or other integrations), you need to add those domains to your allowed origins.
 
 **Access**: [Website Settings → Security](https://app.databuddy.cc/websites/[id]/settings/security)
+
+**Default Behavior:**
+
+- Only requests from your registered domain are accepted
+- Requests from other origins are blocked with a 403 error
 
 **Supported Formats:**
 
@@ -152,8 +157,8 @@ Control which domains can send analytics events to your website. This provides a
 
 **How It Works:**
 
-1. When `allowedOrigins` is configured, only requests from those origins are accepted
-2. If not configured, the system falls back to standard domain validation
+1. By default, only your registered domain can send analytics data
+2. Add additional origins to allow third-party integrations
 3. Requests from unauthorized origins are blocked with a 403 error
 
 **Example Configuration:**
@@ -203,7 +208,7 @@ Allowed IPs:
 </Callout>
 
 <Callout type="info">
-  **Backward Compatibility**: Websites without security settings configured will continue to work with standard domain validation. These settings are optional and provide additional security layers.
+  **Third-Party Integrations**: If you use services like Cal.com, embedded widgets, or other integrations that need to send analytics from their domains, add those domains to your allowed origins.
 </Callout>
 
 ### Data Validation

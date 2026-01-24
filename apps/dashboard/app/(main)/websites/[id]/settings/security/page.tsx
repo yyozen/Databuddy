@@ -315,11 +315,8 @@ export default function SecurityPage() {
 						<div>
 							<Label className="font-medium text-sm">Allowed Origins</Label>
 							<p className="mt-1 text-muted-foreground text-xs">
-								Specify which domains are allowed to send analytics data. Use
-								<code className="mx-1 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-									*
-								</code>
-								to allow all domains, or add specific domains like
+								By default, only your registered domain can send analytics. Add
+								additional origins for third-party integrations like
 								<code className="mx-1 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
 									cal.com
 								</code>
@@ -327,6 +324,11 @@ export default function SecurityPage() {
 								<code className="mx-1 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
 									*.cal.com
 								</code>
+								. Use
+								<code className="mx-1 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+									*
+								</code>
+								to allow all origins.
 							</p>
 						</div>
 						<TagInput
@@ -370,7 +372,7 @@ export default function SecurityPage() {
 				{/* Info Banner */}
 				<section className="px-4 py-5 sm:px-6">
 					<NoticeBanner
-						description="When restrictions are enabled, only requests from the specified origins or IP addresses will be accepted. Leave empty to allow all sources."
+						description="By default, only your registered domain can send analytics. Add origins here for third-party integrations like Cal.com or embedded widgets."
 						icon={<LockIcon />}
 					/>
 				</section>
