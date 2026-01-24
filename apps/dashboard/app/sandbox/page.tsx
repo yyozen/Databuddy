@@ -43,16 +43,18 @@ export default function SandboxPage() {
 	const [websiteId, setWebsiteId] = useState(
 		"5ced32e5-0219-4e75-a18a-ad9826f85698"
 	);
+	const [namespace, setNamespace] = useState("billing");
 	const [source, setSource] = useState("sandbox");
 	const [apiUrl, setApiUrl] = useState("http://localhost:4000");
 	const [batchSize, setBatchSize] = useState("5");
 	const [enableDeduplication, setEnableDeduplication] = useState(true);
 
 	// Event Configuration
-	const [eventName, setEventName] = useState("sandbox_test_event");
+	const [eventName, setEventName] = useState("subscription_created");
 	const [eventId, setEventId] = useState("");
+	const [eventNamespace, setEventNamespace] = useState("");
 	const [eventProperties, setEventProperties] = useState(
-		'{\n  "test": true,\n  "environment": "sandbox"\n}'
+		'{\n  "plan": "pro",\n  "amount": 29.99\n}'
 	);
 
 	// Global Properties
@@ -80,6 +82,7 @@ export default function SandboxPage() {
 	const config = {
 		apiKey,
 		websiteId: websiteId || undefined,
+		namespace: namespace || undefined,
 		source: source || undefined,
 		apiUrl: apiUrl || undefined,
 		batchSize: Number.parseInt(batchSize, 10) || 5,
@@ -103,6 +106,7 @@ export default function SandboxPage() {
 		const result = await testTrackEventAction(config, {
 			name: eventName,
 			eventId: eventId || undefined,
+			namespace: eventNamespace || undefined,
 			properties: parseJson(eventProperties, {}) as Record<string, unknown>,
 		});
 		addResult(result);
@@ -114,6 +118,7 @@ export default function SandboxPage() {
 		const events = parseJson(batchEvents, []) as Array<{
 			name: string;
 			eventId?: string;
+			namespace?: string;
 			properties?: Record<string, unknown>;
 		}>;
 		const result = await testBatchEventsAction(config, events);
@@ -127,6 +132,7 @@ export default function SandboxPage() {
 		const result = await testWithGlobalPropertiesAction(config, globals, {
 			name: eventName,
 			eventId: eventId || undefined,
+			namespace: eventNamespace || undefined,
 			properties: parseJson(eventProperties, {}) as Record<string, unknown>,
 		});
 		addResult(result);
@@ -140,6 +146,7 @@ export default function SandboxPage() {
 			{
 				name: eventName,
 				eventId: eventId || undefined,
+				namespace: eventNamespace || undefined,
 				properties: parseJson(eventProperties, {}) as Record<string, unknown>,
 			},
 			middlewareAction
@@ -155,6 +162,7 @@ export default function SandboxPage() {
 			{
 				name: eventName,
 				eventId: eventId || `dedup_test_${Date.now()}`,
+				namespace: eventNamespace || undefined,
 				properties: parseJson(eventProperties, {}) as Record<string, unknown>,
 			},
 			Number.parseInt(deduplicationSendCount, 10) || 3
@@ -168,6 +176,7 @@ export default function SandboxPage() {
 		const events = parseJson(batchEvents, []) as Array<{
 			name: string;
 			eventId?: string;
+			namespace?: string;
 			properties?: Record<string, unknown>;
 		}>;
 		const result = await testBatchingBehaviorAction(config, events);
@@ -223,28 +232,39 @@ export default function SandboxPage() {
 						</div>
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">
+								<label className="font-medium text-sm" htmlFor="namespace">
+									Namespace (default)
+								</label>
+								<Input
+									id="namespace"
+									onChange={(e) => setNamespace(e.target.value)}
+									placeholder="billing, auth, api..."
+									value={namespace}
+								/>
+							</div>
+							<div className="space-y-2">
 								<label className="font-medium text-sm" htmlFor="source">
-									Source
+									Source (default)
 								</label>
 								<Input
 									id="source"
 									onChange={(e) => setSource(e.target.value)}
-									placeholder="backend, cli, api..."
+									placeholder="backend, webhook, cli..."
 									value={source}
 								/>
 							</div>
-							<div className="space-y-2">
-								<label className="font-medium text-sm" htmlFor="batchSize">
-									Batch Size
-								</label>
-								<Input
-									id="batchSize"
-									onChange={(e) => setBatchSize(e.target.value)}
-									placeholder="5"
-									type="number"
-									value={batchSize}
-								/>
-							</div>
+						</div>
+						<div className="space-y-2">
+							<label className="font-medium text-sm" htmlFor="batchSize">
+								Batch Size
+							</label>
+							<Input
+								id="batchSize"
+								onChange={(e) => setBatchSize(e.target.value)}
+								placeholder="5"
+								type="number"
+								value={batchSize}
+							/>
 						</div>
 						<div className="space-y-2">
 							<label className="font-medium text-sm" htmlFor="apiUrl">
@@ -292,7 +312,7 @@ export default function SandboxPage() {
 								<Input
 									id="eventName"
 									onChange={(e) => setEventName(e.target.value)}
-									placeholder="event_name"
+									placeholder="subscription_created"
 									value={eventName}
 								/>
 							</div>
@@ -307,6 +327,17 @@ export default function SandboxPage() {
 									value={eventId}
 								/>
 							</div>
+						</div>
+						<div className="space-y-2">
+							<label className="font-medium text-sm" htmlFor="eventNamespace">
+								Namespace Override (optional)
+							</label>
+							<Input
+								id="eventNamespace"
+								onChange={(e) => setEventNamespace(e.target.value)}
+								placeholder="Leave empty to use default from config"
+								value={eventNamespace}
+							/>
 						</div>
 						<div className="space-y-2">
 							<label className="font-medium text-sm" htmlFor="eventProperties">

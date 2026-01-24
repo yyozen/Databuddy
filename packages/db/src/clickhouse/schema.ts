@@ -422,6 +422,7 @@ CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.custom_events (
   timestamp DateTime64(3, 'UTC') CODEC(Delta(8), ZSTD(1)),
   
   event_name LowCardinality(String) CODEC(ZSTD(1)),
+  namespace LowCardinality(Nullable(String)) CODEC(ZSTD(1)),
   properties String CODEC(ZSTD(1)),
   
   anonymous_id Nullable(String) CODEC(ZSTD(1)),
@@ -430,6 +431,7 @@ CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.custom_events (
   source LowCardinality(Nullable(String)) CODEC(ZSTD(1)),
   
   INDEX idx_event_name event_name TYPE bloom_filter(0.01) GRANULARITY 1,
+  INDEX idx_namespace namespace TYPE bloom_filter(0.01) GRANULARITY 1,
   INDEX idx_website_id website_id TYPE bloom_filter(0.01) GRANULARITY 1,
   INDEX idx_source source TYPE bloom_filter(0.01) GRANULARITY 1
 ) ENGINE = MergeTree

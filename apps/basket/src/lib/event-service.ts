@@ -454,6 +454,8 @@ export async function insertAICallSpans(
  * Insert organization-scoped custom events
  * owner_id: The org or user ID that owns this data (from API key)
  * website_id: Optional website scope
+ * namespace: Optional logical grouping (e.g., 'billing', 'auth', 'api')
+ * source: Optional origin identifier (e.g., 'backend', 'webhook', 'cli')
  */
 export async function insertCustomEvents(
 	events: Array<{
@@ -461,6 +463,7 @@ export async function insertCustomEvents(
 		website_id?: string;
 		timestamp: number;
 		event_name: string;
+		namespace?: string;
 		properties?: Record<string, unknown>;
 		anonymous_id?: string;
 		session_id?: string;
@@ -479,6 +482,9 @@ export async function insertCustomEvents(
 			event.event_name,
 			VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH
 		),
+		namespace: event.namespace
+			? sanitizeString(event.namespace, VALIDATION_LIMITS.SHORT_STRING_MAX_LENGTH)
+			: undefined,
 		properties: event.properties ? JSON.stringify(event.properties) : "{}",
 		anonymous_id: event.anonymous_id
 			? sanitizeString(

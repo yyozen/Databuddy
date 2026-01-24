@@ -8,6 +8,7 @@ import { z } from "zod";
 const trackEventSchema = z.union([
 	z.object({
 		name: z.string().min(1).max(256),
+		namespace: z.string().max(64).optional(),
 		timestamp: z.union([z.number(), z.string(), z.date()]).optional(),
 		properties: z.record(z.string(), z.unknown()).optional(),
 		anonymousId: z.string().max(256).optional(),
@@ -18,6 +19,7 @@ const trackEventSchema = z.union([
 	z.array(
 		z.object({
 			name: z.string().min(1).max(256),
+			namespace: z.string().max(64).optional(),
 			timestamp: z.union([z.number(), z.string(), z.date()]).optional(),
 			properties: z.record(z.string(), z.unknown()).optional(),
 			anonymousId: z.string().max(256).optional(),
@@ -138,6 +140,7 @@ export const trackRoute = new Elysia().post("/track", async ({ body, query, requ
 			website_id: event.websiteId ?? auth.websiteId,
 			timestamp: parseTimestamp(event.timestamp, now),
 			event_name: event.name,
+			namespace: event.namespace,
 			properties: event.properties,
 			anonymous_id: event.anonymousId,
 			session_id: event.sessionId,

@@ -5,6 +5,7 @@ import { type BatchEventInput, Databuddy } from "@databuddy/sdk/node";
 interface SdkConfig {
 	apiKey: string;
 	websiteId?: string;
+	namespace?: string;
 	source?: string;
 	apiUrl?: string;
 	enableBatching?: boolean;
@@ -15,6 +16,7 @@ interface SdkConfig {
 interface TrackEventInput {
 	name: string;
 	eventId?: string;
+	namespace?: string;
 	properties?: Record<string, unknown>;
 }
 
@@ -58,6 +60,7 @@ export async function testTrackEventAction(
 		const client = new Databuddy({
 			apiKey: config.apiKey,
 			websiteId: config.websiteId || undefined,
+			namespace: config.namespace || undefined,
 			source: config.source || undefined,
 			apiUrl: config.apiUrl || "http://localhost:4000",
 			enableBatching: config.enableBatching ?? false,
@@ -69,6 +72,7 @@ export async function testTrackEventAction(
 		const result = await client.track({
 			name: event.name,
 			eventId: event.eventId,
+			namespace: event.namespace,
 			properties: event.properties,
 		});
 
@@ -99,6 +103,7 @@ export async function testBatchEventsAction(
 		const client = new Databuddy({
 			apiKey: config.apiKey,
 			websiteId: config.websiteId || undefined,
+			namespace: config.namespace || undefined,
 			source: config.source || undefined,
 			apiUrl: config.apiUrl || "http://localhost:4000",
 			enableBatching: false,
@@ -110,6 +115,7 @@ export async function testBatchEventsAction(
 			type: "custom" as const,
 			name: e.name,
 			eventId: e.eventId,
+			namespace: e.namespace,
 			properties: e.properties,
 		}));
 
@@ -140,6 +146,7 @@ export async function testWithGlobalPropertiesAction(
 		const client = new Databuddy({
 			apiKey: config.apiKey,
 			websiteId: config.websiteId || undefined,
+			namespace: config.namespace || undefined,
 			source: config.source || undefined,
 			apiUrl: config.apiUrl || "http://localhost:4000",
 			enableBatching: false,
@@ -153,6 +160,7 @@ export async function testWithGlobalPropertiesAction(
 		const result = await client.track({
 			name: event.name,
 			eventId: event.eventId,
+			namespace: event.namespace,
 			properties: event.properties,
 		});
 
@@ -184,6 +192,7 @@ export async function testMiddlewareAction(
 		const client = new Databuddy({
 			apiKey: config.apiKey,
 			websiteId: config.websiteId || undefined,
+			namespace: config.namespace || undefined,
 			source: config.source || undefined,
 			apiUrl: config.apiUrl || "http://localhost:4000",
 			enableBatching: false,
@@ -223,6 +232,7 @@ export async function testMiddlewareAction(
 		const result = await client.track({
 			name: event.name,
 			eventId: event.eventId,
+			namespace: event.namespace,
 			properties: event.properties,
 		});
 
@@ -251,6 +261,7 @@ export async function testDeduplicationAction(
 		const client = new Databuddy({
 			apiKey: config.apiKey,
 			websiteId: config.websiteId || undefined,
+			namespace: config.namespace || undefined,
 			source: config.source || undefined,
 			apiUrl: config.apiUrl || "http://localhost:4000",
 			enableBatching: false,
@@ -264,6 +275,7 @@ export async function testDeduplicationAction(
 			const result = await client.track({
 				name: event.name,
 				eventId: event.eventId,
+				namespace: event.namespace,
 				properties: event.properties,
 			});
 			results.push(result);
@@ -300,6 +312,7 @@ export async function testBatchingBehaviorAction(
 		const client = new Databuddy({
 			apiKey: config.apiKey,
 			websiteId: config.websiteId || undefined,
+			namespace: config.namespace || undefined,
 			source: config.source || undefined,
 			apiUrl: config.apiUrl || "http://localhost:4000",
 			enableBatching: true,
@@ -318,6 +331,7 @@ export async function testBatchingBehaviorAction(
 			const result = await client.track({
 				name: event.name,
 				eventId: event.eventId,
+				namespace: event.namespace,
 				properties: event.properties,
 			});
 			results.push(result);

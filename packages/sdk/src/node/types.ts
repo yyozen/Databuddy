@@ -15,7 +15,9 @@ export interface DatabuddyConfig {
 	apiKey: string;
 	/** Optional default website ID to scope events to */
 	websiteId?: string;
-	/** Optional default source identifier for events (e.g., 'backend', 'cli', 'api') */
+	/** Optional default namespace for logical grouping (e.g., 'billing', 'auth', 'api') */
+	namespace?: string;
+	/** Optional default source identifier for events (e.g., 'backend', 'webhook', 'cli') */
 	source?: string;
 	/** Custom API endpoint (default: https://basket.databuddy.cc) */
 	apiUrl?: string;
@@ -54,6 +56,8 @@ export interface CustomEventInput {
 	properties?: Record<string, unknown> | null;
 	/** Website ID to scope the event to (overrides default) */
 	websiteId?: string | null;
+	/** Namespace for logical grouping (overrides default) */
+	namespace?: string | null;
 	/** Source identifier (overrides default) */
 	source?: string | null;
 }
@@ -84,6 +88,8 @@ export interface BatchEventInput {
 	properties?: Record<string, unknown> | null;
 	/** Website ID to scope the event to */
 	websiteId?: string | null;
+	/** Namespace for logical grouping */
+	namespace?: string | null;
 	/** Source identifier */
 	source?: string | null;
 }

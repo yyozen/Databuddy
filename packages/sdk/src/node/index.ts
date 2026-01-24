@@ -32,6 +32,7 @@ const DEFAULT_MAX_DEDUPLICATION_CACHE_SIZE = 10_000;
 export class Databuddy {
 	private readonly apiKey: string;
 	private readonly websiteId?: string;
+	private readonly namespace?: string;
 	private readonly source?: string;
 	private readonly apiUrl: string;
 	private readonly logger: Logger;
@@ -53,6 +54,7 @@ export class Databuddy {
 
 		this.apiKey = config.apiKey.trim();
 		this.websiteId = config.websiteId?.trim();
+		this.namespace = config.namespace?.trim();
 		this.source = config.source?.trim();
 		this.apiUrl = config.apiUrl?.trim() || DEFAULT_API_URL;
 		this.enableBatching = config.enableBatching !== false;
@@ -76,6 +78,7 @@ export class Databuddy {
 		this.logger.info("Initialized", {
 			hasApiKey: true,
 			websiteId: this.websiteId,
+			namespace: this.namespace,
 			source: this.source,
 			apiUrl: this.apiUrl,
 			enableBatching: this.enableBatching,
@@ -125,6 +128,7 @@ export class Databuddy {
 				...(event.properties || {}),
 			},
 			websiteId: event.websiteId ?? this.websiteId,
+			namespace: event.namespace ?? this.namespace,
 			source: event.source ?? this.source,
 		};
 
@@ -170,6 +174,7 @@ export class Databuddy {
 
 		return {
 			name: event.name,
+			namespace: event.namespace ?? undefined,
 			timestamp,
 			properties: event.properties ?? undefined,
 			anonymousId: event.anonymousId ?? undefined,
@@ -336,6 +341,7 @@ export class Databuddy {
 				...(event.properties || {}),
 			},
 			websiteId: event.websiteId ?? this.websiteId,
+			namespace: event.namespace ?? this.namespace,
 			source: event.source ?? this.source,
 		}));
 
