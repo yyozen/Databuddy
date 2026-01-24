@@ -34,6 +34,7 @@ interface Metadata {
 export const API_SCOPES = [
 	"read:data",
 	"write:llm",
+	"track:events",
 ] as const;
 
 const scopeEnum = z.enum(API_SCOPES);
