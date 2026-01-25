@@ -172,7 +172,16 @@ Vue uses the same props as React but with kebab-case naming:
 
 const client = new Databuddy({
   // Required
-  clientId: process.env.DATABUDDY_CLIENT_ID!,
+  apiKey: process.env.DATABUDDY_API_KEY!,
+  
+  // Optional: Scope events to a specific website
+  websiteId: process.env.DATABUDDY_WEBSITE_ID,
+  
+  // Optional: Logical grouping (e.g., 'billing', 'auth', 'api')
+  namespace: "api",
+  
+  // Optional: Source identifier (e.g., 'backend', 'webhook', 'cli')
+  source: "backend",
   
   // API
   apiUrl: "https://basket.databuddy.cc",
@@ -205,7 +214,10 @@ const client = new Databuddy({
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `clientId` | `string` | Required | Your client ID |
+| `apiKey` | `string` | Required | Your API key for authentication |
+| `websiteId` | `string` | - | Optional default website ID to scope events |
+| `namespace` | `string` | - | Optional default namespace for logical grouping |
+| `source` | `string` | - | Optional default source identifier for events |
 | `apiUrl` | `string` | `https://basket.databuddy.cc` | API endpoint |
 | `enableBatching` | `boolean` | `true` | Enable event batching |
 | `batchSize` | `number` | `10` | Batch size (max 100) |
@@ -354,9 +366,9 @@ DATABUDDY_API_KEY=your-api-key`}
 ### Node.js / Server
 
 <CodeBlock language="bash" filename=".env">
-  {`DATABUDDY_CLIENT_ID=your-client-id
-DATABUDDY_API_KEY=your-api-key
-DATABUDDY_API_URL=https://basket.databuddy.cc`}
+  {`DATABUDDY_API_KEY=your-api-key
+DATABUDDY_WEBSITE_ID=your-website-id  # Optional
+DATABUDDY_API_URL=https://basket.databuddy.cc  # Optional`}
 </CodeBlock>
 
 ## Related

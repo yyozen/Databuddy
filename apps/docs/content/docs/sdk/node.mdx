@@ -19,7 +19,7 @@ The Node SDK is perfect for tracking server-side events like API calls, backgrou
   {`import { Databuddy } from '@databuddy/sdk/node';
 
 const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!,
+  apiKey: process.env.DATABUDDY_API_KEY!,
   enableBatching: true
 });
 
@@ -46,7 +46,7 @@ await client.flush(); // Important in serverless!`}
 
 // Initialize the client
 const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!
+  apiKey: process.env.DATABUDDY_API_KEY!
 });
 
 // Track an event
@@ -67,7 +67,7 @@ In serverless environments, always flush before the function exits:
   {`import { Databuddy } from '@databuddy/sdk/node';
 
 const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!,
+  apiKey: process.env.DATABUDDY_API_KEY!,
   enableBatching: true
 });
 
@@ -87,15 +87,19 @@ export async function handler(event) {
 ## Configuration
 
 <CodeBlock language="tsx">
-  {`interface DatabuddyConfig {
-  clientId: string;              // Required: Your client ID
-  apiUrl?: string;              // Default: 'https://basket.databuddy.cc'
-  debug?: boolean;              // Enable debug logging
-  logger?: Logger;              // Custom logger instance
-  enableBatching?: boolean;     // Default: true
-  batchSize?: number;           // Default: 10, Max: 100
-  batchTimeout?: number;        // Default: 2000ms
-  maxQueueSize?: number;        // Default: 1000
+  interface DatabuddyConfig {
+    apiKey: string;               // Required: Your API key for authentication
+    websiteId?: string;           // Optional: Default website ID to scope events
+    namespace?: string;           // Optional: Default namespace for logical grouping
+    source?: string;              // Optional: Default source identifier for events
+    apiUrl?: string;              // Default: 'https://basket.databuddy.cc'
+    debug?: boolean;              // Enable debug logging
+    logger?: Logger;              // Custom logger instance
+    enableBatching?: boolean;     // Default: true
+    batchSize?: number;           // Default: 10, Max: 100
+    batchTimeout?: number;        // Default: 2000ms
+    maxQueueSize?: number;        // Default: 1000
+  }
 }`}
 </CodeBlock>
 
@@ -175,6 +179,48 @@ await client.flush();`}
 </CodeBlock>
 
 ## Event Tracking Patterns
+
+### Per-Event Options
+
+You can override the default `websiteId`, `namespace`, and `source` for individual events:
+
+<CodeBlock language="tsx">
+  {`// Set defaults in config
+const client = new Databuddy({
+  apiKey: process.env.DATABUDDY_API_KEY!,
+  websiteId: "default-website",
+  namespace: "api",
+  source: "backend"
+});
+
+// Override per-event
+await client.track({
+  name: 'payment_processed',
+  websiteId: 'billing-service',  // Override default websiteId
+  namespace: 'payments',          // Override default namespace
+  source: 'stripe-webhook',       // Override default source
+  properties: {
+    amount: 99.99,
+    currency: 'USD'
+  }
+});
+
+// Mix defaults and overrides
+await client.track({
+  name: 'user_login',
+  namespace: 'auth',  // Only override namespace
+  properties: {
+    method: 'oauth',
+    provider: 'google'
+  }
+});`}
+</CodeBlock>
+
+**Use Cases:**
+
+- **websiteId**: Scope events to different websites or projects within your organization
+- **namespace**: Group events logically (e.g., `billing`, `auth`, `api`, `webhook`)
+- **source**: Identify where the event originated (e.g., `backend`, `webhook`, `cli`, `cron-job`)
 
 ### E-commerce Events
 
@@ -327,7 +373,7 @@ export function CheckoutButton() {
 import { NextResponse } from 'next/server';
 
 const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!
+  apiKey: process.env.DATABUDDY_API_KEY!
 });
 
 export async function POST(request: Request) {
@@ -379,7 +425,7 @@ These are UUID v4 strings with a prefix. The web SDK stores them in localStorage
 import { NextResponse } from 'next/server';
 
 const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!,
+  apiKey: process.env.DATABUDDY_API_KEY!,
   enableBatching: false
 });
 
@@ -405,7 +451,7 @@ export async function POST(request: Request) {
 import { Databuddy } from '@databuddy/sdk/node';
 
 const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!
+  apiKey: process.env.DATABUDDY_API_KEY!
 });
 
 const app = express();
@@ -440,7 +486,7 @@ process.on('SIGTERM', async () => {
   {`import { Databuddy } from '@databuddy/sdk/node';
 
 const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!,
+  apiKey: process.env.DATABUDDY_API_KEY!,
   enableBatching: true
 });
 
@@ -482,7 +528,7 @@ export const handler = async (event: any) => {
 export default {
   async fetch(request: Request, env: Env) {
     const client = new Databuddy({
-      clientId: env.DATABUDDY_CLIENT_ID,
+      apiKey: env.DATABUDDY_API_KEY,
       enableBatching: false
     });
     
@@ -502,7 +548,7 @@ export default {
   {`import { Databuddy } from '@databuddy/sdk/node';
 
 const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!
+  apiKey: process.env.DATABUDDY_API_KEY!
 });
 
 Bun.serve({
@@ -523,12 +569,15 @@ Bun.serve({
 Events are automatically batched when batch size or timeout is reached:
 
 <CodeBlock language="tsx">
-  {`const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!,
-  enableBatching: true,
-  batchSize: 20,
-  batchTimeout: 5000
-});
+  const client = new Databuddy({
+    apiKey: process.env.DATABUDDY_API_KEY!,
+    websiteId: process.env.DATABUDDY_WEBSITE_ID,
+    namespace: "api",
+    source: "backend",
+    enableBatching: true,
+    batchSize: 20,
+    batchTimeout: 5000
+  });
 
 // These will be batched automatically
 await client.track({ name: 'event1' });
@@ -570,7 +619,7 @@ The SDK is fully typed:
   {`import { Databuddy, type CustomEventInput } from '@databuddy/sdk/node';
 
 const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!,
+  apiKey: process.env.DATABUDDY_API_KEY!,
   enableBatching: true
 });
 
@@ -631,11 +680,13 @@ await client.track({
 
 | Issue | Solution |
 |-------|----------|
-| Events not appearing | Verify `clientId`, check network in logs with `debug: true` |
+| Events not appearing | Verify `apiKey`, check network in logs with `debug: true` |
+| Authentication errors | Ensure `apiKey` is valid and has proper permissions |
 | TypeScript errors | Ensure TypeScript 4.5+, check `@databuddy/sdk` version |
 | Serverless events missing | Always call `await client.flush()` before function exits |
 | High latency | Enable batching: `enableBatching: true, batchSize: 50` |
 | Memory issues | Reduce `maxQueueSize`, flush more frequently |
+| Wrong website/namespace | Check per-event `websiteId`, `namespace`, and `source` values |
 
 ## Related
 

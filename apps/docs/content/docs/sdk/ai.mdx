@@ -27,6 +27,7 @@ import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
 const { track } = databuddyLLM({
+  // apiKey is required - get it from your Databuddy dashboard
   apiKey: process.env.DATABUDDY_API_KEY
 });
 
@@ -46,13 +47,16 @@ Create a tracking instance with your configuration:
   {`import { databuddyLLM } from "@databuddy/sdk/ai";
 
 const { track, transport } = databuddyLLM({
+  // Required: API key for authentication
   apiKey: process.env.DATABUDDY_API_KEY,
+  // Optional: Custom API endpoint (defaults to https://basket.databuddy.cc/llm)
   apiUrl: "https://basket.databuddy.cc/llm",
   computeCosts: true,
   privacyMode: false,
   maxContentSize: 1_048_576,
   onSuccess: (call) => console.log("AI call completed:", call.traceId),
   onError: (call) => console.error("AI call failed:", call.error)
+});
 });`}
 </CodeBlock>
 
@@ -60,8 +64,8 @@ const { track, transport } = databuddyLLM({
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `apiKey` | `string` | `DATABUDDY_API_KEY` env var | API key for authentication |
-| `apiUrl` | `string` | `https://basket.databuddy.cc/llm` | API endpoint |
+| `apiKey` | `string` | `DATABUDDY_API_KEY` env var | **Required.** API key for authentication |
+| `apiUrl` | `string` | `https://basket.databuddy.cc/llm` | API endpoint (or `DATABUDDY_API_URL` env var) |
 | `transport` | `Transport` | HTTP transport | Custom transport function |
 | `computeCosts` | `boolean` | `true` | Compute token costs using TokenLens |
 | `privacyMode` | `boolean` | `false` | Don't capture input/output content |
@@ -393,8 +397,11 @@ The SDK works with any Vercel AI SDK provider:
 ## Environment Variables
 
 <CodeBlock language="bash">
-  {`DATABUDDY_API_KEY=your-api-key
-DATABUDDY_API_URL=https://basket.databuddy.cc/llm  # Optional`}
+  {`# Required: API key for authentication
+DATABUDDY_API_KEY=your-api-key
+
+# Optional: Custom API endpoint (defaults to https://basket.databuddy.cc/llm)
+DATABUDDY_API_URL=https://basket.databuddy.cc/llm`}
 </CodeBlock>
 
 ## Related
