@@ -322,16 +322,10 @@ export const linksRouter = {
 
 				const newSlug = updatedLink.slug;
 
-				// Always invalidate old slug cache first to ensure stale data is cleared
-				await invalidateLinkCache(oldSlug).catch(() => { });
-
-				// If slug changed, also invalidate new slug in case it was previously cached as "not found"
-				if (newSlug !== oldSlug) {
-					await invalidateLinkCache(newSlug).catch(() => { });
-				}
-
-				// Write-through: cache the updated link
-				await setCachedLink(newSlug, toCachedLink(updatedLink)).catch(() => { });
+				await Promise.all([
+					invalidateLinkCache(oldSlug),
+					oldSlug !== newSlug ? invalidateLinkCache(newSlug) : Promise.resolve(),
+				]).catch(() => { });
 
 				return updatedLink;
 			} catch (error) {
