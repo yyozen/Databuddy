@@ -109,6 +109,7 @@
         "@databuddy/auth": "workspace:*",
         "@databuddy/db": "workspace:*",
         "@databuddy/env": "workspace:*",
+        "@databuddy/redis": "workspace:*",
         "@databuddy/rpc": "workspace:*",
         "@databuddy/sdk": "workspace:*",
         "@databuddy/shared": "workspace:*",
@@ -488,7 +489,7 @@
     },
     "packages/sdk": {
       "name": "@databuddy/sdk",
-      "version": "2.3.28",
+      "version": "2.3.29",
       "devDependencies": {
         "@ai-sdk/provider": "^3.0.2",
         "@types/node": "^20.0.0",

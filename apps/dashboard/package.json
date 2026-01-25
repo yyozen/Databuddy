@@ -13,6 +13,7 @@
     "@databuddy/auth": "workspace:*",
     "@databuddy/db": "workspace:*",
     "@databuddy/env": "workspace:*",
+    "@databuddy/redis": "workspace:*",
     "@databuddy/rpc": "workspace:*",
     "@databuddy/sdk": "workspace:*",
     "@databuddy/shared": "workspace:*",
