@@ -213,7 +213,7 @@ export const linksRouter = {
 						.returning();
 
 					await setCachedLink(input.slug, toCachedLink(newLink)).catch(
-						() => {}
+						() => { }
 					);
 
 					return newLink;
@@ -249,7 +249,7 @@ export const linksRouter = {
 						})
 						.returning();
 
-					await setCachedLink(slug, toCachedLink(newLink)).catch(() => {});
+					await setCachedLink(slug, toCachedLink(newLink)).catch(() => { });
 
 					return newLink;
 				} catch (error) {
@@ -322,13 +322,16 @@ export const linksRouter = {
 
 				const newSlug = updatedLink.slug;
 
-				// If slug changed, invalidate old slug cache
+				// Always invalidate old slug cache first to ensure stale data is cleared
+				await invalidateLinkCache(oldSlug).catch(() => { });
+
+				// If slug changed, also invalidate new slug in case it was previously cached as "not found"
 				if (newSlug !== oldSlug) {
-					await invalidateLinkCache(oldSlug).catch(() => {});
+					await invalidateLinkCache(newSlug).catch(() => { });
 				}
 
 				// Write-through: cache the updated link
-				await setCachedLink(newSlug, toCachedLink(updatedLink)).catch(() => {});
+				await setCachedLink(newSlug, toCachedLink(updatedLink)).catch(() => { });
 
 				return updatedLink;
 			} catch (error) {
@@ -377,7 +380,7 @@ export const linksRouter = {
 				.where(eq(links.id, input.id));
 
 			// Invalidate the cache for this slug
-			await invalidateLinkCache(link.slug).catch(() => {});
+			await invalidateLinkCache(link.slug).catch(() => { });
 
 			return { success: true };
 		}),

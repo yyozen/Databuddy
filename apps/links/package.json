@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "bun --watch run src/index.ts",
-    "build": "bun build src/index.ts --target node --outdir dist --minify-syntax --minify-whitespace",
-    "start": "bun run dist/index.js"
+    "build": "bun build src/index.ts --compile --target bun --outfile dist/server --minify-syntax --minify-whitespace",
+    "start": "./dist/server"
   },
   "dependencies": {
     "@databuddy/db": "workspace:*",
