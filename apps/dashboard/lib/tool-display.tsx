@@ -185,6 +185,22 @@ const TOOLS: Record<string, ToolConfig> = {
 		(input) => confirmLabel(input, "Preparing funnel", "Creating funnel"),
 		(output) => mutationOutput(output, "Funnel created"),
 	],
+	update_funnel: [
+		(input) => confirmLabel(input, "Preparing update", "Updating funnel"),
+		(output) => mutationOutput(output, "Funnel updated"),
+	],
+	delete_funnel: [
+		(input) => confirmLabel(input, "Preparing deletion", "Deleting funnel"),
+		(output) => {
+			if (output.preview === true || output.confirmationRequired === true) {
+				return <p className="text-muted-foreground">Confirm deletion</p>;
+			}
+			if (output.success === true) {
+				return <p className="text-primary">Funnel deleted</p>;
+			}
+			return null;
+		},
+	],
 
 	// Goal tools
 	list_goals: [
@@ -245,14 +261,45 @@ const TOOLS: Record<string, ToolConfig> = {
 		},
 	],
 
-	// Misc tools
-	annotations: [
-		() => "Loading annotations",
+	// Annotation tools
+	list_annotations: [
+		() => "Fetching annotations",
 		(output) => {
 			const count = countArray(output, "annotations");
 			return count !== null ? <p>Found {count} annotations</p> : null;
 		},
 	],
+	get_annotation_by_id: [
+		() => "Getting annotation",
+		(output) => {
+			const text = output.text as string | undefined;
+			return text ? (
+				<p className="max-w-[200px] truncate">{text}</p>
+			) : null;
+		},
+	],
+	create_annotation: [
+		(input) => confirmLabel(input, "Preparing annotation", "Creating annotation"),
+		(output) => mutationOutput(output, "Annotation created"),
+	],
+	update_annotation: [
+		(input) => confirmLabel(input, "Preparing update", "Updating annotation"),
+		(output) => mutationOutput(output, "Annotation updated"),
+	],
+	delete_annotation: [
+		(input) => confirmLabel(input, "Preparing deletion", "Deleting annotation"),
+		(output) => {
+			if (output.preview === true || output.confirmationRequired === true) {
+				return <p className="text-muted-foreground">Confirm deletion</p>;
+			}
+			if (output.success === true) {
+				return <p className="text-primary">Annotation deleted</p>;
+			}
+			return null;
+		},
+	],
+
+	// Misc tools
 	competitor_analysis: [
 		() => "Analyzing competitors",
 		(output) => (output.success === true ? <p>Analysis complete</p> : null),

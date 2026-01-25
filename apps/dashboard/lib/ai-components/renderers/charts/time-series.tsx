@@ -13,7 +13,7 @@ import {
 	YAxis,
 } from "recharts";
 import { Card } from "@/components/ui/card";
-import type { ChartComponentProps } from "../types";
+import type { ChartComponentProps } from "../../types";
 
 const COLORS = [
 	"var(--chart-1)",

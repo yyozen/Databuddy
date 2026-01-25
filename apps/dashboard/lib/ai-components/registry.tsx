@@ -1,35 +1,29 @@
 import {
 	type DistributionProps,
 	DistributionRenderer,
-} from "./renderers/distribution";
+} from "./renderers/charts/distribution";
 import {
-	type FunnelPreviewProps,
-	FunnelPreviewRenderer,
-} from "./renderers/funnels/preview";
+	type TimeSeriesProps,
+	TimeSeriesRenderer,
+} from "./renderers/charts/time-series";
 import {
 	type FunnelsListProps,
 	FunnelsListRenderer,
 } from "./renderers/funnels/list";
 import {
+	type FunnelPreviewProps,
+	FunnelPreviewRenderer,
+} from "./renderers/funnels/preview";
+import { type GoalsListProps, GoalsListRenderer } from "./renderers/goals/list";
+import {
 	type GoalPreviewProps,
 	GoalPreviewRenderer,
 } from "./renderers/goals/preview";
-import {
-	type GoalsListProps,
-	GoalsListRenderer,
-} from "./renderers/goals/list";
+import { type LinksListProps, LinksListRenderer } from "./renderers/links/list";
 import {
 	type LinkPreviewProps,
 	LinkPreviewRenderer,
 } from "./renderers/links/preview";
-import {
-	type LinksListProps,
-	LinksListRenderer,
-} from "./renderers/links/list";
-import {
-	type TimeSeriesProps,
-	TimeSeriesRenderer,
-} from "./renderers/time-series";
 import type {
 	ComponentDefinition,
 	ComponentRegistry,

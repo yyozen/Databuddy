@@ -24,6 +24,7 @@ const ANALYTICS_RULES = `<agent-specific-rules>
 - Identify anomalies proactively: unusual spikes, drops, patterns
 
 **Tools Usage:**
+- BATCH ALL INDEPENDENT QUERIES IN ONE CALL: When asked for a report or multiple metrics, call ALL independent tools together in your first response. Example: if user asks for "conversion report", call list_goals + list_funnels + execute_query_builder(traffic) + execute_query_builder(events) ALL AT ONCE, then analyze results together.
 - Use get_top_pages for page analytics
 - Use execute_query_builder for pre-built analytics queries (PREFERRED - use this for common queries like traffic, sessions, pages, devices, geo, errors, performance, etc.)
 - Use execute_sql_query ONLY for custom SQL queries that aren't covered by query builders

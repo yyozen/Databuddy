@@ -10,7 +10,7 @@ import {
 	Tooltip,
 } from "recharts";
 import { Card } from "@/components/ui/card";
-import type { ChartComponentProps } from "../types";
+import type { ChartComponentProps } from "../../types";
 
 const COLORS = [
 	"#3b82f6", // Blue

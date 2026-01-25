@@ -12,7 +12,7 @@ export const COMMON_AGENT_RULES = `<behavior_rules>
 
 **Tool Usage:**
 - Call the right tool directly - don't overthink or add extra steps
-- Use parallel tool calls when possible
+- ALWAYS batch independent tool calls together - if you need goals AND funnels AND traffic data, call all 3 tools in ONE response, not sequentially
 - For links questions: use list_links, NOT execute_query_builder
 - For analytics: use execute_query_builder or get_top_pages
 - For SQL: only SELECT/WITH, use {paramName:Type} placeholders
