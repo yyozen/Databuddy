@@ -159,3 +159,35 @@ export interface GoalPreviewInput {
 		ignoreHistoricData?: boolean;
 	};
 }
+
+// Annotations types
+
+export interface AnnotationsListInput {
+	type: "annotations-list";
+	title?: string;
+	annotations: Array<{
+		id: string;
+		text: string;
+		annotationType: "point" | "line" | "range";
+		xValue: string;
+		xEndValue?: string | null;
+		color?: string | null;
+		tags?: string[];
+		isPublic?: boolean;
+		createdAt?: string;
+	}>;
+}
+
+export interface AnnotationPreviewInput {
+	type: "annotation-preview";
+	mode: "create" | "update" | "delete";
+	annotation: {
+		text: string;
+		annotationType: "point" | "line" | "range";
+		xValue: string;
+		xEndValue?: string | null;
+		color?: string | null;
+		tags?: string[];
+		isPublic?: boolean;
+	};
+}

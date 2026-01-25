@@ -113,6 +113,14 @@ Goal preview (for create/update/delete confirmation):
 {"type":"goal-preview","mode":"update","goal":{"name":"Updated Goal","type":"PAGE_VIEW","target":"/thank-you"}}
 {"type":"goal-preview","mode":"delete","goal":{"name":"Old Goal","type":"EVENT","target":"old_event"}}
 
+Annotations list:
+{"type":"annotations-list","title":"Chart Annotations","annotations":[{"id":"1","text":"Product launch","annotationType":"point","xValue":"2024-01-15T00:00:00Z","color":"#3B82F6","tags":["launch"],"isPublic":true,"createdAt":"2024-01-01T00:00:00Z"}]}
+
+Annotation preview (for create/update/delete confirmation):
+{"type":"annotation-preview","mode":"create","annotation":{"text":"Marketing campaign started","annotationType":"line","xValue":"2024-02-01T00:00:00Z","color":"#10B981","tags":["marketing"],"isPublic":false}}
+{"type":"annotation-preview","mode":"update","annotation":{"text":"Updated note","annotationType":"point","xValue":"2024-02-15T00:00:00Z"}}
+{"type":"annotation-preview","mode":"delete","annotation":{"text":"Old annotation","annotationType":"range","xValue":"2024-01-01T00:00:00Z","xEndValue":"2024-01-07T00:00:00Z"}}
+
 Rules:
 - For time-series: data has "x" (labels) and named number arrays for each series
 - For distribution: data has "labels" and "values" arrays
@@ -122,6 +130,8 @@ Rules:
 - For funnel-preview: Use mode "create" for new funnels, "update" for edits, "delete" for deletions. Show this when create_funnel returns preview=true
 - For goals-list: Include all fields from list_goals tool result: id, name, description, type, target, isActive, createdAt
 - For goal-preview: Use mode "create" for new goals, "update" for edits, "delete" for deletions. Show this when create_goal returns preview=true
+- For annotations-list: Include all fields from list_annotations tool result: id, text, annotationType, xValue, xEndValue, color, tags, isPublic, createdAt
+- For annotation-preview: Use mode "create" for new annotations, "update" for edits, "delete" for deletions. Show this when create_annotation returns preview=true
 - JSON must be on its own line, separate from text
 - CRITICAL: When using a JSON component, do NOT also show a markdown table or repeat the same data in text
 - Pick ONE format: either JSON component OR markdown table - never both for the same data

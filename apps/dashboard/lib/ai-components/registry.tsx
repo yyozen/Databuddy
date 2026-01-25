@@ -1,4 +1,12 @@
 import {
+	type AnnotationsListProps,
+	AnnotationsListRenderer,
+} from "./renderers/annotations/list";
+import {
+	type AnnotationPreviewProps,
+	AnnotationPreviewRenderer,
+} from "./renderers/annotations/preview";
+import {
 	type DistributionProps,
 	DistributionRenderer,
 } from "./renderers/charts/distribution";
@@ -25,6 +33,8 @@ import {
 	LinkPreviewRenderer,
 } from "./renderers/links/preview";
 import type {
+	AnnotationPreviewInput,
+	AnnotationsListInput,
 	ComponentDefinition,
 	ComponentRegistry,
 	DistributionInput,
@@ -203,6 +213,48 @@ function isGoalPreviewInput(
 }
 
 // ============================================
+// Annotations Validators
+// ============================================
+
+function isAnnotationsListInput(
+	input: RawComponentInput
+): input is RawComponentInput & AnnotationsListInput {
+	if (input.type !== "annotations-list") {
+		return false;
+	}
+	if (!Array.isArray(input.annotations)) {
+		return false;
+	}
+	return input.annotations.every(
+		(annotation) =>
+			typeof annotation === "object" &&
+			annotation !== null &&
+			typeof (annotation as Record<string, unknown>).id === "string" &&
+			typeof (annotation as Record<string, unknown>).text === "string" &&
+			typeof (annotation as Record<string, unknown>).xValue === "string"
+	);
+}
+
+function isAnnotationPreviewInput(
+	input: RawComponentInput
+): input is RawComponentInput & AnnotationPreviewInput {
+	if (input.type !== "annotation-preview") {
+		return false;
+	}
+	const mode = input.mode as string;
+	if (!["create", "update", "delete"].includes(mode)) {
+		return false;
+	}
+	const annotation = input.annotation as Record<string, unknown> | undefined;
+	if (!annotation || typeof annotation !== "object") {
+		return false;
+	}
+	return (
+		typeof annotation.text === "string" && typeof annotation.xValue === "string"
+	);
+}
+
+// ============================================
 // Chart Transformers
 // ============================================
 
@@ -293,6 +345,28 @@ function toGoalPreviewProps(input: GoalPreviewInput): GoalPreviewProps {
 }
 
 // ============================================
+// Annotations Transformers
+// ============================================
+
+function toAnnotationsListProps(
+	input: AnnotationsListInput
+): AnnotationsListProps {
+	return {
+		title: input.title,
+		annotations: input.annotations,
+	};
+}
+
+function toAnnotationPreviewProps(
+	input: AnnotationPreviewInput
+): AnnotationPreviewProps {
+	return {
+		mode: input.mode,
+		annotation: input.annotation,
+	};
+}
+
+// ============================================
 // Component Registry
 // ============================================
 
@@ -366,6 +440,19 @@ export const componentRegistry: ComponentRegistry = {
 		transform: toGoalPreviewProps,
 		component: GoalPreviewRenderer,
 	} as ComponentDefinition<GoalPreviewInput, GoalPreviewProps>,
+
+	// Annotations
+	"annotations-list": {
+		validate: isAnnotationsListInput,
+		transform: toAnnotationsListProps,
+		component: AnnotationsListRenderer,
+	} as ComponentDefinition<AnnotationsListInput, AnnotationsListProps>,
+
+	"annotation-preview": {
+		validate: isAnnotationPreviewInput,
+		transform: toAnnotationPreviewProps,
+		component: AnnotationPreviewRenderer,
+	} as ComponentDefinition<AnnotationPreviewInput, AnnotationPreviewProps>,
 };
 
 export function hasComponent(type: string): boolean {
