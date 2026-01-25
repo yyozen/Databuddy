@@ -87,7 +87,7 @@ export async function handler(event) {
 ## Configuration
 
 <CodeBlock language="tsx">
-  interface DatabuddyConfig {
+  {`interface DatabuddyConfig {
     apiKey: string;               // Required: Your API key for authentication
     websiteId?: string;           // Optional: Default website ID to scope events
     namespace?: string;           // Optional: Default namespace for logical grouping
@@ -99,8 +99,7 @@ export async function handler(event) {
     batchSize?: number;           // Default: 10, Max: 100
     batchTimeout?: number;        // Default: 2000ms
     maxQueueSize?: number;        // Default: 1000
-  }
-}`}
+  }`}
 </CodeBlock>
 
 <CodeBlock language="tsx">
@@ -569,7 +568,7 @@ Bun.serve({
 Events are automatically batched when batch size or timeout is reached:
 
 <CodeBlock language="tsx">
-  const client = new Databuddy({
+  {`const client = new Databuddy({
     apiKey: process.env.DATABUDDY_API_KEY!,
     websiteId: process.env.DATABUDDY_WEBSITE_ID,
     namespace: "api",
@@ -591,7 +590,7 @@ Enable debug logging:
 
 <CodeBlock language="tsx">
   {`const client = new Databuddy({
-  clientId: process.env.DATABUDDY_CLIENT_ID!,
+  apiKey: process.env.DATABUDDY_API_KEY!,
   debug: true
 });`}
 </CodeBlock>
