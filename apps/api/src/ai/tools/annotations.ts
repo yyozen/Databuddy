@@ -6,6 +6,20 @@ import { callRPCProcedure, createToolLogger } from "./utils";
 
 const logger = createToolLogger("Annotations Tools");
 
+interface AnnotationRecord {
+	id: string;
+	text: string;
+	annotationType: "point" | "line" | "range";
+	xValue: string;
+	xEndValue?: string | null;
+	yValue?: number | null;
+	color?: string | null;
+	tags?: string[];
+	isPublic?: boolean;
+	createdAt?: string;
+	updatedAt?: string;
+}
+
 const chartContextSchema = z.object({
 	dateRange: z.object({
 		start_date: z.string().describe("Start date in YYYY-MM-DD format"),
@@ -189,12 +203,6 @@ export function createAnnotationTools(context: AppContext) {
 				// If not confirmed, return preview and ask for confirmation
 				if (!confirmed) {
 					const dateRangePreview = `${chartContext.dateRange.start_date} to ${chartContext.dateRange.end_date} (${chartContext.dateRange.granularity})`;
-					const typePreview =
-						annotationType === "range"
-							? `${annotationType} from ${xValue} to ${xEndValue}`
-							: annotationType === "point"
-								? `${annotationType} at ${xValue}${yValue ? ` (y: ${yValue})` : ""}`
-								: `${annotationType} at ${xValue}`;
 
 					return {
 						preview: true,
@@ -204,9 +212,11 @@ export function createAnnotationTools(context: AppContext) {
 							websiteId,
 							chartType,
 							dateRange: dateRangePreview,
-							type: typePreview,
+							annotationType,
+							xValue,
+							xEndValue,
 							text,
-							tags: tags && tags.length > 0 ? tags.join(", ") : "None",
+							tags: tags ?? [],
 							color: color || "#3B82F6",
 							isPublic: isPublic ?? false,
 						},
@@ -284,12 +294,12 @@ export function createAnnotationTools(context: AppContext) {
 		execute: async ({ id, text, tags, color, isPublic, confirmed }) => {
 			try {
 				if (!confirmed) {
-					const currentAnnotation = await callRPCProcedure(
+					const currentAnnotation = (await callRPCProcedure(
 						"annotations",
 						"getById",
 						{ id },
 						context
-					);
+					)) as AnnotationRecord;
 
 					if (!currentAnnotation) {
 						throw new Error("Annotation not found");
@@ -405,14 +415,13 @@ export function createAnnotationTools(context: AppContext) {
 		}),
 		execute: async ({ id, confirmed }) => {
 			try {
-				// If not confirmed, get annotation and show preview
 				if (!confirmed) {
-					const annotation = await callRPCProcedure(
+					const annotation = (await callRPCProcedure(
 						"annotations",
 						"getById",
 						{ id },
 						context
-					);
+					)) as AnnotationRecord;
 
 					return {
 						preview: true,
