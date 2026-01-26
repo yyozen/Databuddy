@@ -146,7 +146,7 @@ export function AnnotationPreviewRenderer({
 							<span className="text-sm">{dateDisplay}</span>
 						</div>
 					</div>
-					{annotation.tags && annotation.tags.length > 0 && (
+					{Array.isArray(annotation.tags) && annotation.tags.length > 0 && (
 						<div>
 							<p className="mb-1 text-muted-foreground text-xs">Tags</p>
 							<div className="flex flex-wrap gap-1">

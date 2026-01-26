@@ -95,7 +95,7 @@ function AnnotationRow({
 						<CalendarIcon className="size-3" weight="duotone" />
 						{dateDisplay}
 					</span>
-					{annotation.tags && annotation.tags.length > 0 && (
+					{Array.isArray(annotation.tags) && annotation.tags.length > 0 && (
 						<div className="flex gap-1">
 							{annotation.tags.slice(0, 3).map((tag) => (
 								<Badge className="text-[10px]" key={tag} variant="outline">
@@ -206,7 +206,7 @@ export function AnnotationsListRenderer({
 					<p className="font-medium text-sm">{title}</p>
 				</div>
 			)}
-			<div role="list">
+			<ul>
 				{annotations.map((annotation) => (
 					<AnnotationRow
 						annotation={annotation}
@@ -215,7 +215,7 @@ export function AnnotationsListRenderer({
 						onEdit={() => handleEdit(annotation.id)}
 					/>
 				))}
-			</div>
+			</ul>
 			<div className="border-t bg-muted/30 px-3 py-1.5">
 				<p className="text-muted-foreground text-xs">
 					{annotations.length}{" "}
