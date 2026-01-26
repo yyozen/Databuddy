@@ -2,18 +2,18 @@
   "name": "databuddy",
   "module": "index.ts",
   "devDependencies": {
-    "@biomejs/biome": "^2.3.10",
+    "@biomejs/biome": "^2.3.13",
     "@types/bun": "latest",
     "@types/dockerode": "^3.3.47",
-    "@types/node": "^24.10.4",
+    "@types/node": "^24.10.9",
     "chalk": "^5.6.2",
     "culori": "^4.0.2",
     "dockerode": "^4.0.9",
     "dotenv-cli": "^10.0.0",
-    "knip": "^5.76.3",
-    "turbo": "^2.7.1",
+    "knip": "^5.82.1",
+    "turbo": "^2.7.6",
     "typescript": "^5.9.3",
-    "ultracite": "^6.5.0"
+    "ultracite": "^6.5.1"
   },
   "engines": {
     "node": ">=20"
@@ -49,9 +49,9 @@
       "packages/*"
     ],
     "catalog": {
-      "react": "19.2.1",
-      "react-dom": "19.2.1",
-      "next": "^15.3.4",
+      "react": "19.2.4",
+      "react-dom": "19.2.4",
+      "next": "16.1.5",
       "typescript": "^5.9.3",
       "zod": "4.1.12",
       "tailwindcss": "^4.1.4",
@@ -81,8 +81,8 @@
       "@logtail/pino": "^0.5.5",
       "@biomejs/biome": "2.2.2",
       "@types/bun": "latest",
-      "@types/react": "19.2.1",
-      "@types/react-dom": "19.2.1",
+      "@types/react": "19.2.3",
+      "@types/react-dom": "19.2.3",
       "bun-types": "latest",
       "ultracite": "5.3.10",
       "turbo": "^2.5.2",
@@ -93,7 +93,7 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/resources": "^2.4.0",
+    "@opentelemetry/resources": "^2.5.0",
     "@opentelemetry/sdk-node": "^0.210.0",
     "@opentelemetry/semantic-conventions": "^1.39.0"
   }
