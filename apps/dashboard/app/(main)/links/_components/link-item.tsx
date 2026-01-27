@@ -273,7 +273,11 @@ function LinkRow({ link, onClick, onEdit, onDelete, onShowQr }: LinkRowProps) {
 			</div>
 
 			{/* Actions */}
-			<div className="shrink-0" role="presentation">
+			<div
+				className="shrink-0"
+				onClick={(e) => e.stopPropagation()}
+				role="presentation"
+			>
 				<LinkActions
 					link={link}
 					onCopy={handleCopy}
