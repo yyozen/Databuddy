@@ -63,7 +63,7 @@ const testimonials = [
 		name: "Ahmet Kilinc",
 		link: "https://x.com/bruvimtired/status/1938972393357062401",
 		social: null,
-		profession: "Software Engineer, @mail0dotcom",
+		profession: "Software Engineer",
 		description:
 			"if you're not using @trydatabuddy then your analytics are going down the drain.",
 		avatar: "ahmet.jpg",
