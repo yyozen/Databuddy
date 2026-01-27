@@ -178,8 +178,9 @@ export function LinkQrCode({
 						<div className="grid grid-cols-4 gap-2">
 							{QR_SIZES.map((size) => (
 								<button
+									aria-pressed={downloadSize === size.value}
 									className={cn(
-										"cursor-pointer rounded border py-2 text-center transition-all",
+										"cursor-pointer rounded border py-2 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 										downloadSize === size.value
 											? "border-primary bg-primary/5 text-foreground"
 											: "border-transparent bg-secondary text-muted-foreground hover:border-border hover:text-foreground"
@@ -205,8 +206,9 @@ export function LinkQrCode({
 						<div className="grid grid-cols-2 gap-2">
 							{(["squares", "dots"] as const).map((style) => (
 								<button
+									aria-pressed={qrStyle === style}
 									className={cn(
-										"cursor-pointer rounded border py-2.5 text-center transition-all",
+										"cursor-pointer rounded border py-2.5 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 										qrStyle === style
 											? "border-primary bg-primary/5 text-foreground"
 											: "border-transparent bg-secondary text-muted-foreground hover:border-border hover:text-foreground"
@@ -247,7 +249,12 @@ export function LinkQrCode({
 
 					{/* Logo */}
 					<div className="space-y-2">
-						<span className="font-medium text-foreground text-sm">Logo</span>
+						<span
+							className="font-medium text-foreground text-sm"
+							id="logo-label"
+						>
+							Logo
+						</span>
 						{logoImage ? (
 							<div className="flex items-center gap-3">
 								<div className="relative size-12 overflow-hidden rounded border bg-white">
@@ -261,36 +268,55 @@ export function LinkQrCode({
 								</div>
 								<div className="flex-1 space-y-2">
 									<div className="flex items-center gap-2">
-										<span className="text-muted-foreground text-xs">Size:</span>
+										<label
+											className="text-muted-foreground text-xs"
+											htmlFor="logo-size"
+										>
+											Size:
+										</label>
 										<input
+											aria-valuemax={80}
+											aria-valuemin={20}
+											aria-valuenow={logoSize}
 											className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-secondary accent-primary"
+											id="logo-size"
 											max={80}
 											min={20}
 											onChange={(e) => setLogoSize(Number(e.target.value))}
 											type="range"
 											value={logoSize}
 										/>
-										<span className="w-8 text-right font-mono text-muted-foreground text-xs">
+										<span
+											aria-hidden="true"
+											className="w-8 text-right font-mono text-muted-foreground text-xs"
+										>
 											{logoSize}
 										</span>
 									</div>
 								</div>
-								<Button onClick={removeLogo} size="sm" variant="ghost">
-									<XIcon size={16} />
+								<Button
+									aria-label="Remove logo"
+									onClick={removeLogo}
+									size="sm"
+									variant="ghost"
+								>
+									<XIcon aria-hidden="true" size={16} />
 								</Button>
 							</div>
 						) : (
 							<button
-								className="flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-dashed bg-secondary/50 px-4 py-6 text-muted-foreground transition-colors hover:border-border hover:bg-secondary hover:text-foreground"
+								aria-describedby="logo-label"
+								className="flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-dashed bg-secondary/50 px-4 py-6 text-muted-foreground transition-colors hover:border-border hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 								onClick={() => fileInputRef.current?.click()}
 								type="button"
 							>
-								<ImageIcon size={20} weight="duotone" />
+								<ImageIcon aria-hidden="true" size={20} weight="duotone" />
 								<span className="text-sm">Upload logo</span>
 							</button>
 						)}
 						<input
 							accept="image/*"
+							aria-label="Upload logo image"
 							className="hidden"
 							onChange={handleLogoUpload}
 							ref={fileInputRef}

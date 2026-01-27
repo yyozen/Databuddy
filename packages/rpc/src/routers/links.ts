@@ -4,6 +4,7 @@ import {
 	invalidateLinkCache,
 	setCachedLink,
 } from "@databuddy/redis";
+import { logger } from "@databuddy/shared/logger";
 import { ORPCError } from "@orpc/server";
 import { randomUUIDv7 } from "bun";
 import { customAlphabet } from "nanoid";
@@ -213,7 +214,12 @@ export const linksRouter = {
 						.returning();
 
 					await setCachedLink(input.slug, toCachedLink(newLink)).catch(
-						() => { }
+						(error) => {
+							logger.error(
+								{ slug: input.slug, linkId: newLink.id, error: String(error) },
+								"Failed to cache link after create"
+							);
+						}
 					);
 
 					return newLink;
@@ -249,7 +255,12 @@ export const linksRouter = {
 						})
 						.returning();
 
-					await setCachedLink(slug, toCachedLink(newLink)).catch(() => { });
+					await setCachedLink(slug, toCachedLink(newLink)).catch((error) => {
+						logger.error(
+							{ slug, linkId: newLink.id, error: String(error) },
+							"Failed to cache link after create"
+						);
+					});
 
 					return newLink;
 				} catch (error) {
@@ -322,10 +333,18 @@ export const linksRouter = {
 
 				const newSlug = updatedLink.slug;
 
-				await Promise.all([
-					invalidateLinkCache(oldSlug),
-					oldSlug !== newSlug ? invalidateLinkCache(newSlug) : Promise.resolve(),
-				]).catch(() => { });
+				// Invalidate old slug and set new cached value
+				try {
+					await Promise.all([
+						oldSlug !== newSlug ? invalidateLinkCache(oldSlug) : Promise.resolve(),
+						setCachedLink(newSlug, toCachedLink(updatedLink)),
+					]);
+				} catch (cacheError) {
+					logger.error(
+						{ linkId: updatedLink.id, oldSlug, newSlug, error: String(cacheError) },
+						"Failed to update link cache"
+					);
+				}
 
 				return updatedLink;
 			} catch (error) {
@@ -374,7 +393,12 @@ export const linksRouter = {
 				.where(eq(links.id, input.id));
 
 			// Invalidate the cache for this slug
-			await invalidateLinkCache(link.slug).catch(() => { });
+			await invalidateLinkCache(link.slug).catch((error) => {
+				logger.error(
+					{ slug: link.slug, linkId: input.id, error: String(error) },
+					"Failed to invalidate link cache after delete"
+				);
+			});
 
 			return { success: true };
 		}),

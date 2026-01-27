@@ -41,12 +41,17 @@ function ShortUrlCopy({
 
 	return (
 		<button
-			className="flex shrink-0 items-center gap-1.5 rounded border border-transparent bg-muted px-2 py-1 font-mono text-xs transition-colors hover:border-border hover:bg-background group-hover:border-border group-hover:bg-background"
+			aria-label={`Copy ${shortUrl}`}
+			className="flex shrink-0 items-center gap-1.5 rounded border border-transparent bg-muted px-2 py-1 font-mono text-xs transition-colors hover:border-border hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 group-hover:border-border group-hover:bg-background"
 			onClick={onClick}
 			type="button"
 		>
 			<span className="text-foreground">{shortUrl}</span>
-			<CopyIcon className="size-3 text-muted-foreground" weight="duotone" />
+			<CopyIcon
+				aria-hidden="true"
+				className="size-3 text-muted-foreground"
+				weight="duotone"
+			/>
 		</button>
 	);
 }
@@ -62,7 +67,10 @@ function LinkFeatures({ link }: { link: Link }) {
 	}
 
 	return (
-		<div className="flex items-center gap-1 text-muted-foreground">
+		<div
+			aria-hidden="true"
+			className="flex items-center gap-1 text-muted-foreground"
+		>
 			{hasOg && <ImageIcon className="size-3.5" weight="duotone" />}
 			{hasIos && <AppleLogoIcon className="size-3.5" weight="duotone" />}
 			{hasAndroid && <AndroidLogoIcon className="size-3.5" weight="duotone" />}
@@ -87,7 +95,11 @@ function ExpirationBadge({ link }: { link: Link }) {
 				isExpired ? "destructive" : isExpiringSoon ? "amber" : "secondary"
 			}
 		>
-			<ClockCountdownIcon className="size-3" weight="duotone" />
+			<ClockCountdownIcon
+				aria-hidden="true"
+				className="size-3"
+				weight="duotone"
+			/>
 			{isExpired ? "Expired" : expiresAt.fromNow(true)}
 		</Badge>
 	);
@@ -152,11 +164,11 @@ function formatTargetUrl(targetUrl: string): string {
 		let display =
 			parsed.host + (parsed.pathname !== "/" ? parsed.pathname : "");
 		if (display.length > 50) {
-			display = `${display.slice(0, 47)}...`;
+			display = `${display.slice(0, 47)}…`;
 		}
 		return display;
 	} catch {
-		return targetUrl.length > 50 ? `${targetUrl.slice(0, 47)}...` : targetUrl;
+		return targetUrl.length > 50 ? `${targetUrl.slice(0, 47)}…` : targetUrl;
 	}
 }
 
@@ -186,17 +198,49 @@ function LinkRow({ link, onClick, onEdit, onDelete, onShowQr }: LinkRowProps) {
 		[link.slug]
 	);
 
+	const handleRowClick = useCallback(
+		(e: React.MouseEvent) => {
+			// Don't trigger row click if clicking on interactive children
+			const target = e.target as HTMLElement;
+			if (target.closest("button, [role='button']")) {
+				return;
+			}
+			onClick(link);
+		},
+		[onClick, link]
+	);
+
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent) => {
+			// Only trigger if the row itself is focused, not a child
+			if (
+				(e.key === "Enter" || e.key === " ") &&
+				e.target === e.currentTarget
+			) {
+				e.preventDefault();
+				onClick(link);
+			}
+		},
+		[onClick, link]
+	);
+
 	return (
-		<button
+		// biome-ignore lint/a11y/useSemanticElements: div with role="button" needed to avoid nested buttons (ShortUrlCopy inside)
+		<div
 			className={cn(
-				"group flex w-full cursor-pointer items-center gap-4 border-b px-4 py-3 text-left transition-colors hover:bg-muted/50",
+				"group flex w-full cursor-pointer items-center gap-4 border-b px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
 				isExpired && "opacity-60"
 			)}
-			onClick={() => onClick(link)}
-			type="button"
+			onClick={handleRowClick}
+			onKeyDown={handleKeyDown}
+			role="button"
+			tabIndex={0}
 		>
 			{/* Link icon */}
-			<div className="shrink-0 rounded border border-transparent bg-accent p-1.5 text-primary transition-colors group-hover:border-primary/20 group-hover:bg-primary/10">
+			<div
+				aria-hidden="true"
+				className="shrink-0 rounded border border-transparent bg-accent p-1.5 text-primary transition-colors group-hover:border-primary/20 group-hover:bg-primary/10"
+			>
 				<LinkIcon className="size-4" weight="duotone" />
 			</div>
 
@@ -229,12 +273,7 @@ function LinkRow({ link, onClick, onEdit, onDelete, onShowQr }: LinkRowProps) {
 			</div>
 
 			{/* Actions */}
-			<div
-				className="shrink-0"
-				onClick={(e) => e.stopPropagation()}
-				onKeyDown={(e) => e.stopPropagation()}
-				role="presentation"
-			>
+			<div className="shrink-0" role="presentation">
 				<LinkActions
 					link={link}
 					onCopy={handleCopy}
@@ -243,7 +282,7 @@ function LinkRow({ link, onClick, onEdit, onDelete, onShowQr }: LinkRowProps) {
 					onShowQr={onShowQr}
 				/>
 			</div>
-		</button>
+		</div>
 	);
 }
 

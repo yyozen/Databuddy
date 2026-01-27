@@ -46,8 +46,8 @@ export function create(context: AgentContext) {
 		name: "analytics",
 		model: models.analytics as LanguageModel,
 		temperature: 0.3,
-		instructions: (ctx) => {
-			const prompt = buildAnalyticsInstructions(ctx);
+		instructions: (context) => {
+			const prompt = buildAnalyticsInstructions(context );
 			console.log("[Analytics Agent] Instructions length:", prompt.length);
 			return prompt;
 		},

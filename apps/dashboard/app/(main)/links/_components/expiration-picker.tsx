@@ -191,37 +191,40 @@ export function ExpirationPicker({
 
 	return (
 		<Popover onOpenChange={handleOpenChange} open={isOpen}>
-			<PopoverTrigger asChild>
-				<Button
-					className={cn(
-						"h-9 w-full justify-start gap-2 px-3 text-left font-normal",
-						!value && "text-muted-foreground",
-						isExpired && "border-destructive/50 text-destructive",
-						className
-					)}
-					type="button"
-					variant="outline"
-				>
-					{value ? (
-						<CalendarIcon className="size-4 shrink-0" weight="duotone" />
-					) : (
-						<InfinityIcon className="size-4 shrink-0" weight="duotone" />
-					)}
-					<span className="truncate">{formatDisplay(currentDate)}</span>
-					{value && (
-						<button
-							className="ml-auto rounded p-0.5 hover:bg-accent"
-							onClick={(e) => {
-								e.stopPropagation();
-								handleClear();
-							}}
-							type="button"
-						>
-							<XIcon className="size-3.5" />
-						</button>
-					)}
-				</Button>
-			</PopoverTrigger>
+			<div className="relative flex items-center">
+				<PopoverTrigger asChild>
+					<Button
+						className={cn(
+							"h-9 w-full justify-start gap-2 px-3 pr-8 text-left font-normal",
+							!value && "text-muted-foreground",
+							isExpired && "border-destructive/50 text-destructive",
+							className
+						)}
+						type="button"
+						variant="outline"
+					>
+						{value ? (
+							<CalendarIcon aria-hidden="true" className="size-4 shrink-0" weight="duotone" />
+						) : (
+							<InfinityIcon aria-hidden="true" className="size-4 shrink-0" weight="duotone" />
+						)}
+						<span className="truncate">{formatDisplay(currentDate)}</span>
+					</Button>
+				</PopoverTrigger>
+				{value && (
+					<button
+						aria-label="Clear expiration"
+						className="absolute right-2 rounded p-0.5 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						onClick={(e) => {
+							e.stopPropagation();
+							handleClear();
+						}}
+						type="button"
+					>
+						<XIcon aria-hidden="true" className="size-3.5" />
+					</button>
+				)}
+			</div>
 
 			<PopoverContent
 				align="start"
@@ -235,7 +238,8 @@ export function ExpirationPicker({
 						{/* Header */}
 						<div className="flex items-center justify-between border-b px-4 py-3">
 							<button
-								className="text-muted-foreground text-sm hover:text-foreground"
+								aria-label="Go back to presets"
+								className="rounded text-muted-foreground text-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 								onClick={() => setShowCustom(false)}
 								type="button"
 							>
@@ -260,12 +264,14 @@ export function ExpirationPicker({
 						<div className="border-t px-4 py-3">
 							<div className="flex items-center gap-3">
 								<ClockIcon
+									aria-hidden="true"
 									className="size-4 text-muted-foreground"
 									weight="duotone"
 								/>
-								<span className="text-sm">Time</span>
+								<label className="text-sm" htmlFor="expiration-time">Time</label>
 								<input
-									className="ml-auto h-8 rounded border bg-input px-2 text-center font-mono text-sm tabular-nums"
+									className="ml-auto h-8 rounded border bg-input px-2 text-center font-mono text-sm tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+									id="expiration-time"
 									onChange={(e) => setCustomTime(e.target.value)}
 									type="time"
 									value={customTime}
@@ -273,7 +279,7 @@ export function ExpirationPicker({
 							</div>
 
 							{customDate && (
-								<p className="mt-2 text-muted-foreground text-xs">
+								<p aria-live="polite" className="mt-2 text-muted-foreground text-xs">
 									Expires{" "}
 									{dayjs(customDate)
 										.hour(Number.parseInt(customTime.split(":")[0], 10))
@@ -314,8 +320,9 @@ export function ExpirationPicker({
 								const previewText = formatPresetPreview(preset);
 								return (
 									<button
+										aria-pressed={isActive}
 										className={cn(
-											"flex w-full items-center justify-between rounded px-3 py-2 text-left transition-colors",
+											"flex w-full items-center justify-between rounded px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
 											isActive
 												? "bg-primary text-primary-foreground"
 												: "hover:bg-secondary"
@@ -326,6 +333,7 @@ export function ExpirationPicker({
 									>
 										<span className="text-sm">{preset.label}</span>
 										<span
+											aria-hidden="true"
 											className={cn(
 												"text-xs tabular-nums",
 												isActive
@@ -340,37 +348,39 @@ export function ExpirationPicker({
 							})}
 						</div>
 
-						<div className="my-2 h-px bg-border" />
+						<div aria-hidden="true" className="my-2 h-px bg-border" />
 
 						<div className="space-y-0.5">
 							<button
+								aria-pressed={activePreset === "custom"}
 								className={cn(
-									"flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm transition-colors hover:bg-secondary",
+									"flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
 									activePreset === "custom" &&
 										"bg-primary text-primary-foreground hover:bg-primary"
 								)}
 								onClick={() => setShowCustom(true)}
 								type="button"
 							>
-								<CalendarIcon className="size-4" weight="duotone" />
+								<CalendarIcon aria-hidden="true" className="size-4" weight="duotone" />
 								<span>Custom date & time</span>
 								{activePreset === "custom" && (
-									<CheckIcon className="ml-auto size-3.5" />
+									<CheckIcon aria-hidden="true" className="ml-auto size-3.5" />
 								)}
 							</button>
 
 							<button
+								aria-pressed={!value}
 								className={cn(
-									"flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm transition-colors hover:bg-secondary",
+									"flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
 									!value &&
 										"bg-primary text-primary-foreground hover:bg-primary"
 								)}
 								onClick={handleClear}
 								type="button"
 							>
-								<InfinityIcon className="size-4" weight="duotone" />
+								<InfinityIcon aria-hidden="true" className="size-4" weight="duotone" />
 								<span>Never expires</span>
-								{!value && <CheckIcon className="ml-auto size-3.5" />}
+								{!value && <CheckIcon aria-hidden="true" className="ml-auto size-3.5" />}
 							</button>
 						</div>
 					</div>

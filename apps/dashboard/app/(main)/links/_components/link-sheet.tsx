@@ -14,7 +14,6 @@ import {
 	QrCodeIcon,
 } from "@phosphor-icons/react";
 import dayjs from "dayjs";
-import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -84,20 +83,27 @@ function CollapsibleSection({
 		<div className="space-y-2">
 			<div className="-mx-3">
 				<button
-					className="group flex w-full cursor-pointer items-center justify-between rounded px-3 py-3 text-left transition-colors hover:bg-accent/50"
+					aria-expanded={isExpanded}
+					className="group flex w-full cursor-pointer items-center justify-between rounded px-3 py-3 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 					onClick={onToggleAction}
 					type="button"
 				>
 					<div className="flex items-center gap-2.5">
-						<Icon size={16} weight="duotone" />
+						<Icon aria-hidden="true" size={16} weight="duotone" />
 						<span className="font-medium text-sm">{title}</span>
 						{showBadge && (
 							<span className="flex size-5 items-center justify-center rounded-full bg-primary font-medium text-primary-foreground text-xs">
-								{typeof badge === "boolean" ? "✓" : badge}
+								<span className="sr-only">
+									{typeof badge === "boolean" ? "enabled" : `${badge} items`}
+								</span>
+								<span aria-hidden="true">
+									{typeof badge === "boolean" ? "✓" : badge}
+								</span>
 							</span>
 						)}
 					</div>
 					<CaretDownIcon
+						aria-hidden="true"
 						className={cn(
 							"size-4 text-muted-foreground transition-transform duration-200",
 							isExpanded && "rotate-180"
@@ -107,19 +113,18 @@ function CollapsibleSection({
 				</button>
 			</div>
 
-			<AnimatePresence initial={false}>
-				{isExpanded && (
-					<motion.div
-						animate={{ height: "auto", opacity: 1 }}
-						className="overflow-hidden"
-						exit={{ height: 0, opacity: 0 }}
-						initial={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.2, ease: "easeInOut" }}
-					>
-						<div className="pb-4">{children}</div>
-					</motion.div>
+			<div
+				className={cn(
+					"grid transition-all duration-200 ease-in-out",
+					isExpanded
+						? "grid-rows-[1fr] opacity-100"
+						: "grid-rows-[0fr] opacity-0"
 				)}
-			</AnimatePresence>
+			>
+				<div className="overflow-hidden">
+					<div className="pb-4">{children}</div>
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -521,7 +526,7 @@ export function LinkSheet({
 						</FormLabel>
 						<FormControl>
 							<Input
-								placeholder="example.com/landing-page"
+								placeholder="example.com/landing-page…"
 								prefix="https://"
 								{...field}
 								onChange={(e) => {
@@ -651,7 +656,7 @@ export function LinkSheet({
 										<Input
 											className="h-9"
 											id="expired-redirect"
-											placeholder="example.com/link-expired"
+											placeholder="example.com/link-expired…"
 											prefix="https://"
 											{...field}
 											onChange={(e) => {
@@ -705,7 +710,7 @@ export function LinkSheet({
 											<Input
 												className="h-9"
 												id="ios-url"
-												placeholder="apps.apple.com/app/..."
+												placeholder="apps.apple.com/app/…"
 												prefix="https://"
 												{...field}
 												onChange={(e) => {
@@ -740,7 +745,7 @@ export function LinkSheet({
 											<Input
 												className="h-9"
 												id="android-url"
-												placeholder="play.google.com/store/apps/..."
+												placeholder="play.google.com/store/apps/…"
 												prefix="https://"
 												{...field}
 												onChange={(e) => {
@@ -834,18 +839,16 @@ export function LinkSheet({
 								variant="underline"
 							>
 								<TabsList className="shrink-0">
-									<TabsTrigger
-										className="focus-visible:ring-0 focus-visible:ring-offset-0"
-										value="details"
-									>
-										<LinkSimpleIcon size={16} weight="duotone" />
+									<TabsTrigger value="details">
+										<LinkSimpleIcon
+											aria-hidden="true"
+											size={16}
+											weight="duotone"
+										/>
 										Details
 									</TabsTrigger>
-									<TabsTrigger
-										className="focus-visible:ring-0 focus-visible:ring-offset-0"
-										value="qr-code"
-									>
-										<QrCodeIcon size={16} weight="duotone" />
+									<TabsTrigger value="qr-code">
+										<QrCodeIcon aria-hidden="true" size={16} weight="duotone" />
 										QR Code
 									</TabsTrigger>
 								</TabsList>

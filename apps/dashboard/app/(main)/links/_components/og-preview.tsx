@@ -218,13 +218,20 @@ export function OgPreview({
 											width={1200}
 										/>
 										<button
-											className="absolute top-2 right-2 rounded bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100"
+											aria-label="Remove image"
+											className="absolute top-2 right-2 rounded bg-black/60 p-1 opacity-0 transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
 											onClick={() => handleFieldChange("ogImageUrl", "")}
 											type="button"
 										>
-											<CloseIcon className="size-4 text-white" />
+											<CloseIcon
+												aria-hidden="true"
+												className="size-4 text-white"
+											/>
 										</button>
-										<div className="absolute right-2 bottom-2 rounded bg-black/60 px-1.5 py-0.5 text-white text-xs">
+										<div
+											aria-hidden="true"
+											className="absolute right-2 bottom-2 rounded bg-black/60 px-1.5 py-0.5 text-white text-xs"
+										>
 											1200 × 630
 										</div>
 									</>
@@ -299,7 +306,10 @@ export function OgPreview({
 							<Label className="text-xs" htmlFor="og-title">
 								Title
 							</Label>
-							<span className="text-muted-foreground text-xs tabular-nums">
+							<span
+								aria-live="polite"
+								className="text-muted-foreground text-xs tabular-nums"
+							>
 								{value.ogTitle.length}/{TITLE_MAX}
 							</span>
 						</div>
@@ -308,7 +318,11 @@ export function OgPreview({
 							id="og-title"
 							maxLength={TITLE_MAX}
 							onChange={(e) => handleFieldChange("ogTitle", e.target.value)}
-							placeholder={fetchedOg?.title || "Enter custom title…"}
+							placeholder={
+								fetchedOg?.title
+									? `${fetchedOg.title.slice(0, 30)}…`
+									: "Enter custom title…"
+							}
 							value={value.ogTitle}
 						/>
 					</div>
@@ -319,7 +333,10 @@ export function OgPreview({
 							<Label className="text-xs" htmlFor="og-description">
 								Description
 							</Label>
-							<span className="text-muted-foreground text-xs tabular-nums">
+							<span
+								aria-live="polite"
+								className="text-muted-foreground text-xs tabular-nums"
+							>
 								{value.ogDescription.length}/{DESCRIPTION_MAX}
 							</span>
 						</div>
@@ -331,7 +348,9 @@ export function OgPreview({
 								handleFieldChange("ogDescription", e.target.value)
 							}
 							placeholder={
-								fetchedOg?.description || "Enter custom description…"
+								fetchedOg?.description
+									? `${fetchedOg.description.slice(0, 40)}…`
+									: "Enter custom description…"
 							}
 							rows={2}
 							value={value.ogDescription}
@@ -364,16 +383,21 @@ export function OgPreview({
 									{imageStatus === "error" && (
 										<>
 											<WarningCircleIcon
+												aria-hidden="true"
 												className="size-3 text-destructive"
 												weight="fill"
 											/>
 											<span className="text-destructive">Invalid</span>
 											<button
-												className="ml-1 text-muted-foreground hover:text-foreground"
+												aria-label="Retry image validation"
+												className="ml-1 text-muted-foreground hover:text-foreground focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 												onClick={retryImage}
 												type="button"
 											>
-												<ArrowsClockwiseIcon className="size-3" />
+												<ArrowsClockwiseIcon
+													aria-hidden="true"
+													className="size-3"
+												/>
 											</button>
 										</>
 									)}
