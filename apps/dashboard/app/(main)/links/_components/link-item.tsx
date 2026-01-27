@@ -12,7 +12,7 @@ import {
 	QrCodeIcon,
 	TrashIcon,
 } from "@phosphor-icons/react";
-import { useCallback } from "react";
+import NextLink from "next/link";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -116,7 +116,7 @@ function LinkActions({
 	onEdit: (link: Link) => void;
 	onDelete: (linkId: string) => void;
 	onShowQr: (link: Link) => void;
-	onCopy: () => void;
+	onCopy: (e?: React.MouseEvent) => void;
 }) {
 	return (
 		<DropdownMenu>
@@ -174,67 +174,34 @@ function formatTargetUrl(targetUrl: string): string {
 
 interface LinkRowProps {
 	link: Link;
-	onClick: (link: Link) => void;
 	onEdit: (link: Link) => void;
 	onDelete: (linkId: string) => void;
 	onShowQr: (link: Link) => void;
 }
 
-function LinkRow({ link, onClick, onEdit, onDelete, onShowQr }: LinkRowProps) {
+function LinkRow({ link, onEdit, onDelete, onShowQr }: LinkRowProps) {
 	const displayTargetUrl = formatTargetUrl(link.targetUrl);
 	const isExpired =
 		link.expiresAt && localDayjs(link.expiresAt).isBefore(localDayjs());
 
-	const handleCopy = useCallback(
-		async (e?: React.MouseEvent) => {
-			e?.stopPropagation();
-			try {
-				await navigator.clipboard.writeText(`${LINKS_BASE_URL}/${link.slug}`);
-				toast.success("Link copied to clipboard");
-			} catch {
-				toast.error("Failed to copy link");
-			}
-		},
-		[link.slug]
-	);
-
-	const handleRowClick = useCallback(
-		(e: React.MouseEvent) => {
-			// Don't trigger row click if clicking on interactive children
-			const target = e.target as HTMLElement;
-			if (target.closest("button, [role='button']")) {
-				return;
-			}
-			onClick(link);
-		},
-		[onClick, link]
-	);
-
-	const handleKeyDown = useCallback(
-		(e: React.KeyboardEvent) => {
-			// Only trigger if the row itself is focused, not a child
-			if (
-				(e.key === "Enter" || e.key === " ") &&
-				e.target === e.currentTarget
-			) {
-				e.preventDefault();
-				onClick(link);
-			}
-		},
-		[onClick, link]
-	);
+	const handleCopy = async (e?: React.MouseEvent) => {
+		e?.preventDefault();
+		e?.stopPropagation();
+		try {
+			await navigator.clipboard.writeText(`${LINKS_BASE_URL}/${link.slug}`);
+			toast.success("Link copied to clipboard");
+		} catch {
+			toast.error("Failed to copy link");
+		}
+	};
 
 	return (
-		// biome-ignore lint/a11y/useSemanticElements: div with role="button" needed to avoid nested buttons (ShortUrlCopy inside)
-		<div
+		<NextLink
 			className={cn(
-				"group flex w-full cursor-pointer items-center gap-4 border-b px-4 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+				"group flex w-full items-center gap-4 border-b px-4 py-3 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
 				isExpired && "opacity-60"
 			)}
-			onClick={handleRowClick}
-			onKeyDown={handleKeyDown}
-			role="button"
-			tabIndex={0}
+			href={`/links/${link.id}`}
 		>
 			{/* Link icon */}
 			<div
@@ -273,11 +240,7 @@ function LinkRow({ link, onClick, onEdit, onDelete, onShowQr }: LinkRowProps) {
 			</div>
 
 			{/* Actions */}
-			<div
-				className="shrink-0"
-				onClick={(e) => e.stopPropagation()}
-				role="presentation"
-			>
+			<div onClick={(e) => e.preventDefault()} role="presentation">
 				<LinkActions
 					link={link}
 					onCopy={handleCopy}
@@ -286,13 +249,12 @@ function LinkRow({ link, onClick, onEdit, onDelete, onShowQr }: LinkRowProps) {
 					onShowQr={onShowQr}
 				/>
 			</div>
-		</div>
+		</NextLink>
 	);
 }
 
 interface LinksListProps {
 	links: Link[];
-	onClick: (link: Link) => void;
 	onEdit: (link: Link) => void;
 	onDelete: (linkId: string) => void;
 	onShowQr: (link: Link) => void;
@@ -300,7 +262,6 @@ interface LinksListProps {
 
 export function LinksList({
 	links,
-	onClick,
 	onEdit,
 	onDelete,
 	onShowQr,
@@ -311,7 +272,6 @@ export function LinksList({
 				<LinkRow
 					key={link.id}
 					link={link}
-					onClick={onClick}
 					onDelete={onDelete}
 					onEdit={onEdit}
 					onShowQr={onShowQr}

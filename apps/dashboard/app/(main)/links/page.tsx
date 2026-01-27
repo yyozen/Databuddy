@@ -7,7 +7,6 @@ import {
 	TrendDownIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { LinkIcon } from "@phosphor-icons/react/dist/ssr/Link";
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { NoticeBanner } from "@/app/(main)/websites/_components/notice-banner";
 import { PageHeader } from "@/app/(main)/websites/_components/page-header";
@@ -22,7 +21,6 @@ import { LinksSearchBar } from "./_components/links-search-bar";
 import { QrCodeDialog } from "./_components/qr-code-dialog";
 
 export default function LinksPage() {
-	const router = useRouter();
 	const [isSheetOpen, setIsSheetOpen] = useState(false);
 	const [editingLink, setEditingLink] = useState<Link | null>(null);
 	const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
@@ -145,7 +143,6 @@ export default function LinksPage() {
 						setEditingLink(link);
 						setIsSheetOpen(true);
 					}}
-					onLinkClick={(link) => router.push(`/links/${link.id}`)}
 					onShowQr={handleShowQr}
 				/>
 			)}

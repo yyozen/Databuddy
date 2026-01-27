@@ -8,7 +8,6 @@ import { LinksList as LinksListComponent } from "./link-item";
 interface LinksListProps {
 	links: Link[];
 	isLoading: boolean;
-	onLinkClick: (link: Link) => void;
 	onEditLink: (link: Link) => void;
 	onDeleteLink: (linkId: string) => void;
 	onShowQr: (link: Link) => void;
@@ -18,7 +17,6 @@ interface LinksListProps {
 export function LinksList({
 	links,
 	isLoading,
-	onLinkClick,
 	onEditLink,
 	onDeleteLink,
 	onShowQr,
@@ -48,7 +46,6 @@ export function LinksList({
 	return (
 		<LinksListComponent
 			links={links}
-			onClick={onLinkClick}
 			onDelete={onDeleteLink}
 			onEdit={onEditLink}
 			onShowQr={onShowQr}
