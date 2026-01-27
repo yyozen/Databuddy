@@ -8,7 +8,9 @@ import {
 	inArray,
 	isNull,
 	ne,
+	notDeleted,
 	targetGroups,
+	withTransaction,
 } from "@databuddy/db";
 import { createDrizzleCache, redis } from "@databuddy/redis";
 import {
@@ -227,7 +229,7 @@ function sanitizeFlagForDemo<T extends FlagWithTargetGroups>(flag: T): T {
 		...flag,
 		rules: Array.isArray(flag.rules) && flag.rules.length > 0 ? [] : flag.rules,
 		targetGroups: flag.targetGroups?.map(
-			(group: { rules?: unknown; [key: string]: unknown }) => ({
+			(group: { rules?: unknown;[key: string]: unknown }) => ({
 				...group,
 				rules:
 					Array.isArray(group.rules) && group.rules.length > 0
@@ -520,43 +522,48 @@ export const flagsRouter = {
 					});
 				}
 
-				const [restoredFlag] = await context.db
-					.update(flags)
-					.set({
-						name: input.name,
-						description: input.description,
-						type: input.type,
-						status: finalStatus,
-						defaultValue: input.defaultValue,
-						rules: input.rules,
-						persistAcrossAuth:
-							input.persistAcrossAuth ??
-							existingFlag[0].persistAcrossAuth ??
-							false,
-						rolloutPercentage: input.rolloutPercentage,
-						rolloutBy: input.rolloutBy,
-						variants: input.variants,
-						dependencies: input.dependencies,
-						environment: input.environment,
-						deletedAt: null,
-						updatedAt: new Date(),
-					})
-					.where(eq(flags.id, existingFlag[0].id))
-					.returning();
+				// Use transaction to ensure flag restore + target group associations are atomic
+				const restoredFlag = await withTransaction(async (tx) => {
+					const [restored] = await tx
+						.update(flags)
+						.set({
+							name: input.name,
+							description: input.description,
+							type: input.type,
+							status: finalStatus,
+							defaultValue: input.defaultValue,
+							rules: input.rules,
+							persistAcrossAuth:
+								input.persistAcrossAuth ??
+								existingFlag[0].persistAcrossAuth ??
+								false,
+							rolloutPercentage: input.rolloutPercentage,
+							rolloutBy: input.rolloutBy,
+							variants: input.variants,
+							dependencies: input.dependencies,
+							environment: input.environment,
+							deletedAt: null,
+							updatedAt: new Date(),
+						})
+						.where(eq(flags.id, existingFlag[0].id))
+						.returning();
 
-				// Update target group associations
-				await context.db
-					.delete(flagsToTargetGroups)
-					.where(eq(flagsToTargetGroups.flagId, existingFlag[0].id));
+					// Update target group associations within the same transaction
+					await tx
+						.delete(flagsToTargetGroups)
+						.where(eq(flagsToTargetGroups.flagId, existingFlag[0].id));
 
-				if (input.targetGroupIds && input.targetGroupIds.length > 0) {
-					await context.db.insert(flagsToTargetGroups).values(
-						input.targetGroupIds.map((targetGroupId) => ({
-							flagId: existingFlag[0].id,
-							targetGroupId,
-						}))
-					);
-				}
+					if (input.targetGroupIds && input.targetGroupIds.length > 0) {
+						await tx.insert(flagsToTargetGroups).values(
+							input.targetGroupIds.map((targetGroupId) => ({
+								flagId: existingFlag[0].id,
+								targetGroupId,
+							}))
+						);
+					}
+
+					return restored;
+				});
 
 				await invalidateFlagCache(
 					restoredFlag.id,
@@ -569,56 +576,62 @@ export const flagsRouter = {
 			}
 
 			const flagId = randomUUIDv7();
-			const [newFlag] = await context.db
-				.insert(flags)
-				.values({
-					id: flagId,
-					key: input.key,
-					name: input.name || null,
-					description: input.description || null,
-					type: input.type,
-					status: finalStatus,
-					defaultValue: input.defaultValue,
-					payload: input.payload || null,
-					rules: input.rules || [],
-					persistAcrossAuth: input.persistAcrossAuth ?? false,
-					rolloutPercentage: input.rolloutPercentage || 0,
-					rolloutBy: input.rolloutBy || null,
-					variants: input.variants || [],
-					dependencies: input.dependencies || [],
-					websiteId: input.websiteId || null,
-					organizationId: input.organizationId || null,
-					environment: input.environment || existingFlag?.[0]?.environment,
-					userId: input.websiteId ? null : context.user.id,
-					createdBy: context.user.id,
-				})
-				.returning();
 
-			// Insert target group associations
-			if (input.targetGroupIds && input.targetGroupIds.length > 0) {
-				// Validate that all target groups exist and belong to the same website
-				const validGroups = await context.db.query.targetGroups.findMany({
-					where: and(
-						inArray(targetGroups.id, input.targetGroupIds),
-						eq(targetGroups.websiteId, input.websiteId || ""),
-						isNull(targetGroups.deletedAt)
-					),
-				});
+			// Use transaction to ensure flag + target group associations are atomic
+			const newFlag = await withTransaction(async (tx) => {
+				const [createdFlag] = await tx
+					.insert(flags)
+					.values({
+						id: flagId,
+						key: input.key,
+						name: input.name || null,
+						description: input.description || null,
+						type: input.type,
+						status: finalStatus,
+						defaultValue: input.defaultValue,
+						payload: input.payload || null,
+						rules: input.rules || [],
+						persistAcrossAuth: input.persistAcrossAuth ?? false,
+						rolloutPercentage: input.rolloutPercentage || 0,
+						rolloutBy: input.rolloutBy || null,
+						variants: input.variants || [],
+						dependencies: input.dependencies || [],
+						websiteId: input.websiteId || null,
+						organizationId: input.organizationId || null,
+						environment: input.environment || existingFlag?.[0]?.environment,
+						userId: input.websiteId ? null : context.user.id,
+						createdBy: context.user.id,
+					})
+					.returning();
 
-				if (validGroups.length !== input.targetGroupIds.length) {
-					throw new ORPCError("BAD_REQUEST", {
-						message:
-							"One or more target groups not found or do not belong to this website",
+				// Insert target group associations within the same transaction
+				if (input.targetGroupIds && input.targetGroupIds.length > 0) {
+					// Validate that all target groups exist and belong to the same website
+					const validGroups = await tx.query.targetGroups.findMany({
+						where: and(
+							inArray(targetGroups.id, input.targetGroupIds),
+							eq(targetGroups.websiteId, input.websiteId || ""),
+							notDeleted(targetGroups)
+						),
 					});
+
+					if (validGroups.length !== input.targetGroupIds.length) {
+						throw new ORPCError("BAD_REQUEST", {
+							message:
+								"One or more target groups not found or do not belong to this website",
+						});
+					}
+
+					await tx.insert(flagsToTargetGroups).values(
+						input.targetGroupIds.map((targetGroupId) => ({
+							flagId,
+							targetGroupId,
+						}))
+					);
 				}
 
-				await context.db.insert(flagsToTargetGroups).values(
-					input.targetGroupIds.map((targetGroupId) => ({
-						flagId,
-						targetGroupId,
-					}))
-				);
-			}
+				return createdFlag;
+			});
 
 			await invalidateFlagCache(
 				newFlag.id,
@@ -727,48 +740,54 @@ export const flagsRouter = {
 			}
 
 			const { id, targetGroupIds, ...updates } = input;
-			const [updatedFlag] = await context.db
-				.update(flags)
-				.set({
-					...updates,
-					updatedAt: new Date(),
-				})
-				.where(and(eq(flags.id, id), isNull(flags.deletedAt)))
-				.returning();
 
-			// Update target group associations if provided
-			if (targetGroupIds !== undefined) {
-				// Validate that all target groups exist and belong to the same website
-				if (targetGroupIds.length > 0) {
-					const validGroups = await context.db.query.targetGroups.findMany({
-						where: and(
-							inArray(targetGroups.id, targetGroupIds),
-							eq(targetGroups.websiteId, flag.websiteId || ""),
-							isNull(targetGroups.deletedAt)
-						),
-					});
+			// Use transaction to ensure flag update + target group associations are atomic
+			const updatedFlag = await withTransaction(async (tx) => {
+				const [updated] = await tx
+					.update(flags)
+					.set({
+						...updates,
+						updatedAt: new Date(),
+					})
+					.where(and(eq(flags.id, id), notDeleted(flags)))
+					.returning();
 
-					if (validGroups.length !== targetGroupIds.length) {
-						throw new ORPCError("BAD_REQUEST", {
-							message:
-								"One or more target groups not found or do not belong to this website",
+				// Update target group associations if provided
+				if (targetGroupIds !== undefined) {
+					// Validate that all target groups exist and belong to the same website
+					if (targetGroupIds.length > 0) {
+						const validGroups = await tx.query.targetGroups.findMany({
+							where: and(
+								inArray(targetGroups.id, targetGroupIds),
+								eq(targetGroups.websiteId, flag.websiteId || ""),
+								notDeleted(targetGroups)
+							),
 						});
+
+						if (validGroups.length !== targetGroupIds.length) {
+							throw new ORPCError("BAD_REQUEST", {
+								message:
+									"One or more target groups not found or do not belong to this website",
+							});
+						}
+					}
+
+					await tx
+						.delete(flagsToTargetGroups)
+						.where(eq(flagsToTargetGroups.flagId, id));
+
+					if (targetGroupIds.length > 0) {
+						await tx.insert(flagsToTargetGroups).values(
+							targetGroupIds.map((targetGroupId) => ({
+								flagId: id,
+								targetGroupId,
+							}))
+						);
 					}
 				}
 
-				await context.db
-					.delete(flagsToTargetGroups)
-					.where(eq(flagsToTargetGroups.flagId, id));
-
-				if (targetGroupIds.length > 0) {
-					await context.db.insert(flagsToTargetGroups).values(
-						targetGroupIds.map((targetGroupId) => ({
-							flagId: id,
-							targetGroupId,
-						}))
-					);
-				}
-			}
+				return updated;
+			});
 
 			await invalidateFlagCache(id, flag.websiteId, flag.organizationId);
 

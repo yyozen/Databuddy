@@ -1,4 +1,10 @@
-import { and, desc, eq, links } from "@databuddy/db";
+import {
+	and,
+	desc,
+	eq,
+	isUniqueViolationFor,
+	links,
+} from "@databuddy/db";
 import {
 	type CachedLink,
 	invalidateLinkCache,
@@ -216,59 +222,51 @@ export const linksRouter = {
 						}
 					);
 
-					return newLink;
-				} catch (error) {
-					const dbError = error as { code?: string; constraint?: string };
-					if (
-						dbError.code === "23505" &&
-						dbError.constraint === "links_slug_unique"
-					) {
-						throw new ORPCError("CONFLICT", {
-							message: "This slug is already taken",
-						});
-					}
-					throw error;
-				}
-			}
-
-			let slug = "";
-			let attempts = 0;
-			const maxAttempts = 10;
-
-			while (attempts < maxAttempts) {
-				slug = generateSlug();
-
-				try {
-					const linkId = randomUUIDv7();
-					const [newLink] = await context.db
-						.insert(links)
-						.values({
-							id: linkId,
-							slug,
-							...linkValues,
-						})
-						.returning();
-
-					await setCachedLink(slug, toCachedLink(newLink)).catch((error) => {
-						logger.error(
-							{ slug, linkId: newLink.id, error: String(error) },
-							"Failed to cache link after create"
-						);
+				return newLink;
+			} catch (error) {
+				if (isUniqueViolationFor(error, "links_slug_unique")) {
+					throw new ORPCError("CONFLICT", {
+						message: "This slug is already taken",
 					});
-
-					return newLink;
-				} catch (error) {
-					const dbError = error as { code?: string; constraint?: string };
-					if (
-						dbError.code === "23505" &&
-						dbError.constraint === "links_slug_unique"
-					) {
-						attempts++;
-						continue;
-					}
-					throw error;
 				}
+				throw error;
 			}
+		}
+
+		let slug = "";
+		let attempts = 0;
+		const maxAttempts = 10;
+
+		while (attempts < maxAttempts) {
+			slug = generateSlug();
+
+			try {
+				const linkId = randomUUIDv7();
+				const [newLink] = await context.db
+					.insert(links)
+					.values({
+						id: linkId,
+						slug,
+						...linkValues,
+					})
+					.returning();
+
+				await setCachedLink(slug, toCachedLink(newLink)).catch((error) => {
+					logger.error(
+						{ slug, linkId: newLink.id, error: String(error) },
+						"Failed to cache link after create"
+					);
+				});
+
+				return newLink;
+			} catch (error) {
+				if (isUniqueViolationFor(error, "links_slug_unique")) {
+					attempts++;
+					continue;
+				}
+				throw error;
+			}
+		}
 
 			throw new ORPCError("INTERNAL_SERVER_ERROR", {
 				message: "Failed to generate unique slug",
@@ -340,20 +338,16 @@ export const linksRouter = {
 					);
 				}
 
-				return updatedLink;
-			} catch (error) {
-				const dbError = error as { code?: string; constraint?: string };
-				if (
-					dbError.code === "23505" &&
-					dbError.constraint === "links_slug_unique"
-				) {
-					throw new ORPCError("CONFLICT", {
-						message: "This slug is already taken",
-					});
-				}
-				throw error;
+			return updatedLink;
+		} catch (error) {
+			if (isUniqueViolationFor(error, "links_slug_unique")) {
+				throw new ORPCError("CONFLICT", {
+					message: "This slug is already taken",
+				});
 			}
-		}),
+			throw error;
+		}
+	}),
 
 	delete: protectedProcedure
 		.input(deleteLinkSchema)
