@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, links } from "@databuddy/db";
+import { and, desc, eq, links } from "@databuddy/db";
 import {
 	type CachedLink,
 	invalidateLinkCache,
@@ -123,12 +123,7 @@ export const linksRouter = {
 			return context.db
 				.select()
 				.from(links)
-				.where(
-					and(
-						eq(links.organizationId, input.organizationId),
-						isNull(links.deletedAt)
-					)
-				)
+				.where(eq(links.organizationId, input.organizationId))
 				.orderBy(desc(links.createdAt));
 		}),
 
@@ -147,8 +142,7 @@ export const linksRouter = {
 				.where(
 					and(
 						eq(links.id, input.id),
-						eq(links.organizationId, input.organizationId),
-						isNull(links.deletedAt)
+						eq(links.organizationId, input.organizationId)
 					)
 				)
 				.limit(1);
@@ -287,7 +281,7 @@ export const linksRouter = {
 			const existingLink = await context.db
 				.select()
 				.from(links)
-				.where(and(eq(links.id, input.id), isNull(links.deletedAt)))
+				.where(eq(links.id, input.id))
 				.limit(1);
 
 			if (existingLink.length === 0) {
@@ -370,7 +364,7 @@ export const linksRouter = {
 					slug: links.slug,
 				})
 				.from(links)
-				.where(and(eq(links.id, input.id), isNull(links.deletedAt)))
+				.where(eq(links.id, input.id))
 				.limit(1);
 
 			if (existingLink.length === 0) {
@@ -387,18 +381,21 @@ export const linksRouter = {
 				permissions: ["delete"],
 			});
 
-			await context.db
-				.update(links)
-				.set({ deletedAt: new Date() })
-				.where(eq(links.id, input.id));
-
-			// Invalidate the cache for this slug
-			await invalidateLinkCache(link.slug).catch((error) => {
+			// Invalidate cache first, then delete from DB
+			try {
+				await invalidateLinkCache(link.slug);
+			} catch (error) {
 				logger.error(
 					{ slug: link.slug, linkId: input.id, error: String(error) },
-					"Failed to invalidate link cache after delete"
+					"Failed to invalidate link cache before delete"
 				);
-			});
+				throw new ORPCError("INTERNAL_SERVER_ERROR", {
+					message: "Failed to invalidate cache. Link not deleted.",
+				});
+			}
+
+			// Hard delete the link
+			await context.db.delete(links).where(eq(links.id, input.id));
 
 			return { success: true };
 		}),

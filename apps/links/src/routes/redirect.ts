@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, db, eq, isNull, links } from "@databuddy/db";
+import { db, eq, links } from "@databuddy/db";
 import {
 	type CachedLink,
 	getCachedLink,
@@ -40,7 +40,7 @@ async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
 	setAttributes({ link_cache_hit: false });
 
 	const dbLink = await db.query.links.findFirst({
-		where: and(eq(links.slug, slug), isNull(links.deletedAt)),
+		where: eq(links.slug, slug),
 		columns: {
 			id: true,
 			targetUrl: true,
