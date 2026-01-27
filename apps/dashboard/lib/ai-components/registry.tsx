@@ -14,6 +14,7 @@ import {
 	type TimeSeriesProps,
 	TimeSeriesRenderer,
 } from "./renderers/charts/time-series";
+import { type DataTableProps, DataTableRenderer } from "./renderers/data-table";
 import {
 	type FunnelsListProps,
 	FunnelsListRenderer,
@@ -32,11 +33,17 @@ import {
 	type LinkPreviewProps,
 	LinkPreviewRenderer,
 } from "./renderers/links/preview";
+import { type MiniMapProps, MiniMapRenderer } from "./renderers/mini-map";
+import {
+	type ReferrersListProps,
+	ReferrersListRenderer,
+} from "./renderers/referrers-list";
 import type {
 	AnnotationPreviewInput,
 	AnnotationsListInput,
 	ComponentDefinition,
 	ComponentRegistry,
+	DataTableInput,
 	DistributionInput,
 	FunnelPreviewInput,
 	FunnelsListInput,
@@ -44,7 +51,9 @@ import type {
 	GoalsListInput,
 	LinkPreviewInput,
 	LinksListInput,
+	MiniMapInput,
 	RawComponentInput,
+	ReferrersListInput,
 	TimeSeriesInput,
 } from "./types";
 
@@ -255,10 +264,76 @@ function isAnnotationPreviewInput(
 }
 
 // ============================================
+// Data Table Validators
+// ============================================
+
+function isDataTableInput(
+	input: RawComponentInput
+): input is RawComponentInput & DataTableInput {
+	if (input.type !== "data-table") {
+		return false;
+	}
+	if (!(Array.isArray(input.columns) && Array.isArray(input.rows))) {
+		return false;
+	}
+	return input.columns.every(
+		(col) =>
+			typeof col === "object" &&
+			col !== null &&
+			typeof (col as Record<string, unknown>).key === "string" &&
+			typeof (col as Record<string, unknown>).header === "string"
+	);
+}
+
+// ============================================
+// Referrers List Validators
+// ============================================
+
+function isReferrersListInput(
+	input: RawComponentInput
+): input is RawComponentInput & ReferrersListInput {
+	if (input.type !== "referrers-list") {
+		return false;
+	}
+	if (!Array.isArray(input.referrers)) {
+		return false;
+	}
+	return input.referrers.every(
+		(ref) =>
+			typeof ref === "object" &&
+			ref !== null &&
+			typeof (ref as Record<string, unknown>).name === "string" &&
+			typeof (ref as Record<string, unknown>).visitors === "number"
+	);
+}
+
+// ============================================
+// Mini Map Validators
+// ============================================
+
+function isMiniMapInput(
+	input: RawComponentInput
+): input is RawComponentInput & MiniMapInput {
+	if (input.type !== "mini-map") {
+		return false;
+	}
+	if (!Array.isArray(input.countries)) {
+		return false;
+	}
+	return input.countries.every(
+		(country) =>
+			typeof country === "object" &&
+			country !== null &&
+			typeof (country as Record<string, unknown>).name === "string" &&
+			typeof (country as Record<string, unknown>).visitors === "number"
+	);
+}
+
+// ============================================
 // Chart Transformers
 // ============================================
 
-function toTimeSeriesProps(variant: "line" | "bar" | "area") {
+function toTimeSeriesProps(variant: "line" | "bar" | "area" | "stacked-bar") {
 	return (input: TimeSeriesInput): TimeSeriesProps => {
 		const series = Object.keys(input.data).filter(
 			(key) => key !== "x" && Array.isArray(input.data[key])
@@ -367,6 +442,42 @@ function toAnnotationPreviewProps(
 }
 
 // ============================================
+// Data Table Transformers
+// ============================================
+
+function toDataTableProps(input: DataTableInput): DataTableProps {
+	return {
+		title: input.title,
+		description: input.description,
+		columns: input.columns,
+		rows: input.rows,
+		footer: input.footer,
+	};
+}
+
+// ============================================
+// Referrers List Transformers
+// ============================================
+
+function toReferrersListProps(input: ReferrersListInput): ReferrersListProps {
+	return {
+		title: input.title,
+		referrers: input.referrers,
+	};
+}
+
+// ============================================
+// Mini Map Transformers
+// ============================================
+
+function toMiniMapProps(input: MiniMapInput): MiniMapProps {
+	return {
+		title: input.title,
+		countries: input.countries,
+	};
+}
+
+// ============================================
 // Component Registry
 // ============================================
 
@@ -387,6 +498,12 @@ export const componentRegistry: ComponentRegistry = {
 	"area-chart": {
 		validate: isTimeSeriesInput,
 		transform: toTimeSeriesProps("area"),
+		component: TimeSeriesRenderer,
+	} as ComponentDefinition<TimeSeriesInput, TimeSeriesProps>,
+
+	"stacked-bar-chart": {
+		validate: isTimeSeriesInput,
+		transform: toTimeSeriesProps("stacked-bar"),
 		component: TimeSeriesRenderer,
 	} as ComponentDefinition<TimeSeriesInput, TimeSeriesProps>,
 
@@ -453,6 +570,27 @@ export const componentRegistry: ComponentRegistry = {
 		transform: toAnnotationPreviewProps,
 		component: AnnotationPreviewRenderer,
 	} as ComponentDefinition<AnnotationPreviewInput, AnnotationPreviewProps>,
+
+	// Data Table
+	"data-table": {
+		validate: isDataTableInput,
+		transform: toDataTableProps,
+		component: DataTableRenderer,
+	} as ComponentDefinition<DataTableInput, DataTableProps>,
+
+	// Referrers List
+	"referrers-list": {
+		validate: isReferrersListInput,
+		transform: toReferrersListProps,
+		component: ReferrersListRenderer,
+	} as ComponentDefinition<ReferrersListInput, ReferrersListProps>,
+
+	// Mini Map
+	"mini-map": {
+		validate: isMiniMapInput,
+		transform: toMiniMapProps,
+		component: MiniMapRenderer,
+	} as ComponentDefinition<MiniMapInput, MiniMapProps>,
 };
 
 export function hasComponent(type: string): boolean {

@@ -14,7 +14,7 @@
     "vscode:prepublish": "bun run build"
   },
   "devDependencies": {
-    "@ai-sdk/provider": "^3.0.2",
+    "@ai-sdk/provider": "^3.0.5",
     "@types/node": "^20.0.0",
     "@vitejs/plugin-react": "^5.0.0",
     "ai": "^5.0.51",
@@ -27,7 +27,7 @@
     "msw": "^2.11.5"
   },
   "peerDependencies": {
-    "@ai-sdk/provider": "^2.0.0",
+    "@ai-sdk/provider": "^3.0.5",
     "ai": "^5.0.51",
     "react": ">=18",
     "tokenlens": "^2.0.0-alpha.3",

@@ -21,7 +21,7 @@ export const { track } = databuddyLLM({
 const overrideModel: string | null = null;
 
 const modelNames = {
-	triage: overrideModel ?? "openai/gpt-oss-safeguard-20b",
+	triage: overrideModel ?? "openai/gpt-oss-120b",
 	analytics: overrideModel ?? "anthropic/claude-sonnet-4.5",
 	advanced: overrideModel ?? "anthropic/claude-sonnet-4.5",
 	perplexity: "perplexity/sonar-pro",

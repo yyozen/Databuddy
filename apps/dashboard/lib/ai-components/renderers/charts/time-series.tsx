@@ -24,7 +24,7 @@ const COLORS = [
 ];
 
 export interface TimeSeriesProps extends ChartComponentProps {
-	variant: "line" | "bar" | "area";
+	variant: "line" | "bar" | "area" | "stacked-bar";
 	data: Record<string, string | number>[];
 	series: string[];
 }
@@ -131,6 +131,38 @@ export function TimeSeriesRenderer({
 							fill={`url(#${id}-gradient-${key})`}
 							key={key}
 							radius={[2, 2, 0, 0]}
+						/>
+					))}
+				</BarChart>
+			);
+		}
+
+		if (variant === "stacked-bar") {
+			return (
+				<BarChart {...chartProps}>
+					<XAxis
+						axisLine={false}
+						dataKey="x"
+						tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+						tickLine={false}
+					/>
+					<YAxis
+						axisLine={false}
+						tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+						tickLine={false}
+						width={35}
+					/>
+					<Tooltip
+						content={tooltipContent}
+						cursor={{ fill: "var(--chart-1)", fillOpacity: 0.1 }}
+					/>
+					{series.map((key, idx) => (
+						<Bar
+							dataKey={key}
+							fill={getColor(idx)}
+							key={key}
+							radius={idx === series.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]}
+							stackId="stack"
 						/>
 					))}
 				</BarChart>

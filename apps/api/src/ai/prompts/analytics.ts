@@ -80,14 +80,24 @@ const ANALYTICS_RULES = `<agent-specific-rules>
 
 To include a chart, use this exact JSON format on its own line:
 
-Time-series charts (line-chart, bar-chart, area-chart):
+Time-series charts (line-chart, bar-chart, area-chart, stacked-bar-chart):
 {"type":"line-chart","title":"Traffic Over Time","data":{"x":["2024-01-01","2024-01-02"],"pageviews":[100,150],"visitors":[80,120]}}
 {"type":"bar-chart","title":"Top Pages","data":{"x":["/page1","/page2","/page3"],"views":[1000,800,600]}}
 {"type":"area-chart","title":"Sessions","data":{"x":["Mon","Tue","Wed"],"sessions":[500,600,550]}}
+{"type":"stacked-bar-chart","title":"Traffic by Source","data":{"x":["Mon","Tue","Wed"],"organic":[100,120,115],"paid":[50,60,55],"direct":[30,35,40]}}
 
 Distribution charts (pie-chart, donut-chart):
 {"type":"pie-chart","title":"Device Distribution","data":{"labels":["Desktop","Mobile","Tablet"],"values":[650,280,70]}}
 {"type":"donut-chart","title":"Traffic Sources","data":{"labels":["Organic","Direct","Referral"],"values":[450,300,150]}}
+
+Data table (for tabular data with custom columns):
+{"type":"data-table","title":"Performance Metrics","description":"Page load times","columns":[{"key":"page","header":"Page"},{"key":"visitors","header":"Visitors","align":"right"},{"key":"avg_load","header":"Avg Load (ms)","align":"right"}],"rows":[{"page":"/home","visitors":1500,"avg_load":245},{"page":"/about","visitors":800,"avg_load":180}],"footer":"5 pages total"}
+
+Referrers list (traffic sources with favicons):
+{"type":"referrers-list","title":"Traffic Sources","referrers":[{"name":"Google","domain":"google.com","visitors":500,"percentage":45.5},{"name":"Twitter","domain":"twitter.com","visitors":200,"percentage":18.2},{"name":"Direct","visitors":300,"percentage":27.3}]}
+
+Mini map (geographic distribution):
+{"type":"mini-map","title":"Visitor Locations","countries":[{"name":"United States","country_code":"US","visitors":1200,"percentage":40},{"name":"Germany","country_code":"DE","visitors":500,"percentage":16.7},{"name":"United Kingdom","country_code":"GB","visitors":400,"percentage":13.3}]}
 
 Links list:
 {"type":"links-list","title":"Your Short Links","links":[{"id":"1","name":"Black Friday","slug":"bf24","targetUrl":"https://example.com/sale","createdAt":"2024-01-01T00:00:00Z","expiresAt":null}]}
@@ -123,7 +133,11 @@ Annotation preview (for create/update/delete confirmation):
 
 Rules:
 - For time-series: data has "x" (labels) and named number arrays for each series
+- For stacked-bar-chart: use when comparing proportions over time (e.g., traffic sources breakdown, device types by day)
 - For distribution: data has "labels" and "values" arrays
+- For data-table: use for tabular data with multiple columns, custom alignment. columns array has key, header, and optional align ("left"|"center"|"right"). Ideal for performance metrics, detailed breakdowns
+- For referrers-list: use when showing traffic sources - automatically displays favicons for domains. Include name, domain (for favicon), visitors, and percentage
+- For mini-map: use when showing geographic/country data - displays an interactive map with top countries overlay. Include name, country_code (ISO 2-letter), visitors, percentage
 - For links-list: ALWAYS include ALL of these fields for each link from the tool result: id, name, slug, targetUrl, createdAt, expiresAt, ogTitle, ogDescription, ogImageUrl, ogVideoUrl, iosUrl, androidUrl, expiredRedirectUrl, organizationId
 - For link-preview: Use mode "create" for new links, "update" for edits, "delete" for deletions. Show this component when a link tool returns preview=true
 - For funnels-list: Include all fields from list_funnels tool result: id, name, description, steps (with type, target, name), isActive, createdAt

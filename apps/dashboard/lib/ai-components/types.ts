@@ -191,3 +191,53 @@ export interface AnnotationPreviewInput {
 		isPublic?: boolean;
 	};
 }
+
+// Data Table types
+
+export interface DataTableColumn {
+	key: string;
+	header: string;
+	align?: "left" | "center" | "right";
+}
+
+export interface DataTableInput {
+	type: "data-table";
+	title?: string;
+	description?: string;
+	columns: DataTableColumn[];
+	rows: Record<string, string | number | boolean | null>[];
+	footer?: string;
+}
+
+// Referrers List types
+
+export interface ReferrerItem {
+	name: string;
+	referrer?: string;
+	domain?: string;
+	visitors: number;
+	pageviews?: number;
+	percentage?: number;
+}
+
+export interface ReferrersListInput {
+	type: "referrers-list";
+	title?: string;
+	referrers: ReferrerItem[];
+}
+
+// Mini Map types
+
+export interface CountryItem {
+	name: string;
+	country_code?: string;
+	visitors: number;
+	pageviews?: number;
+	percentage?: number;
+}
+
+export interface MiniMapInput {
+	type: "mini-map";
+	title?: string;
+	countries: CountryItem[];
+}
