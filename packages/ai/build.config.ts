@@ -6,8 +6,16 @@ export default defineBuildConfig({
 	entries: [
 		"./src/vercel/index.ts",
 		"./src/openai/index.ts",
+		"./src/anthropic/index.ts",
 	],
-	externals: ["@ai-sdk/provider", "ai", "openai", "tokenlens", "uuid"],
+	externals: [
+		"@ai-sdk/provider",
+		"@anthropic-ai/sdk",
+		"ai",
+		"openai",
+		"tokenlens",
+		"uuid",
+	],
 	rollup: {
 		emitCJS: false,
 		esbuild: {

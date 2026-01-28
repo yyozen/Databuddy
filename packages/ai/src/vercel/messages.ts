@@ -10,7 +10,12 @@ export function promptToMessages(prompt: Prompt, maxSize: number): Message[] {
 		}
 
 		if (Array.isArray(msg.content)) {
-			return { role: msg.role, content: msg.content.map(mapContentPart) };
+			// @ts-expect-error Vercel SDK union types don't overlap with our simpler type
+			const parts = msg.content as Array<{
+				type: string;
+				[key: string]: unknown;
+			}>;
+			return { role: msg.role, content: parts.map(mapContentPart) };
 		}
 
 		return { role: msg.role, content: truncate(extractText(msg.content)) };

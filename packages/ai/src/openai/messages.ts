@@ -1,7 +1,15 @@
-import type { Message, MessageContent } from "../shared/types";
-import { truncate } from "../shared/utils";
+import type { OpenAIMessage, OpenAIMessageContent } from "./types";
 
-/** Formats OpenAI chat messages to our Message format */
+const MAX_LENGTH = 100_000;
+
+function truncate(text: string, maxLength = MAX_LENGTH): string {
+	if (text.length <= maxLength) {
+		return text;
+	}
+	return `${text.slice(0, maxLength)}... [truncated]`;
+}
+
+/** Formats OpenAI messages to our Message format */
 export function formatMessages(
 	messages: Array<{
 		role: string;
@@ -14,46 +22,42 @@ export function formatMessages(
 			function: { name: string; arguments: string };
 		}>;
 	}>
-): Message[] {
+): OpenAIMessage[] {
 	return messages.map((msg) => {
-		const content: MessageContent[] = [];
-
+		// Simple text content
 		if (typeof msg.content === "string") {
-			content.push({ type: "text", text: truncate(msg.content) });
-		} else if (Array.isArray(msg.content)) {
-			for (const part of msg.content) {
+			return { role: msg.role, content: truncate(msg.content) };
+		}
+
+		// Array content (vision, etc.)
+		if (Array.isArray(msg.content)) {
+			const content: OpenAIMessageContent[] = msg.content.map((part) => {
 				if (part.type === "text" && part.text) {
-					content.push({ type: "text", text: truncate(part.text) });
-				} else {
-					content.push(part as MessageContent);
+					return { type: "text", text: truncate(part.text) };
 				}
-			}
+				return { type: part.type };
+			});
+			return { role: msg.role, content };
 		}
 
-		if (msg.tool_calls) {
-			for (const tc of msg.tool_calls) {
-				content.push({
-					type: "tool-call",
-					id: tc.id,
-					function: {
-						name: tc.function.name,
-						arguments: truncate(tc.function.arguments),
-					},
-				});
-			}
+		// Tool calls
+		if (msg.tool_calls?.length) {
+			const content: OpenAIMessageContent[] = msg.tool_calls.map((tc) => ({
+				type: "tool-call",
+				id: tc.id,
+				function: {
+					name: tc.function.name,
+					arguments: truncate(tc.function.arguments),
+				},
+			}));
+			return { role: msg.role, content };
 		}
 
-		return {
-			role: msg.role,
-			content:
-				content.length === 1 && content[0].type === "text"
-					? (content[0] as { text: string }).text
-					: content,
-		};
+		return { role: msg.role, content: "" };
 	});
 }
 
-/** Formats OpenAI chat completion response to our Message format */
+/** Formats OpenAI response to our Message format */
 export function formatResponse(response: {
 	choices?: Array<{
 		message?: {
@@ -65,59 +69,47 @@ export function formatResponse(response: {
 			}>;
 		};
 	}>;
-}): Message[] {
-	const messages: Message[] = [];
-
-	for (const choice of response.choices ?? []) {
-		if (!choice.message) {
-			continue;
-		}
-
-		const content: MessageContent[] = [];
-
-		if (choice.message.content) {
-			content.push({ type: "text", text: truncate(choice.message.content) });
-		}
-
-		if (choice.message.tool_calls) {
-			for (const tc of choice.message.tool_calls) {
-				content.push({
-					type: "tool-call",
-					id: tc.id,
-					function: {
-						name: tc.function.name,
-						arguments: truncate(tc.function.arguments),
-					},
-				});
-			}
-		}
-
-		if (content.length > 0) {
-			messages.push({
-				role: choice.message.role ?? "assistant",
-				content:
-					content.length === 1 && content[0].type === "text"
-						? (content[0] as { text: string }).text
-						: content,
-			});
-		}
+}): OpenAIMessage[] {
+	const message = response.choices?.[0]?.message;
+	if (!message) {
+		return [];
 	}
 
-	return messages;
+	// Tool calls response
+	if (message.tool_calls?.length) {
+		const content: OpenAIMessageContent[] = message.tool_calls.map((tc) => ({
+			type: "tool-call",
+			id: tc.id,
+			function: {
+				name: tc.function.name,
+				arguments: truncate(tc.function.arguments),
+			},
+		}));
+		return [{ role: message.role ?? "assistant", content }];
+	}
+
+	// Text response
+	if (message.content) {
+		return [
+			{ role: message.role ?? "assistant", content: truncate(message.content) },
+		];
+	}
+
+	return [];
 }
 
 /** Builds output messages from streaming data */
 export function formatStreamOutput(
 	text: string,
 	toolCalls: Map<number, { id: string; name: string; arguments: string }>
-): Message[] {
-	const content: MessageContent[] = [];
+): OpenAIMessage[] {
+	const content: OpenAIMessageContent[] = [];
 
 	if (text) {
 		content.push({ type: "text", text: truncate(text) });
 	}
 
-	for (const tc of toolCalls.values()) {
+	for (const tc of Array.from(toolCalls.values())) {
 		if (tc.name) {
 			content.push({
 				type: "tool-call",
@@ -131,13 +123,12 @@ export function formatStreamOutput(
 		return [];
 	}
 
-	return [
-		{
-			role: "assistant",
-			content:
-				content.length === 1 && content[0].type === "text"
-					? (content[0] as { text: string }).text
-					: content,
-		},
-	];
+	// Simplify if just text
+	if (content.length === 1 && content[0].type === "text") {
+		return [
+			{ role: "assistant", content: (content[0] as { text: string }).text },
+		];
+	}
+
+	return [{ role: "assistant", content }];
 }

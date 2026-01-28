@@ -20,9 +20,6 @@ import {
 	adjustAnthropicCache,
 	buildToolInfo,
 	buildUsage,
-	getCachedTokens,
-	getReasoningTokens,
-	getTokenCount,
 	getWebSearchCount,
 } from "./usage";
 
@@ -308,15 +305,7 @@ export function createTracker(options: TrackerOptions = {}) {
 								const durationMs = Date.now() - startTime;
 								const provider = getProvider(model);
 
-								const usage = buildUsage(
-									{
-										inputTokens: getTokenCount(rawUsage.inputTokens),
-										outputTokens: getTokenCount(rawUsage.outputTokens),
-										...getReasoningTokens(rawUsage),
-										...getCachedTokens(rawUsage),
-									},
-									providerMetadata
-								);
+								const usage = buildUsage(rawUsage, providerMetadata);
 								usage.webSearchCount = getWebSearchCount(
 									providerMetadata,
 									rawUsage

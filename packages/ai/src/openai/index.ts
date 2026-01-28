@@ -7,46 +7,123 @@ import type {
 	ChatCompletionCreateParamsStreaming,
 } from "openai/resources/chat/completions";
 import type { Stream } from "openai/streaming";
+import { v7 as uuidv7 } from "uuid";
 
-import { computeCost } from "../shared/costs";
-import { createTransport } from "../shared/transport";
-import type { Cost, ToolInfo, Usage } from "../shared/types";
-import { createErrorInfo, createTraceId, getHttpStatus } from "../shared/utils";
 import { formatMessages, formatResponse, formatStreamOutput } from "./messages";
+import type {
+	OpenAICallOptions,
+	OpenAICost,
+	OpenAILLMCall,
+	OpenAIToolInfo,
+	OpenAITrackerOptions,
+	OpenAITransport,
+	OpenAIUsage,
+} from "./types";
 import { extractUsage, getWebSearchCount } from "./usage";
 
-export { httpTransport } from "../shared/transport";
 export type {
-	CallOptions,
-	LLMCall,
-	TrackerOptions,
-	Transport,
-} from "../shared/types";
-export { createTraceId } from "../shared/utils";
+	OpenAICallOptions,
+	OpenAILLMCall,
+	OpenAITrackerOptions,
+	OpenAITransport,
+} from "./types";
 
-interface DatabuddyOpenAIConfig extends ClientOptions {
-	databuddy?: TrackerOptions;
+/** Creates a trace ID using UUIDv7 */
+export function createTraceId(): string {
+	return uuidv7();
+}
+
+/** Default HTTP transport */
+export function httpTransport(url: string, apiKey?: string): OpenAITransport {
+	return async (call) => {
+		await fetch(url, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+			},
+			body: JSON.stringify(call),
+		});
+	};
+}
+
+function createTransport(apiUrl?: string, apiKey?: string): OpenAITransport {
+	const url =
+		apiUrl ?? process.env.DATABUDDY_API_URL ?? "https://api.databuddy.cc/llm";
+	const key = apiKey ?? process.env.DATABUDDY_API_KEY;
+	return httpTransport(url, key);
+}
+
+function createErrorInfo(error: unknown): {
+	name: string;
+	message: string;
+	stack?: string;
+} {
+	if (error instanceof Error) {
+		return { name: error.name, message: error.message, stack: error.stack };
+	}
+	return { name: "Error", message: String(error) };
+}
+
+function getHttpStatus(error: unknown): number {
+	if (error && typeof error === "object" && "status" in error) {
+		const status = (error as { status: unknown }).status;
+		if (typeof status === "number") {
+			return status;
+		}
+	}
+	return 500;
+}
+
+async function computeCost(
+	model: string,
+	usage: OpenAIUsage
+): Promise<OpenAICost> {
+	try {
+		const { computeCostUSD } = await import("tokenlens");
+		const result = await computeCostUSD({
+			modelId: model,
+			provider: "openai",
+			usage: {
+				input_tokens: usage.inputTokens,
+				output_tokens: usage.outputTokens,
+			},
+		});
+		return {
+			inputCostUSD: result.inputTokenCostUSD,
+			outputCostUSD: result.outputTokenCostUSD,
+			totalCostUSD: result.totalTokenCostUSD,
+		};
+	} catch {
+		return {};
+	}
+}
+
+interface OpenAIConfig extends ClientOptions {
+	databuddy?: OpenAITrackerOptions;
 }
 
 type CreateParams = (
 	| ChatCompletionCreateParamsNonStreaming
 	| ChatCompletionCreateParamsStreaming
-) & { databuddy?: CallOptions };
+) & {
+	databuddy?: OpenAICallOptions;
+};
 
 interface TransportConfig {
-	transport: (call: import("../shared/types").LLMCall) => Promise<void> | void;
+	transport: OpenAITransport;
 	computeCosts: boolean;
 	privacyMode: boolean;
-	onSuccess?: (call: import("../shared/types").LLMCall) => void;
-	onError?: (call: import("../shared/types").LLMCall) => void;
+	onSuccess?: (call: OpenAILLMCall) => void;
+	onError?: (call: OpenAILLMCall) => void;
 }
 
 /** OpenAI client with Databuddy observability */
 export class OpenAI extends OpenAIOriginal {
 	private readonly db: TransportConfig;
-	chat: DatabuddyChat;
+	override chat: DatabuddyChat;
 
-	constructor(config: DatabuddyOpenAIConfig = {}) {
+	constructor(config: OpenAIConfig = {}) {
 		const { databuddy, ...openAIConfig } = config;
 		super(openAIConfig);
 
@@ -60,14 +137,15 @@ export class OpenAI extends OpenAIOriginal {
 			onError: databuddy?.onError,
 		};
 
-		this.chat = new DatabuddyChat(this, this.db);
+		this.chat = new DatabuddyChat(this as OpenAIOriginal, this.db);
 	}
 }
 
 class DatabuddyChat extends OpenAIOriginal.Chat {
-	completions: DatabuddyCompletions;
+	override completions: DatabuddyCompletions;
 
-	constructor(client: OpenAI, db: TransportConfig) {
+	constructor(client: OpenAIOriginal, db: TransportConfig) {
+		// @ts-expect-error OpenAI class override causes structural mismatch
 		super(client);
 		this.completions = new DatabuddyCompletions(client, db);
 	}
@@ -75,19 +153,22 @@ class DatabuddyChat extends OpenAIOriginal.Chat {
 
 class DatabuddyCompletions extends OpenAIOriginal.Chat.Completions {
 	private readonly db: TransportConfig;
-	private readonly baseURL: string;
 
 	constructor(client: OpenAIOriginal, db: TransportConfig) {
+		// @ts-expect-error OpenAI class override causes structural mismatch
 		super(client);
 		this.db = db;
-		this.baseURL = client.baseURL;
 	}
 
 	create(
-		body: ChatCompletionCreateParamsNonStreaming & { databuddy?: CallOptions }
+		body: ChatCompletionCreateParamsNonStreaming & {
+			databuddy?: OpenAICallOptions;
+		}
 	): APIPromise<ChatCompletion>;
 	create(
-		body: ChatCompletionCreateParamsStreaming & { databuddy?: CallOptions }
+		body: ChatCompletionCreateParamsStreaming & {
+			databuddy?: OpenAICallOptions;
+		}
 	): APIPromise<Stream<ChatCompletionChunk>>;
 	create(
 		body: CreateParams
@@ -100,7 +181,7 @@ class DatabuddyCompletions extends OpenAIOriginal.Chat.Completions {
 		const onSuccess = opts?.onSuccess ?? this.db.onSuccess;
 		const onError = opts?.onError ?? this.db.onError;
 
-		const sendCall = (call: import("../shared/types").LLMCall) => {
+		const sendCall = (call: OpenAILLMCall) => {
 			Promise.resolve(this.db.transport(call)).catch((err) => {
 				console.error("[databuddy] Failed to send LLM log:", err);
 			});
@@ -114,7 +195,7 @@ class DatabuddyCompletions extends OpenAIOriginal.Chat.Completions {
 		const input = isPrivate
 			? []
 			: formatMessages(params.messages as Parameters<typeof formatMessages>[0]);
-		const tools: ToolInfo = {
+		const tools: OpenAIToolInfo = {
 			callCount: 0,
 			resultCount: 0,
 			calledTools: [],
@@ -135,7 +216,7 @@ class DatabuddyCompletions extends OpenAIOriginal.Chat.Completions {
 					try {
 						let text = "";
 						let modelFromResponse: string | undefined;
-						let usage: Usage = {
+						let usage: OpenAIUsage = {
 							inputTokens: 0,
 							outputTokens: 0,
 							totalTokens: 0,
@@ -192,23 +273,21 @@ class DatabuddyCompletions extends OpenAIOriginal.Chat.Completions {
 						}
 
 						const durationMs = Date.now() - startTime;
-						const cost: Cost =
+						const cost: OpenAICost =
 							shouldCost && (usage.inputTokens > 0 || usage.outputTokens > 0)
-								? await computeCost(
-										modelFromResponse ?? params.model,
-										"openai",
-										usage
-									)
+								? await computeCost(modelFromResponse ?? params.model, usage)
 								: {};
 
 						tools.callCount = toolCalls.size;
-						tools.calledTools = [
-							...new Set(
-								[...toolCalls.values()].map((t) => t.name).filter(Boolean)
-							),
-						];
+						tools.calledTools = Array.from(
+							new Set(
+								Array.from(toolCalls.values())
+									.map((t) => t.name)
+									.filter(Boolean)
+							)
+						);
 
-						const call: import("../shared/types").LLMCall = {
+						const call: OpenAILLMCall = {
 							timestamp: new Date(),
 							traceId,
 							type: "stream",
@@ -225,7 +304,7 @@ class DatabuddyCompletions extends OpenAIOriginal.Chat.Completions {
 
 						sendCall(call);
 					} catch (error) {
-						const call: import("../shared/types").LLMCall = {
+						const call: OpenAILLMCall = {
 							timestamp: new Date(),
 							traceId,
 							type: "stream",
@@ -248,15 +327,15 @@ class DatabuddyCompletions extends OpenAIOriginal.Chat.Completions {
 			}) as APIPromise<Stream<ChatCompletionChunk>>;
 		}
 
-		return promise.then(
+		return (promise as APIPromise<ChatCompletion>).then(
 			async (result) => {
 				const durationMs = Date.now() - startTime;
 				const usage = extractUsage(result.usage);
 				usage.webSearchCount = getWebSearchCount(result);
 
-				const cost: Cost =
+				const cost: OpenAICost =
 					shouldCost && (usage.inputTokens > 0 || usage.outputTokens > 0)
-						? await computeCost(result.model ?? params.model, "openai", usage)
+						? await computeCost(result.model ?? params.model, usage)
 						: {};
 
 				const output = isPrivate ? [] : formatResponse(result);
@@ -266,9 +345,9 @@ class DatabuddyCompletions extends OpenAIOriginal.Chat.Completions {
 					) ?? [];
 
 				tools.callCount = calledTools.length;
-				tools.calledTools = [...new Set(calledTools)];
+				tools.calledTools = Array.from(new Set(calledTools));
 
-				const call: import("../shared/types").LLMCall = {
+				const call: OpenAILLMCall = {
 					timestamp: new Date(),
 					traceId,
 					type: "generate",
@@ -288,7 +367,7 @@ class DatabuddyCompletions extends OpenAIOriginal.Chat.Completions {
 				return result;
 			},
 			(error) => {
-				const call: import("../shared/types").LLMCall = {
+				const call: OpenAILLMCall = {
 					timestamp: new Date(),
 					traceId,
 					type: "generate",

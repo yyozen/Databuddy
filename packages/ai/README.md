@@ -1,6 +1,6 @@
 # @databuddy/ai
 
-LLM observability for OpenAI and Vercel AI SDK.
+LLM observability for OpenAI, Anthropic, and Vercel AI SDK.
 
 ## Installation
 
@@ -26,16 +26,22 @@ const response = await openai.chat.completions.create({
 });
 ```
 
-### Per-call Options
+## Anthropic SDK
 
 ```typescript
-const response = await openai.chat.completions.create({
-  model: "gpt-4o",
-  messages: [{ role: "user", content: "Hello!" }],
+import { Anthropic } from "@databuddy/ai/anthropic";
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
   databuddy: {
-    traceId: "custom-trace-id",
-    privacyMode: true,
+    apiKey: process.env.DATABUDDY_API_KEY,
   },
+});
+
+const response = await anthropic.messages.create({
+  model: "claude-sonnet-4-20250514",
+  max_tokens: 1024,
+  messages: [{ role: "user", content: "Hello!" }],
 });
 ```
 
@@ -59,8 +65,8 @@ const result = await generateText({
 ## Configuration Options
 
 ```typescript
-// OpenAI
-const openai = new OpenAI({
+// OpenAI / Anthropic
+const client = new OpenAI({
   databuddy: {
     apiUrl: "https://your-endpoint.com/llm",
     apiKey: "your-api-key",
@@ -80,6 +86,29 @@ const { track } = createTracker({
   maxContentSize: 1_048_576,
   onSuccess: (call) => {},
   onError: (call) => {},
+});
+```
+
+## Per-call Options
+
+```typescript
+// OpenAI / Anthropic
+const response = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Hello!" }],
+  databuddy: {
+    traceId: "custom-trace-id",
+    privacyMode: true,
+  },
+});
+
+// Vercel AI SDK
+const result = await generateText({
+  model: track(openai("gpt-4o"), {
+    traceId: "custom-trace-id",
+    privacyMode: true,
+  }),
+  prompt: "Hello!",
 });
 ```
 
@@ -109,7 +138,8 @@ const openai = new OpenAI({
 - Automatic token counting and cost calculation
 - Support for streaming and non-streaming calls
 - Tool call tracking
+- Cache token tracking (Anthropic)
 - Web search usage detection
 - Error tracking
 - Privacy mode for sensitive data
-- Works with OpenAI SDK and all Vercel AI SDK providers
+- Works with OpenAI, Anthropic, and all Vercel AI SDK providers
