@@ -37,6 +37,7 @@
         "@ai-sdk/groq": "^3.0.15",
         "@ai-sdk/openai": "^2.0.89",
         "@ai-sdk/provider": "^3.0.5",
+        "@databuddy/ai": "workspace:*",
         "@databuddy/auth": "workspace:*",
         "@databuddy/db": "workspace:*",
         "@databuddy/email": "workspace:*",
