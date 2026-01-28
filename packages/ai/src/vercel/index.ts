@@ -1,6 +1,6 @@
-/** biome-ignore-all lint/performance/noBarrelFile: hey so stop giving an error thanks ultracite */
-export { createTracker, httpTransport } from "./middleware";
+export { httpTransport } from "../shared/transport";
 export type {
+	CallOptions,
 	Cost,
 	ErrorInfo,
 	FileContent,
@@ -15,8 +15,8 @@ export type {
 	ToolInfo,
 	ToolResultContent,
 	TrackerOptions,
-	TrackOptions,
 	Transport,
 	Usage,
-} from "./types";
-export { createTraceId } from "./utils";
+} from "../shared/types";
+export { createTraceId } from "../shared/utils";
+export { createTracker } from "./middleware";

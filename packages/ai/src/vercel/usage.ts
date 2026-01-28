@@ -1,6 +1,6 @@
+import type { ToolInfo, Usage } from "../shared/types";
 import type { Model } from "./providers";
 import { isV3 } from "./providers";
-import type { ToolInfo, Usage } from "./types";
 
 /** Extracts a numeric token count from v2 (number) or v3 (object with .total) formats */
 function getTokenCount(value: unknown): number | undefined {

@@ -1,4 +1,14 @@
-import { computeCost } from "./costs";
+import { computeCost } from "../shared/costs";
+import { createTransport } from "../shared/transport";
+import type {
+	CallOptions,
+	Cost,
+	LLMCall,
+	ToolInfo,
+	TrackerOptions,
+	Transport,
+} from "../shared/types";
+import { createErrorInfo, createTraceId } from "../shared/utils";
 import {
 	outputToMessages,
 	promptToMessages,
@@ -6,15 +16,6 @@ import {
 } from "./messages";
 import type { Model, StreamChunk } from "./providers";
 import { getProvider } from "./providers";
-import { createTransport } from "./transport";
-import type {
-	Cost,
-	LLMCall,
-	ToolInfo,
-	TrackerOptions,
-	TrackOptions,
-	Transport,
-} from "./types";
 import {
 	adjustAnthropicCache,
 	buildToolInfo,
@@ -24,7 +25,6 @@ import {
 	getTokenCount,
 	getWebSearchCount,
 } from "./usage";
-import { createTraceId } from "./utils";
 
 const DEFAULT_MAX_SIZE = 1_048_576;
 const DEFAULT_API_URL = "https://basket.databuddy.cc/llm";
@@ -50,11 +50,7 @@ function createErrorRecord(
 		cost: {},
 		tools: { callCount: 0, resultCount: 0, calledTools: [] },
 		durationMs,
-		error: {
-			name: error instanceof Error ? error.name : "UnknownError",
-			message: error instanceof Error ? error.message : String(error),
-			stack: error instanceof Error ? error.stack : undefined,
-		},
+		error: createErrorInfo(error),
 	};
 }
 
@@ -67,7 +63,11 @@ function sendCall(
 	Promise.resolve(transport(call)).catch((err) => {
 		console.error("[databuddy] Failed to send LLM log:", err);
 	});
-	call.error ? onError?.(call) : onSuccess?.(call);
+	if (call.error) {
+		onError?.(call);
+	} else {
+		onSuccess?.(call);
+	}
 }
 
 function getFinishReason(raw: unknown): string | undefined {
@@ -121,7 +121,7 @@ export function createTracker(options: TrackerOptions = {}) {
 			apiKey ?? process.env.DATABUDDY_API_KEY
 		);
 
-	function track<T extends Model>(model: T, opts: TrackOptions = {}): T {
+	function track<T extends Model>(model: T, opts: CallOptions = {}): T {
 		const getTransport = () => opts.transport ?? transport;
 		const isPrivate = () => opts.privacyMode ?? globalPrivacyMode;
 		const shouldCost = () => opts.computeCosts ?? shouldComputeCosts;
@@ -407,5 +407,3 @@ export function createTracker(options: TrackerOptions = {}) {
 
 	return { track, transport };
 }
-
-export { httpTransport } from "./transport";

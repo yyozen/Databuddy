@@ -1,9 +1,6 @@
 import type { Cost } from "./types";
 
-/**
- * Computes token costs using TokenLens (optional dependency)
- * Returns empty object if TokenLens is not installed or fails
- */
+/** Computes token costs using TokenLens */
 export async function computeCost(
 	modelId: string,
 	provider: string,

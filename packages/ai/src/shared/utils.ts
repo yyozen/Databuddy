@@ -5,7 +5,7 @@ const DATA_URL_PATTERN = /^data:([^;,]+)/;
 const BASE64_PATTERN = /^[A-Za-z0-9+/=]+$/;
 const WHITESPACE_PATTERN = /\s/;
 
-/** Truncates text to a maximum length, appending a notice if truncated */
+/** Truncates text to a maximum length */
 export function truncate(text: string, maxLength = MAX_LENGTH): string {
 	if (text.length <= maxLength) {
 		return text;
@@ -13,7 +13,7 @@ export function truncate(text: string, maxLength = MAX_LENGTH): string {
 	return `${text.slice(0, maxLength)}... [truncated ${text.length - maxLength} chars]`;
 }
 
-/** Redacts base64 data URLs and raw base64 strings to prevent oversized payloads */
+/** Redacts base64 data URLs and raw base64 strings */
 export function redactBase64(data: string): string {
 	if (data.startsWith("data:")) {
 		const match = data.match(DATA_URL_PATTERN);
@@ -54,7 +54,31 @@ export function extractText(content: unknown): string {
 	return "";
 }
 
-/** Generates a UUIDv7 trace ID (time-ordered for better sorting) */
+/** Generates a UUIDv7 trace ID */
 export function createTraceId(): string {
 	return uuidv7();
+}
+
+/** Creates an error info object */
+export function createErrorInfo(error: unknown): {
+	name: string;
+	message: string;
+	stack?: string;
+} {
+	return {
+		name: error instanceof Error ? error.name : "UnknownError",
+		message: error instanceof Error ? error.message : String(error),
+		stack: error instanceof Error ? error.stack : undefined,
+	};
+}
+
+/** Extracts HTTP status from an error */
+export function getHttpStatus(error: unknown): number {
+	if (error && typeof error === "object" && "status" in error) {
+		const status = (error as { status: unknown }).status;
+		if (typeof status === "number") {
+			return status;
+		}
+	}
+	return 500;
 }

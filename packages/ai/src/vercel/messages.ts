@@ -1,6 +1,6 @@
+import type { Message, MessageContent } from "../shared/types";
+import { extractText, redactBase64, truncate } from "../shared/utils";
 import type { Prompt } from "./providers";
-import type { Message, MessageContent } from "./types";
-import { extractText, redactBase64, truncate } from "./utils";
 
 /** Converts a Vercel AI SDK prompt to our Message format */
 export function promptToMessages(prompt: Prompt, maxSize: number): Message[] {
