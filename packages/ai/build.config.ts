@@ -1,0 +1,18 @@
+import { resolve } from "node:path";
+import { defineBuildConfig } from "unbuild";
+
+export default defineBuildConfig({
+	name: "@databuddy/ai",
+	entries: ["./src/vercel/index.ts"],
+	externals: ["@ai-sdk/provider", "ai", "tokenlens", "uuid"],
+	rollup: {
+		emitCJS: false,
+		esbuild: {
+			minify: false,
+		},
+	},
+	declaration: true,
+	alias: {
+		"@": resolve(__dirname, "src"),
+	},
+});

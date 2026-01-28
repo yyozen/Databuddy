@@ -31,16 +31,16 @@ import {
 import { cn } from "@/lib/utils";
 import type { Annotation, AnnotationFormData } from "@/types/annotations";
 
-type EditModeProps = {
+interface EditModeProps {
 	isOpen: boolean;
 	mode: "edit";
 	annotation: Annotation;
 	onClose: () => void;
 	onSubmit: (id: string, updates: AnnotationFormData) => Promise<void>;
 	isSubmitting?: boolean;
-};
+}
 
-type CreateModeProps = {
+interface CreateModeProps {
 	isOpen: boolean;
 	mode: "create";
 	dateRange: { startDate: Date; endDate: Date };
@@ -55,7 +55,7 @@ type CreateModeProps = {
 		isPublic: boolean;
 	}) => Promise<void> | void;
 	isSubmitting?: boolean;
-};
+}
 
 type AnnotationModalProps = EditModeProps | CreateModeProps;
 

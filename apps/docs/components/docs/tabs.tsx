@@ -107,10 +107,10 @@ function TabsTrigger({
 	);
 }
 
-type TabProps = {
+interface TabProps {
 	value?: string;
 	children: React.ReactNode;
-};
+}
 
 function Tab({ children }: TabProps) {
 	return <>{children}</>;

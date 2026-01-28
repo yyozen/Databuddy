@@ -23,12 +23,12 @@ const GeoJSON = dynamic(
 	{ ssr: false }
 );
 
-type TooltipContent = {
+interface TooltipContent {
 	name: string;
 	code: string;
 	count: number;
 	percentage: number;
-};
+}
 
 const mapApiToGeoJson = (code: string): string =>
 	code === "TW" ? "CN-TW" : code;

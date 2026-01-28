@@ -6,18 +6,18 @@ import { useCallback, useEffect, useState } from "react";
 
 // const RE_WWW_PREFIX = /^www\./;
 
-type Logo = {
+interface Logo {
 	id: number;
 	name: string;
 	src?: string;
-};
+}
 
-type LogoColumnProps = {
+interface LogoColumnProps {
 	logos: Logo[];
 	columnIndex: number;
 	currentTime: number;
 	isLast: boolean;
-};
+}
 
 function LogoColumn({
 	logos,
@@ -103,10 +103,10 @@ function LogoColumn({
 	);
 }
 
-type LogoCarouselProps = {
+interface LogoCarouselProps {
 	columns?: number;
 	logos: Logo[];
-};
+}
 
 export function LogoCarousel({ columns = 3, logos }: LogoCarouselProps) {
 	const [logoColumns, setLogoColumns] = useState<Logo[][]>([]);

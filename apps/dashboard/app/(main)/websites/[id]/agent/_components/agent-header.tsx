@@ -4,9 +4,9 @@ import { AgentNavigation } from "./agent-navigation";
 import { AgentTitle } from "./agent-title";
 import { NewChatButton } from "./new-chat-button";
 
-type AgentHeaderProps = {
+interface AgentHeaderProps {
 	showBackButton?: boolean;
-};
+}
 
 export function AgentHeader({ showBackButton = false }: AgentHeaderProps) {
 	return (

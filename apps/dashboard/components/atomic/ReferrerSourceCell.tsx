@@ -5,12 +5,12 @@ import { cn } from "@/lib/utils";
 import { FaviconImage } from "../analytics/favicon-image";
 import { TruncatedText } from "../ui/truncated-text";
 
-export type ReferrerSourceCellData = {
+export interface ReferrerSourceCellData {
 	name?: string;
 	referrer?: string;
 	domain?: string;
 	id?: string;
-};
+}
 
 type ReferrerSourceCellProps = ReferrerSourceCellData & {
 	className?: string;

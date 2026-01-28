@@ -1,18 +1,18 @@
 import { Color, Mesh, Program, Renderer, Triangle } from "ogl";
 import { useEffect, useRef } from "react";
 
-export type CommonProps = {
+export interface CommonProps {
 	onReady?: () => void;
-};
+}
 
-export type TimeProps = {
+export interface TimeProps {
 	time?: number;
 	speed?: number;
-};
+}
 
-export type ControlProps = {
+export interface ControlProps {
 	paused?: boolean;
-};
+}
 
 export interface AuroraProps extends CommonProps, TimeProps, ControlProps {
 	colorStops?: [string, string, string];

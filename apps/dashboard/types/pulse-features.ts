@@ -104,7 +104,7 @@ export const PULSE_PLAN_FEATURES: Record<
 };
 
 /** Plan limits and configuration */
-export type PulsePlanLimits = {
+export interface PulsePlanLimits {
 	/** Number of monitors included */
 	includedMonitors: number;
 	/** Check frequency in minutes (or seconds for Business) */
@@ -115,15 +115,15 @@ export type PulsePlanLimits = {
 	dataRetentionMonths?: number;
 	/** Number of check locations for multi-location checks */
 	checkLocations?: number;
-};
+}
 
 /** Plan metadata including pricing and target audience */
-export type PulsePlanMetadata = {
+export interface PulsePlanMetadata {
 	name: string;
 	priceUsdMonthly: number;
 	targetUser: string;
 	limits: PulsePlanLimits;
-};
+}
 
 /**
  * Plan metadata - pricing, limits, and target audience
@@ -162,12 +162,12 @@ export const PULSE_PLAN_METADATA: Record<PulsePlanId, PulsePlanMetadata> = {
 	},
 };
 
-type PulseFeatureMeta = {
+interface PulseFeatureMeta {
 	name: string;
 	description: string;
 	upgradeMessage: string;
 	minPlan?: PulsePlanId;
-};
+}
 
 export const PULSE_FEATURE_METADATA: Record<
 	PulseGatedFeatureId,

@@ -7,7 +7,11 @@ import type {
 } from "@usemarble/core";
 import { cache } from "react";
 
-type FetchError = { error: true; status: number; statusText: string };
+interface FetchError {
+	error: true;
+	status: number;
+	statusText: string;
+}
 
 async function fetchFromMarble<T>(
 	endpoint: string,

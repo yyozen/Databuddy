@@ -10,8 +10,7 @@ const client = new Client({
 	token: process.env.UPSTASH_QSTASH_TOKEN,
 });
 
-const FLAG_SCHEDULER_DESTINATION =
-	process.env.NEXT_PUBLIC_API_URL + "/webhooks/flag-scheduler";
+const FLAG_SCHEDULER_DESTINATION = `${process.env.NEXT_PUBLIC_API_URL}/webhooks/flag-scheduler`;
 
 export async function createQStashSchedule(
 	scheduleId: string,

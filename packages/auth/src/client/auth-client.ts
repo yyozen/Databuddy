@@ -13,10 +13,10 @@ import { createAuthClient } from "better-auth/react";
 import type { auth } from "../auth";
 import { ac, admin, member, owner } from "../permissions";
 
-export type AuthClientConfig = {
+export interface AuthClientConfig {
 	baseURL?: string;
 	debug?: boolean;
-};
+}
 
 const defaultConfig: AuthClientConfig = {
 	baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL as string,

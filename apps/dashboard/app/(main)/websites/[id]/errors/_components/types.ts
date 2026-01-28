@@ -1,6 +1,6 @@
 // Types based on API response structure from errors.ts query builder
 
-export type RecentError = {
+export interface RecentError {
 	id: string;
 	client_id: string;
 	event_id?: string;
@@ -28,37 +28,37 @@ export type RecentError = {
 	country_name?: string;
 	created_at?: string;
 	severity?: string;
-};
+}
 
-export type ErrorType = {
+export interface ErrorType {
 	name: string;
 	count: number;
 	users: number;
 	last_seen: string;
-};
+}
 
-export type ErrorByPage = {
+export interface ErrorByPage {
 	name: string;
 	errors: number;
 	users: number;
-};
+}
 
-export type ErrorSummary = {
+export interface ErrorSummary {
 	totalErrors: number;
 	uniqueErrorTypes: number;
 	affectedUsers: number;
 	affectedSessions: number;
 	errorRate: number;
-};
+}
 
-export type ErrorChartData = {
+export interface ErrorChartData {
 	date: string;
 	totalErrors: number;
 	affectedUsers: number;
-};
+}
 
-export type ProcessedChartData = {
+export interface ProcessedChartData {
 	date: string;
 	"Total Errors": number;
 	"Affected Users": number;
-};
+}

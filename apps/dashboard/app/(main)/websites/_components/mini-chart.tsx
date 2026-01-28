@@ -16,11 +16,11 @@ import {
 } from "recharts";
 import { useChartPreferences } from "@/hooks/use-chart-preferences";
 
-type MiniChartProps = {
+interface MiniChartProps {
 	data: { date: string; value: number }[];
 	id: string;
 	days?: number;
-};
+}
 
 const formatNumber = (num: number) => {
 	if (num >= 1_000_000) {

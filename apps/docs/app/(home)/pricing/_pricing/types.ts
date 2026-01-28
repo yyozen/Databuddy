@@ -1,4 +1,4 @@
-export type NormalizedPlan = {
+export interface NormalizedPlan {
 	id: string;
 	name: string;
 	priceMonthly: number;
@@ -7,4 +7,4 @@ export type NormalizedPlan = {
 	websitesIncluded: number | "inf" | null;
 	websitesOveragePerUnit: number | null;
 	assistantMessagesPerDay: number | null;
-};
+}

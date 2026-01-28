@@ -1,10 +1,13 @@
-export type FeatureDisplay = { singular: string; plural: string };
-export type RawFeature = {
+export interface FeatureDisplay {
+	singular: string;
+	plural: string;
+}
+export interface RawFeature {
 	id: string;
 	name: string;
 	type: "single_use";
 	display: FeatureDisplay;
-};
+}
 export type RawItem =
 	| {
 			type: "price";
@@ -36,7 +39,11 @@ export type RawItem =
 			type: "enterprise";
 	  };
 
-export type RawPlan = { id: string; name: string; items: RawItem[] };
+export interface RawPlan {
+	id: string;
+	name: string;
+	items: RawItem[];
+}
 
 export const RAW_PLANS: RawPlan[] = [
 	{

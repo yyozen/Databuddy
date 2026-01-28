@@ -5,9 +5,9 @@ import { usePersistentState } from "@/hooks/use-persistent-state";
 import { cn } from "@/lib/utils";
 import type { CustomerWithPaymentMethod } from "../types/billing";
 
-type CreditCardDisplayProps = {
+interface CreditCardDisplayProps {
 	customer: CustomerWithPaymentMethod | null;
-};
+}
 
 export function CreditCardDisplay({ customer }: CreditCardDisplayProps) {
 	const [showCardDetails, setShowCardDetails] = usePersistentState<boolean>(

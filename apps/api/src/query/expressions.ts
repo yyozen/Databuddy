@@ -39,10 +39,10 @@ export type Granularity = "minute" | "hour" | "day" | "week" | "month";
 export type SqlExpression = string & { readonly __brand: "SqlExpression" };
 
 /** Aliased SQL expression with output name */
-export type AliasedExpression = {
+export interface AliasedExpression {
 	readonly expression: SqlExpression;
 	readonly alias: string;
-};
+}
 
 /** Field that can be used in SELECT clause */
 export type SelectField = string | AliasedExpression;
@@ -89,7 +89,7 @@ export function fieldsToSql(fields: SelectField[]): string[] {
 // Aggregate Functions
 // ============================================================================
 
-type AggregateBuilder = {
+interface AggregateBuilder {
 	/** COUNT(*) or COUNT(column) */
 	count: (column?: string) => SqlExpression;
 	/** COUNT(*) with condition */
@@ -142,7 +142,7 @@ type AggregateBuilder = {
 		start: string,
 		end: string
 	) => SqlExpression;
-};
+}
 
 export const agg: AggregateBuilder = {
 	count: (column?: string) => expr(column ? `count(${column})` : "count()"),
@@ -182,7 +182,7 @@ export const agg: AggregateBuilder = {
 // Time Utilities
 // ============================================================================
 
-type TimeFunctions = {
+interface TimeFunctions {
 	/** Get ClickHouse function for time bucketing */
 	bucketFn: (granularity: Granularity) => string;
 	/** Create time bucket expression */
@@ -203,7 +203,7 @@ type TimeFunctions = {
 	parse: (paramName: string) => SqlExpression;
 	/** Parse datetime with end of day */
 	parseEndOfDay: (paramName: string) => SqlExpression;
-};
+}
 
 const granularityToFn: Record<Granularity, string> = {
 	minute: "toStartOfMinute",
@@ -403,21 +403,21 @@ export const ComputedMetrics = {
 // Field Builders - Fluent API for building SELECT fields
 // ============================================================================
 
-type FieldBuilder = {
+interface FieldBuilder {
 	/** Raw column reference */
 	col: (name: string) => FieldChain;
 	/** Expression */
 	expr: (sql: string) => FieldChain;
 	/** Pre-built expression from registry */
 	use: (expression: SqlExpression) => FieldChain;
-};
+}
 
-type FieldChain = {
+interface FieldChain {
 	/** Add alias */
 	as: (alias: string) => AliasedExpression;
 	/** Get raw SQL string */
 	sql: () => string;
-};
+}
 
 class FieldChainImpl implements FieldChain {
 	private readonly expression: string;
@@ -444,7 +444,7 @@ export const field: FieldBuilder = {
 // WHERE Clause Builders
 // ============================================================================
 
-type WhereBuilder = {
+interface WhereBuilder {
 	/** Standard date range filter */
 	dateRange: (
 		timeField: string,
@@ -464,7 +464,7 @@ type WhereBuilder = {
 
 	/** Wrap conditions for safety */
 	wrap: (conditions: string[]) => string;
-};
+}
 
 export const where: WhereBuilder = {
 	dateRange: (
@@ -524,7 +524,7 @@ const SESSION_ATTRIBUTION_FIELDS = [
 export type SessionAttributionField =
 	(typeof SESSION_ATTRIBUTION_FIELDS)[number];
 
-type SessionAttributionBuilder = {
+interface SessionAttributionBuilder {
 	/** Fields to select in CTE */
 	readonly fields: readonly SessionAttributionField[];
 
@@ -544,7 +544,7 @@ type SessionAttributionBuilder = {
 
 	/** Generate JOIN clause */
 	join: (alias: string, cteAlias?: string) => string;
-};
+}
 
 export const sessionAttribution: SessionAttributionBuilder = {
 	fields: SESSION_ATTRIBUTION_FIELDS,
@@ -656,7 +656,10 @@ type FieldDefinitionType =
 			alias: string;
 	  };
 
-type AliasedExpressionType = { expression: SqlExpression; alias: string };
+interface AliasedExpressionType {
+	expression: SqlExpression;
+	alias: string;
+}
 type ConfigFieldType = string | FieldDefinitionType | AliasedExpressionType;
 
 /**

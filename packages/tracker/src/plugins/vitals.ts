@@ -3,10 +3,10 @@ import type { BaseTracker } from "../core/tracker";
 import type { WebVitalMetricName } from "../core/types";
 import { logger } from "../core/utils";
 
-type FPSMetric = {
+interface FPSMetric {
 	name: "FPS";
 	value: number;
-};
+}
 
 const PER_ROUTE_METRICS: WebVitalMetricName[] = ["CLS", "INP", "FPS"];
 

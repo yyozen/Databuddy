@@ -17,11 +17,11 @@ import { useDynamicQuery } from "@/hooks/use-dynamic-query";
 import { RetentionCohortsGrid } from "./retention-cohorts-grid";
 import { RetentionRateChart } from "./retention-rate-chart";
 
-type RetentionContentProps = {
+interface RetentionContentProps {
 	websiteId: string;
-};
+}
 
-type RetentionCohort = {
+interface RetentionCohort {
 	cohort: string;
 	users: number;
 	week_0_retention: number;
@@ -30,14 +30,14 @@ type RetentionCohort = {
 	week_3_retention: number;
 	week_4_retention: number;
 	week_5_retention: number;
-};
+}
 
-type RetentionRate = {
+interface RetentionRate {
 	date: string;
 	new_users: number;
 	returning_users: number;
 	retention_rate: number;
-};
+}
 
 export function RetentionContent({ websiteId }: RetentionContentProps) {
 	const { dateRange } = useDateFilters();

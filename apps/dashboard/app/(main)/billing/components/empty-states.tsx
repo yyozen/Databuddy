@@ -29,10 +29,10 @@ export function EmptyUsageState() {
 	);
 }
 
-type ErrorStateProps = {
+interface ErrorStateProps {
 	error: Error | unknown;
 	onRetry: () => void;
-};
+}
 
 /**
  * Error state shown when billing data fails to load.

@@ -174,11 +174,11 @@ export function createGoalTools(context: AppContext) {
 					const filtersPreview =
 						filters && filters.length > 0
 							? filters
-								.map(
-									(filter) =>
-										`- ${filter.field} ${filter.operator} ${Array.isArray(filter.value) ? filter.value.join(", ") : filter.value}`
-								)
-								.join("\n")
+									.map(
+										(filter) =>
+											`- ${filter.field} ${filter.operator} ${Array.isArray(filter.value) ? filter.value.join(", ") : filter.value}`
+									)
+									.join("\n")
 							: "None";
 
 					return {

@@ -6,11 +6,11 @@ const KEY_LENGTH = 32;
 const ITERATIONS = 100_000;
 const HASH_ALGORITHM = "sha512";
 
-type EncryptedData = {
+interface EncryptedData {
 	iv: string;
 	data: string;
 	tag: string;
-};
+}
 
 function getSalt(): string {
 	const salt = process.env.BETTER_AUTH_SECRET;

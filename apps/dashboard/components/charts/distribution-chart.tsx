@@ -28,28 +28,28 @@ const COLORS = [
 	"#ec4899", // Pink
 ];
 
-type ChartDataItem = {
+interface ChartDataItem {
 	name: string;
 	value: number;
 	color?: string;
-};
+}
 
-type DistributionChartProps = {
+interface DistributionChartProps {
 	data: ChartDataItem[] | undefined;
 	isLoading: boolean;
 	title: string;
 	description?: string;
 	height?: number;
-};
+}
 
-type CustomTooltipProps = {
+interface CustomTooltipProps {
 	active: boolean;
 	payload: Array<{
 		name: string;
 		value: number;
 		percent: number;
 	}>;
-};
+}
 const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 	if (!(active && payload?.length)) {
 		return null;

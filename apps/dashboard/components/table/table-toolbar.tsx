@@ -1,13 +1,13 @@
 import { ArrowsOutSimpleIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
-type TableToolbarProps = {
+interface TableToolbarProps {
 	title: string;
 	description?: string;
 	showFullScreen?: boolean;
 	onFullScreenToggle?: () => void;
 	borderBottom?: boolean;
-};
+}
 
 export function TableToolbar({
 	title,

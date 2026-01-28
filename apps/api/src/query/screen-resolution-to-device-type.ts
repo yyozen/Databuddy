@@ -38,7 +38,10 @@ export const COMMON_RESOLUTION_DEVICE_TYPE: Record<string, DeviceType> = {
 	"5120x1440": "ultrawide",
 };
 
-type Resolution = { width: number; height: number };
+interface Resolution {
+	width: number;
+	height: number;
+}
 
 function parseResolution(input: string): Resolution | null {
 	if (!input) {

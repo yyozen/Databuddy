@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { getErrorTypeIcon } from "./error-icons";
 import { formatDateTime, getErrorCategory, getSeverityColor } from "./utils";
 
-type CellInfo<T = unknown> = {
+interface CellInfo<T = unknown> {
 	getValue: () => T;
 	row?: { original?: Record<string, unknown> };
-};
+}
 
 export const createNameColumn = (
 	header: string,

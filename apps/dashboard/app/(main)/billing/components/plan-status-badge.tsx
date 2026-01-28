@@ -1,9 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 
-type PlanStatusBadgeProps = {
+interface PlanStatusBadgeProps {
 	isCanceled: boolean;
 	isScheduled: boolean;
-};
+}
 
 export function PlanStatusBadge({
 	isCanceled,

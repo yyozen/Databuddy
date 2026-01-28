@@ -8,10 +8,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/utils";
 
-type RightSidebarProps = {
+interface RightSidebarProps {
 	children: React.ReactNode;
 	className?: string;
-};
+}
 
 export function RightSidebar({ children, className }: RightSidebarProps) {
 	return (
@@ -26,7 +26,7 @@ export function RightSidebar({ children, className }: RightSidebarProps) {
 	);
 }
 
-type SectionProps = {
+interface SectionProps {
 	children: React.ReactNode;
 	className?: string;
 	title?: string;
@@ -35,7 +35,7 @@ type SectionProps = {
 		label: string;
 		variant?: VariantProps<typeof badgeVariants>["variant"];
 	};
-};
+}
 
 function Section({
 	children,
@@ -59,7 +59,7 @@ function Section({
 	);
 }
 
-type InfoCardProps = {
+interface InfoCardProps {
 	icon: ComponentType<IconProps>;
 	title: string;
 	description?: string;
@@ -68,7 +68,7 @@ type InfoCardProps = {
 		label: string;
 		variant?: VariantProps<typeof badgeVariants>["variant"];
 	};
-};
+}
 
 function InfoCard({
 	icon: IconComponent,
@@ -108,11 +108,11 @@ function InfoCard({
 	);
 }
 
-type DocsLinkProps = {
+interface DocsLinkProps {
 	href?: string;
 	label?: string;
 	className?: string;
-};
+}
 
 function DocsLink({
 	href = "https://www.databuddy.cc/docs/getting-started",
@@ -133,10 +133,10 @@ function DocsLink({
 	);
 }
 
-type SidebarTipProps = {
+interface SidebarTipProps {
 	description: string;
 	title?: string;
-};
+}
 
 function SidebarTip({ description, title }: SidebarTipProps) {
 	return <Tip description={description} title={title} />;

@@ -1,4 +1,4 @@
-import { databuddyLLM } from "@databuddy/sdk/ai/vercel";
+import { createTracker } from "@databuddy/ai/vercel";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 const apiKey = process.env.AI_API_KEY;
@@ -13,7 +13,7 @@ export const openrouter = createOpenRouter({
 	headers,
 });
 
-export const { track } = databuddyLLM({
+export const { track } = createTracker({
 	apiKey: process.env.DATABUDDY_API_KEY,
 	computeCosts: true,
 });

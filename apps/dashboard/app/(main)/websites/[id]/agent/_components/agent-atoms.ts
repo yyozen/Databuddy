@@ -12,7 +12,7 @@ export type AgentStatus =
 	| "complete"
 	| "error";
 
-export type AgentCommand = {
+export interface AgentCommand {
 	id: string;
 	command: string;
 	title: string;
@@ -20,7 +20,7 @@ export type AgentCommand = {
 	toolName: string;
 	toolParams?: Record<string, unknown>;
 	keywords: string[];
-};
+}
 
 export const agentMessagesAtom = atom<UIMessage[]>([]);
 export const agentStatusAtom = atom<

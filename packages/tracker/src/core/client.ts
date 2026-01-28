@@ -1,9 +1,9 @@
-export type ClientConfig = {
+export interface ClientConfig {
 	baseUrl: string;
 	defaultHeaders?: Record<string, string | (() => string | Promise<string>)>;
 	maxRetries?: number;
 	initialRetryDelay?: number;
-};
+}
 
 export class HttpClient {
 	baseUrl: string;

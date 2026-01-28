@@ -19,7 +19,7 @@ import type { CacheConfig } from "drizzle-orm/cache/core/types";
  * });
  * ```
  */
-export type RedisCacheConfig = {
+export interface RedisCacheConfig {
 	/**
 	 * Cache client instance.
 	 * Can be any cache implementation that supports get, setex, unlink, and del methods.
@@ -78,7 +78,7 @@ export type RedisCacheConfig = {
 	 * ```
 	 */
 	namespace?: string;
-};
+}
 
 /**
  * Redis-based cache implementation for Drizzle ORM.

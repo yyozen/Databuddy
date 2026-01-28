@@ -273,13 +273,12 @@ const TOOLS: Record<string, ToolConfig> = {
 		() => "Getting annotation",
 		(output) => {
 			const text = output.text as string | undefined;
-			return text ? (
-				<p className="max-w-[200px] truncate">{text}</p>
-			) : null;
+			return text ? <p className="max-w-[200px] truncate">{text}</p> : null;
 		},
 	],
 	create_annotation: [
-		(input) => confirmLabel(input, "Preparing annotation", "Creating annotation"),
+		(input) =>
+			confirmLabel(input, "Preparing annotation", "Creating annotation"),
 		(output) => mutationOutput(output, "Annotation created"),
 	],
 	update_annotation: [

@@ -27,13 +27,13 @@ import { generateProviderId, useSSO } from "./use-sso";
 
 type ProviderType = "oidc" | "saml";
 
-type SSOProviderSheetProps = {
+interface SSOProviderSheetProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
-};
+}
 
-type FormState = {
+interface FormState {
 	providerName: string;
 	domain: string;
 	issuer: string;
@@ -43,7 +43,7 @@ type FormState = {
 	entryPoint: string;
 	certificate: string;
 	idpMetadata: string;
-};
+}
 
 const INITIAL_FORM: FormState = {
 	providerName: "",

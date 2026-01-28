@@ -13,10 +13,10 @@ export type ChartMetric =
 
 export type MetricColors = Record<ChartMetric, string>;
 
-export type ChartDataPoint = {
+export interface ChartDataPoint {
 	[key: string]: any;
 	date: string;
-};
+}
 
 interface UseChartConfigOptions {
 	data?: ChartDataPoint[];

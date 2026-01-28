@@ -34,11 +34,11 @@ export function getOperatorLabel(operator: string): string {
 	return operatorLabels[operator] ?? operator;
 }
 
-type BaseFilterType = {
+interface BaseFilterType {
 	field: DynamicQueryFilter["field"];
 	operator: string;
 	value: DynamicQueryFilter["value"];
-};
+}
 
 interface UseFiltersProps<T extends BaseFilterType> {
 	filters: T[];
@@ -54,7 +54,9 @@ export function useFilters<T extends BaseFilterType>({
 	const addFilter = useCallback(
 		(filter?: T) => {
 			const newFilter = filter || defaultFilter;
-			if (!newFilter) return;
+			if (!newFilter) {
+				return;
+			}
 
 			// Check for duplicates: same field, operator, and value
 			const isDuplicate = filters.some(
@@ -64,7 +66,9 @@ export function useFilters<T extends BaseFilterType>({
 					JSON.stringify(f.value) === JSON.stringify(newFilter.value)
 			);
 
-			if (isDuplicate) return;
+			if (isDuplicate) {
+				return;
+			}
 
 			onFiltersChange([...filters, newFilter]);
 		},

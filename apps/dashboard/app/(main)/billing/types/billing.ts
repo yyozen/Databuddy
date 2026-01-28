@@ -1,13 +1,13 @@
 import type { Customer as AutumnCustomer } from "autumn-js";
 
-export type PaymentMethodCard = {
+export interface PaymentMethodCard {
 	brand?: string;
 	last4?: string;
 	exp_month?: number;
 	exp_year?: number;
-};
+}
 
-export type PaymentMethodBillingDetails = {
+export interface PaymentMethodBillingDetails {
 	name?: string;
 	email?: string;
 	address?: {
@@ -18,14 +18,14 @@ export type PaymentMethodBillingDetails = {
 		postal_code?: string;
 		state?: string;
 	};
-};
+}
 
-export type PaymentMethod = {
+export interface PaymentMethod {
 	id?: string;
 	type?: string;
 	card?: PaymentMethodCard;
 	billing_details?: PaymentMethodBillingDetails;
-};
+}
 
 export type CustomerWithPaymentMethod = AutumnCustomer & {
 	payment_method?: PaymentMethod;

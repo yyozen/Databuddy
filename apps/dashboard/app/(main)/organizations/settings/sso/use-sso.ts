@@ -7,7 +7,7 @@ import { orpc } from "@/lib/orpc";
 
 export type SSOProviderType = "oidc" | "saml";
 
-export type SSOProvider = {
+export interface SSOProvider {
 	id: string;
 	providerId: string;
 	issuer: string;
@@ -16,9 +16,9 @@ export type SSOProvider = {
 	userId: string | null;
 	oidcConfig: unknown;
 	samlConfig: unknown;
-};
+}
 
-export type OIDCConfig = {
+export interface OIDCConfig {
 	clientId: string;
 	clientSecret: string;
 	authorizationEndpoint?: string;
@@ -35,9 +35,9 @@ export type OIDCConfig = {
 		image?: string;
 		extraFields?: Record<string, string>;
 	};
-};
+}
 
-export type SAMLConfig = {
+export interface SAMLConfig {
 	entryPoint: string;
 	cert: string;
 	callbackUrl: string;
@@ -73,23 +73,23 @@ export type SAMLConfig = {
 		emailVerified?: string;
 		extraFields?: Record<string, string>;
 	};
-};
+}
 
-type RegisterOIDCProviderData = {
+interface RegisterOIDCProviderData {
 	providerId: string;
 	issuer: string;
 	domain: string;
 	organizationId?: string;
 	oidcConfig: OIDCConfig;
-};
+}
 
-type RegisterSAMLProviderData = {
+interface RegisterSAMLProviderData {
 	providerId: string;
 	issuer: string;
 	domain: string;
 	organizationId?: string;
 	samlConfig: SAMLConfig;
-};
+}
 
 type RegisterProviderData = RegisterOIDCProviderData | RegisterSAMLProviderData;
 

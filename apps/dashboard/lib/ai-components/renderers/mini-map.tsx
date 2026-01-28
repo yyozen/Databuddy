@@ -142,11 +142,11 @@ export function MiniMapRenderer({ title, countries, className }: MiniMapProps) {
 										key={country.country}
 									>
 										<CountryFlag country={countryCode} size="sm" />
-								<span className="min-w-0 flex-1 truncate text-[11px] text-foreground">
-									{country.country}
-								</span>
-								<div className="flex shrink-0 items-center gap-1 text-right">
-									<span className="font-medium text-[11px] text-foreground tabular-nums">
+										<span className="min-w-0 flex-1 truncate text-[11px] text-foreground">
+											{country.country}
+										</span>
+										<div className="flex shrink-0 items-center gap-1 text-right">
+											<span className="font-medium text-[11px] text-foreground tabular-nums">
 												{formatNumber(country.visitors)}
 											</span>
 											<span className="text-[9px] text-muted-foreground tabular-nums">

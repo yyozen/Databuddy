@@ -8,18 +8,18 @@ import {
 	isApiKeyPresent,
 } from "./api-key";
 
-export type WebsiteContext = {
+export interface WebsiteContext {
 	user: unknown;
 	session: unknown;
 	website?: Website;
 	timezone: string;
-};
+}
 
-export type WebsiteValidationResult = {
+export interface WebsiteValidationResult {
 	success: boolean;
 	website?: Website;
 	error?: string;
-};
+}
 
 const getCachedWebsite = cacheable(
 	async (websiteId: string) => {

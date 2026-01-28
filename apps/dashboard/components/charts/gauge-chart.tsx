@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 type GaugeRating = "good" | "needs-improvement" | "poor";
 
-type GaugeChartProps = {
+interface GaugeChartProps {
 	/** Current value to display */
 	value: number;
 	/** Maximum value for the gauge (100% fill) */
@@ -25,7 +25,7 @@ type GaugeChartProps = {
 	startAngle?: number;
 	/** Sweep angle in degrees (360 = full circle) */
 	sweepAngle?: number;
-};
+}
 
 const RATING_COLORS: Record<GaugeRating, string> = {
 	good: "#10b981",

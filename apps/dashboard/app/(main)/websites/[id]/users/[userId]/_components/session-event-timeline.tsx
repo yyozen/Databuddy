@@ -16,7 +16,9 @@ interface SessionEventTimelineProps {
 }
 
 function getEventIcon(eventName: string, hasProperties: boolean) {
-	if (hasProperties) return SparkleIcon;
+	if (hasProperties) {
+		return SparkleIcon;
+	}
 	switch (eventName) {
 		case "screen_view":
 		case "page_view":
@@ -93,7 +95,9 @@ function EventProperties({
 	properties: Record<string, unknown>;
 }) {
 	const entries = Object.entries(properties);
-	if (entries.length === 0) return null;
+	if (entries.length === 0) {
+		return null;
+	}
 
 	return (
 		<div className="ml-12 flex flex-wrap gap-1.5 pb-2">

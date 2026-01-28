@@ -70,7 +70,7 @@ export const timeGranularityAtom = atom<TimeGranularity>("daily");
  */
 export const setDateRangeAndAdjustGranularityAtom = atom(
 	null,
-	(get, set, newRange: DateRangeState) => {
+	(_get, set, newRange: DateRangeState) => {
 		set(dateRangeAtom, newRange);
 
 		const rangeDays = dayjs(newRange.endDate).diff(newRange.startDate, "day");

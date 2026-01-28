@@ -1,9 +1,9 @@
 import { generateId } from "ai";
 import { redirect } from "next/navigation";
 
-type Props = {
+interface Props {
 	params: Promise<{ id: string }>;
-};
+}
 
 export default async function AgentIndexPage(props: Props) {
 	const { id } = await props.params;

@@ -113,7 +113,9 @@ export const flagScheduleSchema = z
 		rolloutSteps: z.array(rolloutStepSchema).optional(),
 	})
 	.superRefine((data, ctx) => {
-		if (!data.isEnabled) return;
+		if (!data.isEnabled) {
+			return;
+		}
 		if (data.type !== "update_rollout") {
 			if (data.rolloutSteps && data?.rolloutSteps?.length > 0) {
 				ctx.addIssue({
@@ -130,7 +132,7 @@ export const flagScheduleSchema = z
 				});
 			}
 			const scheduledDate = new Date(data.scheduledAt!);
-			if (isNaN(scheduledDate.getTime())) {
+			if (Number.isNaN(scheduledDate.getTime())) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["scheduledAt"],

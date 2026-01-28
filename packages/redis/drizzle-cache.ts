@@ -1,11 +1,11 @@
 import type { redis as redisClient } from "./redis";
 
-export type CacheConfig = {
+export interface CacheConfig {
 	redis: typeof redisClient;
 	namespace?: string;
-};
+}
 
-export type WithCacheArgs<T> = {
+export interface WithCacheArgs<T> {
 	key: string;
 	ttl?: number;
 	tables?: string[];
@@ -13,7 +13,7 @@ export type WithCacheArgs<T> = {
 	autoInvalidate?: boolean;
 	disabled?: boolean;
 	queryFn: () => Promise<T>;
-};
+}
 
 function debugLog(
 	level: "info" | "error",

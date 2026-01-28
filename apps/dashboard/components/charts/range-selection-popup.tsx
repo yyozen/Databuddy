@@ -3,7 +3,7 @@
 import { MagnifyingGlassPlusIcon, NoteIcon } from "@phosphor-icons/react";
 import { useHotkeys } from "react-hotkeys-hook";
 
-type RangeSelectionPopupProps = {
+interface RangeSelectionPopupProps {
 	isOpen: boolean;
 	dateRange: {
 		startDate: Date;
@@ -12,7 +12,7 @@ type RangeSelectionPopupProps = {
 	onCloseAction: () => void;
 	onZoomAction: (dateRange: { startDate: Date; endDate: Date }) => void;
 	onAddAnnotationAction: () => void;
-};
+}
 
 export function RangeSelectionPopup({
 	isOpen,

@@ -3,12 +3,12 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type SettingsSectionProps = {
+interface SettingsSectionProps {
 	title: string;
 	description?: string;
 	children: React.ReactNode;
 	className?: string;
-};
+}
 
 export function SettingsSection({
 	title,
@@ -29,12 +29,12 @@ export function SettingsSection({
 	);
 }
 
-type SettingsRowProps = {
+interface SettingsRowProps {
 	label: React.ReactNode;
 	description?: string;
 	children: React.ReactNode;
 	className?: string;
-};
+}
 
 export function SettingsRow({
 	label,
@@ -60,11 +60,11 @@ export function SettingsRow({
 	);
 }
 
-type ComingSoonProps = {
+interface ComingSoonProps {
 	title: string;
 	description: string;
 	icon: React.ReactNode;
-};
+}
 
 export function ComingSoon({ title, description, icon }: ComingSoonProps) {
 	return (
@@ -80,14 +80,14 @@ export function ComingSoon({ title, description, icon }: ComingSoonProps) {
 	);
 }
 
-type UnsavedChangesFooterProps = {
+interface UnsavedChangesFooterProps {
 	hasChanges: boolean;
 	isSaving: boolean;
 	onSave: () => void;
 	onDiscard?: () => void;
 	saveLabel?: string;
 	message?: string;
-};
+}
 
 export function UnsavedChangesFooter({
 	hasChanges,

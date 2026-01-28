@@ -2,10 +2,10 @@
 
 import { AgentPageContent } from "./agent-page-content";
 
-type AgentPageClientProps = {
+interface AgentPageClientProps {
 	chatId: string;
 	websiteId: string;
-};
+}
 
 export function AgentPageClient({ chatId, websiteId }: AgentPageClientProps) {
 	return (

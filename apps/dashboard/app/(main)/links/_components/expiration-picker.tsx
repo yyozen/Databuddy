@@ -204,9 +204,17 @@ export function ExpirationPicker({
 						variant="outline"
 					>
 						{value ? (
-							<CalendarIcon aria-hidden="true" className="size-4 shrink-0" weight="duotone" />
+							<CalendarIcon
+								aria-hidden="true"
+								className="size-4 shrink-0"
+								weight="duotone"
+							/>
 						) : (
-							<InfinityIcon aria-hidden="true" className="size-4 shrink-0" weight="duotone" />
+							<InfinityIcon
+								aria-hidden="true"
+								className="size-4 shrink-0"
+								weight="duotone"
+							/>
 						)}
 						<span className="truncate">{formatDisplay(currentDate)}</span>
 					</Button>
@@ -268,7 +276,9 @@ export function ExpirationPicker({
 									className="size-4 text-muted-foreground"
 									weight="duotone"
 								/>
-								<label className="text-sm" htmlFor="expiration-time">Time</label>
+								<label className="text-sm" htmlFor="expiration-time">
+									Time
+								</label>
 								<input
 									className="ml-auto h-8 rounded border bg-input px-2 text-center font-mono text-sm tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 									id="expiration-time"
@@ -279,7 +289,10 @@ export function ExpirationPicker({
 							</div>
 
 							{customDate && (
-								<p aria-live="polite" className="mt-2 text-muted-foreground text-xs">
+								<p
+									aria-live="polite"
+									className="mt-2 text-muted-foreground text-xs"
+								>
 									Expires{" "}
 									{dayjs(customDate)
 										.hour(Number.parseInt(customTime.split(":")[0], 10))
@@ -361,7 +374,11 @@ export function ExpirationPicker({
 								onClick={() => setShowCustom(true)}
 								type="button"
 							>
-								<CalendarIcon aria-hidden="true" className="size-4" weight="duotone" />
+								<CalendarIcon
+									aria-hidden="true"
+									className="size-4"
+									weight="duotone"
+								/>
 								<span>Custom date & time</span>
 								{activePreset === "custom" && (
 									<CheckIcon aria-hidden="true" className="ml-auto size-3.5" />
@@ -378,9 +395,15 @@ export function ExpirationPicker({
 								onClick={handleClear}
 								type="button"
 							>
-								<InfinityIcon aria-hidden="true" className="size-4" weight="duotone" />
+								<InfinityIcon
+									aria-hidden="true"
+									className="size-4"
+									weight="duotone"
+								/>
 								<span>Never expires</span>
-								{!value && <CheckIcon aria-hidden="true" className="ml-auto size-3.5" />}
+								{!value && (
+									<CheckIcon aria-hidden="true" className="ml-auto size-3.5" />
+								)}
 							</button>
 						</div>
 					</div>

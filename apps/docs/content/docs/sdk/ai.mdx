@@ -22,7 +22,7 @@ The Databuddy AI SDK tracks LLM calls, token usage, costs, and tool invocations.
 Wrap your model with `track()` to automatically capture all LLM calls:
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM } from "@databuddy/sdk/ai";
+  {`import { databuddyLLM } from "@databuddy/ai";
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
@@ -44,7 +44,7 @@ const result = await generateText({
 Create a tracking instance with your configuration:
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM } from "@databuddy/sdk/ai";
+  {`import { databuddyLLM } from "@databuddy/ai";
 
 const { track, transport } = databuddyLLM({
   // Required: API key for authentication
@@ -78,7 +78,7 @@ const { track, transport } = databuddyLLM({
 ### Basic Usage
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM } from "@databuddy/sdk/ai";
+  {`import { databuddyLLM } from "@databuddy/ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText, streamText } from "ai";
@@ -211,7 +211,7 @@ Unless `privacyMode` is enabled:
 Tools are automatically tracked when used:
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM } from "@databuddy/sdk/ai";
+  {`import { databuddyLLM } from "@databuddy/ai";
 import { openai } from "@ai-sdk/openai";
 import { generateText, tool } from "ai";
 import { z } from "zod";
@@ -250,7 +250,7 @@ const result = await generateText({
 Streaming responses are tracked when the stream completes:
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM } from "@databuddy/sdk/ai";
+  {`import { databuddyLLM } from "@databuddy/ai";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 

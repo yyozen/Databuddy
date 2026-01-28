@@ -1,11 +1,11 @@
 import { Queue } from "bullmq";
 import { logger } from "../lib/logger";
 
-type RolloutStep = {
+interface RolloutStep {
 	scheduledAt: string;
 	executedAt?: string;
 	value: number | "enable" | "disable";
-};
+}
 
 // Convert ioredis to BullMQ connection format
 const getConnection = () => {
@@ -44,13 +44,13 @@ const flagScheduleQueue = new Queue("flag-schedules", {
 	},
 });
 
-export type FlagScheduleJobData = {
+export interface FlagScheduleJobData {
 	scheduleId: string;
 	type: "enable" | "disable" | "update_rollout";
 	flagId: string;
 	stepScheduledAt?: string;
 	stepValue?: number | "enable" | "disable";
-};
+}
 
 /**
  * Create a one-time scheduled job for enable/disable at a specific time

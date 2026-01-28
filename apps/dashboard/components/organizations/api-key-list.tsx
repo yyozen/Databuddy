@@ -17,11 +17,11 @@ import {
 } from "../ui/table";
 import type { ApiKeyListItem } from "./api-key-types";
 
-type ApiKeyListProps = {
+interface ApiKeyListProps {
 	organizationId?: string;
 	onCreateNew?: () => void;
 	onSelect?: (apiKey: ApiKeyListItem) => void;
-};
+}
 
 function ApiKeyListSkeleton() {
 	return (

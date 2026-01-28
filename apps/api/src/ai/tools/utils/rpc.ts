@@ -54,7 +54,7 @@ export async function callRPCProcedure(
 								: error.code === "CONFLICT"
 									? "This resource already exists or conflicts with an existing one."
 									: error.message ||
-									"An error occurred while processing your request.";
+										"An error occurred while processing your request.";
 
 			throw new Error(userMessage);
 		}

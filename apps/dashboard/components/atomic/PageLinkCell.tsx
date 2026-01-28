@@ -5,11 +5,11 @@ import type React from "react";
 import { formatDomainLink } from "@/app/(main)/websites/[id]/_components/utils/analytics-helpers";
 import { cn } from "@/lib/utils";
 
-export type PageLinkCellData = {
+export interface PageLinkCellData {
 	path: string;
 	websiteDomain?: string;
 	id?: string;
-};
+}
 
 type PageLinkCellProps = PageLinkCellData & {
 	className?: string;

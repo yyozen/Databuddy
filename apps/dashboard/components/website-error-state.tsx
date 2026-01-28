@@ -70,11 +70,11 @@ function flattenNavigation(sections: NavigationSection[]): SearchItem[] {
 	return items;
 }
 
-type WebsiteErrorStateProps = {
+interface WebsiteErrorStateProps {
 	error: unknown;
 	websiteId?: string;
 	isDemoRoute?: boolean;
-};
+}
 
 function getErrorType(error: unknown): {
 	type: "not_found" | "unauthorized" | "forbidden" | "unknown";
@@ -151,7 +151,7 @@ export function WebsiteErrorState({
 	const router = useRouter();
 	const { type, message, code } = getErrorType(error);
 
-	const getErrorCode = () => {
+	const _getErrorCode = () => {
 		switch (type) {
 			case "not_found":
 				return "ERR_WEBSITE_NOT_FOUND";
@@ -164,7 +164,7 @@ export function WebsiteErrorState({
 		}
 	};
 
-	const getErrorNumber = () => {
+	const _getErrorNumber = () => {
 		switch (type) {
 			case "not_found":
 				return "404";

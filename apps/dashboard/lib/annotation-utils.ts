@@ -124,6 +124,8 @@ export function sanitizeAnnotationText(text: string): string {
  * Formats annotation tags for display
  */
 export function formatAnnotationTags(tags: string[] | null): string[] {
-	if (!tags || tags.length === 0) return [];
+	if (!tags || tags.length === 0) {
+		return [];
+	}
 	return tags.filter((tag) => tag.trim().length > 0);
 }

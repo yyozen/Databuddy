@@ -32,7 +32,7 @@ const granularityLabels: Record<string, string> = {
 	day: "Daily",
 };
 
-type StatusHeaderProps = {
+interface StatusHeaderProps {
 	schedule: {
 		id: string;
 		granularity: string;
@@ -50,7 +50,7 @@ type StatusHeaderProps = {
 	onEditAction: () => void;
 	onDeleteAction: () => void;
 	onRefetchAction: () => void;
-};
+}
 
 export function StatusHeader({
 	schedule,

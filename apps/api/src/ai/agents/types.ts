@@ -6,7 +6,11 @@ export interface AgentContext {
 	requestHeaders?: Headers;
 }
 
-export type AgentType = "triage" | "analytics" | "reflection" | "reflection-max";
+export type AgentType =
+	| "triage"
+	| "analytics"
+	| "reflection"
+	| "reflection-max";
 
 export interface StreamConfig {
 	maxRounds: number;

@@ -26,8 +26,12 @@ import { generateSessionName } from "./generate-session-name";
 import { SessionEventTimeline } from "./session-event-timeline";
 
 function getEventSortPriority(eventName: string): number {
-	if (eventName === "page_exit") return 0;
-	if (eventName === "screen_view") return 1;
+	if (eventName === "page_exit") {
+		return 0;
+	}
+	if (eventName === "screen_view") {
+		return 1;
+	}
 	return 2;
 }
 
@@ -36,7 +40,9 @@ function transformSessionEvents(
 ): SessionEvent[] {
 	return events
 		.map((tuple) => {
-			if (!Array.isArray(tuple) || tuple.length < 5) return null;
+			if (!Array.isArray(tuple) || tuple.length < 5) {
+				return null;
+			}
 
 			const [event_id, time, event_name, path, properties] = tuple;
 
@@ -55,7 +61,9 @@ function transformSessionEvents(
 		.sort((a, b) => {
 			const timeA = new Date(a.time).getTime();
 			const timeB = new Date(b.time).getTime();
-			if (timeA !== timeB) return timeA - timeB;
+			if (timeA !== timeB) {
+				return timeA - timeB;
+			}
 			return (
 				getEventSortPriority(a.event_name) - getEventSortPriority(b.event_name)
 			);

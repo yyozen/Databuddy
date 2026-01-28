@@ -1,21 +1,21 @@
 // Analytics types for consistent data structures across the app
 
-export type DateRange = {
+export interface DateRange {
 	start_date: string;
 	end_date: string;
 	granularity?: "hourly" | "daily";
 	timezone?: string;
-};
+}
 
 // Base interface for common session/profile structure
-export type BaseSessionData = {
+export interface BaseSessionData {
 	session_id: string;
 	country: string;
 	country_name: string;
 	country_code: string;
-};
+}
 
-export type ProfileData = {
+export interface ProfileData {
 	visitor_id: string;
 	first_visit: string;
 	last_visit: string;
@@ -27,7 +27,7 @@ export type ProfileData = {
 	country: string;
 	region: string;
 	referrer: string;
-};
+}
 
 export interface ProfileSessionData extends BaseSessionData {
 	time: string;
@@ -49,7 +49,7 @@ export interface SessionData extends BaseSessionData {
 	user_agent: string;
 }
 
-export type SummaryMetricsData = {
+export interface SummaryMetricsData {
 	unique_visitors: number;
 	sessions: number;
 	pageviews: number;
@@ -58,4 +58,4 @@ export type SummaryMetricsData = {
 	median_session_duration: number;
 	median_session_duration_formatted: string;
 	pages_per_session: number;
-};
+}

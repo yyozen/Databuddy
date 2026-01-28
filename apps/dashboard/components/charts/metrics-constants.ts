@@ -130,7 +130,7 @@ export const METRIC_COLORS = {
 	),
 } as const;
 
-export type ChartDataRow = {
+export interface ChartDataRow {
 	date: string;
 	pageviews?: number;
 	visitors?: number;
@@ -157,9 +157,9 @@ export type ChartDataRow = {
 	p50_inp?: number;
 	measurements?: number;
 	[key: string]: unknown;
-};
+}
 
-export type MetricConfig = {
+export interface MetricConfig {
 	key: string;
 	label: string;
 	color: string;
@@ -168,7 +168,7 @@ export type MetricConfig = {
 	icon: React.ComponentType<{ className?: string }>;
 	formatValue?: (value: number, row: ChartDataRow) => string;
 	category?: "analytics" | "performance" | "core_web_vitals";
-};
+}
 
 // Utility functions
 export const formatPerformanceTime = (value: number): string => {

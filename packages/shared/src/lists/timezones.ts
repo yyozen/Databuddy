@@ -1,8 +1,8 @@
-type timezone = {
+interface timezone {
 	offset: string;
 	label: string;
 	region: string;
-};
+}
 
 export const TIMEZONES: timezone[] = [
 	{

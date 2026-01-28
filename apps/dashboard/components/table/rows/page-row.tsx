@@ -2,12 +2,12 @@ import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import { PercentageBadge } from "@/components/ui/percentage-badge";
 import { TruncatedText } from "@/components/ui/truncated-text";
 
-export type PageEntry = {
+export interface PageEntry {
 	name: string;
 	visitors: number;
 	pageviews: number;
 	percentage: number;
-};
+}
 
 const formatNumber = (value: number | null | undefined): string => {
 	if (value === null || value === undefined || Number.isNaN(value)) {

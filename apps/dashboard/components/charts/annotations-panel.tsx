@@ -23,13 +23,13 @@ import {
 import { formatAnnotationDateRange } from "@/lib/annotation-utils";
 import type { Annotation } from "@/types/annotations";
 
-type AnnotationsPanelProps = {
+interface AnnotationsPanelProps {
 	annotations: Annotation[];
 	onEdit: (annotation: Annotation) => void;
 	onDelete: (id: string) => Promise<void>;
 	isDeleting?: boolean;
 	granularity?: "hourly" | "daily" | "weekly" | "monthly";
-};
+}
 
 export function AnnotationsPanel({
 	annotations,

@@ -9,17 +9,8 @@ export default defineBuildConfig({
 		"./src/react/index.ts",
 		"./src/vue/index.ts",
 		"./src/node/index.ts",
-		"./src/ai/vercel/index.ts",
 	],
-	externals: [
-		"react",
-		"react-dom",
-		"vue",
-		"@ai-sdk/provider",
-		"ai",
-		"tokenlens",
-		"msw",
-	],
+	externals: ["react", "react-dom", "vue", "msw"],
 	rollup: {
 		emitCJS: false,
 		esbuild: {

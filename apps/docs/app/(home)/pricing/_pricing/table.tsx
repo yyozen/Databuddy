@@ -3,7 +3,9 @@ import Link from "next/link";
 import { SciFiButton } from "@/components/landing/scifi-btn";
 import type { NormalizedPlan } from "./types";
 
-type Props = { plans: NormalizedPlan[] };
+interface Props {
+	plans: NormalizedPlan[];
+}
 
 function FeatureCheck() {
 	return (

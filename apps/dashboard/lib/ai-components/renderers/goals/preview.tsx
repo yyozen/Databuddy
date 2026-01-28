@@ -18,11 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useChat } from "@/contexts/chat-context";
-import {
-	type CreateGoalData,
-	type Goal,
-	useGoals,
-} from "@/hooks/use-goals";
+import { type CreateGoalData, type Goal, useGoals } from "@/hooks/use-goals";
 import { cn } from "@/lib/utils";
 import type { BaseComponentProps } from "../../types";
 

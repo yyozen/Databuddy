@@ -42,13 +42,13 @@ type TwoFactorStep =
 	| "backup"
 	| "manage";
 
-type TwoFactorDialogProps = {
+interface TwoFactorDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	isEnabled: boolean;
 	hasCredentialAccount: boolean;
 	onSuccess: () => void;
-};
+}
 
 const MIN_PASSWORD_LENGTH = 8;
 const TOTP_SECRET_REGEX = /secret=([A-Z2-7]+)/i;

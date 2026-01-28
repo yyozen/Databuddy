@@ -15,7 +15,7 @@ import type {
 import { AnnotationModal } from "./annotation-modal";
 import { MetricsChart } from "./metrics-chart";
 
-type CreateAnnotationInput = {
+interface CreateAnnotationInput {
 	annotationType: "range";
 	xValue: string;
 	xEndValue: string;
@@ -23,9 +23,9 @@ type CreateAnnotationInput = {
 	tags: string[];
 	color: string;
 	isPublic: boolean;
-};
+}
 
-type MetricsChartWithAnnotationsProps = {
+interface MetricsChartWithAnnotationsProps {
 	websiteId: string;
 	data: any[] | undefined;
 	isLoading: boolean;
@@ -41,7 +41,7 @@ type MetricsChartWithAnnotationsProps = {
 		endDate: Date;
 		granularity: "hourly" | "daily" | "weekly" | "monthly";
 	};
-};
+}
 
 export function MetricsChartWithAnnotations({
 	websiteId,

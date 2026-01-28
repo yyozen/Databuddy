@@ -12,16 +12,16 @@ import { cn } from "@/lib/utils";
 
 dayjs.extend(relativeTime);
 
-type InvitationToCancel = {
+interface InvitationToCancel {
 	id: string;
 	email: string;
-};
+}
 
-type InvitationRowProps = {
+interface InvitationRowProps {
 	invitation: Invitation;
 	isCancellingInvitation: boolean;
 	onConfirmCancel: (inv: InvitationToCancel) => void;
-};
+}
 
 function InvitationRow({
 	invitation,

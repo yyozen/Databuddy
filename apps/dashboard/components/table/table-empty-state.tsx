@@ -1,11 +1,11 @@
 import type { IconProps } from "@phosphor-icons/react";
 import { cloneElement, type ReactElement } from "react";
 
-type TableEmptyStateProps = {
+interface TableEmptyStateProps {
 	icon: ReactElement<IconProps>;
 	title: string;
 	description: string;
-};
+}
 
 export function TableEmptyState({
 	icon,

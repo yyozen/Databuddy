@@ -18,15 +18,15 @@ const DEFAULT_MIN_HEIGHT = 200;
 const FULLSCREEN_HEIGHT = "h-[92vh]";
 const FULLSCREEN_WIDTH = "w-[92vw]";
 
-export type TabConfig<TData> = {
+export interface TabConfig<TData> {
 	id: string;
 	label: string;
 	data: TData[];
 	columns: ColumnDef<TData, unknown>[];
 	getFilter?: (row: TData) => { field: string; value: string };
-};
+}
 
-type DataTableProps<TData extends { name: string | number }, TValue> = {
+interface DataTableProps<TData extends { name: string | number }, TValue> {
 	data?: TData[] | undefined;
 	columns?: ColumnDef<TData, TValue>[];
 	tabs?: TabConfig<TData>[];
@@ -47,7 +47,7 @@ type DataTableProps<TData extends { name: string | number }, TValue> = {
 		index: number
 	) => React.ReactNode;
 	expandable?: boolean;
-};
+}
 
 const EnhancedSkeleton = ({ minHeight }: { minHeight: string | number }) => (
 	<div className="animate-pulse space-y-3" style={{ minHeight }}>

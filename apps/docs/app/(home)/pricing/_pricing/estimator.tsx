@@ -9,14 +9,14 @@ import { eventsToSliderValue, sliderValueToEvents } from "./estimator-scale";
 import { formatCompact, formatInteger, formatMoney } from "./estimator-utils";
 import type { NormalizedPlan } from "./types";
 
-type Props = {
+interface Props {
 	monthlyEvents: number;
 	setMonthlyEvents: (value: number) => void;
 	bestPlan: NormalizedPlan | null;
 	bestPlanDisplayName: string;
 	estimatedOverage: number;
 	estimatedMonthly: number;
-};
+}
 
 export function Estimator({
 	monthlyEvents,

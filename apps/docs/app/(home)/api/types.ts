@@ -1,26 +1,26 @@
-export type DynamicQueryFilter = {
+export interface DynamicQueryFilter {
 	field: string;
 	operator: string;
 	value: string | number | boolean;
-};
+}
 
-export type DynamicQueryRequest = {
+export interface DynamicQueryRequest {
 	id: string;
 	parameters: string[];
 	filters?: DynamicQueryFilter[];
 	limit?: number;
 	page?: number;
 	granularity?: string;
-};
+}
 
-export type ParameterResult = {
+export interface ParameterResult {
 	parameter: string;
 	success: boolean;
 	data: unknown[];
 	error?: string;
-};
+}
 
-export type DynamicQueryResponse = {
+export interface DynamicQueryResponse {
 	success: boolean;
 	queryId: string;
 	data: ParameterResult[];
@@ -31,10 +31,10 @@ export type DynamicQueryResponse = {
 		limit: number;
 		filters_applied: number;
 	};
-};
+}
 
-export type BatchQueryResponse = {
+export interface BatchQueryResponse {
 	success: boolean;
 	batch: true;
 	results: DynamicQueryResponse[];
-};
+}

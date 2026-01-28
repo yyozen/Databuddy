@@ -35,12 +35,12 @@ import { UnsavedChangesFooter } from "../_components/settings-section";
 import { TwoFactorDialog } from "./sections/two-factor-dialog";
 
 // Types
-type Account = {
+interface Account {
 	id: string;
 	providerId: string;
 	accountId: string;
 	createdAt: Date;
-};
+}
 
 type SocialProvider = "google" | "github";
 

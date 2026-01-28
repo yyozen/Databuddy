@@ -16,30 +16,30 @@ const MOBILE_PREFIX_REGEX = /^Mobile\s+/;
 const MOBILE_SUFFIX_REGEX = /\s+Mobile$/;
 
 // Types
-export type DeviceTypeEntry = {
+export interface DeviceTypeEntry {
 	device_type: string;
 	device_brand?: string;
 	device_model?: string;
 	visitors: number;
 	pageviews?: number;
-};
+}
 
-export type BrowserVersionEntry = {
+export interface BrowserVersionEntry {
 	browser: string;
 	version?: string;
 	visitors: number;
 	pageviews?: number;
 	count?: number;
-};
+}
 
-export type TechnologyTableEntry = {
+export interface TechnologyTableEntry {
 	name: string;
 	visitors: number;
 	percentage: number;
 	icon?: string;
 	iconComponent?: React.ReactNode;
 	category?: string;
-};
+}
 
 export const getDeviceTypeIcon = (
 	deviceType: string | null | undefined,

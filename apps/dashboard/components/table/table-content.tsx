@@ -50,9 +50,9 @@ function getCellStyle(size: number): React.CSSProperties {
 	return style;
 }
 
-type PercentageRow = {
+interface PercentageRow {
 	percentage?: string | number;
-};
+}
 
 function getRowPercentage(row: PercentageRow): number {
 	const value = row.percentage;
@@ -159,7 +159,7 @@ function getPercentageGradient(percentage: number) {
 	);
 }
 
-type TableContentProps<TData extends { name: string | number }> = {
+interface TableContentProps<TData extends { name: string | number }> {
 	table: Table<TData>;
 	title?: string;
 	minHeight?: string | number;
@@ -177,7 +177,7 @@ type TableContentProps<TData extends { name: string | number }> = {
 	activeTab?: string;
 	emptyMessage?: string;
 	className?: string;
-};
+}
 
 function TableContentInner<TData extends { name: string | number }>({
 	table,

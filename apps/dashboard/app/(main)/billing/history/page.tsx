@@ -188,14 +188,14 @@ const InvoiceRow = memo(function InvoiceRowComponent({
 	);
 });
 
-type ProductStatus = {
+interface ProductStatus {
 	id: string;
 	name?: string | null;
 	status?: string;
 	started_at?: number | null;
 	current_period_end?: number | null;
 	canceled_at?: number | null;
-};
+}
 
 function SubscriptionItem({ product }: { product: ProductStatus }) {
 	const renewalDate = product.current_period_end

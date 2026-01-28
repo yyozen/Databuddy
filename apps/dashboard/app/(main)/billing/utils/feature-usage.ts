@@ -4,12 +4,12 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
-export type PricingTier = {
+export interface PricingTier {
 	to: number | "inf";
 	amount: number;
-};
+}
 
-export type FeatureUsage = {
+export interface FeatureUsage {
 	id: string;
 	name: string;
 	balance: number;
@@ -22,7 +22,7 @@ export type FeatureUsage = {
 		amount: number;
 		cost: number;
 	} | null;
-};
+}
 
 function calculateOverageCost(
 	overageAmount: number,

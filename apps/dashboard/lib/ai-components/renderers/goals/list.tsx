@@ -24,11 +24,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	type CreateGoalData,
-	type Goal,
-	useGoals,
-} from "@/hooks/use-goals";
+import { type CreateGoalData, type Goal, useGoals } from "@/hooks/use-goals";
 import { fromNow } from "@/lib/time";
 import type { BaseComponentProps } from "../../types";
 
@@ -144,11 +140,7 @@ function GoalRow({
 	);
 }
 
-export function GoalsListRenderer({
-	title,
-	goals,
-	className,
-}: GoalsListProps) {
+export function GoalsListRenderer({ title, goals, className }: GoalsListProps) {
 	const router = useRouter();
 	const params = useParams();
 	const websiteId = params.id as string;
@@ -197,7 +189,9 @@ export function GoalsListRenderer({
 				}
 				closeDialog();
 			} catch {
-				toast.error(editingGoal ? "Failed to update goal" : "Failed to create goal");
+				toast.error(
+					editingGoal ? "Failed to update goal" : "Failed to create goal"
+				);
 			}
 		},
 		[editingGoal, createGoal, updateGoal, websiteId, closeDialog]
@@ -227,7 +221,9 @@ export function GoalsListRenderer({
 				filters: [],
 				isActive: editingGoal.isActive,
 				ignoreHistoricData: false,
-				createdAt: editingGoal.createdAt ? new Date(editingGoal.createdAt) : new Date(),
+				createdAt: editingGoal.createdAt
+					? new Date(editingGoal.createdAt)
+					: new Date(),
 				updatedAt: new Date(),
 				createdBy: null,
 				deletedAt: null,

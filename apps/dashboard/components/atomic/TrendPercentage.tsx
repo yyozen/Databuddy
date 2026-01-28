@@ -3,13 +3,13 @@
 import type React from "react";
 import { cn } from "@/lib/utils";
 
-type TrendPercentageProps = {
+interface TrendPercentageProps {
 	id?: string;
 	value: number;
 	invertColor?: boolean;
 	className?: string;
 	digits?: number;
-};
+}
 
 const formatPercentage = (value: number, digits = 1): string => {
 	const sign = value > 0 ? "+" : "";

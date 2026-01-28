@@ -3,14 +3,14 @@ import { useMemo } from "react";
 import type { AgentStatus } from "../agent-atoms";
 import { getToolMessage } from "../agent-commands";
 
-type ChatStatusResult = {
+interface ChatStatusResult {
 	agentStatus: AgentStatus;
 	currentToolCall: string | null;
 	toolMessage: string | null;
 	displayMessage: string | null;
 	hasTextContent: boolean;
 	isStreaming: boolean;
-};
+}
 
 function getTextContent(message: UIMessage): string {
 	if (!message.parts) {

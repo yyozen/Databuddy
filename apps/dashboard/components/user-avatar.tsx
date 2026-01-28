@@ -1,10 +1,10 @@
 "use client";
 
-type UserAvatarProps = {
+interface UserAvatarProps {
 	visitorId: string;
 	size?: "sm" | "md" | "lg";
 	className?: string;
-};
+}
 
 function hashCode(str: string): number {
 	let hash = 5381;

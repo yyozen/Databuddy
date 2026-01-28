@@ -2,11 +2,11 @@
 
 import { usePreferences } from "@/hooks/use-preferences";
 
-type DateDisplayProps = {
+interface DateDisplayProps {
 	date: string | Date;
 	showTime?: boolean;
 	customFormat?: string;
-};
+}
 
 export function DateDisplay({
 	date,
@@ -26,10 +26,10 @@ export function DateDisplay({
 	);
 }
 
-type RelativeDateDisplayProps = {
+interface RelativeDateDisplayProps {
 	date: string | Date;
 	className?: string;
-};
+}
 
 export function RelativeDateDisplay({
 	date,

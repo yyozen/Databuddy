@@ -24,20 +24,20 @@ import {
 	isLoadingOrganizationsAtom,
 } from "@/stores/jotai/organizationsAtoms";
 
-type HeaderActionButton = {
+interface HeaderActionButton {
 	text: string;
 	icon: PhosphorIcon;
 	action: () => void;
 	disabled?: boolean;
-};
+}
 
-type PageInfo = {
+interface PageInfo {
 	title: string;
 	description: string;
 	icon: PhosphorIcon;
 	requiresOrg?: boolean;
 	actionButton?: HeaderActionButton;
-};
+}
 
 const PAGE_INFO_MAP: Record<string, PageInfo> = {
 	"/organizations": {

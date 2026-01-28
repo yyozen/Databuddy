@@ -2,11 +2,11 @@ import { chQuery } from "@databuddy/db";
 import { tool } from "ai";
 import { z } from "zod";
 
-export type QueryResult = {
+export interface QueryResult {
 	data: unknown[];
 	executionTime: number;
 	rowCount: number;
-};
+}
 
 const FORBIDDEN_SQL_KEYWORDS = [
 	"INSERT INTO",

@@ -28,9 +28,9 @@ import {
 
 dayjs.extend(relativeTime);
 
-type Props = {
+interface Props {
 	recentErrors: RecentError[];
-};
+}
 
 const SeverityDot = ({ severity }: { severity: "high" | "medium" | "low" }) => {
 	const colors = {

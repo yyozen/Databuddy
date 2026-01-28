@@ -23,16 +23,16 @@ const rateButtonVariants = cva(
 	}
 );
 
-export type Feedback = {
+export interface Feedback {
 	opinion: "good" | "bad";
 	url?: string;
 	message: string;
-};
+}
 
-export type ActionResponse = {
+export interface ActionResponse {
 	success: boolean;
 	error?: string;
-};
+}
 
 interface Result extends Feedback {
 	response?: ActionResponse;

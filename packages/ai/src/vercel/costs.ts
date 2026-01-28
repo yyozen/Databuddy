@@ -1,13 +1,14 @@
-import type { TokenCost } from "./types";
+import type { Cost } from "./types";
 
 /**
- * Compute costs using TokenLens
+ * Computes token costs using TokenLens (optional dependency)
+ * Returns empty object if TokenLens is not installed or fails
  */
-export const computeCosts = async (
+export async function computeCost(
 	modelId: string,
 	provider: string,
 	usage: { inputTokens: number; outputTokens: number }
-): Promise<TokenCost> => {
+): Promise<Cost> {
 	try {
 		const { computeCostUSD } = await import("tokenlens");
 		const result = await computeCostUSD({
@@ -19,11 +20,11 @@ export const computeCosts = async (
 			},
 		});
 		return {
-			inputTokenCostUSD: result.inputTokenCostUSD,
-			outputTokenCostUSD: result.outputTokenCostUSD,
-			totalTokenCostUSD: result.totalTokenCostUSD,
+			inputCostUSD: result.inputTokenCostUSD,
+			outputCostUSD: result.outputTokenCostUSD,
+			totalCostUSD: result.totalTokenCostUSD,
 		};
 	} catch {
 		return {};
 	}
-};
+}

@@ -4,11 +4,11 @@ import { SciFiCard } from "@/components/scifi-card";
 import { cn } from "@/lib/utils";
 import { GridPatternBg } from "./grid-pattern";
 
-type GridCard = {
+interface GridCard {
 	title: string;
 	description: string;
 	icon: ComponentType<IconProps>;
-};
+}
 
 type SciFiGridCardProps = GridCard & {
 	className?: string;

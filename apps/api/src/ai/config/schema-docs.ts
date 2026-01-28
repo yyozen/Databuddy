@@ -6,12 +6,12 @@
 /**
  * Schema table definition with description
  */
-type TableDef = {
+interface TableDef {
 	name: string;
 	description: string;
 	keyColumns: string[];
 	additionalInfo?: string;
-};
+}
 
 /**
  * Analytics tables - main event tracking and user behavior

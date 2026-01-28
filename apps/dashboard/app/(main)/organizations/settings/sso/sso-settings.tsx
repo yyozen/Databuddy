@@ -19,18 +19,18 @@ import type { Organization } from "@/hooks/use-organizations";
 import { SSOProviderSheet } from "./sso-provider-sheet";
 import { useSSO } from "./use-sso";
 
-type SSOSettingsProps = {
+interface SSOSettingsProps {
 	organization: Organization;
-};
+}
 
-type SSOProviderDisplay = {
+interface SSOProviderDisplay {
 	id: string;
 	providerId: string;
 	name: string;
 	type: "oidc" | "saml";
 	domain: string;
 	issuer: string;
-};
+}
 
 function SkeletonRow() {
 	return (

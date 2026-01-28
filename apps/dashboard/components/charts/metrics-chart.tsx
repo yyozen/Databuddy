@@ -40,20 +40,20 @@ import {
 import { RangeSelectionPopup } from "./range-selection-popup";
 import { SkeletonChart } from "./skeleton-chart";
 
-type TooltipPayloadEntry = {
+interface TooltipPayloadEntry {
 	dataKey: string;
 	value: number;
 	color: string;
 	payload: Record<string, unknown>;
-};
+}
 
-type TooltipProps = {
+interface TooltipProps {
 	active?: boolean;
 	payload?: TooltipPayloadEntry[];
 	label?: string;
 	isDragging?: boolean;
 	justFinishedDragging?: boolean;
-};
+}
 
 const CustomTooltip = ({
 	active,
@@ -113,19 +113,19 @@ const CustomTooltip = ({
 	);
 };
 
-type DateRangeState = {
+interface DateRangeState {
 	startDate: Date;
 	endDate: Date;
-};
+}
 
-type ChartDataPoint = {
+interface ChartDataPoint {
 	x?: number;
 	y?: number;
 	value?: number | string;
 	payload?: Record<string, unknown>;
-};
+}
 
-type ChartLineData = {
+interface ChartLineData {
 	item: {
 		props: {
 			dataKey: string;
@@ -134,20 +134,20 @@ type ChartLineData = {
 	props: {
 		points: ChartDataPoint[];
 	};
-};
+}
 
-type CustomizedChartProps = {
+interface CustomizedChartProps {
 	formattedGraphicalItems?: ChartLineData[];
-};
+}
 
-type LineConfig = {
+interface LineConfig {
 	name: string;
 	splitIndex?: number;
 	dashPattern?: number[];
 	curveAdjustment?: number;
-};
+}
 
-type UseDynamicDasharrayProps = {
+interface UseDynamicDasharrayProps {
 	lineConfigs?: LineConfig[];
 	splitIndex?: number;
 	defaultDashPattern?: number[];
@@ -159,7 +159,7 @@ type UseDynamicDasharrayProps = {
 		| "step"
 		| "stepBefore"
 		| "stepAfter";
-};
+}
 
 type LineDasharray = {
 	name: string;
@@ -274,7 +274,7 @@ function useDynamicDasharray({
 	return [DasharrayCalculator, lineDasharrays];
 }
 
-type MetricsChartProps = {
+interface MetricsChartProps {
 	data: ChartDataRow[] | undefined;
 	isLoading: boolean;
 	height?: number;
@@ -300,7 +300,7 @@ type MetricsChartProps = {
 	onToggleAnnotations?: (show: boolean) => void;
 	websiteId?: string;
 	granularity?: "hourly" | "daily" | "weekly" | "monthly";
-};
+}
 
 const DEFAULT_METRICS = [
 	"pageviews",

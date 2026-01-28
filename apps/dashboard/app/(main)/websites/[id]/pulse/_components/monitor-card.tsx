@@ -29,7 +29,7 @@ const granularityLabels: Record<string, string> = {
 	day: "Daily",
 };
 
-type MonitorCardProps = {
+interface MonitorCardProps {
 	schedule: {
 		id: string;
 		granularity: string;
@@ -41,7 +41,7 @@ type MonitorCardProps = {
 	onEditAction: () => void;
 	onDeleteAction: () => void;
 	onRefetchAction: () => void;
-};
+}
 
 export function MonitorCard({
 	schedule,

@@ -7,11 +7,11 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type SkeletonChartProps = {
+interface SkeletonChartProps {
 	height?: number;
 	title?: string;
 	className?: string;
-};
+}
 
 export function SkeletonChart({
 	height = 300,

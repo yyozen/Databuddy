@@ -64,7 +64,9 @@ export function FullScreenModal<TData extends { name: string | number }>({
 	});
 
 	const handleTabChange = (tabId: string) => {
-		if (tabId === activeTab) return;
+		if (tabId === activeTab) {
+			return;
+		}
 		onTabChange?.(tabId);
 	};
 	return (

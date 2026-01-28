@@ -31,12 +31,12 @@ const EVENT_TYPE_COLORS = {
 	outgoing_link: METRIC_COLORS.bounce_rate.primary, // amber
 } as const;
 
-type ConsumptionChartProps = {
+interface ConsumptionChartProps {
 	usageData?: UsageResponse;
 	isLoading: boolean;
 	onDateRangeChange: (startDate: string, endDate: string) => void;
 	overageInfo: OverageInfo | null;
-};
+}
 
 export function ConsumptionChart({
 	usageData,

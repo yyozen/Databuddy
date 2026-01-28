@@ -1,12 +1,12 @@
 import { cn } from "@/lib/utils";
 
-type SpotlightProps = {
+interface SpotlightProps {
 	className?: string;
 	fill?: string;
 	top?: string;
 	left?: string;
 	transform?: string;
-};
+}
 
 export const Spotlight = ({
 	className,

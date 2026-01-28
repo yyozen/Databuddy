@@ -8,7 +8,7 @@ const SLACK_TIMEOUT_MS = 10_000;
 const MIN_NAME_LENGTH = 2;
 const MIN_WHY_AMBASSADOR_LENGTH = 10;
 
-type AmbassadorFormData = {
+interface AmbassadorFormData {
 	name: string;
 	email: string;
 	xHandle?: string;
@@ -17,7 +17,7 @@ type AmbassadorFormData = {
 	experience?: string;
 	audience?: string;
 	referralSource?: string;
-};
+}
 
 type ValidationResult =
 	| { valid: true; data: AmbassadorFormData }

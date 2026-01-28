@@ -19,19 +19,19 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-type DataPoint = {
+interface DataPoint {
 	date: string;
 	[key: string]: string | number | null | undefined;
-};
+}
 
-type MetricConfig = {
+interface MetricConfig {
 	key: string;
 	label: string;
 	color: string;
 	formatValue?: (value: number) => string;
-};
+}
 
-type SimpleMetricsChartProps = {
+interface SimpleMetricsChartProps {
 	data: DataPoint[];
 	metrics: MetricConfig[];
 	title?: string;
@@ -39,7 +39,7 @@ type SimpleMetricsChartProps = {
 	height?: number;
 	isLoading?: boolean;
 	className?: string;
-};
+}
 
 const DEFAULT_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 

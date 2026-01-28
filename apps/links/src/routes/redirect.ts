@@ -56,7 +56,7 @@ async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
 	});
 
 	if (!dbLink) {
-		await setCachedLinkNotFound(slug).catch(() => { });
+		await setCachedLinkNotFound(slug).catch(() => {});
 		return null;
 	}
 
@@ -73,7 +73,7 @@ async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
 		androidUrl: dbLink.androidUrl,
 	};
 
-	await setCachedLink(slug, link).catch(() => { });
+	await setCachedLink(slug, link).catch(() => {});
 	return link;
 }
 
@@ -171,7 +171,11 @@ export const redirectRoute = new Elysia().get(
 		if (request.headers.get("if-none-match") === etag) {
 			setAttributes({ redirect_result: "not_modified" });
 			set.status = 304;
-			set.headers = { ...headers, "Cache-Control": "private, no-cache", ETag: etag };
+			set.headers = {
+				...headers,
+				"Cache-Control": "private, no-cache",
+				ETag: etag,
+			};
 			return;
 		}
 
@@ -181,7 +185,11 @@ export const redirectRoute = new Elysia().get(
 		);
 
 		setAttributes({ redirect_result: "success" });
-		set.headers = { ...headers, "Cache-Control": "private, no-cache", ETag: etag };
+		set.headers = {
+			...headers,
+			"Cache-Control": "private, no-cache",
+			ETag: etag,
+		};
 		return redirect(targetUrl, 302);
 	},
 	{ params: t.Object({ slug: t.String() }) }
