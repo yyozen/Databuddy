@@ -183,6 +183,15 @@ function RuleRow({
 
 	const getPlaceholder = () => {
 		if (rule.type === "email") {
+			if (rule.operator === "ends_with") {
+				return "e.g. @company.com";
+			}
+			if (rule.operator === "starts_with") {
+				return "e.g. admin@";
+			}
+			if (rule.operator === "contains") {
+				return "e.g. company";
+			}
 			return "Enter emails…";
 		}
 		if (rule.type === "user_id") {
@@ -192,10 +201,17 @@ function RuleRow({
 	};
 
 	const validateEmail = (value: string) => {
-		const result = z.email().safeParse(value);
-		return result.success
-			? { success: true }
-			: { success: false, error: "Please enter a valid email address" };
+		const exactMatchOperators = ["equals", "in", "not_in"];
+		if (exactMatchOperators.includes(rule.operator)) {
+			const result = z.email().safeParse(value);
+			return result.success
+				? { success: true }
+				: { success: false, error: "Please enter a valid email address" };
+		}
+		if (!value.trim()) {
+			return { success: false, error: "Value cannot be empty" };
+		}
+		return { success: true };
 	};
 
 	return (
