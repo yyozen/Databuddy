@@ -5,7 +5,7 @@ import { cloneElement, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-type PageHeaderProps = {
+interface PageHeaderProps {
 	title: string;
 	description: string;
 	icon: React.ReactElement<IconProps>;
@@ -22,7 +22,7 @@ type PageHeaderProps = {
 	badgeClassName?: string;
 	right?: React.ReactNode;
 	count?: number;
-};
+}
 
 export const PageHeader = memo(
 	({
@@ -35,8 +35,8 @@ export const PageHeader = memo(
 		right,
 		count,
 	}: PageHeaderProps) => (
-		<div className="box-border flex h-fit shrink-0 flex-col justify-between gap-0 border-b p-0 sm:flex-row sm:items-center md:h-22 md:max-h-22 lg:gap-3">
-			<div className="flex h-full items-center gap-3 p-3 sm:p-4">
+		<div className="flex h-22 shrink-0 flex-col justify-between gap-0 border-b sm:flex-row sm:items-center lg:gap-3">
+			<div className="flex h-22 items-center gap-3 p-3 sm:p-4">
 				<div className="rounded-lg border bg-secondary p-2.5">
 					{cloneElement(icon, {
 						...icon.props,

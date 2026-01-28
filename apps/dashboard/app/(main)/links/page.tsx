@@ -75,7 +75,7 @@ export default function LinksPage() {
 		!isLoading && links.length > 0 && filteredLinks.length === 0;
 
 	return (
-		<div className="relative flex h-full flex-col">
+		<div className="flex h-full flex-col">
 			<PageHeader
 				count={isLoading ? undefined : links.length}
 				description="Create and track short links with analytics"
