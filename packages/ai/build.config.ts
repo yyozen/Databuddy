@@ -1,6 +1,13 @@
 import { resolve } from "node:path";
 import { defineBuildConfig } from "unbuild";
 
+const banner = `/**
+ * @databuddy/ai - LLM Observability SDK
+ * https://databuddy.cc
+ * (c) ${new Date().getFullYear()} Databuddy
+ * @license MIT
+ */`;
+
 export default defineBuildConfig({
 	name: "@databuddy/ai",
 	entries: [
@@ -20,6 +27,9 @@ export default defineBuildConfig({
 		emitCJS: false,
 		esbuild: {
 			minify: true,
+		},
+		output: {
+			banner,
 		},
 	},
 	declaration: true,
