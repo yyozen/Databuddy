@@ -1,7 +1,5 @@
 import { CheckIcon } from "@phosphor-icons/react/ssr";
 import React from "react";
-import { SciFiCard } from "@/components/scifi-card";
-
 import { cn } from "@/lib/utils";
 
 interface StepsProps extends React.ComponentProps<"div"> {
@@ -12,7 +10,7 @@ function Steps({ className, children, ...props }: StepsProps) {
 	const childrenArray = React.Children.toArray(children);
 
 	return (
-		<div className={cn("space-y-6", className)} {...props}>
+		<div className={cn("my-4 space-y-0", className)} {...props}>
 			{childrenArray.map((child, index) => {
 				if (React.isValidElement(child) && child.type === Step) {
 					const stepProps = {
@@ -45,29 +43,26 @@ function Step({
 	const isLast = stepNumber === total;
 
 	return (
-		<div className={cn("relative", !isLast && "pb-6", className)} {...props}>
-			{!isLast && (
-				<div className="absolute top-8 left-6 h-full w-px bg-border" />
+		<div
+			className={cn(
+				"relative border-border border-l-2 py-4 pl-8",
+				isLast && "border-l-transparent",
+				className
 			)}
+			{...props}
+		>
+			<div className="absolute top-4 left-[-13px] flex size-6 items-center justify-center border border-border bg-muted font-mono text-foreground text-xs dark:bg-[#101010]">
+				{stepNumber}
+			</div>
 
-			<div className="flex items-start gap-4">
-				<SciFiCard
-					className="flex size-12 shrink-0 items-center justify-center rounded border border-border bg-card/50 font-semibold text-foreground backdrop-blur-sm transition-all duration-300 hover:bg-card/70"
-					opacity="reduced"
-					size="sm"
-				>
-					{stepNumber}
-				</SciFiCard>
-
-				<div className="min-w-0 flex-1 space-y-3">
-					{title && (
-						<h3 className="font-semibold text-foreground text-lg leading-6">
-							{title}
-						</h3>
-					)}
-					<div className="text-muted-foreground text-sm leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-						{children}
-					</div>
+			<div className="min-w-0">
+				{title && (
+					<h3 className="mb-1 font-semibold text-foreground text-sm">
+						{title}
+					</h3>
+				)}
+				<div className="text-muted-foreground text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+					{children}
 				</div>
 			</div>
 		</div>
@@ -90,31 +85,25 @@ function CompletedStep({
 
 	return (
 		<div
-			className={cn("relative opacity-70", !isLast && "pb-6", className)}
+			className={cn(
+				"relative border-border border-l-2 py-4 pl-8 opacity-60",
+				isLast && "border-l-transparent",
+				className
+			)}
 			{...props}
 		>
-			{!isLast && (
-				<div className="absolute top-8 left-6 h-full w-px bg-border" />
-			)}
+			<div className="absolute top-4 left-[-13px] flex size-6 items-center justify-center border border-border bg-muted dark:bg-[#101010]">
+				<CheckIcon className="size-3 text-muted-foreground" />
+			</div>
 
-			<div className="flex items-start gap-4">
-				<SciFiCard
-					className="flex size-12 shrink-0 items-center justify-center rounded border border-border bg-card/50 backdrop-blur-sm transition-all duration-300 hover:bg-card/70"
-					opacity="reduced"
-					size="sm"
-				>
-					<CheckIcon className="size-4 text-muted-foreground" />
-				</SciFiCard>
-
-				<div className="min-w-0 flex-1 space-y-3">
-					{title && (
-						<h3 className="font-semibold text-foreground text-lg leading-6">
-							{title}
-						</h3>
-					)}
-					<div className="text-muted-foreground text-sm leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-						{children}
-					</div>
+			<div className="min-w-0">
+				{title && (
+					<h3 className="mb-1 font-semibold text-foreground text-sm">
+						{title}
+					</h3>
+				)}
+				<div className="text-muted-foreground text-sm [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+					{children}
 				</div>
 			</div>
 		</div>

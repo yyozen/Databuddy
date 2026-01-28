@@ -7,22 +7,19 @@ import {
 } from "@phosphor-icons/react/ssr";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
-import { SciFiCard } from "@/components/scifi-card";
 import { cn } from "@/lib/utils";
 
 const calloutVariants = cva(
-	"my-4 w-full rounded-none border backdrop-blur-sm transition-all duration-300",
+	"my-4 flex items-center gap-3 border-l-2 bg-muted py-3 pr-4 pl-4 dark:bg-[#101010]",
 	{
 		variants: {
 			type: {
-				info: "border-blue-200 bg-blue-50/80 hover:bg-blue-50/90 dark:border-blue-800/50 dark:bg-blue-950/20 dark:hover:bg-blue-950/30",
-				success:
-					"border-green-200 bg-green-50/80 hover:bg-green-50/90 dark:border-green-800/50 dark:bg-green-950/20 dark:hover:bg-green-950/30",
-				warn: "border-yellow-200 bg-yellow-50/80 hover:bg-yellow-50/90 dark:border-yellow-800/50 dark:bg-yellow-950/20 dark:hover:bg-yellow-950/30",
-				error:
-					"border-red-200 bg-red-50/80 hover:bg-red-50/90 dark:border-red-800/50 dark:bg-red-950/20 dark:hover:bg-red-950/30",
-				tip: "border-purple-200 bg-purple-50/80 hover:bg-purple-50/90 dark:border-purple-800/50 dark:bg-purple-950/20 dark:hover:bg-purple-950/30",
-				note: "border-border bg-card/50 hover:bg-card/70",
+				info: "border-l-blue-500",
+				success: "border-l-green-500",
+				warn: "border-l-yellow-500",
+				error: "border-l-red-500",
+				tip: "border-l-purple-500",
+				note: "border-l-border",
 			},
 		},
 		defaultVariants: {
@@ -31,14 +28,14 @@ const calloutVariants = cva(
 	}
 );
 
-const iconVariants = cva("size-5 shrink-0", {
+const iconVariants = cva("size-6 shrink-0", {
 	variants: {
 		type: {
-			info: "text-blue-500 dark:text-blue-400",
-			success: "text-green-500 dark:text-green-400",
-			warn: "text-yellow-500 dark:text-yellow-400",
-			error: "text-red-500 dark:text-red-400",
-			tip: "text-purple-500 dark:text-purple-400",
+			info: "text-blue-500",
+			success: "text-green-500",
+			warn: "text-yellow-500",
+			error: "text-red-500",
+			tip: "text-purple-500",
 			note: "text-muted-foreground",
 		},
 	},
@@ -72,28 +69,23 @@ function Callout({
 	const Icon = iconMap[type as keyof typeof iconMap] || iconMap.info;
 
 	return (
-		<SciFiCard
+		<div
 			className={cn(calloutVariants({ type }), className)}
-			opacity="reduced"
 			role="alert"
 			{...props}
 		>
-			<div className="flex items-center gap-2 pl-4">
-				<div className="mt-0.5 shrink-0">
-					<Icon className={cn(iconVariants({ type }))} weight="duotone" />
-				</div>
-				<div className="min-w-0 flex-1 space-y-2">
-					{title && (
-						<div className="font-semibold text-foreground tracking-tight">
-							{title}
-						</div>
-					)}
-					<div className="text-foreground text-sm leading-relaxed [&_p]:text-foreground [&_p]:leading-relaxed">
-						{children}
+			<Icon className={cn(iconVariants({ type }))} weight="duotone" />
+			<div className="min-w-0 flex-1">
+				{title && (
+					<div className="mb-1 font-semibold text-foreground text-sm">
+						{title}
 					</div>
+				)}
+				<div className="text-foreground/90 text-sm [&_p]:leading-relaxed">
+					{children}
 				</div>
 			</div>
-		</SciFiCard>
+		</div>
 	);
 }
 

@@ -1,6 +1,6 @@
+import { ArrowRightIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import type * as React from "react";
-import { SciFiCard } from "@/components/scifi-card";
 import { cn } from "@/lib/utils";
 
 interface CardProps extends React.ComponentProps<"div"> {
@@ -20,30 +20,33 @@ function Card({
 	...props
 }: CardProps) {
 	const content = (
-		<SciFiCard
+		<div
 			className={cn(
-				"group h-full rounded-none border border-border bg-card/50 backdrop-blur-sm transition-all duration-300 hover:bg-card/70",
+				"not-prose group flex h-full items-start gap-3 border border-border bg-muted px-4 py-3 dark:bg-[#101010]",
 				href && "cursor-pointer",
 				className
 			)}
-			opacity="reduced"
 			{...props}
 		>
-			<div className="p-6">
-				{icon && <div className="mb-4 text-muted-foreground">{icon}</div>}
+			{icon && <div className="shrink-0 text-foreground/70">{icon}</div>}
+			<div className="min-w-0 flex-1">
 				{title && (
-					<h3 className="mb-3 font-semibold text-foreground text-lg leading-6">
-						{title}
-					</h3>
+					<span className="font-medium text-foreground text-sm">{title}</span>
 				)}
 				{description && (
-					<p className="text-muted-foreground text-sm leading-relaxed">
-						{description}
-					</p>
+					<p className="mt-0.5 text-muted-foreground text-xs">{description}</p>
 				)}
-				{children}
+				{children && (
+					<div className="mt-0.5 text-muted-foreground text-xs">{children}</div>
+				)}
 			</div>
-		</SciFiCard>
+			{href && (
+				<ArrowRightIcon
+					className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
+					weight="bold"
+				/>
+			)}
+		</div>
 	);
 
 	if (href) {
@@ -52,7 +55,7 @@ function Card({
 		if (isExternal) {
 			return (
 				<a
-					className="block"
+					className="block no-underline"
 					href={href}
 					rel="noopener noreferrer"
 					target="_blank"
@@ -63,7 +66,7 @@ function Card({
 		}
 
 		return (
-			<Link className="block" href={href}>
+			<Link className="block no-underline" href={href}>
 				{content}
 			</Link>
 		);
@@ -85,7 +88,10 @@ function Cards({ className, cols = 2, children, ...props }: CardsProps) {
 	};
 
 	return (
-		<div className={cn("grid gap-4", gridCols[cols], className)} {...props}>
+		<div
+			className={cn("my-4 grid gap-2", gridCols[cols], className)}
+			{...props}
+		>
 			{children}
 		</div>
 	);

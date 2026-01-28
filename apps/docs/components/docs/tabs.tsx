@@ -1,14 +1,8 @@
+import { Content, List, Root, Trigger } from "@radix-ui/react-tabs";
 import React from "react";
-import { SciFiCard } from "@/components/scifi-card";
-import {
-	Tabs as BaseTabs,
-	TabsList as BaseTabsList,
-	TabsTrigger as BaseTabsTrigger,
-	TabsContent,
-} from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
-interface TabsProps extends React.ComponentProps<typeof BaseTabs> {
+interface TabsProps extends React.ComponentProps<typeof Root> {
 	items?: string[];
 }
 
@@ -19,17 +13,12 @@ function Tabs({ className, items, children, ...props }: TabsProps) {
 		const tabsContent = React.Children.toArray(children);
 
 		return (
-			<BaseTabs
-				className={cn("w-full", className)}
+			<Root
+				className={cn("my-4 w-full", className)}
 				defaultValue={defaultValue}
 				{...props}
 			>
-				<TabsList
-					className="grid w-full"
-					style={{
-						gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`,
-					}}
-				>
+				<TabsList>
 					{items.map((item) => (
 						<TabsTrigger key={item} value={item}>
 							{item}
@@ -50,61 +39,56 @@ function Tabs({ className, items, children, ...props }: TabsProps) {
 					}
 					return content;
 				})}
-			</BaseTabs>
+			</Root>
 		);
 	}
 
 	return (
-		<BaseTabs
-			className={cn("w-full", className)}
+		<Root
+			className={cn("my-4 w-full", className)}
 			defaultValue={defaultValue}
 			{...props}
 		>
 			{children}
-		</BaseTabs>
+		</Root>
 	);
 }
 
-function TabsList({
-	className,
-	...props
-}: React.ComponentProps<typeof BaseTabsList>) {
+function TabsList({ className, ...props }: React.ComponentProps<typeof List>) {
 	return (
-		<SciFiCard
+		<List
 			className={cn(
-				"inline-flex h-12 w-fit items-center justify-center rounded-none border border-border bg-card/50 p-1.5 backdrop-blur-sm",
+				"flex items-center gap-0 border-border border-b",
 				className
 			)}
-			opacity="reduced"
-			size="sm"
-		>
-			<BaseTabsList
-				className="inline-flex h-full w-full items-center justify-center gap-1"
-				{...props}
-			/>
-		</SciFiCard>
+			{...props}
+		/>
 	);
 }
 
 function TabsTrigger({
 	className,
 	...props
-}: React.ComponentProps<typeof BaseTabsTrigger>) {
+}: React.ComponentProps<typeof Trigger>) {
 	return (
-		<BaseTabsTrigger
+		<Trigger
 			className={cn(
-				"relative inline-flex h-full flex-1 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-none px-4 py-1 font-medium text-muted-foreground text-sm transition-all duration-200",
-				"hover:bg-foreground/5 hover:text-foreground",
-				"focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-				"disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-				"data-[state=active]:bg-primary/10 data-[state=active]:text-primary",
-				"data-[state=active]:border data-[state=active]:border-primary/20",
-				"border border-transparent",
+				"cursor-pointer border-transparent border-b-2 px-3 py-2 font-medium text-muted-foreground text-sm",
+				"hover:text-foreground",
+				"focus-visible:outline-none",
+				"data-[state=active]:border-b-foreground data-[state=active]:text-foreground",
 				className
 			)}
 			{...props}
 		/>
 	);
+}
+
+function TabsContent({
+	className,
+	...props
+}: React.ComponentProps<typeof Content>) {
+	return <Content className={cn("mt-4", className)} {...props} />;
 }
 
 interface TabProps {
