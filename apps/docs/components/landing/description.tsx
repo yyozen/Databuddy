@@ -5,21 +5,21 @@ import { useEffect, useState } from "react";
 
 const analyticsData = [
 	{
-		title: "Bloated and Creepy",
+		title: "Bloated and invasive",
 		content:
-			"Google Analytics tracks everything, slows down your site, and requires cookie banners that hurt conversion rates.",
+			"Heavy scripts that slow your site, cookie banners that kill conversions, and privacy policies nobody wants to read.",
 		isActive: true,
 	},
 	{
-		title: "Minimal but useless",
+		title: "Scattered across tools",
 		content:
-			"Simple analytics tools give you basic metrics but lack the depth needed for meaningful business insights.",
+			"Analytics in one place, errors in another, feature flags somewhere else. You're paying for three tools that don't talk to each other.",
 		isActive: false,
 	},
 	{
-		title: "Complex Product Analysis",
+		title: "Complex and overwhelming",
 		content:
-			"Enterprise tools overwhelm you with features you don't need while hiding the metrics that actually matter.",
+			"Enterprise tools with 200 features when you need 10. Steep learning curves and dashboards that require a PhD to understand.",
 		isActive: false,
 	},
 ];

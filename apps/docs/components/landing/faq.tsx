@@ -7,24 +7,29 @@ import {
 
 const faqs = [
 	{
-		question: "How is Databuddy different from Google Analytics?",
+		question: "What do you mean by one layer?",
 		answer:
-			"Databuddy is built for privacy-first analytics with no cookies required, making it GDPR and CCPA compliant out of the box. Our script is 65x faster than GA4, with a <1KB footprint that won't impact your Core Web Vitals.",
+			"Most teams use separate tools for analytics, error tracking, feature flags, and performance monitoring. Databuddy combines all of these into one connected system, so you see the full picture without switching tabs or paying for multiple subscriptions.",
 	},
 	{
-		question: "Do I need to add cookie consent banners?",
+		question: "How is this different from Google Analytics?",
 		answer:
-			"No. Databuddy's analytics are completely cookieless, using privacy-preserving techniques to provide accurate analytics without tracking individual users. Our customers typically see a 30% increase in conversion rates after removing those intrusive cookie banners.",
+			"Databuddy is under 1KB (vs GA4's 45KB+), requires no cookies, and is GDPR compliant by default. Beyond analytics, it includes error tracking, web vitals, funnels, and feature flags. Things you'd need separate tools for with GA.",
+	},
+	{
+		question: "Do I need cookie consent banners?",
+		answer:
+			"No. Databuddy doesn't use cookies or track individual users. You can remove those banners entirely and stay compliant with GDPR and CCPA.",
 	},
 	{
 		question: "What's included in the free plan?",
 		answer:
-			"Our free plan includes up to 10,000 monthly events, real-time analytics, basic event tracking, It's perfect for small websites, personal projects, or to test Databuddy before upgrading.",
+			"Up to 10,000 monthly events, real-time analytics, error tracking, and basic feature flags. Enough for most small projects and side projects.",
 	},
 	{
-		question: "How easy is it to implement Databuddy?",
+		question: "How long does setup take?",
 		answer:
-			"Implementation takes less than 5 minutes for most websites. Simply add our lightweight script to your site (we provide easy integrations for Next.js, React, WordPress, Shopify, and more), and you'll start seeing data immediately.",
+			"Under 5 minutes. Add a single script tag or use our SDK for Next.js, React, Vue, or vanilla JS. Data shows up immediately.",
 	},
 ];
 
@@ -35,7 +40,7 @@ export default function FAQ() {
 				{/* Header Section */}
 				<div className="text-center lg:text-left">
 					<h2 className="mx-auto max-w-2xl font-medium text-2xl leading-tight sm:text-3xl lg:mx-0 lg:text-4xl xl:text-5xl">
-						Questions we think you might like answers to
+						Frequently asked questions
 					</h2>
 				</div>
 
