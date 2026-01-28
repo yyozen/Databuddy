@@ -9,19 +9,16 @@ const logos = [
 		style: "font-medium font-geist",
 	},
 	{ name: "Notra", src: "https://usenotra.com", style: "font-bold font-geist" },
-	{ name: "Confinity", src: "https://www.confinity.com" },
 	{ name: "Autumn", src: "https://useautumn.com", style: "font-bold" },
 	{ name: "OpenCut", src: "https://opencut.app" },
 	{ name: "Call", src: "https://joincall.co" },
-	{ name: "Mail0", src: "https://0.email" },
 	{ name: "ServerStats", src: "https://serverstats.bot" },
 	{ name: "xpand", src: "https://xpandconf.com" },
-	{ name: "oss.now", src: "https://oss.now/" },
-	{ name: "Terabits", src: "https://www.terabits.xyz" },
 	{ name: "Dione", src: "https://getdione.app" },
 	{ name: "Lindra", src: "https://lindra.ai" },
 	{ name: "inbound", src: "https://inbound.new/" },
-	{ name: "Mantlz", src: "https://mantlz.com" },
+	{ name: "Rentmyheader", src: "https://rentmyheader.com" },
+	{ name: "Open", src: "https://open.cx" },
 ].map((logo, i) => ({ id: i + 1, style: "font-semibold", ...logo }));
 
 export const TrustedBy = () => (
