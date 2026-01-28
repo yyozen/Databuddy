@@ -118,11 +118,12 @@ export default function Hero() {
 			<Spotlight transform="translateX(-60%) translateY(-50%)" />
 
 			<div className="mx-auto w-full max-w-7xl px-4 pt-16 pb-8 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
-				{/* Hero Content - Centered with consistent spacing */}
 				<div className="mx-auto flex max-w-4xl flex-col items-center space-y-8 text-center">
 					<h1 className="fade-in slide-in-from-bottom-6 animate-in text-balance font-bold text-4xl leading-[1.1] tracking-tight delay-100 duration-700 sm:text-5xl md:text-6xl lg:text-7xl">
-						Analytics that runs{" "}
-						<span className="text-muted-foreground">itself</span>
+						Analytics that{" "}
+						<span className="underline decoration-2 decoration-wavy underline-offset-8">
+							runs <span className="text-muted-foreground">itself</span>
+						</span>
 					</h1>
 
 					<p className="fade-in slide-in-from-bottom-6 max-w-2xl animate-in text-pretty font-medium text-muted-foreground text-sm leading-relaxed delay-200 duration-700 sm:text-base lg:text-lg">

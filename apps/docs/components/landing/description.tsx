@@ -22,6 +22,12 @@ const analyticsData = [
 			"Enterprise tools with 200 features when you need 10. Steep learning curves and dashboards that require a PhD to understand.",
 		isActive: false,
 	},
+	{
+		title: "Built to get more complex",
+		content:
+			"Start with dashboards that make sense. Six months later, you need a consultant to find anything. Setup takes weeks, not minutes.",
+		isActive: false,
+	},
 ];
 
 export const Description = () => {

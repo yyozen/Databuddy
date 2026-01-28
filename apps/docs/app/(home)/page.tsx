@@ -15,9 +15,9 @@ export default function HomePage() {
 			<StructuredData
 				page={{
 					title:
-						"Privacy-first web analytics (Google Analytics alternative) — 3 KB, GDPR-compliant | Databuddy",
+						"Simple Analytics Platform - Fast Setup, No Complexity | Databuddy",
 					description:
-						"Experience powerful, privacy-first analytics that matches Google Analytics feature-for-feature without compromising user data. Zero cookies required, 100% data ownership, and AI-powered insights to help your business grow while staying compliant.",
+						"Analytics tool that stays simple forever. Track usage, errors, and experiments in one layer. Setup in 5 minutes. Open source alternative to Google Analytics that won't become complex over time. Privacy-first, GDPR compliant.",
 					url: "https://www.databuddy.cc",
 				}}
 			/>
