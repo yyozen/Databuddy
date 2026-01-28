@@ -91,6 +91,55 @@ describe("evaluateStringRule", () => {
 	});
 });
 
+describe("evaluateStringRule - email pattern matching", () => {
+	const emailRule = (op: string, val?: string, vals?: string[]) => ({
+		type: "email" as const,
+		operator: op,
+		value: val,
+		values: vals,
+		enabled: true,
+		batch: false,
+	});
+
+	it("handles ends_with for email domain patterns", () => {
+		// Common use case: target users by email domain
+		expect(evaluateStringRule("user@databuddy.cc", emailRule("ends_with", "@databuddy.cc"))).toBe(true);
+		expect(evaluateStringRule("admin@databuddy.cc", emailRule("ends_with", "@databuddy.cc"))).toBe(true);
+		expect(evaluateStringRule("user@other.com", emailRule("ends_with", "@databuddy.cc"))).toBe(false);
+		expect(evaluateStringRule("user@company.io", emailRule("ends_with", ".io"))).toBe(true);
+		expect(evaluateStringRule("user@company.com", emailRule("ends_with", ".io"))).toBe(false);
+	});
+
+	it("handles starts_with for email prefix patterns", () => {
+		// Target emails starting with a prefix (e.g., admin@, support@)
+		expect(evaluateStringRule("admin@company.com", emailRule("starts_with", "admin@"))).toBe(true);
+		expect(evaluateStringRule("admin@other.org", emailRule("starts_with", "admin@"))).toBe(true);
+		expect(evaluateStringRule("user@company.com", emailRule("starts_with", "admin@"))).toBe(false);
+		expect(evaluateStringRule("support@company.com", emailRule("starts_with", "support"))).toBe(true);
+	});
+
+	it("handles contains for partial email matching", () => {
+		// Target emails containing a substring
+		expect(evaluateStringRule("user@company.internal.com", emailRule("contains", "internal"))).toBe(true);
+		expect(evaluateStringRule("internal-user@company.com", emailRule("contains", "internal"))).toBe(true);
+		expect(evaluateStringRule("user@company.com", emailRule("contains", "internal"))).toBe(false);
+		expect(evaluateStringRule("beta-tester@company.com", emailRule("contains", "beta"))).toBe(true);
+	});
+
+	it("handles exact match for full email addresses", () => {
+		expect(evaluateStringRule("user@databuddy.cc", emailRule("equals", "user@databuddy.cc"))).toBe(true);
+		expect(evaluateStringRule("other@databuddy.cc", emailRule("equals", "user@databuddy.cc"))).toBe(false);
+	});
+
+	it("handles in/not_in for email lists", () => {
+		const allowedEmails = ["admin@co.com", "support@co.com", "dev@co.com"];
+		expect(evaluateStringRule("admin@co.com", emailRule("in", undefined, allowedEmails))).toBe(true);
+		expect(evaluateStringRule("random@co.com", emailRule("in", undefined, allowedEmails))).toBe(false);
+		expect(evaluateStringRule("random@co.com", emailRule("not_in", undefined, allowedEmails))).toBe(true);
+		expect(evaluateStringRule("admin@co.com", emailRule("not_in", undefined, allowedEmails))).toBe(false);
+	});
+});
+
 describe("evaluateValueRule", () => {
 	const rule = (op: string, val?: unknown, vals?: unknown[]) => ({
 		type: "property" as const,

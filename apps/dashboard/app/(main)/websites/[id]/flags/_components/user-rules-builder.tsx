@@ -117,6 +117,12 @@ function InlineTagsInput({
 		}
 	};
 
+	const handleBlur = () => {
+		if (draft.trim()) {
+			addValue(draft);
+		}
+	};
+
 	return (
 		<div className="space-y-1">
 			<div
@@ -144,6 +150,7 @@ function InlineTagsInput({
 				))}
 				<input
 					className="min-w-[120px] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+					onBlur={handleBlur}
 					onChange={handleChange}
 					onKeyDown={handleKeyDown}
 					placeholder={values.length === 0 ? placeholder : "Add more…"}
