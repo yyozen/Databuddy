@@ -1,1 +1,1 @@
-export { default } from "../../../../../(main)/websites/[id]/events/stream/page";
+export { default } from "../../../../(main)/websites/[id]/events/stream/page";
