@@ -362,7 +362,7 @@ export function Sidebar({ user = null }: SidebarProps) {
 												navigation.length > 1 && idx === navigation.length - 1
 													? "border-t"
 													: idx === 0 && navigation.length < 2
-														? "box-content border-b"
+														? "border-b"
 														: idx !== 0 && navigation.length > 1
 															? "border-t"
 															: "border-transparent"

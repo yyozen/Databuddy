@@ -198,7 +198,7 @@ function LinkRow({ link, onEdit, onDelete, onShowQr }: LinkRowProps) {
 	return (
 		<NextLink
 			className={cn(
-				"group flex w-full items-center gap-4 border-b px-4 py-3 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+				"group flex h-20 w-full items-center gap-4 border-b px-4 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
 				isExpired && "opacity-60"
 			)}
 			href={`/links/${link.id}`}
@@ -206,12 +206,12 @@ function LinkRow({ link, onEdit, onDelete, onShowQr }: LinkRowProps) {
 			{/* Link icon */}
 			<div
 				aria-hidden="true"
-				className="shrink-0 rounded border border-transparent bg-accent p-1.5 text-primary transition-colors group-hover:border-primary/20 group-hover:bg-primary/10"
+				className="shrink-0 rounded border border-transparent bg-accent p-2 text-primary transition-colors group-hover:border-primary/20 group-hover:bg-primary/10"
 			>
-				<LinkIcon className="size-4" weight="duotone" />
+				<LinkIcon className="size-5" weight="duotone" />
 			</div>
 
-			{/* Name and short URL */}
+			{/* Name and URLs */}
 			<div className="min-w-0 flex-1">
 				<div className="flex items-center gap-2">
 					<p className="truncate font-medium text-foreground text-sm">
@@ -221,26 +221,30 @@ function LinkRow({ link, onEdit, onDelete, onShowQr }: LinkRowProps) {
 				</div>
 				<div className="mt-1 flex items-center gap-2">
 					<ShortUrlCopy onClick={handleCopy} slug={link.slug} />
-					<span className="truncate text-muted-foreground text-xs">
+					<span className="hidden truncate text-muted-foreground text-xs sm:inline">
 						→ {displayTargetUrl}
 					</span>
 				</div>
 			</div>
 
 			{/* Expiration - desktop only */}
-			<div className="hidden w-24 shrink-0 sm:block">
+			<div className="hidden shrink-0 md:block">
 				<ExpirationBadge link={link} />
 			</div>
 
 			{/* Created date - desktop only */}
-			<div className="hidden w-24 shrink-0 text-right sm:block">
+			<div className="hidden w-20 shrink-0 text-right sm:block">
 				<span className="text-muted-foreground text-sm">
 					{fromNow(link.createdAt)}
 				</span>
 			</div>
 
 			{/* Actions */}
-			<div onClick={(e) => e.preventDefault()} role="presentation">
+			<div
+				className="shrink-0"
+				onClick={(e) => e.preventDefault()}
+				role="presentation"
+			>
 				<LinkActions
 					link={link}
 					onCopy={handleCopy}
@@ -286,18 +290,18 @@ export function LinksListSkeleton() {
 		<div className="w-full">
 			{Array.from({ length: 5 }).map((_, i) => (
 				<div
-					className="flex items-center gap-4 border-b px-4 py-3"
+					className="flex h-20 items-center gap-4 border-b px-4"
 					key={`skeleton-${i + 1}`}
 				>
-					<Skeleton className="size-7 shrink-0 rounded" />
+					<Skeleton className="size-9 shrink-0 rounded" />
 					<div className="min-w-0 flex-1 space-y-2">
 						<Skeleton className="h-4 w-32" />
 						<div className="flex items-center gap-2">
 							<Skeleton className="h-6 w-28" />
-							<Skeleton className="h-3 w-40" />
+							<Skeleton className="hidden h-3 w-40 sm:block" />
 						</div>
 					</div>
-					<Skeleton className="hidden h-5 w-16 sm:block" />
+					<Skeleton className="hidden h-5 w-16 md:block" />
 					<Skeleton className="hidden h-4 w-20 sm:block" />
 					<Skeleton className="size-8 shrink-0 rounded" />
 				</div>
@@ -310,16 +314,16 @@ export function LinksListSkeleton() {
 export { LinkRow as LinkItem };
 export function LinkItemSkeleton() {
 	return (
-		<div className="flex items-center gap-4 border-b px-4 py-3">
-			<Skeleton className="size-7 shrink-0 rounded" />
+		<div className="flex h-20 items-center gap-4 border-b px-4">
+			<Skeleton className="size-9 shrink-0 rounded" />
 			<div className="min-w-0 flex-1 space-y-2">
 				<Skeleton className="h-4 w-32" />
 				<div className="flex items-center gap-2">
 					<Skeleton className="h-6 w-28" />
-					<Skeleton className="h-3 w-40" />
+					<Skeleton className="hidden h-3 w-40 sm:block" />
 				</div>
 			</div>
-			<Skeleton className="hidden h-5 w-16 sm:block" />
+			<Skeleton className="hidden h-5 w-16 md:block" />
 			<Skeleton className="hidden h-4 w-20 sm:block" />
 			<Skeleton className="size-8 shrink-0 rounded" />
 		</div>

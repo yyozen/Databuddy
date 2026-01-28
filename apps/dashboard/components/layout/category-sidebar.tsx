@@ -116,8 +116,8 @@ export function CategorySidebar({
 					const borderClass = isActive && !isLast ? "border-accent" : "";
 					const hoverClass = isActive ? "" : "hover:bg-sidebar-accent-brighter";
 					const boxClass = isLast
-						? "box-content border-border border-b"
-						: "box-content border-transparent";
+						? "border-border border-b"
+						: "border-transparent";
 
 					return (
 						<Tooltip delayDuration={500} key={category.id}>
@@ -136,7 +136,7 @@ export function CategorySidebar({
 									{isActive ? (
 										<div
 											className={cn(
-												"absolute top-0 left-0 -z-10 box-border h-full w-full bg-sidebar-accent-brighter"
+												"absolute top-0 left-0 -z-10 h-full w-full bg-sidebar-accent-brighter"
 											)}
 										/>
 									) : null}

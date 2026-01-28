@@ -3,12 +3,10 @@
 import {
 	ArrowClockwiseIcon,
 	PlusIcon,
-	SparkleIcon,
 	TrendDownIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { LinkIcon } from "@phosphor-icons/react/dist/ssr/Link";
 import { useCallback, useState } from "react";
-import { NoticeBanner } from "@/app/(main)/websites/_components/notice-banner";
 import { PageHeader } from "@/app/(main)/websites/_components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,6 +75,7 @@ export default function LinksPage() {
 	return (
 		<div className="flex h-full flex-col">
 			<PageHeader
+				badgeContent="Early Access"
 				count={isLoading ? undefined : links.length}
 				description="Create and track short links with analytics"
 				icon={<LinkIcon weight="duotone" />}
@@ -107,21 +106,13 @@ export default function LinksPage() {
 				title="Links"
 			/>
 
-			<div className="px-3 pt-3 sm:px-4">
-				<NoticeBanner
-					description="Free while in beta"
-					icon={<SparkleIcon />}
-					title="Early Access"
-				/>
-			</div>
-
-			{!isLoading && links.length > 0 && (
+			<div className="flex h-10 shrink-0 items-center border-b px-1">
 				<LinksSearchBar
+					disabled={isLoading || links.length === 0}
 					links={links}
 					onFilteredLinksChange={handleFilteredLinksChange}
 				/>
-			)}
-
+			</div>
 			{isLoading ? (
 				<LinksListSkeleton />
 			) : showEmptySearch ? (

@@ -148,7 +148,7 @@ export default function LinkStatsLayout({ children }: LinkStatsLayoutProps) {
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
 			{isLoadingLink ? (
-				<div className="box-border flex h-12 shrink-0 items-center gap-2 border-border border-b bg-accent/30 px-3">
+				<div className="flex h-12 shrink-0 items-center gap-2 border-border border-b bg-accent/30 px-3">
 					<Skeleton className="h-4 w-12" />
 					<span className="text-muted-foreground/40">/</span>
 					<Skeleton className="h-4 w-32" />

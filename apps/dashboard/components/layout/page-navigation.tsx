@@ -44,7 +44,7 @@ export function PageNavigation(props: PageNavigationProps) {
 		return (
 			<div
 				className={cn(
-					"box-border flex h-10 shrink-0 items-center gap-2 border-border border-b bg-accent/30 px-3",
+					"flex h-10 shrink-0 items-center gap-2 border-border border-b bg-accent/30 px-3",
 					props.className
 				)}
 			>
@@ -89,7 +89,7 @@ export function PageNavigation(props: PageNavigationProps) {
 	return (
 		<div
 			className={cn(
-				"box-border flex h-10 shrink-0 border-border border-b bg-accent/30",
+				"flex h-10 shrink-0 border-border border-b bg-accent/30",
 				props.className
 			)}
 		>

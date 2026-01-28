@@ -20,15 +20,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import type { Link } from "@/hooks/use-links";
+import { cn } from "@/lib/utils";
 
 type SortOption = "newest" | "oldest" | "name-asc" | "name-desc";
 
 interface LinksSearchBarProps {
+	disabled?: boolean;
 	links: Link[];
 	onFilteredLinksChange: (filteredLinks: Link[]) => void;
 }
 
 export function LinksSearchBar({
+	disabled = false,
 	links,
 	onFilteredLinksChange,
 }: LinksSearchBarProps) {
@@ -106,14 +109,15 @@ export function LinksSearchBar({
 	const hasActiveFilters = searchQuery.trim() !== "" || sortBy !== "newest";
 
 	return (
-		<div className="flex items-center gap-2 border-b px-4 py-3">
+		<div className="flex h-full w-full items-center gap-2">
 			<div className="relative flex-1">
 				<MagnifyingGlassIcon
 					className="absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground"
 					weight="bold"
 				/>
 				<Input
-					className="pr-8 pl-9"
+					className="h-8 pr-8 pl-9"
+					disabled={disabled}
 					onChange={(e) => setSearchQuery(e.target.value)}
 					placeholder="Search links…"
 					showFocusIndicator={false}
@@ -134,7 +138,11 @@ export function LinksSearchBar({
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<Button
-						className={sortBy !== "newest" ? "border-primary/50" : ""}
+						className={cn(
+							"h-8 border-accent-brighter bg-background",
+							sortBy !== "newest" && "border-primary/50"
+						)}
+						disabled={disabled}
 						size="sm"
 						variant="outline"
 					>
@@ -167,6 +175,8 @@ export function LinksSearchBar({
 
 			{hasActiveFilters && (
 				<Button
+					className="h-8"
+					disabled={disabled}
 					onClick={() => {
 						setSearchQuery("");
 						setSortBy("newest");
