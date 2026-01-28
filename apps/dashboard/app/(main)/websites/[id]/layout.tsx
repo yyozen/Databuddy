@@ -129,13 +129,7 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 				</div>
 			)}
 
-			<div
-				className={
-					hideToolbar
-						? "min-h-0 flex-1"
-						: "min-h-0 flex-1 overflow-y-auto overscroll-contain"
-				}
-			>
+			<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
 				{renderContent()}
 			</div>
 		</div>
