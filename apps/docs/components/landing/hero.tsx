@@ -19,6 +19,11 @@ const tabs = [
 		path: "",
 	},
 	{
+		id: "events",
+		label: "Events",
+		path: "/events",
+	},
+	{
 		id: "errors",
 		label: "Errors",
 		path: "/errors",
@@ -76,7 +81,7 @@ export default function Hero() {
 	}, []);
 
 	const activeTabData = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
-	const iframeSrc = `${baseUrl}${activeTabData.path}`;
+	const iframeSrc = `${baseUrl}${activeTabData.path}?embed=true`;
 
 	const handleFullscreen = async () => {
 		const element = iframeRef.current as FullscreenElement | null;

@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useAtom, useSetAtom } from "jotai";
 import { useParams, usePathname } from "next/navigation";
+import { parseAsBoolean, useQueryState } from "nuqs";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { WebsiteErrorState } from "@/components/website-error-state";
@@ -37,15 +38,15 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 	const queryClient = useQueryClient();
 	const [isRefreshing, setIsRefreshing] = useAtom(isAnalyticsRefreshingAtom);
 	const setCurrentFilterWebsiteId = useSetAtom(currentFilterWebsiteIdAtom);
+	const [isEmbed] = useQueryState("embed", parseAsBoolean.withDefault(false));
 
 	useEffect(() => {
 		setCurrentFilterWebsiteId(websiteId);
 	}, [websiteId, setCurrentFilterWebsiteId]);
 
 	const isDemoRoute = pathname?.startsWith("/demo/");
-	const hideToolbar = NO_TOOLBAR_ROUTES.some((route) =>
-		pathname.includes(route)
-	);
+	const hideToolbar =
+		isEmbed || NO_TOOLBAR_ROUTES.some((route) => pathname.includes(route));
 
 	const {
 		data: websiteData,

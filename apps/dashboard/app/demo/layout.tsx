@@ -1,8 +1,36 @@
+"use client";
+
 import { AutumnProvider } from "autumn-js/react";
+import { parseAsBoolean, useQueryState } from "nuqs";
 import { Sidebar } from "@/components/layout/sidebar";
 import { BillingProvider } from "@/components/providers/billing-provider";
 
-export default async function DemoLayout({
+function DemoLayoutContent({ children }: { children: React.ReactNode }) {
+	const [isEmbed] = useQueryState("embed", parseAsBoolean.withDefault(false));
+
+	if (isEmbed) {
+		return (
+			<div className="h-dvh overflow-hidden text-foreground">
+				<div className="h-dvh overflow-y-auto overflow-x-hidden">
+					{children}
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="h-dvh overflow-hidden text-foreground">
+			<Sidebar user={null} />
+			<div className="relative h-dvh pl-0 md:pl-76 lg:pl-84">
+				<div className="h-dvh overflow-y-auto overflow-x-hidden pt-16 md:pt-0">
+					{children}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export default function DemoLayout({
 	children,
 }: {
 	children: React.ReactNode;
@@ -12,14 +40,7 @@ export default async function DemoLayout({
 			backendUrl={process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}
 		>
 			<BillingProvider>
-				<div className="h-dvh overflow-hidden text-foreground">
-					<Sidebar user={null} />
-					<div className="relative h-dvh pl-0 md:pl-76 lg:pl-84">
-						<div className="h-dvh overflow-y-auto overflow-x-hidden pt-16 md:pt-0">
-							{children}
-						</div>
-					</div>
-				</div>
+				<DemoLayoutContent>{children}</DemoLayoutContent>
 			</BillingProvider>
 		</AutumnProvider>
 	);
