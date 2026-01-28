@@ -1,80 +1,234 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { ArrowsOutSimpleIcon } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { CHATGPT_PROMPT_URL } from "@/app/util/constants";
-// import { YCLogo } from "@/components/icons/yc-logo";
-import DemoContainer from "./demo";
 import { SciFiButton } from "./scifi-btn";
 import { Spotlight } from "./spotlight";
 
-const WorldMap = dynamic(() => import("./map").then((m) => m.WorldMap), {
-	ssr: false,
-	loading: () => null,
-});
+const DEMO_ID = "OXmNQsViBT-FOS_wZCTHc";
+const PROD_BASE_URL = `https://app.databuddy.cc/demo/${DEMO_ID}`;
+const DEV_BASE_URL = `http://localhost:3000/demo/${DEMO_ID}`;
+
+const tabs = [
+	{
+		id: "overview",
+		label: "Overview",
+		path: "",
+	},
+	{
+		id: "errors",
+		label: "Errors",
+		path: "/errors",
+	},
+	{
+		id: "vitals",
+		label: "Vitals",
+		path: "/vitals",
+	},
+	{
+		id: "funnels",
+		label: "Funnels",
+		path: "/funnels",
+	},
+	{
+		id: "flags",
+		label: "Flags",
+		path: "/flags",
+	},
+];
+
+type FullscreenElement = HTMLIFrameElement & {
+	webkitRequestFullscreen?: () => Promise<void>;
+	mozRequestFullScreen?: () => Promise<void>;
+	msRequestFullscreen?: () => Promise<void>;
+};
+
+function isFullscreenSupported(): boolean {
+	if (typeof document === "undefined") {
+		return false;
+	}
+	const element = document.createElement("div") as FullscreenElement;
+	return !!(
+		element.requestFullscreen ||
+		element.webkitRequestFullscreen ||
+		element.mozRequestFullScreen ||
+		element.msRequestFullscreen
+	);
+}
 
 export default function Hero() {
+	const [activeTab, setActiveTab] = useState(tabs[0].id);
+	const [isFullscreenAvailable, setIsFullscreenAvailable] = useState(false);
+	const [baseUrl, setBaseUrl] = useState(PROD_BASE_URL);
+	const iframeRef = useRef<HTMLIFrameElement>(null);
+
+	useEffect(() => {
+		setIsFullscreenAvailable(isFullscreenSupported());
+		if (
+			typeof window !== "undefined" &&
+			window.location.hostname === "localhost"
+		) {
+			setBaseUrl(DEV_BASE_URL);
+		}
+	}, []);
+
+	const activeTabData = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
+	const iframeSrc = `${baseUrl}${activeTabData.path}`;
+
+	const handleFullscreen = async () => {
+		const element = iframeRef.current as FullscreenElement | null;
+		if (!element) {
+			return;
+		}
+
+		try {
+			if (element.requestFullscreen) {
+				await element.requestFullscreen();
+			} else if (element.webkitRequestFullscreen) {
+				await element.webkitRequestFullscreen();
+			} else if (element.mozRequestFullScreen) {
+				await element.mozRequestFullScreen();
+			} else if (element.msRequestFullscreen) {
+				await element.msRequestFullscreen();
+			} else {
+				window.open(element.src, "_blank", "noopener,noreferrer");
+			}
+		} catch {
+			window.open(element.src, "_blank", "noopener,noreferrer");
+		}
+	};
+
+	const handleOpenInNewTab = () => {
+		const element = iframeRef.current;
+		if (element) {
+			window.open(element.src, "_blank", "noopener,noreferrer");
+		}
+	};
+
 	return (
-		<section className="relative flex min-h-svh w-full flex-col items-center overflow-hidden">
+		<section className="relative flex w-full flex-col items-center overflow-hidden">
 			<Spotlight transform="translateX(-60%) translateY(-50%)" />
 
-			<div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div className="grid grid-cols-1 items-center gap-8 pt-16 pb-10 sm:pt-20 sm:pb-12 lg:grid-cols-2 lg:gap-12 lg:pt-28 lg:pb-16 xl:gap-16">
-					{/* Text Content */}
-					<div className="order-2 flex flex-col items-center gap-8 text-center lg:order-1 lg:items-start lg:gap-10 lg:text-left">
-						{/* <div className="fade-in slide-in-from-bottom-4 animate-in self-center duration-700 lg:self-start">
-							<div className="group inline-flex cursor-default items-center rounded-full border border-border/50 bg-background/60 px-4 py-1.5 font-medium text-muted-foreground text-xs shadow-sm backdrop-blur-md hover:bg-background/80 hover:text-foreground">
-								<span className="mr-1.5 opacity-70">Rejected by</span>
-								<YCLogo className="mr-1.5 inline-block h-3.5 w-3.5 align-[-2px] grayscale transition-all group-hover:grayscale-0" />
-								<span className="font-semibold tracking-tight">Combinator</span>
-							</div>
-						</div> */}
+			<div className="mx-auto w-full max-w-7xl px-4 pt-16 pb-8 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
+				{/* Hero Content - Centered with consistent spacing */}
+				<div className="mx-auto flex max-w-4xl flex-col items-center space-y-8 text-center">
+					<h1 className="fade-in slide-in-from-bottom-6 animate-in text-balance font-bold text-4xl leading-[1.1] tracking-tight delay-100 duration-700 sm:text-5xl md:text-6xl lg:text-7xl">
+						Analytics that runs{" "}
+						<span className="text-muted-foreground">itself</span>
+					</h1>
 
-						<h1 className="fade-in slide-in-from-bottom-6 animate-in text-balance font-bold text-4xl leading-[1.1] tracking-tight delay-100 duration-700 sm:text-6xl md:text-7xl lg:text-7xl xl:text-[80px]">
-							<span className="block whitespace-normal">
-								Privacy <span className="text-muted-foreground">first</span>
-							</span>
-							<span className="block whitespace-normal">
-								Analytics for{" "}
-								<span className="text-muted-foreground">devs</span>
-							</span>
-						</h1>
+					<p className="fade-in slide-in-from-bottom-6 max-w-2xl animate-in text-pretty font-medium text-muted-foreground text-sm leading-relaxed delay-200 duration-700 sm:text-base lg:text-lg">
+						Usage, errors, and experiments in one layer.{" "}
+						<Link
+							className="text-foreground"
+							href="https://github.com/databuddy-analytics/databuddy"
+						>
+							Open source
+						</Link>{" "}
+						and autonomous.
+					</p>
 
-						<p className="fade-in slide-in-from-bottom-6 max-w-prose animate-in text-balance font-medium text-base text-muted-foreground leading-relaxed tracking-tight delay-200 duration-700 sm:text-lg lg:text-xl">
-							Track users, not identities. Get fast, accurate insights with zero
-							cookies and 100% GDPR compliance.{" "}
-							<span className="text-foreground">Open source</span> and fully
-							transparent.
-						</p>
-
-						<div className="fade-in slide-in-from-bottom-6 flex w-full animate-in justify-center pt-4 delay-300 duration-700 lg:justify-start">
-							<SciFiButton
-								asChild
-								className="w-full px-8 py-6 text-lg sm:w-auto"
+					<div className="fade-in slide-in-from-bottom-6 animate-in delay-300 duration-700">
+						<SciFiButton asChild className="px-6 py-5 text-base sm:px-8">
+							<a
+								href="https://app.databuddy.cc/login"
+								rel="noopener noreferrer"
+								target="_blank"
 							>
-								<a
-									href="https://app.databuddy.cc/login"
-									rel="noopener noreferrer"
-									target="_blank"
-								>
-									GET STARTED
-								</a>
-							</SciFiButton>
+								Get early access
+							</a>
+						</SciFiButton>
+					</div>
+				</div>
+
+				{/* Feature Tabs Section */}
+				<div className="fade-in slide-in-from-bottom-8 mt-8 animate-in space-y-8 delay-400 duration-1000">
+					{/* Tabs Navigation */}
+					<div className="flex justify-center">
+						<div className="relative flex items-center gap-0 border-border border-b">
+							{tabs.map((tab) => {
+								const isActive = activeTab === tab.id;
+								return (
+									<button
+										className={`relative cursor-pointer px-4 py-3 font-medium text-sm transition-colors duration-200 sm:px-6 sm:py-3.5 sm:text-base ${
+											isActive
+												? "text-foreground"
+												: "text-muted-foreground hover:text-foreground"
+										}`}
+										key={tab.id}
+										onClick={() => setActiveTab(tab.id)}
+										type="button"
+									>
+										{tab.label}
+										{isActive && (
+											<motion.div
+												className="absolute right-0 bottom-0 left-0 h-0.5 bg-foreground"
+												layoutId="hero-tab-underline"
+												transition={{
+													type: "spring",
+													stiffness: 500,
+													damping: 35,
+												}}
+											/>
+										)}
+									</button>
+								);
+							})}
 						</div>
 					</div>
 
-					{/* Map Visualization */}
-					<div className="fade-in zoom-in-95 order-1 flex w-full animate-in justify-center delay-200 duration-1000 lg:order-2 lg:justify-end">
-						<div className="w-full max-w-lg lg:max-w-none">
-							<WorldMap />
-						</div>
+					{/* Iframe Container */}
+					<div className="group relative rounded border border-border/50 bg-card/30 p-1.5 shadow-2xl backdrop-blur-sm sm:p-2">
+						<AnimatePresence mode="wait">
+							<motion.div
+								animate={{ opacity: 1 }}
+								className="relative"
+								exit={{ opacity: 0 }}
+								initial={{ opacity: 0 }}
+								key={activeTab}
+								transition={{ duration: 0.15 }}
+							>
+								<iframe
+									allowFullScreen
+									className="h-[400px] w-full rounded border-0 bg-background shadow-inner sm:h-[500px] lg:h-[600px]"
+									loading="lazy"
+									ref={iframeRef}
+									src={iframeSrc}
+									title={`Databuddy ${activeTabData.label} Demo`}
+								/>
+							</motion.div>
+						</AnimatePresence>
+
+						{/* Fullscreen Button Overlay */}
+						<button
+							aria-label={
+								isFullscreenAvailable
+									? "Open demo in fullscreen"
+									: "Open demo in new tab"
+							}
+							className="absolute inset-1.5 flex items-center justify-center rounded bg-background/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:inset-2"
+							onClick={
+								isFullscreenAvailable ? handleFullscreen : handleOpenInNewTab
+							}
+							type="button"
+						>
+							<div className="flex cursor-pointer items-center gap-2 rounded border border-border bg-card/90 px-4 py-2 font-medium text-sm shadow-lg backdrop-blur-sm transition-colors duration-200 hover:bg-card">
+								<ArrowsOutSimpleIcon className="size-4" weight="fill" />
+								<span>
+									{isFullscreenAvailable
+										? "Click to view fullscreen"
+										: "Click to open in new tab"}
+								</span>
+							</div>
+						</button>
 					</div>
 				</div>
 			</div>
 
-			{/* Demo Container */}
-			<div className="fade-in slide-in-from-bottom-8 mx-auto w-full max-w-7xl animate-in px-4 pb-12 delay-500 duration-1000 sm:px-6 lg:px-8 lg:pb-20">
-				<DemoContainer />
-			</div>
+			{/* ChatGPT Link */}
 			<div className="mx-auto w-full border-t bg-secondary/30 px-4 py-4 sm:px-6 lg:px-8">
 				<div className="flex justify-center">
 					<a

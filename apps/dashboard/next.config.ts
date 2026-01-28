@@ -62,6 +62,9 @@ const nextConfig: NextConfig = {
 		const localhostConnectSrc = isDev
 			? "http://localhost:* http://127.0.0.1:*"
 			: "";
+		const localhostFrameAncestors = isDev
+			? "http://localhost:* http://127.0.0.1:*"
+			: "";
 
 		const cspDirectives = [
 			"default-src 'self'",
@@ -82,7 +85,7 @@ const nextConfig: NextConfig = {
 			"font-src 'self' https://fonts.gstatic.com",
 			"img-src 'self' data: blob: https://cdn.databuddy.cc https://icons.duckduckgo.com https://flagcdn.com https://api.dicebear.com",
 			`connect-src 'self' ${localhostConnectSrc} https://cdn.databuddy.cc https://*.databuddy.cc wss://*.databuddy.cc`.trim(),
-			"frame-ancestors 'self' https://*.databuddy.cc https://databuddy.cc",
+			`frame-ancestors 'self' ${localhostFrameAncestors} https://*.databuddy.cc https://databuddy.cc`.trim(),
 			"base-uri 'self'",
 			"form-action 'self'",
 		];
