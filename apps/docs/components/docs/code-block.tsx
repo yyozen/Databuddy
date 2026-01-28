@@ -139,7 +139,7 @@ function InlineCode({ className, ...props }: React.ComponentProps<"code">) {
 	return (
 		<code
 			className={cn(
-				"relative rounded-none border-none bg-accent/50 font-medium font-mono! text-primary text-sm",
+				"border border-border bg-muted px-1.5 py-0.5 font-mono text-[13px] text-foreground/90 dark:bg-[#101010]",
 				className
 			)}
 			{...props}
