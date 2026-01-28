@@ -9,7 +9,6 @@
     "vanilla-js",
     "node",
     "tracker",
-    "ai",
     "feature-flags",
     "server-flags",
     "configuration"

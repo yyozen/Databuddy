@@ -4,11 +4,11 @@ import { Databuddy } from "@databuddy/sdk/node";
 import type { ActionResponse, Feedback } from "@/components/feedback";
 
 if (!process.env.DATABUDDY_API_KEY) {
-	throw new Error("DATABUDDY_API_KEY environment variable is required");
+	console.error("DATABUDDY_API_KEY environment variable is required");
 }
 
 const client = new Databuddy({
-	apiKey: process.env.DATABUDDY_API_KEY,
+	apiKey: process.env.DATABUDDY_API_KEY ?? "no",
 	websiteId: process.env.DATABUDDY_WEBSITE_ID,
 	debug: process.env.NODE_ENV === "development",
 });

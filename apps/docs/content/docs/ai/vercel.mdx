@@ -1,33 +1,30 @@
 ---
-title: AI / LLM Analytics
-description: Track LLM calls, costs, and token usage with the Vercel AI SDK integration
+title: Vercel AI SDK
+description: Track LLM calls with Vercel AI SDK and any provider (OpenAI, Anthropic, Google, etc.)
 ---
 
 import { Callout, CodeBlock, Card, Cards } from "@/components/docs";
 
-The Databuddy AI SDK tracks LLM calls, token usage, costs, and tool invocations. It integrates seamlessly with the Vercel AI SDK and supports all major providers (OpenAI, Anthropic, Google, etc.).
+The Vercel AI SDK integration works with any AI provider through the unified Vercel AI SDK interface. Wrap your model with `track()` to automatically capture all LLM calls.
 
 <Callout type="info">
-  **Package**: `@databuddy/sdk` | **Import**: `@databuddy/sdk/ai` or `@databuddy/sdk/ai/vercel`
+  **Package**: `@databuddy/ai` | **Import**: `@databuddy/ai/vercel`
 </Callout>
 
 ## Installation
 
 <CodeBlock language="bash">
-  {`bun add @databuddy/sdk ai @ai-sdk/openai`}
+  {`bun add @databuddy/ai ai @ai-sdk/openai`}
 </CodeBlock>
 
 ## Quick Start
 
-Wrap your model with `track()` to automatically capture all LLM calls:
-
 <CodeBlock language="tsx">
-  {`import { databuddyLLM } from "@databuddy/ai";
+  {`import { createTracker } from "@databuddy/ai/vercel";
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
-const { track } = databuddyLLM({
-  // apiKey is required - get it from your Databuddy dashboard
+const { track } = createTracker({
   apiKey: process.env.DATABUDDY_API_KEY
 });
 
@@ -39,28 +36,38 @@ const result = await generateText({
 
 ## Configuration
 
-### databuddyLLM(options)
+### createTracker(options)
 
 Create a tracking instance with your configuration:
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM } from "@databuddy/ai";
+  {`import { createTracker } from "@databuddy/ai/vercel";
 
-const { track, transport } = databuddyLLM({
+const { track, transport } = createTracker({
   // Required: API key for authentication
   apiKey: process.env.DATABUDDY_API_KEY,
-  // Optional: Custom API endpoint (defaults to https://basket.databuddy.cc/llm)
+  
+  // Optional: Custom API endpoint
   apiUrl: "https://basket.databuddy.cc/llm",
+  
+  // Optional: Compute token costs (default: true)
   computeCosts: true,
+  
+  // Optional: Don't capture message content (default: false)
   privacyMode: false,
+  
+  // Optional: Max content size in bytes (default: 1MB)
   maxContentSize: 1_048_576,
+  
+  // Optional: Success callback
   onSuccess: (call) => console.log("AI call completed:", call.traceId),
+  
+  // Optional: Error callback
   onError: (call) => console.error("AI call failed:", call.error)
-});
 });`}
 </CodeBlock>
 
-### Options
+### Options Reference
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -78,12 +85,12 @@ const { track, transport } = databuddyLLM({
 ### Basic Usage
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM } from "@databuddy/ai";
+  {`import { createTracker } from "@databuddy/ai/vercel";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText, streamText } from "ai";
 
-const { track } = databuddyLLM({
+const { track } = createTracker({
   apiKey: process.env.DATABUDDY_API_KEY
 });
 
@@ -106,12 +113,12 @@ const stream = await streamText({
 });`}
 </CodeBlock>
 
-### Per-Model Options
+### Per-Call Options
 
-Override options for specific models:
+Override options for specific calls:
 
 <CodeBlock language="tsx">
-  {`const { track } = databuddyLLM({
+  {`const { track } = createTracker({
   apiKey: process.env.DATABUDDY_API_KEY
 });
 
@@ -136,87 +143,17 @@ const result = await generateText({
 | `onSuccess` | `(call) => void` | Override success callback |
 | `onError` | `(call) => void` | Override error callback |
 
-## What Gets Tracked
-
-Each AI call captures:
-
-### Token Usage
-
-<CodeBlock language="json">
-  {`{
-  "inputTokens": 150,
-  "outputTokens": 500,
-  "totalTokens": 650,
-  "cachedInputTokens": 50,
-  "reasoningTokens": 100,
-  "webSearchCount": 2
-}`}
-</CodeBlock>
-
-### Cost Breakdown
-
-Costs are computed automatically using TokenLens pricing data:
-
-<CodeBlock language="json">
-  {`{
-  "inputTokenCostUSD": 0.00075,
-  "outputTokenCostUSD": 0.0025,
-  "totalTokenCostUSD": 0.00325
-}`}
-</CodeBlock>
-
-### Tool Calls
-
-<CodeBlock language="json">
-  {`{
-  "toolCallCount": 2,
-  "toolResultCount": 2,
-  "toolCallNames": ["get_weather", "search_web"],
-  "availableTools": ["get_weather", "search_web", "calculate"]
-}`}
-</CodeBlock>
-
-### Metadata
-
-<CodeBlock language="json">
-  {`{
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "traceId": "trace_abc123",
-  "type": "generate",
-  "model": "gpt-4o",
-  "provider": "openai",
-  "finishReason": "stop",
-  "durationMs": 1250,
-  "httpStatus": 200
-}`}
-</CodeBlock>
-
-### Input/Output Content
-
-Unless `privacyMode` is enabled:
-
-<CodeBlock language="json">
-  {`{
-  "input": [
-    { "role": "user", "content": "Explain quantum computing" }
-  ],
-  "output": [
-    { "role": "assistant", "content": "Quantum computing uses..." }
-  ]
-}`}
-</CodeBlock>
-
 ## Tool Tracking
 
 Tools are automatically tracked when used:
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM } from "@databuddy/ai";
+  {`import { createTracker } from "@databuddy/ai/vercel";
 import { openai } from "@ai-sdk/openai";
 import { generateText, tool } from "ai";
 import { z } from "zod";
 
-const { track } = databuddyLLM({
+const { track } = createTracker({
   apiKey: process.env.DATABUDDY_API_KEY
 });
 
@@ -238,9 +175,9 @@ const result = await generateText({
 
 // Tracked data includes:
 // tools: {
-//   toolCallCount: 1,
-//   toolResultCount: 1,
-//   toolCallNames: ["getWeather"],
+//   callCount: 1,
+//   resultCount: 1,
+//   calledTools: ["getWeather"],
 //   availableTools: ["getWeather"]
 // }`}
 </CodeBlock>
@@ -250,11 +187,11 @@ const result = await generateText({
 Streaming responses are tracked when the stream completes:
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM } from "@databuddy/ai";
+  {`import { createTracker } from "@databuddy/ai/vercel";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 
-const { track } = databuddyLLM({
+const { track } = createTracker({
   apiKey: process.env.DATABUDDY_API_KEY
 });
 
@@ -276,7 +213,7 @@ for await (const chunk of result.textStream) {
 Errors are automatically captured:
 
 <CodeBlock language="tsx">
-  {`const { track } = databuddyLLM({
+  {`const { track } = createTracker({
   apiKey: process.env.DATABUDDY_API_KEY,
   onError: (call) => {
     console.error("AI call failed:", {
@@ -302,7 +239,7 @@ try {
 Enable privacy mode to track usage without capturing content:
 
 <CodeBlock language="tsx">
-  {`const { track } = databuddyLLM({
+  {`const { track } = createTracker({
   apiKey: process.env.DATABUDDY_API_KEY,
   privacyMode: true  // Don't capture prompts/responses
 });
@@ -316,21 +253,21 @@ Enable privacy mode to track usage without capturing content:
 Use a custom transport for logging to other destinations:
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM, httpTransport, type AICall } from "@databuddy/sdk/ai";
+  {`import { createTracker, httpTransport, type LLMCall } from "@databuddy/ai/vercel";
 
 // Custom transport that logs locally and sends to API
-const customTransport = async (call: AICall) => {
+const customTransport = async (call: LLMCall) => {
   console.log("AI call:", {
     model: call.model,
     tokens: call.usage.totalTokens,
-    cost: call.cost.totalTokenCostUSD
+    cost: call.cost.totalCostUSD
   });
   
   // Also send to Databuddy
   await httpTransport("https://basket.databuddy.cc/llm", "your-api-key")(call);
 };
 
-const { track } = databuddyLLM({
+const { track } = createTracker({
   transport: customTransport
 });`}
 </CodeBlock>
@@ -340,14 +277,14 @@ const { track } = databuddyLLM({
 Link related calls with trace IDs:
 
 <CodeBlock language="tsx">
-  {`import { databuddyLLM, generateTraceId } from "@databuddy/sdk/ai";
+  {`import { createTracker, createTraceId } from "@databuddy/ai/vercel";
 
-const { track } = databuddyLLM({
+const { track } = createTracker({
   apiKey: process.env.DATABUDDY_API_KEY
 });
 
 // Generate a trace ID for a conversation
-const traceId = generateTraceId();
+const traceId = createTraceId();
 
 // All calls in this conversation share the trace ID
 const result1 = await generateText({
@@ -380,40 +317,30 @@ The SDK works with any Vercel AI SDK provider:
 
 <CodeBlock language="tsx">
   {`import {
-  databuddyLLM,
+  createTracker,
   httpTransport,
-  generateTraceId,
-  type AICall,
-  type AIError,
-  type DatabuddyLLMOptions,
-  type TokenCost,
-  type TokenUsage,
-  type ToolCallInfo,
-  type TrackOptions,
-  type Transport
-} from "@databuddy/sdk/ai";`}
-</CodeBlock>
-
-## Environment Variables
-
-<CodeBlock language="bash">
-  {`# Required: API key for authentication
-DATABUDDY_API_KEY=your-api-key
-
-# Optional: Custom API endpoint (defaults to https://basket.databuddy.cc/llm)
-DATABUDDY_API_URL=https://basket.databuddy.cc/llm`}
+  createTraceId,
+  type CallOptions,
+  type Cost,
+  type ErrorInfo,
+  type LLMCall,
+  type Message,
+  type TrackerOptions,
+  type Transport,
+  type Usage
+} from "@databuddy/ai/vercel";`}
 </CodeBlock>
 
 ## Related
 
 <Cards>
-  <Card title="Node SDK" href="/docs/sdk/node">
-    Server-side event tracking
+  <Card title="OpenAI SDK" href="/docs/ai/openai">
+    Direct OpenAI SDK integration
   </Card>
-  <Card title="API Reference" href="/docs/api">
-    Direct HTTP API
+  <Card title="Anthropic SDK" href="/docs/ai/anthropic">
+    Direct Anthropic SDK integration
   </Card>
-  <Card title="Configuration" href="/docs/sdk/configuration">
-    All configuration options
+  <Card title="AI Overview" href="/docs/ai">
+    All AI integrations
   </Card>
 </Cards>

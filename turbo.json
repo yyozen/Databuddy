@@ -23,7 +23,10 @@
         "REDIS_URL",
         "REDPANDA_BROKER",
         "REDPANDA_USER",
-        "REDPANDA_PASSWORD"
+        "REDPANDA_PASSWORD",
+        "DATABUDDY_API_KEY",
+        "DATABUDDY_WEBSITE_ID",
+        "NODE_ENV"
       ]
     },
     "start": {
