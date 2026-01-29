@@ -26,7 +26,6 @@ import {
 	organization,
 	twoFactor,
 } from "better-auth/plugins";
-import { emailHarmony } from 'better-auth-harmony';
 import { Resend } from "resend";
 import { ac, admin, member, owner, viewer } from "./permissions";
 
@@ -221,7 +220,6 @@ export const auth = betterAuth({
 		},
 	},
 	plugins: [
-		emailHarmony(),
 		multiSession({
 			maximumSessions: 5,
 		}),
