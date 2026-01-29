@@ -15,6 +15,36 @@ interface FaviconImageProps {
 const hostnameRegex = /^https?:\/\//;
 const wwwRegex = /^www\./;
 
+/**
+ * Maps CDN/plugin domains to their canonical brand domains for favicon lookup
+ */
+const FAVICON_DOMAIN_MAP: Record<string, string> = {
+	"framercdn.com": "framer.com",
+	"plugins.framercdn.com": "framer.com",
+	"figma.design": "figma.com",
+	"canva.me": "canva.com",
+	"vercel.app": "vercel.com",
+	"netlify.app": "netlify.com",
+	"pages.dev": "cloudflare.com",
+	"workers.dev": "cloudflare.com",
+};
+
+function getFaviconDomain(hostname: string): string {
+	// Check exact match first
+	if (hostname in FAVICON_DOMAIN_MAP) {
+		return FAVICON_DOMAIN_MAP[hostname];
+	}
+
+	// Check if it's a subdomain of a mapped domain
+	for (const [pattern, canonical] of Object.entries(FAVICON_DOMAIN_MAP)) {
+		if (hostname.endsWith(`.${pattern}`)) {
+			return canonical;
+		}
+	}
+
+	return hostname;
+}
+
 export function FaviconImage({
 	domain,
 	altText,
@@ -32,6 +62,8 @@ export function FaviconImage({
 		.split("?")[0]
 		.split("#")[0];
 
+	const faviconHost = getFaviconDomain(hostname);
+
 	const invalid =
 		!hostname ||
 		hostname.length < 3 ||
@@ -43,7 +75,7 @@ export function FaviconImage({
 
 	const showFallback = invalid || error || !loaded;
 
-	const isGitHub = hostname === "github.com";
+	const isGitHub = faviconHost === "github.com";
 
 	const fallbackContent = fallbackIcon || (
 		<GlobeIcon
@@ -73,7 +105,7 @@ export function FaviconImage({
 					height={size}
 					onError={() => setError(true)}
 					onLoad={() => setLoaded(true)}
-					src={`https://icons.duckduckgo.com/ip3/${hostname}.ico`}
+					src={`https://icons.duckduckgo.com/ip3/${faviconHost}.ico`}
 					style={{ width: size, height: size }}
 					width={size}
 				/>

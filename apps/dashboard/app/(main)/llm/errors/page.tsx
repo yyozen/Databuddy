@@ -1,10 +1,6 @@
 "use client";
 
-import {
-	ClockIcon,
-	RobotIcon,
-	WarningIcon,
-} from "@phosphor-icons/react";
+import { ClockIcon, RobotIcon, WarningIcon } from "@phosphor-icons/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -33,7 +29,9 @@ dayjs.extend(relativeTime);
 
 function getRelativeTime(timestamp: string): string {
 	const date = dayjs(timestamp);
-	if (!date.isValid()) return "";
+	if (!date.isValid()) {
+		return "";
+	}
 	return date.fromNow();
 }
 
@@ -345,8 +343,9 @@ export default function LLMErrorsPage() {
 					size: 80,
 					cell: ({ row }) => {
 						const status = row.original.http_status;
-						if (!status)
+						if (!status) {
 							return <span className="text-muted-foreground">—</span>;
+						}
 						const severity = getHttpStatusSeverity(status);
 						return (
 							<Badge

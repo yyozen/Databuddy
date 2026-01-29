@@ -2680,5 +2680,17 @@ export const referrers: Record<string, { type: string; name: string }> = {
 	"paper.li": { type: "social", name: "Paper.li" },
 	"moikrug.ru": { type: "social", name: "MoiKrug.ru" },
 	"bsky.app": { type: "social", name: "Bluesky" },
+
+	"figma.com": { type: "unknown", name: "Figma" },
+	"www.figma.com": { type: "unknown", name: "Figma" },
+	"figma.design": { type: "unknown", name: "Figma" },
+	"framer.com": { type: "unknown", name: "Framer" },
+	"www.framer.com": { type: "unknown", name: "Framer" },
+	"framercdn.com": { type: "unknown", name: "Framer CDN" },
+	"plugins.framercdn.com": { type: "unknown", name: "Framer Plugins" },
+	"canva.com": { type: "unknown", name: "Canva" },
+	"www.canva.com": { type: "unknown", name: "Canva" },
+	"sketch.com": { type: "unknown", name: "Sketch" },
+	"www.sketch.com": { type: "unknown", name: "Sketch" },
 } as const;
 export default referrers;
