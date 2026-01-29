@@ -14,6 +14,8 @@ import basketRouter from "@routes/basket";
 import emailRouter from "@routes/email";
 import llmRouter from "@routes/llm";
 import { trackRoute } from "@routes/track";
+import { paddleWebhook } from "@routes/webhooks/paddle";
+import { stripeWebhook } from "@routes/webhooks/stripe";
 import { closeGeoIPReader } from "@utils/ip-geo";
 import { Elysia } from "elysia";
 
@@ -110,6 +112,8 @@ const app = new Elysia()
 	.use(emailRouter)
 	.use(llmRouter)
 	.use(trackRoute)
+	.use(stripeWebhook)
+	.use(paddleWebhook)
 	.get("/health", function healthCheck() {
 		return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
 	});

@@ -946,3 +946,41 @@ export const usageAlertLog = pgTable(
 		}).onDelete("cascade"),
 	]
 );
+
+export const revenueConfig = pgTable(
+	"revenue_config",
+	{
+		id: text().primaryKey().notNull(),
+		ownerId: text("owner_id").notNull(),
+		websiteId: text("website_id"),
+		webhookHash: text("webhook_hash").notNull(),
+		stripeWebhookSecret: text("stripe_webhook_secret"),
+		paddleWebhookSecret: text("paddle_webhook_secret"),
+		currency: text().default("USD").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("revenue_config_webhook_hash_unique").using(
+			"btree",
+			table.webhookHash.asc().nullsLast().op("text_ops")
+		),
+		uniqueIndex("revenue_config_owner_website_unique").on(
+			table.ownerId,
+			table.websiteId
+		),
+		index("revenue_config_owner_id_idx").using(
+			"btree",
+			table.ownerId.asc().nullsLast().op("text_ops")
+		),
+		foreignKey({
+			columns: [table.websiteId],
+			foreignColumns: [websites.id],
+			name: "revenue_config_website_id_fkey",
+		}).onDelete("cascade"),
+	]
+);

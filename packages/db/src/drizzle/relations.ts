@@ -9,6 +9,7 @@ import {
 	links,
 	member,
 	organization,
+	revenueConfig,
 	session,
 	targetGroups,
 	team,
@@ -198,5 +199,12 @@ export const linksRelations = relations(links, ({ one }) => ({
 	creator: one(user, {
 		fields: [links.createdBy],
 		references: [user.id],
+	}),
+}));
+
+export const revenueConfigRelations = relations(revenueConfig, ({ one }) => ({
+	website: one(websites, {
+		fields: [revenueConfig.websiteId],
+		references: [websites.id],
 	}),
 }));

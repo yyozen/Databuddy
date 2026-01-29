@@ -13,6 +13,7 @@ import { linksRouter } from "./routers/links";
 import { miniChartsRouter } from "./routers/mini-charts";
 import { organizationsRouter } from "./routers/organizations";
 import { preferencesRouter } from "./routers/preferences";
+import { revenueRouter } from "./routers/revenue";
 import { ssoRouter } from "./routers/sso";
 import { targetGroupsRouter } from "./routers/target-groups";
 import { uptimeRouter } from "./routers/uptime";
@@ -38,6 +39,7 @@ export const appRouter = {
 	uptime: uptimeRouter,
 	insights: insightsRouter,
 	links: linksRouter,
+	revenue: revenueRouter,
 };
 
 export type AppRouter = typeof appRouter;

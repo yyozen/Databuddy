@@ -548,6 +548,48 @@ SETTINGS index_granularity = 8192
 `;
 
 /**
+ * Revenue table for storing payment transactions from Stripe/Paddle
+ * Uses ReplacingMergeTree to handle transaction updates (e.g., refunds)
+ */
+const CREATE_REVENUE_TABLE = `
+CREATE TABLE IF NOT EXISTS ${DATABASES.ANALYTICS}.revenue (
+  owner_id String CODEC(ZSTD(1)),
+  website_id Nullable(String) CODEC(ZSTD(1)),
+  
+  transaction_id String CODEC(ZSTD(1)),
+  provider LowCardinality(String) CODEC(ZSTD(1)),
+  type LowCardinality(String) CODEC(ZSTD(1)),
+  status LowCardinality(String) CODEC(ZSTD(1)),
+  
+  amount Decimal64(4) CODEC(ZSTD(1)),
+  original_amount Decimal64(4) CODEC(ZSTD(1)),
+  original_currency LowCardinality(String) CODEC(ZSTD(1)),
+  currency LowCardinality(String) CODEC(ZSTD(1)),
+  
+  anonymous_id Nullable(String) CODEC(ZSTD(1)),
+  session_id Nullable(String) CODEC(ZSTD(1)),
+  
+  product_id Nullable(String) CODEC(ZSTD(1)),
+  product_name Nullable(String) CODEC(ZSTD(1)),
+  
+  metadata String DEFAULT '{}' CODEC(ZSTD(1)),
+  
+  created DateTime('UTC') CODEC(Delta(4), ZSTD(1)),
+  synced_at DateTime('UTC') CODEC(Delta(4), ZSTD(1)),
+  
+  INDEX idx_owner_id owner_id TYPE bloom_filter(0.01) GRANULARITY 1,
+  INDEX idx_website_id website_id TYPE bloom_filter(0.01) GRANULARITY 1,
+  INDEX idx_transaction_id transaction_id TYPE bloom_filter(0.01) GRANULARITY 1,
+  INDEX idx_provider provider TYPE bloom_filter(0.01) GRANULARITY 1,
+  INDEX idx_type type TYPE bloom_filter(0.01) GRANULARITY 1,
+  INDEX idx_anonymous_id anonymous_id TYPE bloom_filter(0.01) GRANULARITY 1
+) ENGINE = ReplacingMergeTree(synced_at)
+PARTITION BY toYYYYMM(created)
+ORDER BY (owner_id, transaction_id)
+SETTINGS index_granularity = 8192
+`;
+
+/**
  * Lean error span type
  */
 export interface ErrorSpanRow {
@@ -756,6 +798,29 @@ export interface UptimeMonitor {
 }
 
 /**
+ * Revenue transaction from payment providers
+ */
+export interface RevenueTransaction {
+	owner_id: string;
+	website_id?: string;
+	transaction_id: string;
+	provider: "stripe" | "paddle";
+	type: "sale" | "refund" | "subscription";
+	status: "completed" | "refunded" | "pending";
+	amount: number;
+	original_amount: number;
+	original_currency: string;
+	currency: string;
+	anonymous_id?: string;
+	session_id?: string;
+	product_id?: string;
+	product_name?: string;
+	metadata: string | Record<string, unknown>;
+	created: number;
+	synced_at: number;
+}
+
+/**
  * AI call span type
  * owner_id: The org or user ID that owns this data (from API key)
  */
@@ -900,6 +965,7 @@ export async function initClickHouseSchema() {
 			{ name: "custom_events", query: CREATE_CUSTOM_EVENTS_TABLE },
 			{ name: "link_visits", query: CREATE_LINK_VISITS_TABLE },
 			{ name: "ai_traffic_spans", query: CREATE_AI_TRAFFIC_SPANS_TABLE },
+			{ name: "revenue", query: CREATE_REVENUE_TABLE },
 		];
 
 		// Materialized views (must be created after target tables)
