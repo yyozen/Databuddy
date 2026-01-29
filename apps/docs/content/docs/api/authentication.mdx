@@ -45,12 +45,12 @@ Scopes control what actions an API key can perform:
 | Scope | Permission |
 |-------|------------|
 | `read:data` | Query analytics data (required for all query endpoints) |
-| `write:data` | Send custom events |
+| `track:events` | Send custom events via `/track` endpoint |
 | `read:websites` | List accessible websites |
 | `manage:websites` | Create and update websites |
 
 <Callout type="info">
-  Most integrations only need `read:data` scope. Add additional scopes only if required.
+  Most integrations only need `read:data` scope. Add `track:events` if you need to send events server-side.
 </Callout>
 
 ## Access Levels

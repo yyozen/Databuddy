@@ -99,7 +99,7 @@ The `details` array contains all validation issues found, with suggestions when 
   language="json"
   code={`{
   "success": false,
-  "error": "Missing project identifier (website_id, schedule_id, or link_id)",
+  "error": "Missing project identifier (website_id, schedule_id, link_id, or organization_id)",
   "code": "MISSING_PROJECT_ID"
 }`}
 />
@@ -182,9 +182,9 @@ The top-level `success: true` indicates the request was processed. Check each pa
 - Use `GET /v1/query/types` to see available types
 - Some types require specific project IDs (e.g., `link_*` needs `link_id`)
 
-### "Hourly granularity only supports up to 7 days"
+### "Hourly granularity only supports up to 30 days"
 
-- Reduce your date range to 7 days or less
+- Reduce your date range to 30 days or less
 - Use `"granularity": "daily"` for longer ranges
 
 ## Best Practices

@@ -109,6 +109,25 @@ Query types for `link_id`:
 | `link_top_devices` | Device breakdown |
 | `link_top_browsers` | Browser breakdown |
 
+### LLM Analytics
+
+Query types for `organization_id` (LLM observability):
+
+| Type | Description |
+|------|-------------|
+| `llm_overview_kpis` | Cost, tokens, latency, and error rate |
+| `llm_time_series` | Calls, cost, and tokens over time |
+| `llm_provider_breakdown` | Metrics by provider |
+| `llm_model_breakdown` | Metrics by model |
+| `llm_error_breakdown` | Top errors |
+| `llm_latency_time_series` | Latency percentiles over time |
+| `llm_latency_by_model` | Latency by model |
+| `llm_cost_by_provider_time_series` | Cost by provider over time |
+| `llm_cost_by_model_time_series` | Cost by model over time |
+| `llm_recent_calls` | Most recent LLM calls |
+| `llm_slowest_calls` | Longest duration calls |
+| `llm_trace_summary` | Trace-level aggregates |
+
 ## Health Check
 
 Check API and dependency status:
