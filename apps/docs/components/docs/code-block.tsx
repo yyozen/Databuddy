@@ -9,6 +9,7 @@ import json from "shiki/langs/json.mjs";
 import jsx from "shiki/langs/jsx.mjs";
 import markdown from "shiki/langs/markdown.mjs";
 import php from "shiki/langs/php.mjs";
+import python from "shiki/langs/python.mjs";
 import svelte from "shiki/langs/svelte.mjs";
 import tsx from "shiki/langs/tsx.mjs";
 import githubLight from "shiki/themes/github-light.mjs";
@@ -26,7 +27,7 @@ interface CodeBlockProps extends React.ComponentProps<"div"> {
 
 const highlighter = createHighlighterCoreSync({
 	themes: [vesper, githubLight],
-	langs: [tsx, jsx, html, css, json, markdown, bash, http, php, svelte],
+	langs: [tsx, jsx, html, css, json, markdown, bash, http, php, svelte, python],
 	engine: createJavaScriptRegexEngine(),
 });
 
