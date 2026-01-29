@@ -217,10 +217,6 @@ export const contents: SidebarSection[] = [
 				href: "/docs/Integrations/squarespace",
 			},
 			{
-				title: "Stripe",
-				href: "/docs/Integrations/stripe",
-			},
-			{
 				title: "Framer",
 				href: "/docs/Integrations/framer",
 			},
@@ -261,8 +257,25 @@ export const contents: SidebarSection[] = [
 			},
 			{
 				title: "Revenue Tracking",
-				href: "/docs/revenue",
 				icon: CurrencyDollarIcon,
+				children: [
+					{
+						title: "Overview",
+						href: "/docs/revenue",
+					},
+					{
+						title: "Stripe",
+						href: "/docs/revenue/stripe",
+					},
+					{
+						title: "Paddle",
+						href: "/docs/revenue/paddle",
+					},
+					{
+						title: "Autumn",
+						href: "/docs/revenue/autumn",
+					},
+				],
 			},
 		],
 	},
