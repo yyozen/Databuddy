@@ -1,11 +1,16 @@
 ---
 title: Stripe
-description: Track revenue analytics with Stripe webhook integration
+description: Advanced Stripe integration with session tracking and revenue attribution
 ---
 
 import { Card, Cards } from "@/components/docs";
+import { Callout } from "@/components/docs";
 
-Connect Stripe payments to Databuddy's analytics to track revenue, conversion funnels, and customer behavior. This integration automatically links payment events to your website analytics for complete revenue attribution.
+Connect Stripe payments to Databuddy's analytics to track revenue, conversion funnels, and customer behavior. This integration links payment events to your website analytics for complete revenue attribution.
+
+<Callout type="info">
+  **Looking for simple revenue tracking?** If you just want to track revenue without code changes, see the [Revenue Tracking](/docs/revenue) guide. This page covers advanced integration with session linking and marketing attribution.
+</Callout>
 
 ## Overview
 
@@ -19,12 +24,13 @@ All payment data is automatically linked to your website analytics using session
 
 ## Prerequisites
 
-Before setting up the Stripe integration, ensure you have:
+Before setting up the advanced Stripe integration, ensure you have:
 
 1. **Databuddy Account**: [Sign up](https://app.databuddy.cc) and get your Client ID
 2. **Stripe Account**: Active Stripe account with API access
 3. **Website Analytics**: Databuddy tracking script installed on your website
 4. **Server-side Integration**: Ability to modify your server-side Stripe checkout code
+5. **Basic Revenue Tracking**: Complete the [Revenue Tracking setup](/docs/revenue) first
 
 ## How Session Tracking Works
 
@@ -42,7 +48,7 @@ Databuddy automatically handles session and user IDs:
 - **Privacy**: No personal information is stored, fully anonymous
 
 ### Data Linking
-When you pass the session ID to Stripe via `client_reference_id`, Databuddy can:
+When you pass the session ID to Stripe via metadata, Databuddy can:
 - Link payment events to specific user sessions
 - Track the complete customer journey from first visit to purchase
 - Attribute revenue to marketing campaigns and traffic sources
@@ -50,9 +56,23 @@ When you pass the session ID to Stripe via `client_reference_id`, Databuddy can:
 
 ## Setup Process
 
-### Step 1: Ensure Databuddy Script is Properly Configured
+### Step 1: Complete Basic Revenue Tracking Setup
 
-Before setting up webhooks, make sure your Databuddy tracking script is configured correctly:
+First, set up basic revenue tracking via webhooks:
+
+1. Go to your website in the Databuddy dashboard
+2. Navigate to **Revenue** in the sidebar
+3. Click **Configure** and follow the [Revenue Tracking guide](/docs/revenue)
+
+This gives you a webhook URL like:
+
+```
+https://basket.databuddy.cc/webhooks/stripe/your_unique_hash
+```
+
+### Step 2: Ensure Databuddy Script is Properly Configured
+
+Make sure your Databuddy tracking script is configured correctly:
 
 ```html
 <script
@@ -66,45 +86,7 @@ Before setting up webhooks, make sure your Databuddy tracking script is configur
 - Session tracking is enabled by default - no configuration needed
 - `data-client-id` - **Required** - Your Databuddy Client ID
 
-### Step 2: Configure Webhook Endpoint
-
-1. **Log into your Databuddy Dashboard**
-2. **Navigate to Integrations** > **Stripe**
-3. **Create a new Stripe configuration**:
-   - Enter your **Stripe Webhook Secret** (we'll get this in Step 2)
-   - Choose **Test Mode** or **Live Mode**
-   - Copy your unique **Webhook URL** (e.g., `https://basket.databuddy.cc/stripe/webhook/wh_abc123`)
-
-### Step 3: Create Stripe Webhook
-
-1. **Log into your Stripe Dashboard**
-2. **Go to Developers** > **Webhooks**
-3. **Click "Add endpoint"**
-4. **Configure the webhook**:
-   - **Endpoint URL**: Paste your Databuddy webhook URL from Step 1
-   - **Events to send**: Select these specific events:
-     ```
-     payment_intent.succeeded
-     payment_intent.created
-     payment_intent.canceled
-     payment_intent.payment_failed
-     payment_intent.requires_action
-     charge.succeeded
-     charge.failed
-     charge.captured
-     charge.dispute.created
-     refund.created
-     refund.updated
-     refund.failed
-     ```
-5. **Click "Add endpoint"**
-6. **Copy the Webhook Secret**:
-   - Click on your newly created webhook
-   - In the "Signing secret" section, click "Reveal"
-   - Copy the secret (starts with `whsec_`)
-7. **Return to Databuddy** and paste the webhook secret
-
-### Step 4: Update Your Checkout Code
+### Step 3: Update Your Checkout Code
 
 Modify your server-side Stripe checkout session creation to include required metadata:
 
@@ -203,7 +185,7 @@ $session = \Stripe\Checkout\Session::create([
 ?>
 ```
 
-### Step 5: Get Your Analytics Session ID
+### Step 4: Get Your Analytics Session ID
 
 The `session_id` in your metadata should contain your website's analytics session ID. Databuddy automatically generates and manages session IDs, so you can easily access them:
 
@@ -646,11 +628,11 @@ const session = await stripe.checkout.sessions.create({
 
 ### Debug Mode
 
-Enable debug logging in your Databuddy dashboard:
+To debug webhook issues:
 
-1. Go to **Integrations** > **Stripe**
-2. Enable **Debug Mode**
-3. Monitor webhook logs for detailed error information
+1. Check your Stripe dashboard under **Developers** > **Webhooks**
+2. Click on your webhook endpoint to see delivery attempts
+3. Review the response codes and error messages for failed deliveries
 
 ## Security Considerations
 
@@ -742,18 +724,18 @@ Need help with your Stripe integration?
 
 ---
 
-## Related Integrations
+## Related Resources
 
 <Cards>
+  <Card title="Revenue Tracking" href="/docs/revenue">
+    Simple webhook-based revenue tracking without code changes.
+  </Card>
   <Card title="Shopify" href="/docs/Integrations/shopify">
     Complete e-commerce tracking with purchase analytics.
   </Card>
-  <Card title="Next.js" href="/docs/Integrations/nextjs">
-    App Router and Pages Router support with SSR.
-  </Card>
-  <Card title="React" href="/docs/Integrations/react">
-    TypeScript support with React hooks and components.
+  <Card title="Dashboard Guide" href="/docs/dashboard">
+    Learn about all dashboard features and analytics.
   </Card>
 </Cards>
 
-**Next Steps**: Once your Stripe integration is working, explore our [Dashboard](/docs/dashboard) to analyze your revenue data and [API](/docs/api) to build custom reports. 
+**Next Steps**: Once your Stripe integration is working, explore the [Revenue page](/docs/revenue) in your dashboard to analyze your revenue data. 
