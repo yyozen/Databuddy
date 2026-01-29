@@ -97,6 +97,8 @@ function ProviderCard({
 	onSecretChange,
 	dashboardUrl,
 	events,
+	onCreateWebhook,
+	isCreatingWebhook,
 }: {
 	name: string;
 	icon: React.ComponentType<{ className?: string; weight?: "duotone" }>;
@@ -107,6 +109,8 @@ function ProviderCard({
 	onSecretChange: (value: string) => void;
 	dashboardUrl: string;
 	events: { required: string[]; optional: string[] };
+	onCreateWebhook: () => void;
+	isCreatingWebhook: boolean;
 }) {
 	const [expanded, setExpanded] = useState(!configured);
 	const [copied, setCopied] = useState(false);
@@ -120,6 +124,8 @@ function ProviderCard({
 			setTimeout(() => setCopied(false), 2000);
 		}
 	};
+
+	const hasWebhookUrl = Boolean(webhookUrl);
 
 	return (
 		<div className="overflow-hidden rounded border">
@@ -154,12 +160,13 @@ function ProviderCard({
 						transition={{ duration: 0.2, ease: "easeInOut" }}
 					>
 						<div className="space-y-4 border-t px-4 pt-3 pb-4">
-							{webhookUrl && (
-								<div className="space-y-1.5">
-									<div className="flex items-center justify-between">
-										<p className="font-medium text-foreground text-xs">
-											Webhook URL
-										</p>
+							{/* Step 1: Webhook URL */}
+							<div className="space-y-1.5">
+								<div className="flex items-center justify-between">
+									<p className="font-medium text-foreground text-xs">
+										1. Webhook URL
+									</p>
+									{hasWebhookUrl && (
 										<a
 											className="flex items-center gap-1 text-muted-foreground text-xs transition-colors hover:text-foreground"
 											href={dashboardUrl}
@@ -169,7 +176,9 @@ function ProviderCard({
 											Open dashboard
 											<ArrowSquareOutIcon className="size-3" />
 										</a>
-									</div>
+									)}
+								</div>
+								{hasWebhookUrl ? (
 									<div className="flex items-center gap-2">
 										<code className="flex-1 truncate rounded bg-secondary px-2.5 py-2 font-mono text-xs">
 											{webhookUrl}
@@ -182,22 +191,49 @@ function ProviderCard({
 											)}
 										</Button>
 									</div>
-								</div>
-							)}
+								) : (
+									<Button
+										className="w-full"
+										disabled={isCreatingWebhook}
+										onClick={onCreateWebhook}
+										size="sm"
+										variant="secondary"
+									>
+										{isCreatingWebhook ? (
+											<SpinnerIcon className="mr-2 size-4 animate-spin" />
+										) : null}
+										Generate Webhook URL
+									</Button>
+								)}
+							</div>
 
+							{/* Step 2: Signing secret */}
 							<div className="space-y-1.5">
-								<p className="font-medium text-foreground text-xs">
-									Signing secret
+								<p
+									className={cn(
+										"font-medium text-xs",
+										hasWebhookUrl ? "text-foreground" : "text-muted-foreground"
+									)}
+								>
+									2. Signing secret
 								</p>
 								<div className="flex items-center gap-2">
 									<Input
 										className="flex-1 font-mono text-xs"
+										disabled={!hasWebhookUrl}
 										onChange={(e) => onSecretChange(e.target.value)}
-										placeholder={configured ? "••••••••" : secretPlaceholder}
+										placeholder={
+											hasWebhookUrl
+												? configured
+													? "••••••••"
+													: secretPlaceholder
+												: "Generate webhook URL first"
+										}
 										type={showSecret ? "text" : "password"}
 										value={secretValue}
 									/>
 									<Button
+										disabled={!hasWebhookUrl}
 										onClick={() => setShowSecret(!showSecret)}
 										size="sm"
 										variant="ghost"
@@ -211,6 +247,7 @@ function ProviderCard({
 								</div>
 							</div>
 
+							{/* Events list */}
 							<div className="space-y-3">
 								<div className="space-y-1.5">
 									<p className="font-medium text-foreground text-xs">
@@ -269,6 +306,17 @@ function RevenueSettingsSheet({
 	const { data: config, isLoading } = useQuery({
 		queryKey: ["revenue-config", websiteId],
 		queryFn: () => orpc.revenue.get.call({ websiteId }),
+	});
+
+	const createWebhookMutation = useMutation({
+		mutationFn: () => orpc.revenue.upsert.call({ websiteId }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["revenue-config", websiteId],
+			});
+			toast.success("Webhook URL generated");
+		},
+		onError: () => toast.error("Failed to generate webhook URL"),
 	});
 
 	const upsertMutation = useMutation({
@@ -354,7 +402,9 @@ function RevenueSettingsSheet({
 								dashboardUrl="https://dashboard.stripe.com/webhooks/create"
 								events={STRIPE_EVENTS}
 								icon={StripeLogoIcon}
+								isCreatingWebhook={createWebhookMutation.isPending}
 								name="Stripe"
+								onCreateWebhook={() => createWebhookMutation.mutate()}
 								onSecretChange={setStripeSecret}
 								secretPlaceholder="whsec_..."
 								secretValue={stripeSecret}
@@ -366,7 +416,9 @@ function RevenueSettingsSheet({
 								dashboardUrl="https://vendors.paddle.com/notifications"
 								events={PADDLE_EVENTS}
 								icon={CurrencyDollarIcon}
+								isCreatingWebhook={createWebhookMutation.isPending}
 								name="Paddle"
+								onCreateWebhook={() => createWebhookMutation.mutate()}
 								onSecretChange={setPaddleSecret}
 								secretPlaceholder="pdl_ntfset_..."
 								secretValue={paddleSecret}
@@ -404,6 +456,7 @@ function RevenueSettingsSheet({
 						className="min-w-24"
 						disabled={
 							upsertMutation.isPending ||
+							!webhookHash ||
 							(stripeSecret === "" && paddleSecret === "")
 						}
 						onClick={handleSave}
