@@ -1,11 +1,10 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { clickHouse, db, eq, revenueConfig } from "@databuddy/db";
 import { logger } from "@databuddy/shared/logger";
 import { Elysia } from "elysia";
-import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 const DATE_REGEX = /\.\d{3}Z$/;
+const SIGNATURE_TOLERANCE_SECONDS = 300;
 
 interface WebhookConfig {
 	ownerId: string;
@@ -38,7 +37,80 @@ interface WebhookCharge {
 	};
 }
 
-function extractAnalyticsMetadata(metadata: Record<string, string> | undefined): Record<string, string> {
+interface WebhookEvent {
+	id: string;
+	type: string;
+	data: {
+		object: WebhookPaymentIntent | WebhookCharge;
+	};
+}
+
+function verifyStripeSignature(
+	payload: string,
+	header: string,
+	secret: string
+): { valid: true; event: WebhookEvent } | { valid: false; error: string } {
+	const parts: Record<string, string[]> = {};
+
+	for (const item of header.split(",")) {
+		const [key, value] = item.split("=");
+		if (key && value) {
+			if (!parts[key]) {
+				parts[key] = [];
+			}
+			parts[key].push(value);
+		}
+	}
+
+	const timestamp = parts.t?.[0];
+	const signatures = parts.v1 || [];
+
+	if (!timestamp) {
+		return { valid: false, error: "Missing timestamp in signature header" };
+	}
+
+	if (signatures.length === 0) {
+		return { valid: false, error: "No v1 signatures found in header" };
+	}
+
+	const timestampNum = Number.parseInt(timestamp, 10);
+	const now = Math.floor(Date.now() / 1000);
+
+	if (Math.abs(now - timestampNum) > SIGNATURE_TOLERANCE_SECONDS) {
+		return { valid: false, error: "Timestamp outside tolerance zone" };
+	}
+
+	const signedPayload = `${timestamp}.${payload}`;
+	const expectedSignature = createHmac("sha256", secret)
+		.update(signedPayload, "utf8")
+		.digest("hex");
+
+	const signatureMatch = signatures.some((sig) => {
+		try {
+			return timingSafeEqual(
+				Buffer.from(expectedSignature),
+				Buffer.from(sig)
+			);
+		} catch {
+			return false;
+		}
+	});
+
+	if (!signatureMatch) {
+		return { valid: false, error: "Signature mismatch" };
+	}
+
+	try {
+		const event = JSON.parse(payload) as WebhookEvent;
+		return { valid: true, event };
+	} catch {
+		return { valid: false, error: "Invalid JSON payload" };
+	}
+}
+
+function extractAnalyticsMetadata(
+	metadata: Record<string, string> | undefined
+): Record<string, string> {
 	if (!metadata) {
 		return {};
 	}
@@ -55,31 +127,8 @@ function extractAnalyticsMetadata(metadata: Record<string, string> | undefined):
 	return result;
 }
 
-interface WebhookInvoice {
-	id: string;
-	payment_intent?: string | { id: string } | null;
-}
-
-interface WebhookEvent {
-	id: string;
-	type: string;
-	data: {
-		object: WebhookPaymentIntent | WebhookCharge | WebhookInvoice;
-	};
-}
-
 function formatDate(date: Date): string {
 	return date.toISOString().replace("T", " ").replace(DATE_REGEX, "");
-}
-
-function extractId(value: string | { id: string } | null | undefined): string | undefined {
-	if (!value) {
-		return undefined;
-	}
-	if (typeof value === "string") {
-		return value;
-	}
-	return value.id;
 }
 
 async function getConfig(
@@ -114,24 +163,8 @@ async function handlePaymentIntent(
 	config: WebhookConfig
 ): Promise<void> {
 	const metadata = extractAnalyticsMetadata(pi.metadata);
-	let type: "sale" | "subscription" = "sale";
-	let productName: string | undefined;
 
-	const invoiceId = extractId(pi.invoice);
-
-	if (invoiceId) {
-		const invoice = await stripe.invoices
-			.retrieve(invoiceId, { expand: ["subscription", "lines"] })
-			.catch(() => null);
-
-		if (invoice?.subscription) {
-			type = "subscription";
-		}
-		const firstLine = invoice?.lines?.data?.[0];
-		if (firstLine?.description) {
-			productName = firstLine.description;
-		}
-	}
+	const type: "sale" | "subscription" = pi.invoice ? "subscription" : "sale";
 
 	const amount = (pi.amount_received ?? pi.amount) / 100;
 	const currency = pi.currency.toUpperCase();
@@ -152,7 +185,7 @@ async function handlePaymentIntent(
 				currency,
 				anonymous_id: metadata.anonymous_id || undefined,
 				session_id: metadata.session_id || undefined,
-				product_name: productName || pi.description || undefined,
+				product_name: pi.description || undefined,
 				metadata: JSON.stringify(metadata),
 				created: formatDate(new Date(pi.created * 1000)),
 				synced_at: formatDate(new Date()),
@@ -263,18 +296,19 @@ export const stripeWebhook = new Elysia().post(
 
 		const body = await request.text();
 
-		let event: WebhookEvent;
-		try {
-			event = (await stripe.webhooks.constructEventAsync(
-				body,
-				signature,
-				result.stripeWebhookSecret
-			)) as unknown as WebhookEvent;
-		} catch (error) {
-			logger.warn({ error }, "Stripe signature verification failed");
+		const verification = verifyStripeSignature(
+			body,
+			signature,
+			result.stripeWebhookSecret
+		);
+
+		if (!verification.valid) {
+			logger.warn({ error: verification.error }, "Stripe signature verification failed");
 			set.status = 401;
 			return { error: "Invalid webhook signature" };
 		}
+
+		const event = verification.event;
 
 		logger.info({ type: event.type, id: event.id }, "Stripe webhook received");
 
@@ -305,28 +339,6 @@ export const stripeWebhook = new Elysia().post(
 				}
 				case "charge.refunded": {
 					await handleRefund(event.data.object as WebhookCharge, result);
-					break;
-				}
-				case "invoice.payment_succeeded": {
-					const invoice = event.data.object as WebhookInvoice;
-					const paymentIntentId = extractId(invoice.payment_intent);
-
-					if (paymentIntentId) {
-						const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
-						await handlePaymentIntent(
-							{
-								id: pi.id,
-								amount: pi.amount,
-								amount_received: pi.amount_received,
-								currency: pi.currency,
-								created: pi.created,
-								description: pi.description,
-								invoice: extractId(pi.invoice as string | { id: string } | null),
-								metadata: pi.metadata as Record<string, string>,
-							},
-							result
-						);
-					}
 					break;
 				}
 				default: {
