@@ -1,6 +1,60 @@
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
+function Heading1({
+	children,
+	className,
+	...props
+}: React.ComponentProps<"h1">) {
+	return (
+		<h1
+			className={cn(
+				"mt-8 mb-4 font-semibold text-3xl text-foreground tracking-tight sm:text-4xl",
+				className
+			)}
+			{...props}
+		>
+			{children}
+		</h1>
+	);
+}
+
+function Heading2({
+	children,
+	className,
+	...props
+}: React.ComponentProps<"h2">) {
+	return (
+		<h2
+			className={cn(
+				"mt-8 mb-3 font-semibold text-2xl text-foreground tracking-tight sm:text-3xl",
+				className
+			)}
+			{...props}
+		>
+			{children}
+		</h2>
+	);
+}
+
+function Heading3({
+	children,
+	className,
+	...props
+}: React.ComponentProps<"h3">) {
+	return (
+		<h3
+			className={cn(
+				"mt-6 mb-2 font-semibold text-foreground text-xl tracking-tight sm:text-2xl",
+				className
+			)}
+			{...props}
+		>
+			{children}
+		</h3>
+	);
+}
+
 function Blockquote({
 	children,
 	className,
@@ -90,6 +144,9 @@ function ListItem({
 export {
 	Anchor,
 	Blockquote,
+	Heading1,
+	Heading2,
+	Heading3,
 	HorizontalRule,
 	ListItem,
 	OrderedList,

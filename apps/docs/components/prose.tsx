@@ -1,5 +1,4 @@
 import type { ComponentPropsWithoutRef } from "react";
-import { enhanceCodeBlocks } from "@/lib/enhance-code-blocks";
 import { cn } from "@/lib/utils";
 
 interface ProseProps extends ComponentPropsWithoutRef<"article"> {
@@ -7,7 +6,6 @@ interface ProseProps extends ComponentPropsWithoutRef<"article"> {
 }
 
 export function Prose({ children, html, className }: ProseProps) {
-	const enhancedHtml = html ? enhanceCodeBlocks(html) : "";
 	return (
 		<article
 			className={cn(
@@ -42,11 +40,7 @@ export function Prose({ children, html, className }: ProseProps) {
 				className
 			)}
 		>
-			{html ? (
-				<div dangerouslySetInnerHTML={{ __html: enhancedHtml }} />
-			) : (
-				children
-			)}
+			{html ? <div dangerouslySetInnerHTML={{ __html: html }} /> : children}
 		</article>
 	);
 }

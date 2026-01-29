@@ -1,9 +1,11 @@
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
-import { InlineCode } from "@/components/docs/code-block";
 import {
 	Anchor,
 	Blockquote,
+	Heading1,
+	Heading2,
+	Heading3,
 	HorizontalRule,
 	ListItem,
 	OrderedList,
@@ -23,7 +25,9 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
 		...defaultMdxComponents,
 		a: Anchor,
 		blockquote: Blockquote,
-		code: InlineCode,
+		h1: Heading1,
+		h2: Heading2,
+		h3: Heading3,
 		hr: HorizontalRule,
 		li: ListItem,
 		ol: OrderedList,

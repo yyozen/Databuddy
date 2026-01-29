@@ -1,0 +1,280 @@
+---
+title: Revenue Tracking
+description: Track revenue from Stripe and Paddle with webhook integration
+---
+
+import { Tab, Tabs } from "@/components/docs";
+import { Callout } from "@/components/docs";
+import { Card, Cards } from "@/components/docs";
+import { Step, Steps } from "fumadocs-ui/components/steps";
+
+Track revenue automatically from your payment providers. Databuddy receives webhook events from Stripe and Paddle to give you real-time revenue analytics including net revenue, subscriptions, refunds, and transaction trends.
+
+<Callout type="info">
+  Revenue tracking requires no code changes to your application. Simply configure webhooks in your payment provider dashboard and paste the signing secret in Databuddy.
+</Callout>
+
+## Overview
+
+The Revenue page in your Databuddy dashboard shows:
+
+- **Net Revenue** - Total revenue minus refunds
+- **Gross Revenue** - Total revenue before refunds
+- **Subscriptions** - Recurring revenue and active subscription count
+- **Refunds** - Refund amounts and count
+- **Transaction Trends** - Revenue over time with interactive charts
+- **Average Transaction Value** - Per-transaction revenue breakdown
+
+## Setup Process
+
+<Tabs items={['Stripe', 'Paddle']}>
+<Tab value="Stripe">
+
+<Steps>
+<Step>
+
+### Open Revenue Settings in Databuddy
+
+1. Go to your website in the Databuddy dashboard
+2. Navigate to **Revenue** in the sidebar
+3. Click the **Configure** button in the top right
+4. The Stripe section will be expanded by default
+
+</Step>
+<Step>
+
+### Copy the Webhook URL
+
+In the Revenue settings sheet, you'll see a unique webhook URL for your website:
+
+```
+https://basket.databuddy.cc/webhooks/stripe/your_unique_hash
+```
+
+Click the copy button next to the URL to copy it to your clipboard.
+
+</Step>
+<Step>
+
+### Create a Webhook in Stripe
+
+1. Click **Open dashboard** link or go to [dashboard.stripe.com/webhooks/create](https://dashboard.stripe.com/webhooks/create)
+2. In the **Endpoint URL** field, paste your Databuddy webhook URL
+3. Under **Select events to listen to**, click **Select events**
+4. Search for and select the following events:
+
+**Required events** (must be selected):
+- `payment_intent.succeeded`
+- `charge.refunded`
+
+**Optional events** (recommended for more insights):
+- `payment_intent.payment_failed`
+- `payment_intent.canceled`
+- `invoice.payment_succeeded`
+
+5. Click **Add endpoint**
+
+</Step>
+<Step>
+
+### Copy the Signing Secret
+
+After creating the webhook:
+
+1. Click on your newly created webhook endpoint
+2. In the **Signing secret** section, click **Reveal**
+3. Copy the secret (it starts with `whsec_`)
+
+<Callout type="warn">
+  Keep your signing secret secure. Never commit it to version control or share it publicly.
+</Callout>
+
+</Step>
+<Step>
+
+### Paste the Secret in Databuddy
+
+1. Return to the Revenue settings sheet in Databuddy
+2. In the **Signing secret** field under Stripe, paste your webhook secret
+3. Click **Save**
+
+The Stripe section will now show a checkmark indicating it's configured.
+
+</Step>
+</Steps>
+
+</Tab>
+<Tab value="Paddle">
+
+<Steps>
+<Step>
+
+### Open Revenue Settings in Databuddy
+
+1. Go to your website in the Databuddy dashboard
+2. Navigate to **Revenue** in the sidebar
+3. Click the **Configure** button in the top right
+4. Click on the **Paddle** section to expand it
+
+</Step>
+<Step>
+
+### Copy the Webhook URL
+
+In the Revenue settings sheet, you'll see a unique webhook URL for Paddle:
+
+```
+https://basket.databuddy.cc/webhooks/paddle/your_unique_hash
+```
+
+Click the copy button next to the URL to copy it to your clipboard.
+
+</Step>
+<Step>
+
+### Create a Notification in Paddle
+
+1. Click **Open dashboard** link or go to [vendors.paddle.com/notifications](https://vendors.paddle.com/notifications)
+2. Click **New destination**
+3. In the **URL** field, paste your Databuddy webhook URL
+4. Under **Events**, select:
+
+**Required events** (must be selected):
+- `transaction.completed`
+
+**Optional events** (recommended):
+- `transaction.billed`
+
+5. Save the notification destination
+
+</Step>
+<Step>
+
+### Copy the Webhook Secret
+
+After creating the notification:
+
+1. Find your notification destination in the list
+2. Copy the webhook secret (it starts with `pdl_ntfset_`)
+
+</Step>
+<Step>
+
+### Paste the Secret in Databuddy
+
+1. Return to the Revenue settings sheet in Databuddy
+2. In the **Signing secret** field under Paddle, paste your webhook secret
+3. Click **Save**
+
+The Paddle section will now show a checkmark indicating it's configured.
+
+</Step>
+</Steps>
+
+</Tab>
+</Tabs>
+
+## Testing Your Integration
+
+### Stripe Test Mode
+
+To test your Stripe integration without processing real payments:
+
+1. Make sure you're using Stripe's test mode when creating the webhook
+2. Use [Stripe's test card numbers](https://stripe.com/docs/testing) to create test payments:
+   - **Successful payment**: `4242 4242 4242 4242`
+   - **Declined payment**: `4000 0000 0000 0002`
+3. Check the Databuddy Revenue page after processing test transactions
+
+### Paddle Sandbox
+
+For Paddle, use the sandbox environment to test your integration before going live.
+
+<Callout type="info">
+  Test transactions may take a few moments to appear in your Databuddy dashboard after the webhook is received.
+</Callout>
+
+## Regenerating Webhook URLs
+
+If you need to regenerate your webhook URLs (for example, if your URL was compromised):
+
+1. Open the Revenue settings sheet
+2. Click **Regenerate webhook URLs** at the bottom
+3. Update the webhook URL in your Stripe/Paddle dashboard
+4. Your old webhook URLs will stop working immediately
+
+<Callout type="warn">
+  After regenerating URLs, you must update the endpoint URL in both Stripe and Paddle dashboards. Webhooks sent to old URLs will fail.
+</Callout>
+
+## Understanding Revenue Metrics
+
+### Net Revenue vs Gross Revenue
+
+- **Gross Revenue** is the total amount of successful payments
+- **Net Revenue** is gross revenue minus refunds
+- Use net revenue for accurate business reporting
+
+### Subscription vs One-time Revenue
+
+Databuddy automatically categorizes transactions based on the payment type:
+
+- **Subscriptions** - Recurring payments from subscription products
+- **One-time Sales** - Single purchase transactions
+
+### Refund Tracking
+
+Refunds are tracked automatically when you process them through your payment provider. The dashboard shows:
+
+- Total refund amount
+- Number of refunds
+- Impact on net revenue
+
+## Troubleshooting
+
+### No Data Appearing
+
+If revenue data isn't showing after setup:
+
+1. **Verify webhook is active** - Check your Stripe/Paddle dashboard to ensure the webhook endpoint shows successful deliveries
+2. **Check the signing secret** - Make sure you copied the complete secret including the `whsec_` or `pdl_ntfset_` prefix
+3. **Process a test transaction** - Create a test payment to trigger a webhook event
+4. **Check webhook logs** - In Stripe, go to Developers > Webhooks and check for failed delivery attempts
+
+### Webhook Delivery Failures
+
+If Stripe/Paddle shows failed webhook deliveries:
+
+- Verify the webhook URL is correct
+- Ensure the signing secret in Databuddy matches exactly
+- Check that you selected the required events
+
+### Missing Events
+
+If some transactions aren't appearing:
+
+- Verify all required events are selected in your payment provider
+- Check if the transactions occurred after the webhook was configured
+- Historical transactions before webhook setup won't be captured
+
+## Advanced: Code-Level Integration
+
+For advanced revenue attribution and session linking, see the [Stripe Integration Guide](/docs/Integrations/stripe). This allows you to:
+
+- Link payments to specific user sessions
+- Track the complete customer journey from first visit to purchase
+- Attribute revenue to marketing campaigns and traffic sources
+
+## Related Resources
+
+<Cards>
+  <Card title="Stripe Integration" href="/docs/Integrations/stripe">
+    Advanced Stripe integration with session tracking and revenue attribution
+  </Card>
+  <Card title="Custom Events" href="/docs/sdk#custom-event-tracking">
+    Track additional e-commerce events like cart additions and checkouts
+  </Card>
+  <Card title="Dashboard Guide" href="/docs/dashboard">
+    Learn about all dashboard features and analytics
+  </Card>
+</Cards>

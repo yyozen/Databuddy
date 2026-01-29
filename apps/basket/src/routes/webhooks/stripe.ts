@@ -164,6 +164,43 @@ async function handlePaymentIntent(
 	logger.info({ type, amount, currency }, "Revenue: payment");
 }
 
+async function handleFailedPayment(
+	pi: WebhookPaymentIntent,
+	config: WebhookConfig,
+	status: "failed" | "canceled"
+): Promise<void> {
+	const metadata = extractAnalyticsMetadata(pi.metadata);
+	const amount = (pi.amount_received ?? pi.amount) / 100;
+	const currency = pi.currency.toUpperCase();
+
+	await clickHouse.insert({
+		table: "analytics.revenue",
+		values: [
+			{
+				owner_id: config.ownerId,
+				website_id: metadata.website_id || config.websiteId || undefined,
+				transaction_id: pi.id,
+				provider: "stripe",
+				type: "sale",
+				status,
+				amount,
+				original_amount: amount,
+				original_currency: currency,
+				currency,
+				anonymous_id: metadata.anonymous_id || undefined,
+				session_id: metadata.session_id || undefined,
+				product_name: pi.description || undefined,
+				metadata: JSON.stringify(metadata),
+				created: formatDate(new Date(pi.created * 1000)),
+				synced_at: formatDate(new Date()),
+			},
+		],
+		format: "JSONEachRow",
+	});
+
+	logger.info({ status, amount, currency }, `Revenue: payment ${status}`);
+}
+
 async function handleRefund(
 	charge: WebhookCharge,
 	config: WebhookConfig
@@ -247,6 +284,22 @@ export const stripeWebhook = new Elysia().post(
 					await handlePaymentIntent(
 						event.data.object as WebhookPaymentIntent,
 						result
+					);
+					break;
+				}
+				case "payment_intent.payment_failed": {
+					await handleFailedPayment(
+						event.data.object as WebhookPaymentIntent,
+						result,
+						"failed"
+					);
+					break;
+				}
+				case "payment_intent.canceled": {
+					await handleFailedPayment(
+						event.data.object as WebhookPaymentIntent,
+						result,
+						"canceled"
 					);
 					break;
 				}

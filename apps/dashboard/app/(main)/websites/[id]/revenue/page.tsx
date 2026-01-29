@@ -7,7 +7,7 @@ export default function RevenuePage() {
 	const { id: websiteId } = useParams();
 
 	return (
-		<div className="flex h-[calc(100vh-6rem)] flex-col overflow-hidden p-4">
+		<div className="relative flex h-full flex-col">
 			<RevenueContent websiteId={websiteId as string} />
 		</div>
 	);
