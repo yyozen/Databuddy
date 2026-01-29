@@ -241,13 +241,11 @@ export interface ParameterDataMap {
 	device_types: GenericParameterRow;
 	browser_versions: GenericParameterRow;
 	// Revenue parameters
-	revenue_summary: GenericParameterRow;
-	revenue_trends: GenericParameterRow;
+	revenue_overview: GenericParameterRow;
+	revenue_time_series: GenericParameterRow;
+	revenue_by_provider: GenericParameterRow;
+	revenue_by_product: GenericParameterRow;
 	recent_transactions: GenericParameterRow;
-	recent_refunds: GenericParameterRow;
-	revenue_by_country: GenericParameterRow;
-	revenue_by_currency: GenericParameterRow;
-	revenue_by_card_brand: GenericParameterRow;
 	// Real-time
 	active_stats: GenericParameterRow;
 	latest_events: GenericParameterRow;

@@ -91,7 +91,6 @@ export default function WebsiteLayout({ children }: WebsiteLayoutProps) {
 					queryKey: ["batch-dynamic-query", id],
 				}),
 			]);
-			toast.success("Data refreshed");
 		} catch {
 			toast.error("Failed to refresh data");
 		} finally {

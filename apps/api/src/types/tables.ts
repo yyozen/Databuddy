@@ -8,6 +8,7 @@ import type {
 	CustomOutgoingLink,
 	ErrorHourlyAggregate,
 	ErrorSpanRow,
+	RevenueTransaction,
 	UptimeMonitor,
 	WebVitalsHourlyAggregate,
 	WebVitalsSpan,
@@ -26,6 +27,7 @@ export const Analytics = {
 	outgoing_links: "analytics.outgoing_links",
 	link_visits: "analytics.link_visits",
 	uptime_monitor: "uptime.uptime_monitor",
+	revenue: "analytics.revenue",
 } as const;
 
 export const Observability = {
@@ -45,6 +47,7 @@ export interface TableFieldsMap {
 	"analytics.custom_events_hourly": keyof CustomEventsHourlyAggregate;
 	"analytics.blocked_traffic": keyof BlockedTraffic;
 	"analytics.outgoing_links": keyof CustomOutgoingLink;
+	"analytics.revenue": keyof RevenueTransaction;
 	"uptime.uptime_monitor": keyof UptimeMonitor;
 	"observability.ai_call_spans": keyof AICallSpan;
 }

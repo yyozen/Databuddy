@@ -308,6 +308,11 @@ export const websiteNavigation: NavigationSection[] = [
 			rootLevel: false,
 			flag: "llm",
 		}),
+		createNavItem("Revenue", CurrencyDollarIcon, "/revenue", {
+			alpha: true,
+			rootLevel: false,
+			flag: "revenue",
+		}),
 		createNavItem("AI Agent", RobotIcon, "/agent", {
 			alpha: true,
 			rootLevel: false,

@@ -124,7 +124,6 @@ export default function LinkStatsLayout({ children }: LinkStatsLayoutProps) {
 					query.queryKey[0] === "batch-dynamic-query" &&
 					query.queryKey.includes(linkId),
 			});
-			toast.success("Data refreshed");
 		} catch {
 			toast.error("Failed to refresh data");
 		} finally {
