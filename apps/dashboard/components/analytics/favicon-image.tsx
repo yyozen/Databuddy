@@ -27,6 +27,9 @@ const FAVICON_DOMAIN_MAP: Record<string, string> = {
 	"netlify.app": "netlify.com",
 	"pages.dev": "cloudflare.com",
 	"workers.dev": "cloudflare.com",
+	"checkout.stripe.com": "stripe.com",
+	"billing.stripe.com": "stripe.com",
+	"invoice.stripe.com": "stripe.com",
 };
 
 function getFaviconDomain(hostname: string): string {

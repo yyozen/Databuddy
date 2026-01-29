@@ -2692,5 +2692,6 @@ export const referrers: Record<string, { type: string; name: string }> = {
 	"www.canva.com": { type: "unknown", name: "Canva" },
 	"sketch.com": { type: "unknown", name: "Sketch" },
 	"www.sketch.com": { type: "unknown", name: "Sketch" },
+	"checkout.stripe.com": { type: "unknown", name: "Stripe Checkout" },
 } as const;
 export default referrers;
