@@ -120,8 +120,7 @@ export function FunnelPreviewRenderer({
 		[createFunnel]
 	);
 
-	const handleUpdateFromDialog = useCallback(async (_funnel: Funnel) => {
-		// Updates go through the AI confirmation flow
+	const handleUpdateFromDialog = useCallback((_funnel: Funnel) => {
 		setIsDialogOpen(false);
 	}, []);
 

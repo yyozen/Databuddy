@@ -44,8 +44,8 @@ export function getWebsiteSecuritySettings(
 	return {
 		allowedOrigins: Array.isArray(s.allowedOrigins)
 			? s.allowedOrigins.filter(
-					(item): item is string => typeof item === "string"
-				)
+				(item): item is string => typeof item === "string"
+			)
 			: undefined,
 		allowedIps: Array.isArray(s.allowedIps)
 			? s.allowedIps.filter((item): item is string => typeof item === "string")

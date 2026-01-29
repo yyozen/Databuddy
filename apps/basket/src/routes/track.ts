@@ -33,10 +33,10 @@ const trackEventSchema = z.union([
 type AuthResult =
 	| { success: true; ownerId: string; websiteId?: string }
 	| {
-		success: false;
-		error: { status: string; message: string };
-		status: number;
-	};
+			success: false;
+			error: { status: string; message: string };
+			status: number;
+	  };
 
 function json(data: unknown, status: number): Response {
 	return new Response(JSON.stringify(data), {

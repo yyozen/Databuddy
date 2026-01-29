@@ -20,7 +20,9 @@ interface PaddleTransaction {
 	billed_at: string | null;
 }
 
-function extractAnalyticsMetadata(data: Record<string, string> | undefined): Record<string, string> {
+function extractAnalyticsMetadata(
+	data: Record<string, string> | undefined
+): Record<string, string> {
 	if (!data) {
 		return {};
 	}
@@ -178,7 +180,10 @@ export const paddleWebhook = new Elysia().post(
 			result.paddleWebhookSecret
 		);
 		if (!valid) {
-			logger.warn({ hash: params.hash }, "Paddle signature verification failed");
+			logger.warn(
+				{ hash: params.hash },
+				"Paddle signature verification failed"
+			);
 			set.status = 401;
 			return { error: "Invalid webhook signature" };
 		}

@@ -317,14 +317,13 @@ export default function PunchCardHeatmap({ data }: Props) {
 										{/* Hour cells */}
 										<div className="grid grid-cols-24 gap-1">
 											{dayData.map((cell) => (
+												// biome-ignore lint/a11y/noNoninteractiveElementInteractions: oui
 												<div
 													className={`aspect-square rounded-sm ${getIntensityColor(cell.intensity)} transition-all hover:scale-105`}
 													key={`${cell.day}-${cell.hour}`}
 													onMouseEnter={(e) => handleMouseEnter(cell, e)}
 													onMouseLeave={handleMouseLeave}
 													onMouseMove={handleMouseMove}
-													role="button"
-													tabIndex={0}
 												/>
 											))}
 										</div>
@@ -451,8 +450,6 @@ export default function PunchCardHeatmap({ data }: Props) {
 														);
 													}
 												}}
-												role="button"
-												tabIndex={0}
 											/>
 										))}
 									</div>

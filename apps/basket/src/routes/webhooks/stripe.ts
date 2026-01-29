@@ -89,10 +89,7 @@ function verifyStripeSignature(
 
 	const signatureMatch = signatures.some((sig) => {
 		try {
-			return timingSafeEqual(
-				Buffer.from(expectedSignature),
-				Buffer.from(sig)
-			);
+			return timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(sig));
 		} catch {
 			return false;
 		}
@@ -246,7 +243,10 @@ async function handleFailedPayment(
 		format: "JSONEachRow",
 	});
 
-	logger.info({ status, amount, currency, customerId }, `Revenue: payment ${status}`);
+	logger.info(
+		{ status, amount, currency, customerId },
+		`Revenue: payment ${status}`
+	);
 }
 
 async function handleRefund(
@@ -320,7 +320,10 @@ export const stripeWebhook = new Elysia().post(
 		);
 
 		if (!verification.valid) {
-			logger.warn({ error: verification.error }, "Stripe signature verification failed");
+			logger.warn(
+				{ error: verification.error },
+				"Stripe signature verification failed"
+			);
 			set.status = 401;
 			return { error: "Invalid webhook signature" };
 		}

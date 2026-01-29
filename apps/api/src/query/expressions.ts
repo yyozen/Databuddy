@@ -635,26 +635,26 @@ export function buildWith(ctes: Array<{ name: string; sql: string }>): string {
 type FieldDefinitionType =
 	| { type: "column"; source: string; alias?: string }
 	| {
-			type: "aggregate";
-			fn: AggregateFn;
-			source?: string;
-			condition?: string;
-			alias: string;
-	  }
+		type: "aggregate";
+		fn: AggregateFn;
+		source?: string;
+		condition?: string;
+		alias: string;
+	}
 	| { type: "expression"; expression: string | SqlExpression; alias: string }
 	| {
-			type: "window";
-			fn: AggregateFn;
-			source?: string;
-			over: { partitionBy?: string[]; orderBy?: string };
-			alias: string;
-	  }
+		type: "window";
+		fn: AggregateFn;
+		source?: string;
+		over: { partitionBy?: string[]; orderBy?: string };
+		alias: string;
+	}
 	| {
-			type: "computed";
-			metric: "bounceRate" | "percentageOfTotal" | "pagesPerSession";
-			inputs: string[];
-			alias: string;
-	  };
+		type: "computed";
+		metric: "bounceRate" | "percentageOfTotal" | "pagesPerSession";
+		inputs: string[];
+		alias: string;
+	};
 
 interface AliasedExpressionType {
 	expression: SqlExpression;

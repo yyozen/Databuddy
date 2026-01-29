@@ -16,7 +16,11 @@ import {
 } from "./llm-types";
 
 // Helper components
-function createMetricDisplay(value: number, label: string, format = formatNumber) {
+function createMetricDisplay(
+	value: number,
+	label: string,
+	format = formatNumber
+) {
 	return (
 		<div>
 			<div className="font-medium text-foreground">{format(value)}</div>
@@ -63,7 +67,8 @@ function createToolColumns(
 			id: "calls",
 			accessorKey: "calls",
 			header: "Calls",
-			cell: ({ getValue }) => createMetricDisplay(getValue() as number, "total"),
+			cell: ({ getValue }) =>
+				createMetricDisplay(getValue() as number, "total"),
 		},
 		{
 			id: "percentage",
@@ -120,8 +125,7 @@ function createModelColumns(
 			id: "total_tokens",
 			accessorKey: "total_tokens",
 			header: "Tokens",
-			cell: ({ getValue }) =>
-				createMetricDisplay(getValue() as number, "used"),
+			cell: ({ getValue }) => createMetricDisplay(getValue() as number, "used"),
 		},
 		{
 			id: "avg_duration_ms",

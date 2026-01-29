@@ -131,7 +131,7 @@ export const flagScheduleSchema = z
 					message: "Date time is required for enable/disable schedule types",
 				});
 			}
-			const scheduledDate = new Date(data.scheduledAt!);
+			const scheduledDate = new Date(data.scheduledAt ?? "");
 			if (Number.isNaN(scheduledDate.getTime())) {
 				ctx.addIssue({
 					code: "custom",
@@ -140,7 +140,7 @@ export const flagScheduleSchema = z
 				});
 			}
 
-			if (Date.now() > new Date(data.scheduledAt!).getTime()) {
+			if (Date.now() > new Date(data.scheduledAt ?? "").getTime()) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["scheduledAt"],
@@ -183,7 +183,7 @@ export const flagScheduleSchema = z
 					});
 				}
 
-				if (Date.now() > new Date(step.scheduledAt!).getTime()) {
+				if (Date.now() > new Date(step.scheduledAt ?? "").getTime()) {
 					ctx.addIssue({
 						code: "custom",
 						path: ["rolloutSteps"],

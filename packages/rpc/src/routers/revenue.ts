@@ -52,13 +52,13 @@ export const revenueRouter = {
 			const config = await context.db.query.revenueConfig.findFirst({
 				where: input.websiteId
 					? and(
-						eq(revenueConfig.ownerId, ownerId),
-						eq(revenueConfig.websiteId, input.websiteId)
-					)
+							eq(revenueConfig.ownerId, ownerId),
+							eq(revenueConfig.websiteId, input.websiteId)
+						)
 					: and(
-						eq(revenueConfig.ownerId, ownerId),
-						isNull(revenueConfig.websiteId)
-					),
+							eq(revenueConfig.ownerId, ownerId),
+							isNull(revenueConfig.websiteId)
+						),
 			});
 
 			if (!config) {
@@ -96,13 +96,13 @@ export const revenueRouter = {
 			const existing = await context.db.query.revenueConfig.findFirst({
 				where: input.websiteId
 					? and(
-						eq(revenueConfig.ownerId, ownerId),
-						eq(revenueConfig.websiteId, input.websiteId)
-					)
+							eq(revenueConfig.ownerId, ownerId),
+							eq(revenueConfig.websiteId, input.websiteId)
+						)
 					: and(
-						eq(revenueConfig.ownerId, ownerId),
-						isNull(revenueConfig.websiteId)
-					),
+							eq(revenueConfig.ownerId, ownerId),
+							isNull(revenueConfig.websiteId)
+						),
 			});
 
 			if (existing) {
@@ -164,13 +164,13 @@ export const revenueRouter = {
 			const existing = await context.db.query.revenueConfig.findFirst({
 				where: input.websiteId
 					? and(
-						eq(revenueConfig.ownerId, ownerId),
-						eq(revenueConfig.websiteId, input.websiteId)
-					)
+							eq(revenueConfig.ownerId, ownerId),
+							eq(revenueConfig.websiteId, input.websiteId)
+						)
 					: and(
-						eq(revenueConfig.ownerId, ownerId),
-						isNull(revenueConfig.websiteId)
-					),
+							eq(revenueConfig.ownerId, ownerId),
+							isNull(revenueConfig.websiteId)
+						),
 			});
 
 			if (!existing) {
@@ -199,13 +199,13 @@ export const revenueRouter = {
 			const existing = await context.db.query.revenueConfig.findFirst({
 				where: input.websiteId
 					? and(
-						eq(revenueConfig.ownerId, ownerId),
-						eq(revenueConfig.websiteId, input.websiteId)
-					)
+							eq(revenueConfig.ownerId, ownerId),
+							eq(revenueConfig.websiteId, input.websiteId)
+						)
 					: and(
-						eq(revenueConfig.ownerId, ownerId),
-						isNull(revenueConfig.websiteId)
-					),
+							eq(revenueConfig.ownerId, ownerId),
+							isNull(revenueConfig.websiteId)
+						),
 			});
 
 			if (!existing) {
