@@ -66,13 +66,16 @@ describe("hashIp", () => {
 	});
 
 	describe("privacy properties", () => {
-		test("should not expose original IP in hash", () => {
+		test("should produce a proper SHA256 hash that obscures the original IP", () => {
 			const ip = "192.168.1.1";
 			const hash = hashIp(ip);
 
-			// Hash should not contain the IP
-			expect(hash).not.toContain("192");
-			expect(hash).not.toContain("168");
+			// Hash should be a valid SHA256 hex string
+			expect(hash).toMatch(/^[a-f0-9]{64}$/);
+			// Hash should not be the IP itself
+			expect(hash).not.toBe(ip);
+			// Hash should not be a simple encoding of the IP
+			expect(hash).not.toBe(ip.replace(/\./g, ""));
 		});
 
 		test("hash should not be reversible to IP", () => {
