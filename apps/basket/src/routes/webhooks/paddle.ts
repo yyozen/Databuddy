@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { clickHouse, db, eq, revenueConfig } from "@databuddy/db";
 import { logger } from "@databuddy/shared/logger";
 import { Elysia } from "elysia";
@@ -95,7 +96,12 @@ async function verifySignature(
 			.map((b) => b.toString(16).padStart(2, "0"))
 			.join("");
 
-		return signature === expected;
+		const sigBuffer = Buffer.from(signature, "utf8");
+		const expectedBuffer = Buffer.from(expected, "utf8");
+		return (
+			sigBuffer.length === expectedBuffer.length &&
+			timingSafeEqual(sigBuffer, expectedBuffer)
+		);
 	} catch {
 		return false;
 	}

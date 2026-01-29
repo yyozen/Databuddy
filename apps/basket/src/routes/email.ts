@@ -95,7 +95,6 @@ const app = new Elysia()
 					JSON.stringify({
 						status: "error",
 						message: "Invalid email event schema",
-						errors: parseResult.error.issues,
 					}),
 					{
 						status: 400,
@@ -173,7 +172,6 @@ const app = new Elysia()
 					JSON.stringify({
 						status: "error",
 						message: "Invalid batch email event schema",
-						errors: parseResult.error.issues,
 					}),
 					{
 						status: 400,

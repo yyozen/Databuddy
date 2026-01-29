@@ -178,7 +178,6 @@ const app = new Elysia().post("/llm", async (context) => {
 				JSON.stringify({
 					status: "error",
 					message: "Invalid request body",
-					issues: parseResult.error.issues,
 				}),
 				{
 					status: 400,
