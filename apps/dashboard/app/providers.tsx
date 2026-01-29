@@ -10,7 +10,6 @@ import {
 	QueryClientProvider,
 	useQuery,
 } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "next-themes";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { toast } from "sonner";
@@ -113,9 +112,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 						</OrganizationsProvider>
 					</FlagsProviderWrapper>
 				</TooltipProvider>
-				{process.env.NODE_ENV === "development" && (
-					<ReactQueryDevtools initialIsOpen={false} />
-				)}
 			</QueryClientProvider>
 		</ThemeProvider>
 	);

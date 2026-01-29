@@ -2,20 +2,23 @@
 
 import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ArrowClockwise";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr/ArrowSquareOut";
+import { ArrowsCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ArrowsCounterClockwise";
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
-import { ChartLineUpIcon } from "@phosphor-icons/react/dist/ssr/ChartLineUp";
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
 import { CheckCircleIcon } from "@phosphor-icons/react/dist/ssr/CheckCircle";
 import { ClipboardIcon } from "@phosphor-icons/react/dist/ssr/Clipboard";
+import { CreditCardIcon } from "@phosphor-icons/react/dist/ssr/CreditCard";
 import { CurrencyDollarIcon } from "@phosphor-icons/react/dist/ssr/CurrencyDollar";
 import { EyeIcon } from "@phosphor-icons/react/dist/ssr/Eye";
 import { EyeSlashIcon } from "@phosphor-icons/react/dist/ssr/EyeSlash";
 import { GearIcon } from "@phosphor-icons/react/dist/ssr/Gear";
 import { LinkIcon } from "@phosphor-icons/react/dist/ssr/Link";
+import { ReceiptIcon } from "@phosphor-icons/react/dist/ssr/Receipt";
 import { SpinnerIcon } from "@phosphor-icons/react/dist/ssr/Spinner";
 import { StripeLogoIcon } from "@phosphor-icons/react/dist/ssr/StripeLogo";
 import { TrendUpIcon } from "@phosphor-icons/react/dist/ssr/TrendUp";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import { useAtom } from "jotai";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
@@ -54,12 +57,14 @@ interface RevenueOverview {
 	subscription_count: number;
 	sale_revenue: number;
 	sale_count: number;
+	unique_customers: number;
 }
 
 interface RevenueTimeSeries {
 	date: string;
 	revenue: number;
 	transactions: number;
+	customers: number;
 }
 
 const BASKET_URL =
@@ -86,6 +91,37 @@ function formatCurrency(amount: number, currency = "USD"): string {
 		minimumFractionDigits: 0,
 		maximumFractionDigits: 0,
 	}).format(amount);
+}
+
+function padTimeSeriesData<T extends { date: string }>(
+	data: T[],
+	startDate: string,
+	endDate: string,
+	defaultValues: Omit<T, "date">
+): T[] {
+	if (data.length === 0) {
+		return [];
+	}
+
+	const dataMap = new Map(data.map((d) => [d.date, d]));
+	const result: T[] = [];
+	let current = dayjs(startDate);
+	const end = dayjs(endDate);
+
+	while (current.isBefore(end) || current.isSame(end, "day")) {
+		const dateStr = current.format("YYYY-MM-DD");
+		const existing = dataMap.get(dateStr);
+
+		if (existing) {
+			result.push(existing);
+		} else {
+			result.push({ date: dateStr, ...defaultValues } as T);
+		}
+
+		current = current.add(1, "day");
+	}
+
+	return result;
 }
 
 type ExpandedSection = "webhooks" | "stripe" | "paddle" | null;
@@ -621,15 +657,22 @@ export function RevenueContent({ websiteId }: RevenueContentProps) {
 	const hasData = overview && overview.total_transactions > 0;
 	const isConfigured = config?.stripeConfigured || config?.paddleConfigured;
 
+	const paddedTimeSeriesData = useMemo(() => {
+		return padTimeSeriesData(
+			timeSeriesData,
+			dateRange.start_date,
+			dateRange.end_date,
+			{ revenue: 0, transactions: 0, customers: 0 }
+		);
+	}, [timeSeriesData, dateRange.start_date, dateRange.end_date]);
+
 	const chartData = useMemo(() => {
-		if (timeSeriesData.length === 0) {
-			return [];
-		}
-		return timeSeriesData.map((row) => ({
+		return paddedTimeSeriesData.map((row) => ({
 			date: row.date,
 			Revenue: row.revenue,
+			Transactions: row.transactions,
 		}));
-	}, [timeSeriesData]);
+	}, [paddedTimeSeriesData]);
 
 	const chartMetrics = useMemo(
 		() => [
@@ -646,6 +689,11 @@ export function RevenueContent({ websiteId }: RevenueContentProps) {
 	const netRevenue = overview
 		? overview.total_revenue + overview.refund_amount
 		: 0;
+
+	const avgTransaction =
+		overview && overview.total_transactions > 0
+			? overview.total_revenue / overview.total_transactions
+			: 0;
 
 	const getSubtitle = () => {
 		if (isConfigured) {
@@ -680,87 +728,49 @@ export function RevenueContent({ websiteId }: RevenueContentProps) {
 			/>
 
 			{isLoading || hasData ? (
-				<div className="space-y-4 p-4">
-					<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+				<div className="space-y-3 p-4">
+					<SimpleMetricsChart
+						data={chartData}
+						description={`${overview?.total_transactions ?? 0} transactions · ${formatCurrency(avgTransaction)} avg`}
+						height={240}
+						isLoading={isLoading}
+						metrics={chartMetrics}
+						title={formatCurrency(netRevenue)}
+					/>
+
+					<div className="grid grid-cols-2 gap-3 md:grid-cols-4">
 						<StatCard
-							chartData={chartData.map((d) => ({
-								date: d.date,
-								value: d.Revenue,
-							}))}
-							chartType="area"
-							formatChartValue={formatCurrency}
-							icon={CurrencyDollarIcon}
-							id="net-revenue"
+							icon={ReceiptIcon}
+							id="transactions"
 							isLoading={isLoading}
-							showChart
-							title="Net Revenue"
-							value={formatCurrency(netRevenue)}
+							title="Transactions"
+							value={overview?.total_transactions ?? 0}
 						/>
 						<StatCard
-							icon={TrendUpIcon}
-							id="gross-revenue"
+							icon={CreditCardIcon}
+							id="avg-transaction"
 							isLoading={isLoading}
-							title="Gross Revenue"
-							value={formatCurrency(overview?.total_revenue ?? 0)}
+							title="Avg Transaction"
+							value={formatCurrency(avgTransaction)}
 						/>
 						<StatCard
-							description={`${overview?.subscription_count ?? 0} active`}
-							icon={ChartLineUpIcon}
-							id="subscriptions"
-							isLoading={isLoading}
-							title="Subscriptions"
-							value={formatCurrency(overview?.subscription_revenue ?? 0)}
-						/>
-						<StatCard
-							description={`${overview?.refund_count ?? 0} refunds`}
-							icon={TrendUpIcon}
+							description={
+								overview?.refund_count
+									? `${overview.refund_count} refunds`
+									: undefined
+							}
+							icon={ArrowsCounterClockwiseIcon}
 							id="refunds"
-							invertTrend
 							isLoading={isLoading}
 							title="Refunds"
 							value={formatCurrency(Math.abs(overview?.refund_amount ?? 0))}
 						/>
-					</div>
-
-					{chartData.length > 0 && (
-						<SimpleMetricsChart
-							data={chartData}
-							description="Revenue over time"
-							height={300}
-							isLoading={isLoading}
-							metrics={chartMetrics}
-							title="Revenue Trend"
-						/>
-					)}
-
-					<div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-						<StatCard
-							icon={ChartLineUpIcon}
-							id="total-transactions"
-							isLoading={isLoading}
-							title="Total Transactions"
-							value={overview?.total_transactions ?? 0}
-						/>
-						<StatCard
-							description={`${overview?.sale_count ?? 0} sales`}
-							icon={CurrencyDollarIcon}
-							id="one-time-sales"
-							isLoading={isLoading}
-							title="One-time Sales"
-							value={formatCurrency(overview?.sale_revenue ?? 0)}
-						/>
 						<StatCard
 							icon={TrendUpIcon}
-							id="avg-transaction"
+							id="unique-customers"
 							isLoading={isLoading}
-							title="Avg Transaction"
-							value={
-								overview && overview.total_transactions > 0
-									? formatCurrency(
-											overview.total_revenue / overview.total_transactions
-										)
-									: "$0"
-							}
+							title="Customers"
+							value={overview?.unique_customers ?? 0}
 						/>
 					</div>
 				</div>
