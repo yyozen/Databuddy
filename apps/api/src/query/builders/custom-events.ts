@@ -1,10 +1,13 @@
 import { Analytics } from "../../types/tables";
 import type { Filter, SimpleQueryConfig, TimeUnit } from "../types";
 
+const PROJECT_WHERE_CLAUSE =
+	"(owner_id = {projectId:String} OR website_id = {projectId:String})";
+
 export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 	custom_events: {
 		customSql: (
-			websiteId: string,
+			projectId: string,
 			startDate: string,
 			endDate: string,
 			_filters?: Filter[],
@@ -33,7 +36,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 						ROUND((COUNT(DISTINCT anonymous_id) / SUM(COUNT(DISTINCT anonymous_id)) OVER()) * 100, 2) as percentage
 					FROM ${Analytics.custom_events}
 					WHERE 
-						website_id = {websiteId:String}
+						${PROJECT_WHERE_CLAUSE}
 						AND timestamp >= toDateTime({startDate:String})
 						AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 						AND event_name != ''
@@ -43,7 +46,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 					LIMIT {limit:UInt32}
 				`,
 				params: {
-					websiteId,
+					projectId,
 					startDate,
 					endDate,
 					limit,
@@ -64,7 +67,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 	},
 	custom_event_properties: {
 		customSql: (
-			websiteId: string,
+			projectId: string,
 			startDate: string,
 			endDate: string,
 			_filters?: Filter[],
@@ -89,7 +92,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 						COUNT(*) as count
 					FROM ${Analytics.custom_events}
 					WHERE 
-						website_id = {websiteId:String}
+						${PROJECT_WHERE_CLAUSE}
 						AND timestamp >= toDateTime({startDate:String})
 						AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 						AND event_name != ''
@@ -101,7 +104,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 					LIMIT {limit:UInt32}
 				`,
 				params: {
-					websiteId,
+					projectId,
 					startDate,
 					endDate,
 					limit,
@@ -123,7 +126,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 
 	custom_events_by_path: {
 		customSql: (
-			websiteId: string,
+			projectId: string,
 			startDate: string,
 			endDate: string,
 			_filters?: Filter[],
@@ -148,7 +151,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 						COUNT(DISTINCT anonymous_id) as unique_users
 					FROM ${Analytics.custom_events}
 					WHERE 
-						website_id = {websiteId:String}
+						${PROJECT_WHERE_CLAUSE}
 						AND timestamp >= toDateTime({startDate:String})
 						AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 						AND event_name != ''
@@ -159,7 +162,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 					LIMIT {limit:UInt32}
 				`,
 				params: {
-					websiteId,
+					projectId,
 					startDate,
 					endDate,
 					limit,
@@ -174,7 +177,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 
 	custom_events_trends: {
 		customSql: (
-			websiteId: string,
+			projectId: string,
 			startDate: string,
 			endDate: string,
 			_filters?: Filter[],
@@ -201,7 +204,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 						COUNT(DISTINCT path) as unique_pages
 					FROM ${Analytics.custom_events}
 					WHERE 
-						website_id = {websiteId:String}
+						${PROJECT_WHERE_CLAUSE}
 						AND timestamp >= toDateTime({startDate:String})
 						AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 						AND event_name != ''
@@ -211,7 +214,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 					LIMIT {limit:UInt32}
 				`,
 				params: {
-					websiteId,
+					projectId,
 					startDate,
 					endDate,
 					limit,
@@ -225,7 +228,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 
 	custom_events_summary: {
 		customSql: (
-			websiteId: string,
+			projectId: string,
 			startDate: string,
 			endDate: string,
 			_filters?: Filter[],
@@ -250,14 +253,14 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 						COUNT(DISTINCT path) as unique_pages
 					FROM ${Analytics.custom_events}
 					WHERE 
-						website_id = {websiteId:String}
+						${PROJECT_WHERE_CLAUSE}
 						AND timestamp >= toDateTime({startDate:String})
 						AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 						AND event_name != ''
 						${combinedWhereClause}
 				`,
 				params: {
-					websiteId,
+					projectId,
 					startDate,
 					endDate,
 					...filterParams,
@@ -270,7 +273,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 
 	custom_events_property_cardinality: {
 		customSql: (
-			websiteId: string,
+			projectId: string,
 			startDate: string,
 			endDate: string,
 			_filters?: Filter[],
@@ -294,7 +297,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 							arrayJoin(JSONExtractKeys(properties)) as property_key
 						FROM ${Analytics.custom_events}
 						WHERE 
-							website_id = {websiteId:String}
+							${PROJECT_WHERE_CLAUSE}
 							AND timestamp >= toDateTime({startDate:String})
 							AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 							AND event_name != ''
@@ -310,7 +313,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 					FROM ${Analytics.custom_events} ce
 					INNER JOIN property_keys pk ON ce.event_name = pk.event_name
 					WHERE 
-						ce.website_id = {websiteId:String}
+						${PROJECT_WHERE_CLAUSE}
 						AND ce.timestamp >= toDateTime({startDate:String})
 						AND ce.timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 						AND ce.event_name != ''
@@ -322,7 +325,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 					LIMIT {limit:UInt32}
 				`,
 				params: {
-					websiteId,
+					projectId,
 					startDate,
 					endDate,
 					limit,
@@ -336,7 +339,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 
 	custom_events_recent: {
 		customSql: (
-			websiteId: string,
+			projectId: string,
 			startDate: string,
 			endDate: string,
 			_filters?: Filter[],
@@ -366,7 +369,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 						timestamp
 					FROM ${Analytics.custom_events}
 					WHERE 
-						website_id = {websiteId:String}
+						${PROJECT_WHERE_CLAUSE}
 						AND timestamp >= toDateTime({startDate:String})
 						AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 						AND event_name != ''
@@ -376,7 +379,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 					OFFSET {offset:UInt32}
 				`,
 				params: {
-					websiteId,
+					projectId,
 					startDate,
 					endDate,
 					limit,
@@ -403,7 +406,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 	 */
 	custom_events_property_classification: {
 		customSql: (
-			websiteId: string,
+			projectId: string,
 			startDate: string,
 			endDate: string,
 			_filters?: Filter[],
@@ -429,7 +432,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 							trim(BOTH '"' FROM JSONExtractRaw(properties, arrayJoin(JSONExtractKeys(properties)))) as clean_value
 						FROM ${Analytics.custom_events}
 						WHERE 
-							website_id = {websiteId:String}
+							${PROJECT_WHERE_CLAUSE}
 							AND timestamp >= toDateTime({startDate:String})
 							AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 							AND event_name != ''
@@ -523,7 +526,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 					LIMIT {limit:UInt32}
 				`,
 				params: {
-					websiteId,
+					projectId,
 					startDate,
 					endDate,
 					limit,
@@ -541,7 +544,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 	 */
 	custom_events_property_top_values: {
 		customSql: (
-			websiteId: string,
+			projectId: string,
 			startDate: string,
 			endDate: string,
 			_filters?: Filter[],
@@ -567,7 +570,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 							COUNT(*) as count
 						FROM ${Analytics.custom_events}
 						WHERE 
-							website_id = {websiteId:String}
+							${PROJECT_WHERE_CLAUSE}
 							AND timestamp >= toDateTime({startDate:String})
 							AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 							AND event_name != ''
@@ -609,7 +612,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 					ORDER BY event_name, property_key, rank
 				`,
 				params: {
-					websiteId,
+					projectId,
 					startDate,
 					endDate,
 					limit,
@@ -627,7 +630,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 	 */
 	custom_events_property_distribution: {
 		customSql: (
-			websiteId: string,
+			projectId: string,
 			startDate: string,
 			endDate: string,
 			_filters?: Filter[],
@@ -652,7 +655,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 							trim(BOTH '"' FROM JSONExtractRaw(properties, arrayJoin(JSONExtractKeys(properties)))) as property_value
 						FROM ${Analytics.custom_events}
 						WHERE 
-							website_id = {websiteId:String}
+							${PROJECT_WHERE_CLAUSE}
 							AND timestamp >= toDateTime({startDate:String})
 							AND timestamp <= toDateTime(concat({endDate:String}, ' 23:59:59'))
 							AND event_name != ''
@@ -693,7 +696,7 @@ export const CustomEventsBuilders: Record<string, SimpleQueryConfig> = {
 					LIMIT {limit:UInt32}
 				`,
 				params: {
-					websiteId,
+					projectId,
 					startDate,
 					endDate,
 					limit,

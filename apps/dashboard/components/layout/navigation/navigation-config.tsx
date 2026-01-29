@@ -142,6 +142,9 @@ export const createWebsitesNavigation = (
 		createNavItem("Links", LinkIcon, "/links", {
 			highlight: true,
 		}),
+		createNavItem("Custom Events", LightningIcon, "/events", {
+			highlight: true,
+		}),
 		createNavItem("LLM Analytics", RobotIcon, "/llm", {
 			highlight: true,
 			flag: "llm",
