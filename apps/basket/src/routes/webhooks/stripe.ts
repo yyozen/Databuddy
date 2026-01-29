@@ -20,6 +20,7 @@ interface WebhookPaymentIntent {
 	created: number;
 	description?: string | null;
 	invoice?: string | { id: string } | null;
+	customer?: string | { id: string } | null;
 	metadata?: Record<string, string>;
 }
 
@@ -27,6 +28,7 @@ interface WebhookCharge {
 	id: string;
 	amount_refunded: number;
 	currency: string;
+	customer?: string | { id: string } | null;
 	metadata?: Record<string, string>;
 	refunds?: {
 		data: Array<{
@@ -127,6 +129,15 @@ function extractAnalyticsMetadata(
 	};
 }
 
+function extractCustomerId(
+	customer: string | { id: string } | null | undefined
+): string | undefined {
+	if (!customer) {
+		return undefined;
+	}
+	return typeof customer === "string" ? customer : customer.id;
+}
+
 function formatDate(date: Date): string {
 	return date.toISOString().replace("T", " ").replace(DATE_REGEX, "");
 }
@@ -163,6 +174,7 @@ async function handlePaymentIntent(
 	config: WebhookConfig
 ): Promise<void> {
 	const metadata = extractAnalyticsMetadata(pi.metadata);
+	const customerId = extractCustomerId(pi.customer);
 
 	const type: "sale" | "subscription" = pi.invoice ? "subscription" : "sale";
 
@@ -185,6 +197,7 @@ async function handlePaymentIntent(
 				currency,
 				anonymous_id: metadata.anonymous_id || undefined,
 				session_id: metadata.session_id || undefined,
+				customer_id: customerId,
 				product_name: pi.description || undefined,
 				metadata: JSON.stringify(metadata),
 				created: formatDate(new Date(pi.created * 1000)),
@@ -194,7 +207,7 @@ async function handlePaymentIntent(
 		format: "JSONEachRow",
 	});
 
-	logger.info({ type, amount, currency }, "Revenue: payment");
+	logger.info({ type, amount, currency, customerId }, "Revenue: payment");
 }
 
 async function handleFailedPayment(
@@ -203,6 +216,7 @@ async function handleFailedPayment(
 	status: "failed" | "canceled"
 ): Promise<void> {
 	const metadata = extractAnalyticsMetadata(pi.metadata);
+	const customerId = extractCustomerId(pi.customer);
 	const amount = (pi.amount_received ?? pi.amount) / 100;
 	const currency = pi.currency.toUpperCase();
 
@@ -222,6 +236,7 @@ async function handleFailedPayment(
 				currency,
 				anonymous_id: metadata.anonymous_id || undefined,
 				session_id: metadata.session_id || undefined,
+				customer_id: customerId,
 				product_name: pi.description || undefined,
 				metadata: JSON.stringify(metadata),
 				created: formatDate(new Date(pi.created * 1000)),
@@ -231,7 +246,7 @@ async function handleFailedPayment(
 		format: "JSONEachRow",
 	});
 
-	logger.info({ status, amount, currency }, `Revenue: payment ${status}`);
+	logger.info({ status, amount, currency, customerId }, `Revenue: payment ${status}`);
 }
 
 async function handleRefund(
@@ -239,6 +254,7 @@ async function handleRefund(
 	config: WebhookConfig
 ): Promise<void> {
 	const metadata = extractAnalyticsMetadata(charge.metadata);
+	const customerId = extractCustomerId(charge.customer);
 	const currency = charge.currency.toUpperCase();
 	const refunds = charge.refunds?.data || [];
 
@@ -261,6 +277,7 @@ async function handleRefund(
 					currency,
 					anonymous_id: metadata.anonymous_id || undefined,
 					session_id: metadata.session_id || undefined,
+					customer_id: customerId,
 					product_name: "Refund",
 					metadata: JSON.stringify(metadata),
 					created: formatDate(new Date(refund.created * 1000)),
@@ -270,7 +287,7 @@ async function handleRefund(
 			format: "JSONEachRow",
 		});
 
-		logger.info({ amount, currency }, "Revenue: refund");
+		logger.info({ amount, currency, customerId }, "Revenue: refund");
 	}
 }
 

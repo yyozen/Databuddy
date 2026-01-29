@@ -813,6 +813,7 @@ export interface RevenueTransaction {
 	currency: string;
 	anonymous_id?: string;
 	session_id?: string;
+	customer_id?: string;
 	product_id?: string;
 	product_name?: string;
 	metadata: string | Record<string, unknown>;
