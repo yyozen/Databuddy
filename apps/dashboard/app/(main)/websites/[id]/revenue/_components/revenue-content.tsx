@@ -11,6 +11,7 @@ import { CurrencyDollarIcon } from "@phosphor-icons/react/dist/ssr/CurrencyDolla
 import { EyeIcon } from "@phosphor-icons/react/dist/ssr/Eye";
 import { EyeSlashIcon } from "@phosphor-icons/react/dist/ssr/EyeSlash";
 import { GearIcon } from "@phosphor-icons/react/dist/ssr/Gear";
+import { LinkIcon } from "@phosphor-icons/react/dist/ssr/Link";
 import { SpinnerIcon } from "@phosphor-icons/react/dist/ssr/Spinner";
 import { StripeLogoIcon } from "@phosphor-icons/react/dist/ssr/StripeLogo";
 import { TrendUpIcon } from "@phosphor-icons/react/dist/ssr/TrendUp";
@@ -87,71 +88,48 @@ function formatCurrency(amount: number, currency = "USD"): string {
 	}).format(amount);
 }
 
-function ProviderCard({
-	name,
+type ExpandedSection = "webhooks" | "stripe" | "paddle" | null;
+
+function CollapsibleSection({
 	icon: Icon,
-	configured,
-	webhookUrl,
-	secretValue,
-	secretPlaceholder,
-	onSecretChange,
-	dashboardUrl,
-	events,
-	onCreateWebhook,
-	isCreatingWebhook,
+	title,
+	badge,
+	isExpanded,
+	onToggleAction,
+	children,
 }: {
-	name: string;
-	icon: React.ComponentType<{ className?: string; weight?: "duotone" }>;
-	configured: boolean;
-	webhookUrl: string | null;
-	secretValue: string;
-	secretPlaceholder: string;
-	onSecretChange: (value: string) => void;
-	dashboardUrl: string;
-	events: { required: string[]; optional: string[] };
-	onCreateWebhook: () => void;
-	isCreatingWebhook: boolean;
+	icon: React.ComponentType<{ size?: number; weight?: "duotone" }>;
+	title: string;
+	badge?: React.ReactNode;
+	isExpanded: boolean;
+	onToggleAction: () => void;
+	children: React.ReactNode;
 }) {
-	const [expanded, setExpanded] = useState(!configured);
-	const [copied, setCopied] = useState(false);
-	const [showSecret, setShowSecret] = useState(false);
-
-	const handleCopy = () => {
-		if (webhookUrl) {
-			navigator.clipboard.writeText(webhookUrl);
-			setCopied(true);
-			toast.success("Webhook URL copied");
-			setTimeout(() => setCopied(false), 2000);
-		}
-	};
-
-	const hasWebhookUrl = Boolean(webhookUrl);
-
 	return (
-		<div className="overflow-hidden rounded border">
-			<button
-				className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-accent/50"
-				onClick={() => setExpanded(!expanded)}
-				type="button"
-			>
-				<div className="flex items-center gap-2.5">
-					<Icon className="size-5 text-muted-foreground" weight="duotone" />
-					<span className="font-medium text-sm">{name}</span>
-					{configured && (
-						<CheckCircleIcon className="size-4 text-success" weight="duotone" />
-					)}
-				</div>
-				<CaretDownIcon
-					className={cn(
-						"size-4 text-muted-foreground transition-transform duration-200",
-						expanded && "rotate-180"
-					)}
-					weight="fill"
-				/>
-			</button>
+		<div className="space-y-2">
+			<div className="-mx-3">
+				<button
+					className="group flex w-full cursor-pointer items-center justify-between rounded px-3 py-3 text-left transition-colors hover:bg-accent/50"
+					onClick={onToggleAction}
+					type="button"
+				>
+					<div className="flex items-center gap-2.5">
+						<Icon size={16} weight="duotone" />
+						<span className="font-medium text-sm">{title}</span>
+						{badge}
+					</div>
+					<CaretDownIcon
+						className={cn(
+							"size-4 text-muted-foreground transition-transform duration-200",
+							isExpanded && "rotate-180"
+						)}
+						weight="fill"
+					/>
+				</button>
+			</div>
 
 			<AnimatePresence initial={false}>
-				{expanded && (
+				{isExpanded && (
 					<motion.div
 						animate={{ height: "auto", opacity: 1 }}
 						className="overflow-hidden"
@@ -159,130 +137,7 @@ function ProviderCard({
 						initial={{ height: 0, opacity: 0 }}
 						transition={{ duration: 0.2, ease: "easeInOut" }}
 					>
-						<div className="space-y-4 border-t px-4 pt-3 pb-4">
-							{/* Step 1: Webhook URL */}
-							<div className="space-y-1.5">
-								<div className="flex items-center justify-between">
-									<p className="font-medium text-foreground text-xs">
-										1. Webhook URL
-									</p>
-									{hasWebhookUrl && (
-										<a
-											className="flex items-center gap-1 text-muted-foreground text-xs transition-colors hover:text-foreground"
-											href={dashboardUrl}
-											rel="noopener noreferrer"
-											target="_blank"
-										>
-											Open dashboard
-											<ArrowSquareOutIcon className="size-3" />
-										</a>
-									)}
-								</div>
-								{hasWebhookUrl ? (
-									<div className="flex items-center gap-2">
-										<code className="flex-1 truncate rounded bg-secondary px-2.5 py-2 font-mono text-xs">
-											{webhookUrl}
-										</code>
-										<Button onClick={handleCopy} size="sm" variant="ghost">
-											{copied ? (
-												<CheckIcon className="size-4 text-success" />
-											) : (
-												<ClipboardIcon className="size-4" weight="duotone" />
-											)}
-										</Button>
-									</div>
-								) : (
-									<Button
-										className="w-full"
-										disabled={isCreatingWebhook}
-										onClick={onCreateWebhook}
-										size="sm"
-										variant="secondary"
-									>
-										{isCreatingWebhook ? (
-											<SpinnerIcon className="mr-2 size-4 animate-spin" />
-										) : null}
-										Generate Webhook URL
-									</Button>
-								)}
-							</div>
-
-							{/* Step 2: Signing secret */}
-							<div className="space-y-1.5">
-								<p
-									className={cn(
-										"font-medium text-xs",
-										hasWebhookUrl ? "text-foreground" : "text-muted-foreground"
-									)}
-								>
-									2. Signing secret
-								</p>
-								<div className="flex items-center gap-2">
-									<Input
-										className="flex-1 font-mono text-xs"
-										disabled={!hasWebhookUrl}
-										onChange={(e) => onSecretChange(e.target.value)}
-										placeholder={
-											hasWebhookUrl
-												? configured
-													? "••••••••"
-													: secretPlaceholder
-												: "Generate webhook URL first"
-										}
-										type={showSecret ? "text" : "password"}
-										value={secretValue}
-									/>
-									<Button
-										disabled={!hasWebhookUrl}
-										onClick={() => setShowSecret(!showSecret)}
-										size="sm"
-										variant="ghost"
-									>
-										{showSecret ? (
-											<EyeSlashIcon className="size-4" weight="duotone" />
-										) : (
-											<EyeIcon className="size-4" weight="duotone" />
-										)}
-									</Button>
-								</div>
-							</div>
-
-							{/* Events list */}
-							<div className="space-y-3">
-								<div className="space-y-1.5">
-									<p className="font-medium text-foreground text-xs">
-										Required events
-									</p>
-									<div className="flex flex-wrap gap-1">
-										{events.required.map((event) => (
-											<code
-												className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] text-primary"
-												key={event}
-											>
-												{event}
-											</code>
-										))}
-									</div>
-								</div>
-								{events.optional.length > 0 && (
-									<div className="space-y-1.5">
-										<p className="text-muted-foreground text-xs">
-											Optional events
-										</p>
-										<div className="flex flex-wrap gap-1">
-											{events.optional.map((event) => (
-												<code
-													className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground"
-													key={event}
-												>
-													{event}
-												</code>
-											))}
-										</div>
-									</div>
-								)}
-							</div>
-						</div>
+						<div className="pb-4">{children}</div>
 					</motion.div>
 				)}
 			</AnimatePresence>
@@ -302,6 +157,11 @@ function RevenueSettingsSheet({
 	const queryClient = useQueryClient();
 	const [stripeSecret, setStripeSecret] = useState("");
 	const [paddleSecret, setPaddleSecret] = useState("");
+	const [showStripeSecret, setShowStripeSecret] = useState(false);
+	const [showPaddleSecret, setShowPaddleSecret] = useState(false);
+	const [expandedSection, setExpandedSection] =
+		useState<ExpandedSection>("webhooks");
+	const [copiedUrl, setCopiedUrl] = useState<"stripe" | "paddle" | null>(null);
 
 	const { data: config, isLoading } = useQuery({
 		queryKey: ["revenue-config", websiteId],
@@ -314,7 +174,7 @@ function RevenueSettingsSheet({
 			queryClient.invalidateQueries({
 				queryKey: ["revenue-config", websiteId],
 			});
-			toast.success("Webhook URL generated");
+			toast.success("Webhook URLs generated");
 		},
 		onError: () => toast.error("Failed to generate webhook URL"),
 	});
@@ -362,6 +222,17 @@ function RevenueSettingsSheet({
 		}
 	};
 
+	const toggleSection = (section: ExpandedSection) => {
+		setExpandedSection((prev) => (prev === section ? null : section));
+	};
+
+	const handleCopyUrl = (url: string, provider: "stripe" | "paddle") => {
+		navigator.clipboard.writeText(url);
+		setCopiedUrl(provider);
+		toast.success("Webhook URL copied");
+		setTimeout(() => setCopiedUrl(null), 2000);
+	};
+
 	const webhookHash = config?.webhookHash;
 	const stripeUrl = webhookHash
 		? `${BASKET_URL}/webhooks/stripe/${webhookHash}`
@@ -390,57 +261,301 @@ function RevenueSettingsSheet({
 					</div>
 				</SheetHeader>
 
-				<SheetBody className="space-y-4">
+				<SheetBody>
 					{isLoading ? (
 						<div className="flex items-center justify-center py-12">
 							<SpinnerIcon className="size-6 animate-spin text-muted-foreground" />
 						</div>
 					) : (
-						<>
-							<ProviderCard
-								configured={config?.stripeConfigured ?? false}
-								dashboardUrl="https://dashboard.stripe.com/webhooks/create"
-								events={STRIPE_EVENTS}
+						<div className="space-y-1">
+							{/* Webhook URLs Section */}
+							<CollapsibleSection
+								badge={
+									webhookHash ? (
+										<CheckCircleIcon
+											className="size-4 text-success"
+											weight="duotone"
+										/>
+									) : undefined
+								}
+								icon={LinkIcon}
+								isExpanded={expandedSection === "webhooks"}
+								onToggleAction={() => toggleSection("webhooks")}
+								title="Webhook URLs"
+							>
+								{webhookHash ? (
+									<div className="space-y-4">
+										{/* Stripe URL */}
+										<div className="space-y-1.5">
+											<div className="flex items-center justify-between">
+												<p className="font-medium text-foreground text-xs">
+													Stripe
+												</p>
+												<a
+													className="flex items-center gap-1 text-muted-foreground text-xs transition-colors hover:text-foreground"
+													href="https://dashboard.stripe.com/webhooks/create"
+													rel="noopener noreferrer"
+													target="_blank"
+												>
+													Open dashboard
+													<ArrowSquareOutIcon className="size-3" />
+												</a>
+											</div>
+											<div className="flex items-center gap-2">
+												<code className="flex-1 truncate rounded bg-secondary px-2.5 py-2 font-mono text-xs">
+													{stripeUrl}
+												</code>
+												<Button
+													onClick={() =>
+														stripeUrl && handleCopyUrl(stripeUrl, "stripe")
+													}
+													size="sm"
+													variant="ghost"
+												>
+													{copiedUrl === "stripe" ? (
+														<CheckIcon className="size-4 text-success" />
+													) : (
+														<ClipboardIcon
+															className="size-4"
+															weight="duotone"
+														/>
+													)}
+												</Button>
+											</div>
+										</div>
+
+										{/* Paddle URL */}
+										<div className="space-y-1.5">
+											<div className="flex items-center justify-between">
+												<p className="font-medium text-foreground text-xs">
+													Paddle
+												</p>
+												<a
+													className="flex items-center gap-1 text-muted-foreground text-xs transition-colors hover:text-foreground"
+													href="https://vendors.paddle.com/notifications"
+													rel="noopener noreferrer"
+													target="_blank"
+												>
+													Open dashboard
+													<ArrowSquareOutIcon className="size-3" />
+												</a>
+											</div>
+											<div className="flex items-center gap-2">
+												<code className="flex-1 truncate rounded bg-secondary px-2.5 py-2 font-mono text-xs">
+													{paddleUrl}
+												</code>
+												<Button
+													onClick={() =>
+														paddleUrl && handleCopyUrl(paddleUrl, "paddle")
+													}
+													size="sm"
+													variant="ghost"
+												>
+													{copiedUrl === "paddle" ? (
+														<CheckIcon className="size-4 text-success" />
+													) : (
+														<ClipboardIcon
+															className="size-4"
+															weight="duotone"
+														/>
+													)}
+												</Button>
+											</div>
+										</div>
+
+										<button
+											className="flex w-full items-center justify-center gap-1.5 pt-2 text-muted-foreground text-xs transition-colors hover:text-foreground disabled:opacity-50"
+											disabled={regenerateMutation.isPending}
+											onClick={() => regenerateMutation.mutate()}
+											type="button"
+										>
+											{regenerateMutation.isPending ? (
+												<SpinnerIcon className="size-3 animate-spin" />
+											) : (
+												<ArrowClockwiseIcon className="size-3" />
+											)}
+											Regenerate URLs
+										</button>
+									</div>
+								) : (
+									<div>
+										<p className="mb-3 text-muted-foreground text-xs">
+											Generate webhook URLs to start receiving payment events.
+										</p>
+										<Button
+											className="w-full"
+											disabled={createWebhookMutation.isPending}
+											onClick={() => createWebhookMutation.mutate()}
+											size="sm"
+											variant="secondary"
+										>
+											{createWebhookMutation.isPending ? (
+												<SpinnerIcon className="mr-2 size-4 animate-spin" />
+											) : null}
+											Generate Webhook URLs
+										</Button>
+									</div>
+								)}
+							</CollapsibleSection>
+
+							{/* Stripe Section */}
+							<CollapsibleSection
+								badge={
+									config?.stripeConfigured ? (
+										<CheckCircleIcon
+											className="size-4 text-success"
+											weight="duotone"
+										/>
+									) : undefined
+								}
 								icon={StripeLogoIcon}
-								isCreatingWebhook={createWebhookMutation.isPending}
-								name="Stripe"
-								onCreateWebhook={() => createWebhookMutation.mutate()}
-								onSecretChange={setStripeSecret}
-								secretPlaceholder="whsec_..."
-								secretValue={stripeSecret}
-								webhookUrl={stripeUrl}
-							/>
+								isExpanded={expandedSection === "stripe"}
+								onToggleAction={() => toggleSection("stripe")}
+								title="Stripe"
+							>
+								<div className="space-y-4">
+									<div className="space-y-1.5">
+										<p className="font-medium text-foreground text-xs">
+											Signing secret
+										</p>
+										<div className="flex items-center gap-2">
+											<Input
+												className="flex-1 font-mono text-xs"
+												onChange={(e) => setStripeSecret(e.target.value)}
+												placeholder={
+													config?.stripeConfigured ? "••••••••" : "whsec_..."
+												}
+												type={showStripeSecret ? "text" : "password"}
+												value={stripeSecret}
+											/>
+											<Button
+												onClick={() => setShowStripeSecret(!showStripeSecret)}
+												size="sm"
+												variant="ghost"
+											>
+												{showStripeSecret ? (
+													<EyeSlashIcon className="size-4" weight="duotone" />
+												) : (
+													<EyeIcon className="size-4" weight="duotone" />
+												)}
+											</Button>
+										</div>
+									</div>
 
-							<ProviderCard
-								configured={config?.paddleConfigured ?? false}
-								dashboardUrl="https://vendors.paddle.com/notifications"
-								events={PADDLE_EVENTS}
-								icon={CurrencyDollarIcon}
-								isCreatingWebhook={createWebhookMutation.isPending}
-								name="Paddle"
-								onCreateWebhook={() => createWebhookMutation.mutate()}
-								onSecretChange={setPaddleSecret}
-								secretPlaceholder="pdl_ntfset_..."
-								secretValue={paddleSecret}
-								webhookUrl={paddleUrl}
-							/>
+									<div className="space-y-2">
+										<p className="text-muted-foreground text-xs">
+											Required events
+										</p>
+										<div className="flex flex-wrap gap-1">
+											{STRIPE_EVENTS.required.map((event) => (
+												<code
+													className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] text-primary"
+													key={event}
+												>
+													{event}
+												</code>
+											))}
+										</div>
+									</div>
 
-							{webhookHash && (
-								<button
-									className="flex w-full items-center justify-center gap-1.5 py-2 text-muted-foreground text-xs transition-colors hover:text-foreground disabled:opacity-50"
-									disabled={regenerateMutation.isPending}
-									onClick={() => regenerateMutation.mutate()}
-									type="button"
-								>
-									{regenerateMutation.isPending ? (
-										<SpinnerIcon className="size-3 animate-spin" />
-									) : (
-										<ArrowClockwiseIcon className="size-3" />
+									{STRIPE_EVENTS.optional.length > 0 && (
+										<div className="space-y-2">
+											<p className="text-muted-foreground text-xs">Optional</p>
+											<div className="flex flex-wrap gap-1">
+												{STRIPE_EVENTS.optional.map((event) => (
+													<code
+														className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground"
+														key={event}
+													>
+														{event}
+													</code>
+												))}
+											</div>
+										</div>
 									)}
-									Regenerate webhook URLs
-								</button>
-							)}
-						</>
+								</div>
+							</CollapsibleSection>
+
+							{/* Paddle Section */}
+							<CollapsibleSection
+								badge={
+									config?.paddleConfigured ? (
+										<CheckCircleIcon
+											className="size-4 text-success"
+											weight="duotone"
+										/>
+									) : undefined
+								}
+								icon={CurrencyDollarIcon}
+								isExpanded={expandedSection === "paddle"}
+								onToggleAction={() => toggleSection("paddle")}
+								title="Paddle"
+							>
+								<div className="space-y-4">
+									<div className="space-y-1.5">
+										<p className="font-medium text-foreground text-xs">
+											Signing secret
+										</p>
+										<div className="flex items-center gap-2">
+											<Input
+												className="flex-1 font-mono text-xs"
+												onChange={(e) => setPaddleSecret(e.target.value)}
+												placeholder={
+													config?.paddleConfigured
+														? "••••••••"
+														: "pdl_ntfset_..."
+												}
+												type={showPaddleSecret ? "text" : "password"}
+												value={paddleSecret}
+											/>
+											<Button
+												onClick={() => setShowPaddleSecret(!showPaddleSecret)}
+												size="sm"
+												variant="ghost"
+											>
+												{showPaddleSecret ? (
+													<EyeSlashIcon className="size-4" weight="duotone" />
+												) : (
+													<EyeIcon className="size-4" weight="duotone" />
+												)}
+											</Button>
+										</div>
+									</div>
+
+									<div className="space-y-2">
+										<p className="text-muted-foreground text-xs">
+											Required events
+										</p>
+										<div className="flex flex-wrap gap-1">
+											{PADDLE_EVENTS.required.map((event) => (
+												<code
+													className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] text-primary"
+													key={event}
+												>
+													{event}
+												</code>
+											))}
+										</div>
+									</div>
+
+									{PADDLE_EVENTS.optional.length > 0 && (
+										<div className="space-y-2">
+											<p className="text-muted-foreground text-xs">Optional</p>
+											<div className="flex flex-wrap gap-1">
+												{PADDLE_EVENTS.optional.map((event) => (
+													<code
+														className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground"
+														key={event}
+													>
+														{event}
+													</code>
+												))}
+											</div>
+										</div>
+									)}
+								</div>
+							</CollapsibleSection>
+						</div>
 					)}
 				</SheetBody>
 
@@ -456,7 +571,6 @@ function RevenueSettingsSheet({
 						className="min-w-24"
 						disabled={
 							upsertMutation.isPending ||
-							!webhookHash ||
 							(stripeSecret === "" && paddleSecret === "")
 						}
 						onClick={handleSave}
