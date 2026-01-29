@@ -11,6 +11,7 @@ import {
 	type FeatureUsage,
 	type PricingTier,
 } from "../utils/feature-usage";
+import { getStripeMetadata } from "../utils/stripe-metadata";
 
 export interface Usage {
 	features: FeatureUsage[];
@@ -36,6 +37,7 @@ export function useBilling(refetch?: () => void) {
 				productId: planId,
 				dialog: AttachDialog,
 				successUrl: `${window.location.origin}/billing`,
+				metadata: getStripeMetadata(),
 			});
 		} catch (error) {
 			toast.error(
@@ -158,12 +160,12 @@ export function useBillingData() {
 	const usage: Usage = {
 		features: customer?.features
 			? Object.values(customer.features).map((f) =>
-					calculateFeatureUsage(
-						f,
-						featureConfig.limits[f.id],
-						featureConfig.tiers[f.id]
-					)
+				calculateFeatureUsage(
+					f,
+					featureConfig.limits[f.id],
+					featureConfig.tiers[f.id]
 				)
+			)
 			: [],
 	};
 

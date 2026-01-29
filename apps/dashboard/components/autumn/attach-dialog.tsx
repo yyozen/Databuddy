@@ -5,6 +5,7 @@ import type { CheckProductPreview } from "autumn-js";
 import { useCustomer } from "autumn-js/react";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { getStripeMetadata } from "@/app/(main)/billing/utils/stripe-metadata";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -101,6 +102,7 @@ export default function AttachDialog(params?: AttachDialogProps) {
 									featureId: option.feature_id,
 									quantity: option.quantity || 0,
 								})),
+								metadata: getStripeMetadata(),
 							});
 							setOpen(false);
 							setLoading(false);

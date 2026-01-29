@@ -27,6 +27,7 @@ import {
 } from "autumn-js/react";
 import { createContext, useContext, useState } from "react";
 import { PricingTiersTooltip } from "@/app/(main)/billing/components/pricing-tiers-tooltip";
+import { getStripeMetadata } from "@/app/(main)/billing/utils/stripe-metadata";
 import AttachDialog from "@/components/autumn/attach-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -217,6 +218,7 @@ export default function PricingTable({
 							await attach({
 								productId: plan.id,
 								dialog: AttachDialog,
+								metadata: getStripeMetadata(),
 								...(plan.id === "hobby" && { reward: "SAVE80" }),
 							});
 						}}
@@ -509,6 +511,7 @@ function PricingCard({
 						await attach({
 							productId: product.id,
 							dialog: AttachDialog,
+							metadata: getStripeMetadata(),
 							...(product.id === "hobby" && { reward: "SAVE80" }),
 						});
 					} finally {

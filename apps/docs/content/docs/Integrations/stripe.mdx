@@ -113,8 +113,9 @@ const session = await stripe.checkout.sessions.create({
   // REQUIRED: Set metadata on payment intent (this propagates to all webhook events)
   payment_intent_data: {
     metadata: {
-      client_id: 'your_databuddy_client_id', // Required for webhook processing
-      session_id: sessionId, // Required for analytics tracking
+      databuddy_client_id: 'your_databuddy_client_id', // Required for webhook processing
+      databuddy_session_id: sessionId, // Required for analytics tracking
+      databuddy_anonymous_id: anonymousId, // Optional: For anonymous user tracking
       // Optional: Add any custom metadata
       user_id: 'user_123',
       campaign: 'summer_sale',
@@ -143,8 +144,9 @@ session = stripe.checkout.Session.create(
     # REQUIRED: Set metadata on payment intent (this propagates to all webhook events)
     payment_intent_data={
         'metadata': {
-            'client_id': 'your_databuddy_client_id',  # Required for webhook processing
-            'session_id': session_id,  # Required for analytics tracking
+            'databuddy_client_id': 'your_databuddy_client_id',  # Required for webhook processing
+            'databuddy_session_id': session_id,  # Required for analytics tracking
+            'databuddy_anonymous_id': anonymous_id,  # Optional: For anonymous user tracking
             # Optional: Add any custom metadata
             'user_id': 'user_123',
             'campaign': 'summer_sale',
@@ -174,8 +176,9 @@ $session = \Stripe\Checkout\Session::create([
     // REQUIRED: Set metadata on payment intent (this propagates to all webhook events)
     'payment_intent_data' => [
         'metadata' => [
-            'client_id' => 'your_databuddy_client_id', // Required for webhook processing
-            'session_id' => $sessionId, // Required for analytics tracking
+            'databuddy_client_id' => 'your_databuddy_client_id', // Required for webhook processing
+            'databuddy_session_id' => $sessionId, // Required for analytics tracking
+            'databuddy_anonymous_id' => $anonymousId, // Optional: For anonymous user tracking
             // Optional: Add any custom metadata
             'user_id' => 'user_123',
             'campaign' => 'summer_sale',
@@ -185,108 +188,57 @@ $session = \Stripe\Checkout\Session::create([
 ?>
 ```
 
-### Step 4: Get Your Analytics Session ID
+### Step 4: Get Your Analytics Session ID and Anonymous ID
 
-The `session_id` in your metadata should contain your website's analytics session ID. Databuddy automatically generates and manages session IDs, so you can easily access them:
+The `databuddy_session_id` and `databuddy_anonymous_id` in your metadata should contain your website's analytics tracking IDs. Databuddy automatically generates and manages these IDs, so you can easily access them using the SDK helper functions:
 
-#### Frontend JavaScript
+#### Using the Databuddy SDK (Recommended)
 
 ```javascript
-// Get the session ID from Databuddy
-let sessionId;
+import { getSessionId, getAnonymousId } from '@databuddy/sdk';
 
-// Method 1: From Databuddy sessionStorage (automatic generation)
-// Databuddy stores session ID in sessionStorage as 'did_session'
-if (typeof window !== 'undefined' && sessionStorage) {
-  sessionId = sessionStorage.getItem('did_session');
-}
-
-// Method 2: If Databuddy hasn't initialized yet, wait for it
-if (!sessionId && window.databuddy) {
-  // Access the session ID directly from the Databuddy instance
-  sessionId = window.databuddy.sessionId;
-}
-
-// Method 3: Wait for Databuddy to initialize
-if (!sessionId) {
-  // Databuddy will automatically generate a session ID when it loads
-  // You can wait for it or check periodically
-  const waitForDatabuddy = () => {
-    if (window.databuddy && window.databuddy.sessionId) {
-      sessionId = window.databuddy.sessionId;
-      createCheckoutSession(sessionId);
-    } else {
-      setTimeout(waitForDatabuddy, 100);
-    }
-  };
-  waitForDatabuddy();
-  return; // Exit early, will continue in callback
-}
+// Get both session ID and anonymous ID
+const sessionId = getSessionId();
+const anonymousId = getAnonymousId();
 
 // Send to your backend when creating checkout
-createCheckoutSession(sessionId);
-
-function createCheckoutSession(sessionId) {
+function createCheckoutSession(sessionId, anonymousId) {
   fetch('/create-checkout-session', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-            body: JSON.stringify({
-          sessionId: sessionId,
-          clientId: 'your_databuddy_client_id',
-          // ... other checkout data
-        }),
-  });
-}
-```
-
-#### Alternative: Use a Helper Function
-
-```javascript
-// Helper function to get session ID reliably
-function getDatabuddySessionId() {
-  return new Promise((resolve) => {
-    // Check if session ID is already available
-    const existingSessionId = sessionStorage.getItem('did_session');
-    if (existingSessionId) {
-      resolve(existingSessionId);
-      return;
-    }
-
-    // Wait for Databuddy to initialize and generate session ID
-    const checkForSession = () => {
-      const sessionId = sessionStorage.getItem('did_session') || 
-                       (window.databuddy && window.databuddy.sessionId);
-      
-      if (sessionId) {
-        resolve(sessionId);
-      } else {
-        setTimeout(checkForSession, 50);
-      }
-    };
-    
-    checkForSession();
-  });
-}
-
-// Usage
-async function handleCheckout() {
-  const sessionId = await getDatabuddySessionId();
-  
-  const response = await fetch('/create-checkout-session', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       sessionId: sessionId,
+      anonymousId: anonymousId,
       clientId: 'your_databuddy_client_id',
-      // ... other data
+      // ... other checkout data
     }),
   });
-  
-  const { url } = await response.json();
-  window.location.href = url;
 }
+
+createCheckoutSession(sessionId, anonymousId);
+```
+
+#### Alternative: Get Both IDs at Once
+
+```javascript
+import { getTrackingIds } from '@databuddy/sdk';
+
+// Get both IDs in a single call
+const { anonId, sessionId } = getTrackingIds();
+
+// Send to your backend
+await fetch('/create-checkout-session', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    sessionId: sessionId,
+    anonymousId: anonId,
+    clientId: 'your_databuddy_client_id',
+    // ... other data
+  }),
+});
 ```
 
 ## Implementation Examples
@@ -294,49 +246,19 @@ async function handleCheckout() {
 ### React/Next.js Integration
 
 ```jsx
-import { useState, useEffect } from 'react';
+import { getTrackingIds } from '@databuddy/sdk';
+import { useState } from 'react';
 
 function CheckoutButton({ priceId, productName }) {
-  const [sessionId, setSessionId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Get session ID from Databuddy (automatically generated)
-    const getSessionId = () => {
-      // Check if session ID is already available in sessionStorage
-      const existingSessionId = sessionStorage.getItem('did_session');
-      if (existingSessionId) {
-        setSessionId(existingSessionId);
-        return;
-      }
-
-      // Wait for Databuddy to initialize and generate session ID
-      const checkForSession = () => {
-        const sessionId = sessionStorage.getItem('did_session') || 
-                         (window.databuddy && window.databuddy.sessionId);
-        
-        if (sessionId) {
-          setSessionId(sessionId);
-        } else {
-          setTimeout(checkForSession, 100);
-        }
-      };
-      
-      checkForSession();
-    };
-
-    getSessionId();
-  }, []);
-
   const handleCheckout = async () => {
-    if (!sessionId) {
-      console.warn('Session ID not available yet');
-      return;
-    }
-
     setIsLoading(true);
 
     try {
+      // Get tracking IDs from Databuddy SDK
+      const { anonId, sessionId } = getTrackingIds();
+
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -345,6 +267,7 @@ function CheckoutButton({ priceId, productName }) {
         body: JSON.stringify({
           priceId,
           sessionId,
+          anonymousId: anonId,
           clientId: process.env.NEXT_PUBLIC_DATABUDDY_CLIENT_ID,
         }),
       });
@@ -360,7 +283,7 @@ function CheckoutButton({ priceId, productName }) {
   return (
     <button 
       onClick={handleCheckout}
-      disabled={!sessionId || isLoading}
+      disabled={isLoading}
       className="bg-blue-600 text-white px-6 py-2 rounded disabled:opacity-50"
     >
       {isLoading ? 'Processing...' : `Buy ${productName}`}
@@ -369,70 +292,46 @@ function CheckoutButton({ priceId, productName }) {
 }
 ```
 
-#### Custom Hook for Session Management
+#### Custom Hook for Tracking IDs
 
 ```jsx
+import { getTrackingIds } from '@databuddy/sdk';
 import { useState, useEffect } from 'react';
 
-// Custom hook to manage Databuddy session ID
-function useDatabuddySession() {
-  const [sessionId, setSessionId] = useState(null);
-  const [isReady, setIsReady] = useState(false);
+// Custom hook to get Databuddy tracking IDs
+function useDatabuddyTracking() {
+  const [trackingIds, setTrackingIds] = useState<{
+    anonId: string | null;
+    sessionId: string | null;
+  } | null>(null);
 
   useEffect(() => {
-    const getSessionId = async () => {
-      return new Promise((resolve) => {
-        // Check if session ID is already available
-        const existingSessionId = sessionStorage.getItem('did_session');
-        if (existingSessionId) {
-          resolve(existingSessionId);
-          return;
-        }
-
-        // Wait for Databuddy to initialize
-        const checkForSession = () => {
-          const sessionId = sessionStorage.getItem('did_session') || 
-                           (window.databuddy && window.databuddy.sessionId);
-          
-          if (sessionId) {
-            resolve(sessionId);
-          } else {
-            setTimeout(checkForSession, 50);
-          }
-        };
-        
-        checkForSession();
-      });
-    };
-
-    getSessionId().then((id) => {
-      setSessionId(id);
-      setIsReady(true);
-    });
+    const ids = getTrackingIds();
+    setTrackingIds(ids);
   }, []);
 
-  return { sessionId, isReady };
+  return trackingIds;
 }
 
 // Usage in component
 function CheckoutButton({ priceId, productName }) {
-  const { sessionId, isReady } = useDatabuddySession();
+  const trackingIds = useDatabuddyTracking();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCheckout = async () => {
-    if (!sessionId) return;
+    if (!trackingIds) return;
 
     setIsLoading(true);
-    // ... checkout logic
+    // ... checkout logic using trackingIds.sessionId and trackingIds.anonId
   };
 
   return (
     <button 
       onClick={handleCheckout}
-      disabled={!isReady || isLoading}
+      disabled={!trackingIds || isLoading}
       className="bg-blue-600 text-white px-6 py-2 rounded disabled:opacity-50"
     >
-      {!isReady ? 'Loading...' : isLoading ? 'Processing...' : `Buy ${productName}`}
+      {!trackingIds ? 'Loading...' : isLoading ? 'Processing...' : `Buy ${productName}`}
     </button>
   );
 }
@@ -451,7 +350,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { priceId, sessionId, clientId } = req.body;
+  const { priceId, sessionId, anonymousId, clientId } = req.body;
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -469,8 +368,9 @@ export default async function handler(req, res) {
       // REQUIRED: Set metadata on payment intent (this propagates to all webhook events)
       payment_intent_data: {
         metadata: {
-          client_id: clientId, // Required for webhook processing
-          session_id: sessionId, // Required for analytics tracking
+          databuddy_client_id: clientId, // Required for webhook processing
+          databuddy_session_id: sessionId, // Required for analytics tracking
+          databuddy_anonymous_id: anonymousId, // Optional: For anonymous user tracking
         },
       },
     });
@@ -490,7 +390,7 @@ const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 app.post('/create-checkout-session', async (req, res) => {
-  const { priceId, sessionId, clientId } = req.body;
+  const { priceId, sessionId, clientId, anonymousId } = req.body;
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -508,8 +408,9 @@ app.post('/create-checkout-session', async (req, res) => {
       // REQUIRED: Set metadata on payment intent (this propagates to all webhook events)
       payment_intent_data: {
         metadata: {
-          client_id: clientId, // Required for webhook processing
-          session_id: sessionId, // Required for analytics tracking
+          databuddy_client_id: clientId, // Required for webhook processing
+          databuddy_session_id: sessionId, // Required for analytics tracking
+          databuddy_anonymous_id: anonymousId, // Optional: For anonymous user tracking
         },
       },
     });
@@ -554,7 +455,7 @@ Stripe's checkout sessions, payment intents, and charges are **separate objects*
 
 **The simplified approach**:
 - ✅ Set metadata ONLY in `payment_intent_data.metadata`
-- ✅ Payment intent has metadata with client_id and session_id
+- ✅ Payment intent has metadata with databuddy_client_id, databuddy_session_id, and optionally databuddy_anonymous_id
 - ✅ Charges inherit metadata from payment intent
 - ✅ All webhook events receive the metadata
 - ✅ Webhook processes successfully
@@ -573,13 +474,13 @@ Stripe's checkout sessions, payment intents, and charges are **separate objects*
 - Ensure your server accepts POST requests
 - Verify SSL certificate is valid
 
-#### Missing client_id Error
+#### Missing databuddy_client_id Error
 
 **Problem**: Webhook receives events but shows "Missing required client_id" error
 
 **Solutions**:
-- Ensure `client_id` is set in `payment_intent_data.metadata`
-- Verify the client_id matches your Databuddy Client ID exactly
+- Ensure `databuddy_client_id` is set in `payment_intent_data.metadata`
+- Verify the databuddy_client_id matches your Databuddy Client ID exactly
 - Don't set metadata on checkout session - only use `payment_intent_data.metadata`
 
 **Correct implementation**:
@@ -588,8 +489,9 @@ const session = await stripe.checkout.sessions.create({
   // ... other config
   payment_intent_data: {
     metadata: {
-      client_id: 'your_client_id', // Required for webhook processing
-      session_id: sessionId,       // Required for analytics tracking
+      databuddy_client_id: 'your_client_id', // Required for webhook processing
+      databuddy_session_id: sessionId,       // Required for analytics tracking
+      databuddy_anonymous_id: anonymousId,    // Optional: For anonymous user tracking
     },
   },
 });
@@ -600,7 +502,7 @@ const session = await stripe.checkout.sessions.create({
 **Problem**: Payments appear in Databuddy but aren't linked to user sessions
 
 **Solutions**:
-- Verify `session_id` in `payment_intent_data.metadata` contains the correct session ID from `sessionStorage.getItem('did_session')`
+- Verify `databuddy_session_id` in `payment_intent_data.metadata` contains the correct session ID from `sessionStorage.getItem('did_session')` or use `getSessionId()` from `@databuddy/sdk`
 - Ensure Databuddy has initialized before creating the checkout session
 - Check that the session ID format matches: `sess_{timestamp}_{random_string}`
 - Verify the session ID exists in your analytics events by checking the Databuddy dashboard
@@ -661,12 +563,13 @@ const session = await stripe.checkout.sessions.create({
   // ... other configuration
   payment_intent_data: {
     metadata: {
-      client_id: 'your_databuddy_client_id', // Required
-      session_id: sessionId,                 // Required
-      user_id: 'user_123',                   // Optional
-      campaign: 'summer_sale',               // Optional
-      source: 'email_campaign',              // Optional
-      affiliate_id: 'aff_456',               // Optional
+      databuddy_client_id: 'your_databuddy_client_id', // Required
+      databuddy_session_id: sessionId,                 // Required
+      databuddy_anonymous_id: anonymousId,             // Optional: For anonymous user tracking
+      user_id: 'user_123',                             // Optional: Custom metadata
+      campaign: 'summer_sale',                         // Optional: Custom metadata
+      source: 'email_campaign',                        // Optional: Custom metadata
+      affiliate_id: 'aff_456',                         // Optional: Custom metadata
     },
   },
 });

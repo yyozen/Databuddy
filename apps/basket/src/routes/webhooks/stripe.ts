@@ -108,23 +108,23 @@ function verifyStripeSignature(
 	}
 }
 
+interface AnalyticsMetadata {
+	anonymous_id?: string;
+	session_id?: string;
+	client_id?: string;
+}
+
 function extractAnalyticsMetadata(
 	metadata: Record<string, string> | undefined
-): Record<string, string> {
+): AnalyticsMetadata {
 	if (!metadata) {
 		return {};
 	}
-	const result: Record<string, string> = {};
-	if (metadata.anonymous_id) {
-		result.anonymous_id = metadata.anonymous_id;
-	}
-	if (metadata.session_id) {
-		result.session_id = metadata.session_id;
-	}
-	if (metadata.website_id) {
-		result.website_id = metadata.website_id;
-	}
-	return result;
+	return {
+		anonymous_id: metadata.databuddy_anonymous_id,
+		session_id: metadata.databuddy_session_id,
+		client_id: metadata.databuddy_client_id,
+	};
 }
 
 function formatDate(date: Date): string {
@@ -174,7 +174,7 @@ async function handlePaymentIntent(
 		values: [
 			{
 				owner_id: config.ownerId,
-				website_id: metadata.website_id || config.websiteId || undefined,
+				website_id: metadata.client_id || config.websiteId || undefined,
 				transaction_id: pi.id,
 				provider: "stripe",
 				type,
@@ -211,7 +211,7 @@ async function handleFailedPayment(
 		values: [
 			{
 				owner_id: config.ownerId,
-				website_id: metadata.website_id || config.websiteId || undefined,
+				website_id: metadata.client_id || config.websiteId || undefined,
 				transaction_id: pi.id,
 				provider: "stripe",
 				type: "sale",
@@ -250,7 +250,7 @@ async function handleRefund(
 			values: [
 				{
 					owner_id: config.ownerId,
-					website_id: metadata.website_id || config.websiteId || undefined,
+					website_id: metadata.client_id || config.websiteId || undefined,
 					transaction_id: refund.id,
 					provider: "stripe",
 					type: "refund",
