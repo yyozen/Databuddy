@@ -795,6 +795,7 @@ export const LLMAnalyticsBuilders: Record<string, SimpleQueryConfig> = {
 					${TIME_FIELD} AS timestamp,
 					error_name,
 					error_message,
+					error_stack,
 					model,
 					provider,
 					http_status,
@@ -818,7 +819,7 @@ export const LLMAnalyticsBuilders: Record<string, SimpleQueryConfig> = {
 		allowedFilters: LLM_ALLOWED_FILTERS,
 		meta: {
 			title: "LLM Recent Errors",
-			description: "Most recent error calls.",
+			description: "Most recent error calls with stack traces.",
 			category: "LLM Analytics",
 			tags: ["llm", "errors"],
 			output_fields: [],

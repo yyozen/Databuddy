@@ -315,17 +315,20 @@ interface AuthContext {
 	authMethod: "api_key" | "session" | "none";
 }
 
+type ProjectType = "website" | "schedule" | "link" | "organization";
+
 type ProjectAccessResult =
 	| {
-			success: true;
-			projectId: string;
-	  }
+		success: true;
+		projectId: string;
+		projectType: ProjectType;
+	}
 	| {
-			success: false;
-			error: string;
-			code: string;
-			status?: number;
-	  };
+		success: false;
+		error: string;
+		code: string;
+		status?: number;
+	};
 
 function createAuthFailedResponse(requestId: string): Response {
 	return new Response(
@@ -541,11 +544,42 @@ async function verifyLinkAccess(
 	return false;
 }
 
+async function verifyOrganizationAccess(
+	ctx: AuthContext,
+	organizationId: string
+): Promise<boolean> {
+	if (!ctx.isAuthenticated) {
+		return false;
+	}
+
+	if (ctx.user) {
+		const membership = await db.query.member.findFirst({
+			where: and(
+				eq(member.userId, ctx.user.id),
+				eq(member.organizationId, organizationId)
+			),
+			columns: { id: true },
+		});
+		return !!membership;
+	}
+
+	if (ctx.apiKey) {
+		return ctx.apiKey.organizationId === organizationId;
+	}
+
+	return false;
+}
+
 async function resolveProjectAccess(
 	ctx: AuthContext,
-	options: { websiteId?: string; scheduleId?: string; linkId?: string }
+	options: {
+		websiteId?: string;
+		scheduleId?: string;
+		linkId?: string;
+		organizationId?: string;
+	}
 ): Promise<ProjectAccessResult> {
-	const { websiteId, scheduleId, linkId } = options;
+	const { websiteId, scheduleId, linkId, organizationId } = options;
 
 	// Check link_id first (for link shortener)
 	if (linkId) {
@@ -560,7 +594,7 @@ async function resolveProjectAccess(
 				status: ctx.isAuthenticated ? 403 : 401,
 			};
 		}
-		return { success: true, projectId: linkId };
+		return { success: true, projectId: linkId, projectType: "link" };
 	}
 
 	// Check schedule_id (for custom uptime monitors)
@@ -576,7 +610,7 @@ async function resolveProjectAccess(
 				status: ctx.isAuthenticated ? 403 : 401,
 			};
 		}
-		return { success: true, projectId: scheduleId };
+		return { success: true, projectId: scheduleId, projectType: "schedule" };
 	}
 
 	// Check website access (handles public websites)
@@ -592,7 +626,27 @@ async function resolveProjectAccess(
 				status: ctx.isAuthenticated ? 403 : 401,
 			};
 		}
-		return { success: true, projectId: websiteId };
+		return { success: true, projectId: websiteId, projectType: "website" };
+	}
+
+	// Check organization access (for org-level queries like LLM analytics)
+	if (organizationId) {
+		const hasAccess = await verifyOrganizationAccess(ctx, organizationId);
+		if (!hasAccess) {
+			return {
+				success: false,
+				error: ctx.isAuthenticated
+					? "Access denied to this organization"
+					: "Authentication required",
+				code: ctx.isAuthenticated ? "ACCESS_DENIED" : "AUTH_REQUIRED",
+				status: ctx.isAuthenticated ? 403 : 401,
+			};
+		}
+		return {
+			success: true,
+			projectId: organizationId,
+			projectType: "organization",
+		};
 	}
 
 	// No project identifier provided
@@ -607,7 +661,8 @@ async function resolveProjectAccess(
 
 	return {
 		success: false,
-		error: "Missing project identifier (website_id, schedule_id, or link_id)",
+		error:
+			"Missing project identifier (website_id, schedule_id, link_id, or organization_id)",
 		code: "MISSING_PROJECT_ID",
 		status: 400,
 	};
@@ -688,12 +743,12 @@ function getTimeUnit(
 type ParameterInput =
 	| string
 	| {
-			name: string;
-			start_date?: string;
-			end_date?: string;
-			granularity?: string;
-			id?: string;
-	  };
+		name: string;
+		start_date?: string;
+		end_date?: string;
+		granularity?: string;
+		id?: string;
+	};
 
 function parseQueryParameter(param: ParameterInput) {
 	if (typeof param === "string") {
@@ -718,6 +773,7 @@ interface QueryResult {
 async function executeDynamicQuery(
 	request: DynamicQueryRequestType,
 	projectId: string,
+	projectType: ProjectType,
 	timezone: string,
 	domainCache?: Record<string, string | null>
 ): Promise<{
@@ -745,9 +801,13 @@ async function executeDynamicQuery(
 	});
 
 	// Resolve owner ID for LLM queries (organizationId or userId)
+	// If projectType is "organization", the projectId IS the owner ID
 	let ownerId: string | null = null;
 	if (hasLlmQueries) {
-		ownerId = await getWebsiteOwnerId(projectId);
+		ownerId =
+			projectType === "organization"
+				? projectId
+				: await getWebsiteOwnerId(projectId);
 	}
 
 	type PreparedParameter =
@@ -1004,6 +1064,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 				website_id?: string;
 				schedule_id?: string;
 				link_id?: string;
+				organization_id?: string;
 				timezone?: string;
 			};
 			auth: AuthContext;
@@ -1016,6 +1077,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 					websiteId: q.website_id,
 					scheduleId: q.schedule_id,
 					linkId: q.link_id,
+					organizationId: q.organization_id,
 				});
 
 				if (!accessResult.success) {
@@ -1077,6 +1139,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 							return executeDynamicQuery(
 								resolvedReq,
 								accessResult.projectId,
+								accessResult.projectType,
 								timezone,
 								cache
 							).catch((e) => ({
@@ -1120,6 +1183,7 @@ export const query = new Elysia({ prefix: "/v1/query" })
 					...(await executeDynamicQuery(
 						resolvedBody,
 						accessResult.projectId,
+						accessResult.projectType,
 						timezone
 					)),
 				};

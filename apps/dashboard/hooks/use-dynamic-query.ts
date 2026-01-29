@@ -18,6 +18,7 @@ interface BuildParamsOptions {
 	websiteId?: string;
 	scheduleId?: string;
 	linkId?: string;
+	organizationId?: string;
 	dateRange?: DateRange;
 	additionalParams?: Record<string, string | number>;
 }
@@ -26,6 +27,7 @@ function buildParams({
 	websiteId,
 	scheduleId,
 	linkId,
+	organizationId,
 	dateRange,
 	additionalParams,
 }: BuildParamsOptions): URLSearchParams {
@@ -40,6 +42,8 @@ function buildParams({
 		params.set("schedule_id", scheduleId);
 	} else if (websiteId) {
 		params.set("website_id", websiteId);
+	} else if (organizationId) {
+		params.set("organization_id", organizationId);
 	}
 
 	if (dateRange?.start_date) {
@@ -88,6 +92,7 @@ interface FetchOptions {
 	websiteId?: string;
 	scheduleId?: string;
 	linkId?: string;
+	organizationId?: string;
 }
 
 async function fetchDynamicQuery(
@@ -106,6 +111,7 @@ async function fetchDynamicQuery(
 		websiteId: options.websiteId,
 		scheduleId: options.scheduleId,
 		linkId: options.linkId,
+		organizationId: options.organizationId,
 		dateRange,
 		additionalParams: { timezone },
 	});
@@ -224,6 +230,7 @@ interface BatchQueryOptions {
 	websiteId?: string;
 	scheduleId?: string;
 	linkId?: string;
+	organizationId?: string;
 }
 
 export function useBatchDynamicQuery(
@@ -237,7 +244,10 @@ export function useBatchDynamicQuery(
 		typeof idOrOptions === "string" ? { websiteId: idOrOptions } : idOrOptions;
 
 	const effectiveId =
-		queryOptions.websiteId || queryOptions.scheduleId || queryOptions.linkId;
+		queryOptions.websiteId ||
+		queryOptions.scheduleId ||
+		queryOptions.linkId ||
+		queryOptions.organizationId;
 
 	const fetchData = useCallback(
 		async ({ signal }: { signal?: AbortSignal }) => {
@@ -258,6 +268,7 @@ export function useBatchDynamicQuery(
 			queryOptions.websiteId,
 			queryOptions.scheduleId,
 			queryOptions.linkId,
+			queryOptions.organizationId,
 			dateRange.start_date,
 			dateRange.end_date,
 			dateRange.granularity,
