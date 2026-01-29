@@ -107,9 +107,10 @@ export interface ErrorCategory {
 /**
  * Error table tab configuration
  */
-export interface ErrorTab {
+export interface ErrorTab<TData = unknown> {
 	id: string;
 	label: string;
-	data: any[];
-	columns: any[];
+	data: TData[];
+	columns: unknown[];
+	getFilter?: (row: TData) => { field: string; value: string };
 }

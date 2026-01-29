@@ -1,17 +1,11 @@
 "use client";
 
-import {
-	ClockIcon,
-	CodeIcon,
-	GlobeIcon,
-	StackIcon,
-} from "@phosphor-icons/react";
+import { ClockIcon, CodeIcon, GlobeIcon } from "@phosphor-icons/react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useCallback, useMemo, useState } from "react";
 import { BrowserIcon, CountryFlag, OSIcon } from "@/components/icon";
 import { DataTable } from "@/components/table/data-table";
-import { Badge } from "@/components/ui/badge";
 import {
 	Tooltip,
 	TooltipContent,
@@ -20,11 +14,7 @@ import {
 import { ErrorDetailModal } from "./error-detail-modal";
 import { getDeviceIcon, getErrorTypeIcon } from "./error-icons";
 import type { RecentError } from "./types";
-import {
-	formatDateTimeSeconds,
-	getErrorCategory,
-	getSeverityColor,
-} from "./utils";
+import { formatDateTimeSeconds, getErrorCategory } from "./utils";
 
 dayjs.extend(relativeTime);
 
@@ -64,14 +54,22 @@ export const RecentErrorsTable = ({ recentErrors }: Props) => {
 		setIsModalOpen(true);
 	}, []);
 
-	const tableData = useMemo(
-		() =>
-			recentErrors.map((error) => ({
+	const tableData = useMemo(() => {
+		const seen = new Set<string>();
+		return recentErrors
+			.filter((error) => {
+				const key = error.stack || error.message;
+				if (seen.has(key)) {
+					return false;
+				}
+				seen.add(key);
+				return true;
+			})
+			.map((error) => ({
 				...error,
 				name: error.message,
-			})),
-		[recentErrors]
-	);
+			}));
+	}, [recentErrors]);
 
 	const columns = useMemo(
 		() => [
@@ -94,46 +92,27 @@ export const RecentErrorsTable = ({ recentErrors }: Props) => {
 				id: "message",
 				accessorKey: "message",
 				header: "Error",
-				cell: (info: {
-					getValue: () => unknown;
-					row: { original: RecentError };
-				}) => {
+				cell: (info: { getValue: () => unknown }) => {
 					const message = info.getValue() as string;
-					const row = info.row.original;
 					const { type } = getErrorCategory(message);
 
 					return (
-						<div className="flex max-w-md flex-col gap-1.5">
-							<div className="flex items-center gap-2">
-								<div className="flex size-5 shrink-0 items-center justify-center rounded bg-primary/10">
-									{getErrorTypeIcon(type)}
+						<Tooltip skipProvider>
+							<TooltipTrigger asChild>
+								<div className="flex max-w-md flex-col gap-1.5">
+									<div className="flex items-center gap-2">
+										<div className="flex size-5 shrink-0 items-center justify-center rounded bg-primary/10">
+											{getErrorTypeIcon(type)}
+										</div>
+										<span className="font-medium text-sm">{type}</span>
+									</div>
+									<p className="line-clamp-2 text-pretty">{message}</p>
 								</div>
-								<Badge
-									className={getSeverityColor(
-										getErrorCategory(message).severity
-									)}
-								>
-									{type}
-								</Badge>
-								{row.stack && (
-									<Tooltip skipProvider>
-										<TooltipTrigger asChild>
-											<Badge
-												className="gap-1 border-chart-2/30 bg-chart-2/10 text-chart-2"
-												variant="outline"
-											>
-												<StackIcon className="size-3" weight="duotone" />
-												<span className="hidden sm:inline">Stack</span>
-											</Badge>
-										</TooltipTrigger>
-										<TooltipContent>
-											Stack trace available — click to view
-										</TooltipContent>
-									</Tooltip>
-								)}
-							</div>
-							<p className="wrap-break-word">{message}</p>
-						</div>
+							</TooltipTrigger>
+							<TooltipContent className="max-w-sm">
+								<p className="text-pretty">{message}</p>
+							</TooltipContent>
+						</Tooltip>
 					);
 				},
 			},

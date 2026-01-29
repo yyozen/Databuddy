@@ -1,7 +1,7 @@
 "use client";
 
-import type { ErrorTab } from "@databuddy/shared/types/errors";
 import dynamic from "next/dynamic";
+import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	createErrorTypeColumns,
@@ -37,27 +37,40 @@ interface ErrorDataTableProps {
 	};
 	isLoading: boolean;
 	isRefreshing: boolean;
+	onAddFilter?: (field: string, value: string) => void;
 }
 
 export const ErrorDataTable = ({
 	processedData,
 	isLoading,
 	isRefreshing,
+	onAddFilter,
 }: ErrorDataTableProps) => {
-	const errorTabs: ErrorTab[] = [
-		{
-			id: "error_types",
-			label: "Error Types",
-			data: processedData.error_types,
-			columns: createErrorTypeColumns(),
-		},
-		{
-			id: "errors_by_page",
-			label: "By Page",
-			data: processedData.errors_by_page,
-			columns: [createPageColumn(), ...errorColumns],
-		},
-	];
+	const errorTabs = useMemo(
+		() => [
+			{
+				id: "error_types",
+				label: "Error Types",
+				data: processedData.error_types,
+				columns: createErrorTypeColumns(),
+				getFilter: (row: ErrorType) => ({
+					field: "error_type",
+					value: row.name,
+				}),
+			},
+			{
+				id: "errors_by_page",
+				label: "By Page",
+				data: processedData.errors_by_page,
+				columns: [createPageColumn(), ...errorColumns],
+				getFilter: (row: ErrorByPage) => ({
+					field: "path",
+					value: row.name,
+				}),
+			},
+		],
+		[processedData.error_types, processedData.errors_by_page]
+	);
 
 	return (
 		<DataTable
@@ -65,7 +78,9 @@ export const ErrorDataTable = ({
 			initialPageSize={15}
 			isLoading={isLoading || isRefreshing}
 			minHeight={350}
-			tabs={errorTabs}
+			onAddFilter={onAddFilter}
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			tabs={errorTabs as any}
 			title="Error Analysis"
 		/>
 	);

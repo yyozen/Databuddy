@@ -2,13 +2,17 @@
 
 import { GATED_FEATURES } from "@databuddy/shared/types/features";
 import { BugIcon } from "@phosphor-icons/react/dist/ssr/Bug";
-import { useAtomValue } from "jotai";
-import { use } from "react";
+import { useAtom, useAtomValue } from "jotai";
+import { use, useCallback } from "react";
 import { FeatureGate } from "@/components/feature-gate";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDateFilters } from "@/hooks/use-date-filters";
 import { formatDateOnly } from "@/lib/formatters";
-import { isAnalyticsRefreshingAtom } from "@/stores/jotai/filterAtoms";
+import {
+	type DynamicQueryFilter,
+	dynamicQueryFiltersAtom,
+	isAnalyticsRefreshingAtom,
+} from "@/stores/jotai/filterAtoms";
 import { useEnhancedErrorData } from "../use-errors";
 import { ErrorDataTable } from "./error-data-table";
 import { ErrorSummaryStats } from "./error-summary-stats";
@@ -33,14 +37,30 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 	const websiteId = resolvedParams.id;
 
 	const isRefreshing = useAtomValue(isAnalyticsRefreshingAtom);
+	const [filters, setFilters] = useAtom(dynamicQueryFiltersAtom);
 	const { dateRange } = useDateFilters();
+
+	const onAddFilter = useCallback(
+		(field: string, value: string) => {
+			const newFilter: DynamicQueryFilter = {
+				field,
+				operator: "eq",
+				value,
+			};
+			// Replace existing filter on the same field instead of adding duplicates
+			const withoutSameField = filters.filter((f) => f.field !== field);
+			setFilters([...withoutSameField, newFilter]);
+		},
+		[filters, setFilters]
+	);
 
 	const {
 		results: errorResults,
 		isLoading,
 		error,
 	} = useEnhancedErrorData(websiteId, dateRange, {
-		queryKey: ["enhancedErrorData", websiteId, dateRange],
+		filters,
+		queryKey: ["enhancedErrorData", websiteId, dateRange, filters],
 	});
 
 	const getData = <T,>(id: string): T[] =>
@@ -112,6 +132,7 @@ export const ErrorsPageContent = ({ params }: ErrorsPageContentProps) => {
 						<ErrorDataTable
 							isLoading={isLoading}
 							isRefreshing={isRefreshing}
+							onAddFilter={onAddFilter}
 							processedData={{
 								error_types: errorTypes,
 								errors_by_page: errorsByPage,
