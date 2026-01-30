@@ -206,11 +206,14 @@ export function FunnelAnalytics({
 					chartData={conversionChartData}
 					chartStepType={chartStepType}
 					chartType={chartType}
-					formatChartValue={(v) => `${v.toFixed(1)}%`}
+					formatChartValue={(v) => {
+						const safeValue = v == null || Number.isNaN(v) ? 0 : v;
+						return `${safeValue.toFixed(1)}%`;
+					}}
 					icon={TargetIcon}
 					showChart={hasChartData}
 					title="Conversion"
-					value={`${displayData.overall_conversion_rate.toFixed(1)}%`}
+					value={`${(displayData.overall_conversion_rate == null || Number.isNaN(displayData.overall_conversion_rate) ? 0 : displayData.overall_conversion_rate).toFixed(1)}%`}
 				/>
 				<StatCard
 					chartData={dropoffChartData}
@@ -220,7 +223,7 @@ export function FunnelAnalytics({
 					invertTrend
 					showChart={hasChartData}
 					title="Drop-off"
-					value={`${displayData.biggest_dropoff_rate.toFixed(1)}%`}
+					value={`${(displayData.biggest_dropoff_rate == null || Number.isNaN(displayData.biggest_dropoff_rate) ? 0 : displayData.biggest_dropoff_rate).toFixed(1)}%`}
 				/>
 				<StatCard
 					chartData={avgTimeChartData}
@@ -244,8 +247,12 @@ export function FunnelAnalytics({
 					</div>
 					<div className="min-w-0 flex-1">
 						<p className="font-medium text-foreground text-sm">
-							{errorInsights.error_correlation_rate.toFixed(0)}% of drop-offs
-							had errors
+							{(errorInsights.error_correlation_rate == null ||
+							Number.isNaN(errorInsights.error_correlation_rate)
+								? 0
+								: errorInsights.error_correlation_rate
+							).toFixed(0)}
+							% of drop-offs had errors
 						</p>
 						<p className="text-muted-foreground text-xs">
 							{errorInsights.dropoffs_with_errors} of{" "}

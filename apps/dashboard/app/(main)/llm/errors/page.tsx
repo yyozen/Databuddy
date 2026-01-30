@@ -417,7 +417,10 @@ export default function LLMErrorsPage() {
 						key: "rate",
 						label: "Error Rate",
 						color: "#f97316",
-						formatValue: (v) => `${v.toFixed(1)}%`,
+						formatValue: (v) => {
+							const safeValue = v == null || Number.isNaN(v) ? 0 : v;
+							return `${safeValue.toFixed(1)}%`;
+						},
 					},
 				]}
 				title="Error Trends"

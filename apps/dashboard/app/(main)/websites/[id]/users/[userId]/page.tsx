@@ -331,7 +331,10 @@ export default function UserDetailPage() {
 			0
 		) ?? 0;
 	const totalSessions = userProfile.total_sessions ?? 0;
-	const avgPagesPerSession = totalSessions > 0 ? totalPages / totalSessions : 0;
+	const avgPagesPerSession =
+		totalSessions > 0 && !Number.isNaN(totalPages)
+			? totalPages / totalSessions
+			: 0;
 
 	return (
 		<div className="flex h-full flex-col">

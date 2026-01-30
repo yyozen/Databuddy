@@ -195,7 +195,10 @@ export function LlmAnalyticsContent() {
 							chartData={miniChartData.errorRate}
 							chartStepType={chartStepType}
 							chartType={chartType}
-							formatChartValue={(v) => `${v.toFixed(1)}%`}
+							formatChartValue={(v) => {
+								const safeValue = v == null || Number.isNaN(v) ? 0 : v;
+								return `${safeValue.toFixed(1)}%`;
+							}}
 							icon={WarningIcon}
 							id="llm-error-rate"
 							invertTrend

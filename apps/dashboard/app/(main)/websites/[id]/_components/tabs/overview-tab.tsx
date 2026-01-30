@@ -873,14 +873,20 @@ export function WebsiteOverviewTab({
 					{
 						id: "bounce-rate-chart",
 						title: "Bounce Rate",
-						value: analytics.summary?.bounce_rate
-							? `${analytics.summary.bounce_rate.toFixed(1)}%`
-							: "0%",
+						value:
+							analytics.summary?.bounce_rate != null &&
+							!Number.isNaN(analytics.summary.bounce_rate)
+								? `${analytics.summary.bounce_rate.toFixed(1)}%`
+								: "0%",
 						icon: CursorIcon,
 						chartData: miniChartData.bounceRate,
 						trend: calculateTrends.bounce_rate,
 						invertTrend: true,
-						formatValue: (value: number) => `${value.toFixed(1)}%`,
+						formatValue: (value: number) => {
+							const safeValue =
+								value == null || Number.isNaN(value) ? 0 : value;
+							return `${safeValue.toFixed(1)}%`;
+						},
 					},
 					{
 						id: "session-duration-chart",

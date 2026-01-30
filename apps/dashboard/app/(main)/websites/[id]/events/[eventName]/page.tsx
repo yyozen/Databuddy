@@ -313,6 +313,10 @@ function PropertyCard({ property }: PropertyCardProps) {
 			<div className="max-h-[160px] overflow-y-auto p-1.5">
 				{values.slice(0, 10).map((value, idx) => {
 					const barWidth = (value.count / maxCount) * 100;
+					const safePercentage =
+						value.percentage == null || Number.isNaN(value.percentage)
+							? 0
+							: value.percentage;
 					return (
 						<div
 							className="group relative flex items-center gap-2 rounded px-2 py-1.5"
@@ -334,7 +338,7 @@ function PropertyCard({ property }: PropertyCardProps) {
 										{formatNumber(value.count)}
 									</span>
 									<span className="w-10 text-right text-muted-foreground/60 text-xs tabular-nums">
-										{value.percentage.toFixed(0)}%
+										{safePercentage.toFixed(0)}%
 									</span>
 								</div>
 							</div>

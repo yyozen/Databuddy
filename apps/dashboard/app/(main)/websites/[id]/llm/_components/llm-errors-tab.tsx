@@ -121,7 +121,11 @@ export function LlmErrorsTab({ websiteId, dateRange }: LlmErrorsTabProps) {
 						key: "rate",
 						label: "Error Rate",
 						color: "#f59e0b",
-						formatValue: (value) => `${value.toFixed(1)}%`,
+						formatValue: (value) => {
+							const safeValue =
+								value == null || Number.isNaN(value) ? 0 : value;
+							return `${safeValue.toFixed(1)}%`;
+						},
 					},
 				]}
 				title="Error Trends"

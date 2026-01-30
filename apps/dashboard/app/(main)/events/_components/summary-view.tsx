@@ -178,6 +178,8 @@ function PropertyCard({
 					const count = value.count;
 					const percentage = value.percentage;
 					const barWidth = (count / maxCount) * 100;
+					const safePercentage =
+						percentage == null || Number.isNaN(percentage) ? 0 : percentage;
 
 					return (
 						<button
@@ -205,7 +207,7 @@ function PropertyCard({
 										{formatNumber(count)}
 									</span>
 									<span className="w-10 text-right text-muted-foreground/60 text-xs tabular-nums">
-										{percentage.toFixed(0)}%
+										{safePercentage.toFixed(0)}%
 									</span>
 									<FunnelIcon
 										aria-hidden="true"

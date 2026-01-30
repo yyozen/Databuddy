@@ -87,7 +87,9 @@ export function RetentionContent({ websiteId }: RetentionContentProps) {
 		const totalUniqueUsers = totalNewUsers + totalReturningUsers;
 
 		const overallRetentionRate =
-			totalUniqueUsers > 0 ? (totalReturningUsers / totalUniqueUsers) * 100 : 0;
+			totalUniqueUsers > 0 && !Number.isNaN(totalReturningUsers) && !Number.isNaN(totalUniqueUsers)
+				? (totalReturningUsers / totalUniqueUsers) * 100
+				: 0;
 
 		const weightedWeek1 = cohorts.reduce(
 			(sum, cohort) => sum + cohort.week_1_retention * cohort.users,
@@ -98,14 +100,16 @@ export function RetentionContent({ websiteId }: RetentionContentProps) {
 			0
 		);
 		const avgWeek1Retention =
-			totalCohortUsers > 0 ? weightedWeek1 / totalCohortUsers : 0;
+			totalCohortUsers > 0 && !Number.isNaN(weightedWeek1) && !Number.isNaN(totalCohortUsers)
+				? weightedWeek1 / totalCohortUsers
+				: 0;
 
 		return {
-			avgRetentionRate: overallRetentionRate,
+			avgRetentionRate: Number.isNaN(overallRetentionRate) ? 0 : overallRetentionRate,
 			totalUsers: totalUniqueUsers,
 			totalNewUsers,
 			totalReturningUsers,
-			avgWeek1Retention,
+			avgWeek1Retention: Number.isNaN(avgWeek1Retention) ? 0 : avgWeek1Retention,
 		};
 	}, [rates, cohorts]);
 
@@ -150,7 +154,10 @@ export function RetentionContent({ websiteId }: RetentionContentProps) {
 					chartData={chartData.retentionRate}
 					chartStepType={chartStepType}
 					chartType={chartType}
-					formatChartValue={(v) => `${v.toFixed(1)}%`}
+					formatChartValue={(v) => {
+						const safeValue = v == null || Number.isNaN(v) ? 0 : v;
+						return `${safeValue.toFixed(1)}%`;
+					}}
 					icon={ArrowCounterClockwiseIcon}
 					id="retention-rate"
 					isLoading={isLoading}
