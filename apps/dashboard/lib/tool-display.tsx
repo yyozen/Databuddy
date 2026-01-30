@@ -161,9 +161,11 @@ const TOOLS: Record<string, ToolConfig> = {
 		() => "Analyzing funnel",
 		(output) => {
 			if ("conversionRate" in output) {
+				const rate = output.conversionRate as number;
+				const safeRate = rate == null || Number.isNaN(rate) ? 0 : rate;
 				return (
 					<p>
-						{((output.conversionRate as number) * 100).toFixed(1)}% conversion
+						{(safeRate * 100).toFixed(1)}% conversion
 					</p>
 				);
 			}
@@ -221,9 +223,11 @@ const TOOLS: Record<string, ToolConfig> = {
 		() => "Analyzing goal",
 		(output) => {
 			if ("overall_conversion_rate" in output) {
+				const rate = output.overall_conversion_rate as number;
+				const safeRate = rate == null || Number.isNaN(rate) ? 0 : rate;
 				return (
 					<p>
-						{(output.overall_conversion_rate as number).toFixed(1)}% conversion
+						{safeRate.toFixed(1)}% conversion
 					</p>
 				);
 			}

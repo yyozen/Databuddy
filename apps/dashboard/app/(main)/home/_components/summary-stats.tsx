@@ -171,7 +171,7 @@ export function SummaryStats({
 								/>
 								{trendDirection === "up" && "+"}
 								{trendDirection === "down" && "-"}
-								{averageTrend.toFixed(0)}%
+								{(averageTrend == null || Number.isNaN(averageTrend) ? 0 : averageTrend).toFixed(0)}%
 							</span>
 						)}
 					</div>
@@ -245,7 +245,7 @@ export function SummaryStats({
 							</p>
 							<p className="truncate text-muted-foreground text-xs">
 								{totalMonitors > 0
-									? `${pulseHealthPercentage.toFixed(0)}% healthy`
+									? `${(pulseHealthPercentage == null || Number.isNaN(pulseHealthPercentage) ? 0 : pulseHealthPercentage).toFixed(0)}% healthy`
 									: "uptime monitoring"}
 							</p>
 						</div>

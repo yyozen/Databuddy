@@ -228,7 +228,7 @@ const MiniPieChart = memo(
 									{entry.name}
 								</span>
 								<span className="font-medium text-foreground text-xs tabular-nums">
-									{entry.percent.toFixed(0)}%
+									{(entry.percent == null || Number.isNaN(entry.percent) ? 0 : entry.percent).toFixed(0)}%
 								</span>
 							</button>
 						))}

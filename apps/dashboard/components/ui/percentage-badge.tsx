@@ -22,15 +22,17 @@ export function PercentageBadge({
 		return 'bg-secondary border border-accent-foreground/20 badge-angled-rectangle-gradient text-accent-foreground';
 	};
 
+	const safePercentage = percentage == null || Number.isNaN(percentage) ? 0 : percentage;
+
 	return (
 		<span
 			className={cn(
 				'inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs',
-				getColorClass(percentage),
+				getColorClass(safePercentage),
 				className
 			)}
 		>
-			{percentage.toFixed(1)}%
+			{safePercentage.toFixed(1)}%
 		</span>
 	);
 }

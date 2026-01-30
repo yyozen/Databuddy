@@ -127,35 +127,37 @@ export function MiniMapRenderer({ title, countries, className }: MiniMapProps) {
 
 					{topCountries.length > 0 ? (
 						<div className="max-h-40 overflow-y-auto rounded-b bg-background">
-							{topCountries.map((country) => {
-								const percentage =
-									totalVisitors > 0
-										? (country.visitors / totalVisitors) * 100
-										: 0;
-								const countryCode =
-									country.country_code?.toUpperCase() ||
-									country.country.toUpperCase();
+						{topCountries.map((country) => {
+							const safeVisitors = country.visitors == null || Number.isNaN(country.visitors) ? 0 : country.visitors;
+							const safeTotalVisitors = totalVisitors == null || Number.isNaN(totalVisitors) ? 0 : totalVisitors;
+							const percentage =
+								safeTotalVisitors > 0 && !Number.isNaN(safeVisitors) && !Number.isNaN(safeTotalVisitors)
+									? (safeVisitors / safeTotalVisitors) * 100
+									: 0;
+							const countryCode =
+								country.country_code?.toUpperCase() ||
+								country.country.toUpperCase();
 
-								return (
-									<div
-										className="flex items-center gap-2 border-b px-2 py-1.5 transition-colors last:border-b-0 hover:bg-accent/80"
-										key={country.country}
-									>
-										<CountryFlag country={countryCode} size="sm" />
-										<span className="min-w-0 flex-1 truncate text-[11px] text-foreground">
-											{country.country}
+							return (
+								<div
+									className="flex items-center gap-2 border-b px-2 py-1.5 transition-colors last:border-b-0 hover:bg-accent/80"
+									key={country.country}
+								>
+									<CountryFlag country={countryCode} size="sm" />
+									<span className="min-w-0 flex-1 truncate text-[11px] text-foreground">
+										{country.country}
+									</span>
+									<div className="flex shrink-0 items-center gap-1 text-right">
+										<span className="font-medium text-[11px] text-foreground tabular-nums">
+											{formatNumber(country.visitors)}
 										</span>
-										<div className="flex shrink-0 items-center gap-1 text-right">
-											<span className="font-medium text-[11px] text-foreground tabular-nums">
-												{formatNumber(country.visitors)}
-											</span>
-											<span className="text-[9px] text-muted-foreground tabular-nums">
-												{percentage.toFixed(0)}%
-											</span>
-										</div>
+										<span className="text-[9px] text-muted-foreground tabular-nums">
+											{percentage.toFixed(0)}%
+										</span>
 									</div>
-								);
-							})}
+								</div>
+							);
+						})}
 						</div>
 					) : (
 						<div className="flex flex-col items-center justify-center bg-accent p-3 text-center">

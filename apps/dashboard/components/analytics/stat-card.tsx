@@ -75,9 +75,10 @@ const formatTrendValue = (
 		if (formatter) {
 			return formatter(value);
 		}
-		return Number.isInteger(value)
-			? formatMetricNumber(value)
-			: value.toFixed(1);
+		const safeValue = value == null || Number.isNaN(value) ? 0 : value;
+		return Number.isInteger(safeValue)
+			? formatMetricNumber(safeValue)
+			: safeValue.toFixed(1);
 	}
 	return value;
 };
@@ -91,7 +92,7 @@ function TrendIndicator({
 	invertColor?: boolean;
 	className?: string;
 }) {
-	if (Number.isNaN(value)) {
+	if (value == null || Number.isNaN(value)) {
 		return null;
 	}
 
@@ -115,12 +116,14 @@ function TrendIndicator({
 			? TrendDownIcon
 			: MinusIcon;
 
+	const safeValue = value == null || Number.isNaN(value) ? 0 : value;
+
 	return (
 		<span className={cn("flex items-center gap-1", colorClass, className)}>
 			<Icon className="size-4" weight={isNeutral ? "regular" : "fill"} />
 			<span className="font-semibold text-xs">
 				{isPositive ? "+" : ""}
-				{Math.abs(value).toFixed(0)}%
+				{Math.abs(safeValue).toFixed(0)}%
 			</span>
 		</span>
 	);
