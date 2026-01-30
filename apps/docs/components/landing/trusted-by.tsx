@@ -30,6 +30,7 @@ const industryLeaders = [
 		name: "OpenCut",
 		url: "https://opencut.app",
 		logo: "/social/opencut.svg",
+		invert: true,
 		description: "Open source video editor",
 	},
 	{
