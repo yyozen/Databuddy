@@ -131,9 +131,19 @@ export function GeoMapSection({ countries, isLoading }: GeoMapSectionProps) {
 					{topCountries.length > 0 ? (
 						<div className="max-h-48 overflow-y-auto rounded-b bg-background lg:max-h-none">
 							{topCountries.map((country) => {
+								const safeVisitors =
+									country.visitors == null || Number.isNaN(country.visitors)
+										? 0
+										: country.visitors;
+								const safeTotalVisitors =
+									totalVisitors == null || Number.isNaN(totalVisitors)
+										? 0
+										: totalVisitors;
 								const percentage =
-									totalVisitors > 0
-										? (country.visitors / totalVisitors) * 100
+									safeTotalVisitors > 0 &&
+									!Number.isNaN(safeVisitors) &&
+									!Number.isNaN(safeTotalVisitors)
+										? (safeVisitors / safeTotalVisitors) * 100
 										: 0;
 								const countryCode =
 									country.country_code?.toUpperCase() ||

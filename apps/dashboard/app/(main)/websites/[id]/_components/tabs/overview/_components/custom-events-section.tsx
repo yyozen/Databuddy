@@ -37,11 +37,14 @@ const createDomainIndicator = () => (
 	<div className="size-2 shrink-0 rounded bg-blue-500" />
 );
 
-const createPercentageBadge = (percentage: number) => (
-	<div className="inline-flex items-center rounded bg-primary/10 px-2 py-1 font-medium text-primary text-xs">
-		{percentage.toFixed(1)}%
-	</div>
-);
+const createPercentageBadge = (percentage: number) => {
+	const safePercentage = percentage == null || Number.isNaN(percentage) ? 0 : percentage;
+	return (
+		<div className="inline-flex items-center rounded bg-primary/10 px-2 py-1 font-medium text-primary text-xs">
+			{safePercentage.toFixed(1)}%
+		</div>
+	);
+};
 
 const createMetricDisplay = (value: number, label: string) => (
 	<div>
