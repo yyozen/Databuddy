@@ -259,7 +259,7 @@ export function FunnelAnalytics({
 							{errorInsights.sessions_with_errors} sessions with errors dropped
 							off · {errorInsights.total_errors} total errors in funnel
 						</p>
-					</div>
+					</div>	
 					<Link
 						className="flex shrink-0 items-center gap-1 text-primary text-xs hover:underline"
 						href={`/websites/${websiteId}/errors`}
