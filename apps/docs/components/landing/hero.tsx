@@ -4,7 +4,6 @@ import { ArrowsOutSimpleIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { CHATGPT_PROMPT_URL } from "@/app/util/constants";
 import { SciFiButton } from "./scifi-btn";
 import { Spotlight } from "./spotlight";
 
@@ -234,19 +233,6 @@ export default function Hero() {
 				</div>
 			</div>
 
-			{/* ChatGPT Link */}
-			<div className="mx-auto w-full border-t bg-secondary/30 px-4 py-4 sm:px-6 lg:px-8">
-				<div className="flex justify-center">
-					<a
-						className="text-muted-foreground text-sm underline underline-offset-4 hover:text-foreground"
-						href={CHATGPT_PROMPT_URL}
-						rel="noopener noreferrer"
-						target="_blank"
-					>
-						Don't understand what this does? Ask ChatGPT
-					</a>
-				</div>
-			</div>
 		</section>
 	);
 }
