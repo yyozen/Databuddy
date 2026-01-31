@@ -31,7 +31,8 @@ export function insertTrackEvent(
 	trackData: any,
 	clientId: string,
 	userAgent: string,
-	ip: string
+	ip: string,
+	request?: Request
 ): Promise<void> {
 	return record("insertTrackEvent", async () => {
 		let eventId = sanitizeString(
@@ -52,7 +53,7 @@ export function insertTrackEvent(
 
 		const [isDuplicate, geoData, salt] = await Promise.all([
 			checkDuplicate(eventId, "track"),
-			getGeo(ip),
+			getGeo(ip, request),
 			getDailySalt(),
 		]);
 

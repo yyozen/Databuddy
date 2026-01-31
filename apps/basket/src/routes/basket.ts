@@ -41,13 +41,14 @@ function processTrackEventData(
 	trackData: any,
 	clientId: string,
 	userAgent: string,
-	ip: string
+	ip: string,
+	request?: Request
 ): Promise<AnalyticsEvent> {
 	return record("processTrackEventData", async () => {
 		const eventId = parseEventId(trackData.eventId, () => randomUUIDv7());
 
 		const [geoData, uaData, salt] = await Promise.all([
-			getGeo(ip),
+			getGeo(ip, request),
 			parseUserAgent(userAgent),
 			getDailySalt(),
 		]);
@@ -188,7 +189,7 @@ const app = new Elysia()
 			}
 
 			if (eventType === "track") {
-				insertTrackEvent(eventData, clientId, userAgent, ip);
+				insertTrackEvent(eventData, clientId, userAgent, ip, request);
 			} else if (eventType === "outgoing_link") {
 				insertOutgoingLink(eventData, clientId, userAgent, ip);
 			}
@@ -429,7 +430,7 @@ const app = new Elysia()
 					return createSchemaErrorResponse(parseResult.error.issues);
 				}
 
-				insertTrackEvent(body, clientId, userAgent, ip);
+				insertTrackEvent(body, clientId, userAgent, ip, request);
 				return new Response(
 					JSON.stringify({ status: "success", type: "track" }),
 					{
@@ -578,7 +579,8 @@ const app = new Elysia()
 							event,
 							clientId,
 							userAgent,
-							ip
+							ip,
+							request
 						);
 						trackEvents.push(trackEvent);
 						results.push({

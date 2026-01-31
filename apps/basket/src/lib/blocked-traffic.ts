@@ -24,7 +24,7 @@ async function _logBlockedTrafficAsync(
 			) || "";
 
 		const [geo, ua] = await Promise.all([
-			getGeo(ip),
+			getGeo(ip, request),
 			parseUserAgent(userAgent),
 		]);
 		const now = Date.now();

@@ -87,6 +87,14 @@ function isValidIp(ip: string): boolean {
 	return Boolean(ip && (ipv4Regex.test(ip) || ipv6Regex.test(ip)));
 }
 
+function getCloudflareCountry(headers: Headers): string | undefined {
+	const cfCountry = headers.get("cf-ipcountry");
+	if (cfCountry && cfCountry.length === 2) {
+		return cfCountry;
+	}
+	return undefined;
+}
+
 function lookupGeoLocation(ip: string): Promise<{
 	country: string | undefined;
 	region: string | undefined;
@@ -169,7 +177,7 @@ export function anonymizeIp(ip: string): string {
 	return hash.digest("hex").substring(0, 12);
 }
 
-export async function getGeo(ip: string) {
+export async function getGeo(ip: string, request?: Request) {
 	if (!ip || ignore.includes(ip) || !isValidIp(ip)) {
 		return {
 			anonymizedIP: anonymizeIp(ip),
@@ -180,6 +188,24 @@ export async function getGeo(ip: string) {
 	}
 
 	const geo = await getGeoLocation(ip);
+
+	// Fallback to Cloudflare headers if MMDB lookup failed
+	if (!geo.country && request?.headers) {
+		const cfCountry = getCloudflareCountry(request.headers);
+		if (cfCountry) {
+			setAttributes({
+				geo_fallback: "cloudflare",
+				geo_country: cfCountry,
+			});
+			return {
+				anonymizedIP: anonymizeIp(ip),
+				country: cfCountry,
+				region: undefined,
+				city: undefined,
+			};
+		}
+	}
+
 	return {
 		anonymizedIP: anonymizeIp(ip),
 		country: geo.country,
