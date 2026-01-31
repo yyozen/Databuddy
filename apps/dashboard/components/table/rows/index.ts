@@ -5,4 +5,5 @@ export * from "./metric-row";
 export * from "./page-row";
 export * from "./page-time-row";
 export * from "./referrer-row";
+export * from "./revenue-row";
 export * from "./timezone-row";

@@ -17,6 +17,7 @@ import { ReceiptIcon } from "@phosphor-icons/react/dist/ssr/Receipt";
 import { SpinnerIcon } from "@phosphor-icons/react/dist/ssr/Spinner";
 import { StripeLogoIcon } from "@phosphor-icons/react/dist/ssr/StripeLogo";
 import { TrendUpIcon } from "@phosphor-icons/react/dist/ssr/TrendUp";
+import { UsersIcon } from "@phosphor-icons/react/dist/ssr/Users";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useAtom } from "jotai";
@@ -43,6 +44,7 @@ import { orpc } from "@/lib/orpc";
 import { cn } from "@/lib/utils";
 import { dynamicQueryFiltersAtom } from "@/stores/jotai/filterAtoms";
 import { WebsitePageHeader } from "../../_components/website-page-header";
+import { RevenueAttributionTables } from "./revenue-attribution-tables";
 
 interface RevenueContentProps {
 	websiteId: string;
@@ -58,6 +60,8 @@ interface RevenueOverview {
 	sale_revenue: number;
 	sale_count: number;
 	unique_customers: number;
+	attributed_transactions: number;
+	attributed_revenue: number;
 }
 
 interface RevenueTimeSeries {
@@ -738,7 +742,7 @@ export function RevenueContent({ websiteId }: RevenueContentProps) {
 						title={formatCurrency(netRevenue)}
 					/>
 
-					<div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+					<div className="grid grid-cols-2 gap-3 md:grid-cols-5">
 						<StatCard
 							icon={ReceiptIcon}
 							id="transactions"
@@ -766,13 +770,35 @@ export function RevenueContent({ websiteId }: RevenueContentProps) {
 							value={formatCurrency(Math.abs(overview?.refund_amount ?? 0))}
 						/>
 						<StatCard
-							icon={TrendUpIcon}
+							icon={UsersIcon}
 							id="unique-customers"
 							isLoading={isLoading}
 							title="Customers"
 							value={overview?.unique_customers ?? 0}
 						/>
+						<StatCard
+							description={
+								overview?.attributed_transactions
+									? `${overview.attributed_transactions} of ${overview.total_transactions} transactions`
+									: undefined
+							}
+							icon={TrendUpIcon}
+							id="attribution-rate"
+							isLoading={isLoading}
+							title="Attribution Rate"
+							value={
+								overview?.total_transactions
+									? `${Math.round((overview.attributed_transactions / overview.total_transactions) * 100)}%`
+									: "0%"
+							}
+						/>
 					</div>
+
+					<RevenueAttributionTables
+						dateRange={dateRange}
+						isLoading={isLoading}
+						websiteId={websiteId}
+					/>
 				</div>
 			) : (
 				<EmptyState
