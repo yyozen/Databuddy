@@ -87,20 +87,17 @@ export const uptimeRouter = {
 	getScheduleByWebsiteId: protectedProcedure
 		.input(z.object({ websiteId: z.string() }))
 		.handler(async ({ context, input }) => {
-			const { success } = await websitesApi.hasPermission({
-				headers: context.headers,
-				body: { permissions: { website: ["read"] } },
-			});
-			if (!success) {
-				throw new ORPCError("FORBIDDEN", {
-					message: "Missing workspace permissions.",
-				});
-			}
-
 			const schedule = await db.query.uptimeSchedules.findFirst({
 				where: eq(uptimeSchedules.websiteId, input.websiteId),
 				orderBy: (table, { desc }) => [desc(table.createdAt)],
 			});
+
+			if (schedule) {
+				await authorizeUptimeScheduleAccess(context, {
+					organizationId: schedule.organizationId,
+				});
+			}
+
 			return schedule ?? null;
 		}),
 
@@ -116,7 +113,10 @@ export const uptimeRouter = {
 			if (input.organizationId) {
 				const { success } = await websitesApi.hasPermission({
 					headers: context.headers,
-					body: { permissions: { website: ["read"] } },
+					body: {
+						organizationId: input.organizationId,
+						permissions: { website: ["read"] },
+					},
 				});
 				if (!success) {
 					throw new ORPCError("FORBIDDEN", {
@@ -196,7 +196,10 @@ export const uptimeRouter = {
 		.handler(async ({ context, input }) => {
 			const { success } = await websitesApi.hasPermission({
 				headers: context.headers,
-				body: { permissions: { website: ["update"] } },
+				body: {
+					organizationId: input.organizationId,
+					permissions: { website: ["update"] },
+				},
 			});
 			if (!success) {
 				throw new ORPCError("FORBIDDEN", {

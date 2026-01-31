@@ -259,7 +259,10 @@ export const websitesRouter = {
 					if (input.organizationId) {
 						const { success } = await websitesApi.hasPermission({
 							headers: context.headers,
-							body: { permissions: { website: ["read"] } },
+							body: {
+								organizationId: input.organizationId,
+								permissions: { website: ["read"] },
+							},
 						});
 						if (!success) {
 							throw new ORPCError("FORBIDDEN", {
@@ -327,7 +330,10 @@ export const websitesRouter = {
 			if (input.organizationId) {
 				const { success } = await websitesApi.hasPermission({
 					headers: context.headers,
-					body: { permissions: { website: ["read"] } },
+					body: {
+						organizationId: input.organizationId,
+						permissions: { website: ["read"] },
+					},
 				});
 				if (!success) {
 					throw new ORPCError("FORBIDDEN", {
@@ -416,7 +422,10 @@ export const websitesRouter = {
 
 			const { success } = await websitesApi.hasPermission({
 				headers: context.headers,
-				body: { permissions: { website: ["create"] } },
+				body: {
+					organizationId: input.organizationId,
+					permissions: { website: ["create"] },
+				},
 			});
 			if (!success) {
 				throw new ORPCError("FORBIDDEN", {

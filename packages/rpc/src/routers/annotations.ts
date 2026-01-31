@@ -34,7 +34,10 @@ async function hasWebsiteUpdatePermission(
 	}
 	const { success } = await websitesApi.hasPermission({
 		headers: context.headers,
-		body: { permissions: { website: ["update"] } },
+		body: {
+			organizationId: website.organizationId,
+			permissions: { website: ["update"] },
+		},
 	});
 	return success;
 }

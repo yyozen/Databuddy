@@ -43,6 +43,25 @@ const rateLimitSchema = z.object({
 
 const getMeta = (key: ApiKey): Metadata => (key.metadata as Metadata) ?? {};
 
+async function verifyOrganizationAccess(
+	ctx: Context & { user: NonNullable<Context["user"]> },
+	organizationId: string
+) {
+	const { success } = await websitesApi.hasPermission({
+		headers: ctx.headers,
+		body: {
+			organizationId,
+			permissions: { website: ["configure"] },
+		},
+	});
+
+	if (!success) {
+		throw new ORPCError("FORBIDDEN", {
+			message: "Missing organization permissions",
+		});
+	}
+}
+
 async function getKeyWithAuth(
 	ctx: Context & { user: NonNullable<Context["user"]> },
 	id: string
@@ -52,20 +71,10 @@ async function getKeyWithAuth(
 		throw new ORPCError("NOT_FOUND", { message: "API key not found" });
 	}
 
-	if (ctx.user.role !== "ADMIN") {
-		if (key.organizationId) {
-			const { success } = await websitesApi.hasPermission({
-				headers: ctx.headers,
-				body: { permissions: { website: ["configure"] } },
-			});
-			if (!success) {
-				throw new ORPCError("FORBIDDEN", {
-					message: "Missing organization permissions",
-				});
-			}
-		} else if (key.userId !== ctx.user.id) {
-			throw new ORPCError("FORBIDDEN", { message: "Not authorized" });
-		}
+	if (key.organizationId) {
+		await verifyOrganizationAccess(ctx, key.organizationId);
+	} else if (key.userId !== ctx.user.id) {
+		throw new ORPCError("FORBIDDEN", { message: "Not authorized" });
 	}
 
 	return key;
@@ -119,6 +128,10 @@ export const apikeysRouter = {
 	list: protectedProcedure
 		.input(z.object({ organizationId: z.string().optional() }).default({}))
 		.handler(async ({ context, input }) => {
+			if (input.organizationId) {
+				await verifyOrganizationAccess(context, input.organizationId);
+			}
+
 			const rows = await context.db
 				.select()
 				.from(apikey)
@@ -126,9 +139,9 @@ export const apikeysRouter = {
 					input.organizationId
 						? eq(apikey.organizationId, input.organizationId)
 						: and(
-								eq(apikey.userId, context.user.id),
-								isNull(apikey.organizationId)
-							)
+							eq(apikey.userId, context.user.id),
+							isNull(apikey.organizationId)
+						)
 				)
 				.orderBy(desc(apikey.createdAt));
 			return rows.map((r) => mapKey(r));
@@ -155,6 +168,10 @@ export const apikeysRouter = {
 			})
 		)
 		.handler(async ({ context, input }) => {
+			if (input.organizationId) {
+				await verifyOrganizationAccess(context, input.organizationId);
+			}
+
 			const { key: secret, record } = await keys.create({
 				ownerId: input.organizationId ?? context.user.id,
 				name: input.name,

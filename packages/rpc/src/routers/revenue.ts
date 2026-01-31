@@ -35,10 +35,16 @@ async function getOwnerId(
 	return ctx.user.id;
 }
 
-async function hasManagePermission(headers: Headers): Promise<boolean> {
+async function hasManagePermission(
+	headers: Headers,
+	organizationId: string
+): Promise<boolean> {
 	const { success } = await websitesApi.hasPermission({
 		headers,
-		body: { permissions: { website: ["configure"] } },
+		body: {
+			organizationId,
+			permissions: { website: ["configure"] },
+		},
 	});
 	return success;
 }
@@ -52,13 +58,13 @@ export const revenueRouter = {
 			const config = await context.db.query.revenueConfig.findFirst({
 				where: input.websiteId
 					? and(
-							eq(revenueConfig.ownerId, ownerId),
-							eq(revenueConfig.websiteId, input.websiteId)
-						)
+						eq(revenueConfig.ownerId, ownerId),
+						eq(revenueConfig.websiteId, input.websiteId)
+					)
 					: and(
-							eq(revenueConfig.ownerId, ownerId),
-							isNull(revenueConfig.websiteId)
-						),
+						eq(revenueConfig.ownerId, ownerId),
+						isNull(revenueConfig.websiteId)
+					),
 			});
 
 			if (!config) {
@@ -87,22 +93,22 @@ export const revenueRouter = {
 			})
 		)
 		.handler(async ({ context, input, errors }) => {
-			if (!(await hasManagePermission(context.headers))) {
+			const ownerId = await getOwnerId(context, input.websiteId);
+
+			if (!(await hasManagePermission(context.headers, ownerId))) {
 				throw errors.FORBIDDEN({ message: "Missing permissions" });
 			}
-
-			const ownerId = await getOwnerId(context, input.websiteId);
 
 			const existing = await context.db.query.revenueConfig.findFirst({
 				where: input.websiteId
 					? and(
-							eq(revenueConfig.ownerId, ownerId),
-							eq(revenueConfig.websiteId, input.websiteId)
-						)
+						eq(revenueConfig.ownerId, ownerId),
+						eq(revenueConfig.websiteId, input.websiteId)
+					)
 					: and(
-							eq(revenueConfig.ownerId, ownerId),
-							isNull(revenueConfig.websiteId)
-						),
+						eq(revenueConfig.ownerId, ownerId),
+						isNull(revenueConfig.websiteId)
+					),
 			});
 
 			if (existing) {
@@ -155,22 +161,22 @@ export const revenueRouter = {
 	regenerateHash: protectedProcedure
 		.input(z.object({ websiteId: z.string().optional() }))
 		.handler(async ({ context, input, errors }) => {
-			if (!(await hasManagePermission(context.headers))) {
+			const ownerId = await getOwnerId(context, input.websiteId);
+
+			if (!(await hasManagePermission(context.headers, ownerId))) {
 				throw errors.FORBIDDEN({ message: "Missing permissions" });
 			}
-
-			const ownerId = await getOwnerId(context, input.websiteId);
 
 			const existing = await context.db.query.revenueConfig.findFirst({
 				where: input.websiteId
 					? and(
-							eq(revenueConfig.ownerId, ownerId),
-							eq(revenueConfig.websiteId, input.websiteId)
-						)
+						eq(revenueConfig.ownerId, ownerId),
+						eq(revenueConfig.websiteId, input.websiteId)
+					)
 					: and(
-							eq(revenueConfig.ownerId, ownerId),
-							isNull(revenueConfig.websiteId)
-						),
+						eq(revenueConfig.ownerId, ownerId),
+						isNull(revenueConfig.websiteId)
+					),
 			});
 
 			if (!existing) {
@@ -190,22 +196,22 @@ export const revenueRouter = {
 	delete: protectedProcedure
 		.input(z.object({ websiteId: z.string().optional() }))
 		.handler(async ({ context, input, errors }) => {
-			if (!(await hasManagePermission(context.headers))) {
+			const ownerId = await getOwnerId(context, input.websiteId);
+
+			if (!(await hasManagePermission(context.headers, ownerId))) {
 				throw errors.FORBIDDEN({ message: "Missing permissions" });
 			}
-
-			const ownerId = await getOwnerId(context, input.websiteId);
 
 			const existing = await context.db.query.revenueConfig.findFirst({
 				where: input.websiteId
 					? and(
-							eq(revenueConfig.ownerId, ownerId),
-							eq(revenueConfig.websiteId, input.websiteId)
-						)
+						eq(revenueConfig.ownerId, ownerId),
+						eq(revenueConfig.websiteId, input.websiteId)
+					)
 					: and(
-							eq(revenueConfig.ownerId, ownerId),
-							isNull(revenueConfig.websiteId)
-						),
+						eq(revenueConfig.ownerId, ownerId),
+						isNull(revenueConfig.websiteId)
+					),
 			});
 
 			if (!existing) {

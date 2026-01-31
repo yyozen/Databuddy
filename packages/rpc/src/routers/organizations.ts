@@ -16,6 +16,7 @@ import { ORPCError } from "@orpc/server";
 import { Autumn as autumn } from "autumn-js";
 import { z } from "zod";
 import { protectedProcedure, publicProcedure } from "../orpc";
+import { authorizeWebsiteAccess } from "../utils/auth";
 
 /**
  * Gets the billing owner ID for the current context.
@@ -105,7 +106,10 @@ export const organizationsRouter = {
 		.handler(async ({ input, context }) => {
 			const { success } = await websitesApi.hasPermission({
 				headers: context.headers,
-				body: { permissions: { organization: ["update"] } },
+				body: {
+					organizationId: input.organizationId,
+					permissions: { organization: ["update"] },
+				},
 			});
 			if (!success) {
 				throw new ORPCError("FORBIDDEN", {
@@ -139,7 +143,10 @@ export const organizationsRouter = {
 		.handler(async ({ input, context }) => {
 			const { success } = await websitesApi.hasPermission({
 				headers: context.headers,
-				body: { permissions: { organization: ["read"] } },
+				body: {
+					organizationId: input.organizationId,
+					permissions: { organization: ["read"] },
+				},
 			});
 			if (!success) {
 				throw new ORPCError("FORBIDDEN", {
@@ -292,15 +299,13 @@ export const organizationsRouter = {
 			let canUserUpgrade = true;
 			let activeOrgId: string | null | undefined;
 
-			// If websiteId is provided, get billing owner from website
 			if (input?.websiteId) {
+				await authorizeWebsiteAccess(context, input.websiteId, "read");
 				const websiteOwner = await getBillingOwnerFromWebsite(input.websiteId);
 				customerId = websiteOwner.customerId;
 				isOrganization = websiteOwner.isOrganization;
-				// User can't upgrade if they're viewing someone else's website
 				canUserUpgrade = false;
 			}
-			// If user is authenticated, use their context
 			else if (context.user) {
 				activeOrgId = (
 					context.session as { activeOrganizationId?: string | null }
@@ -316,14 +321,14 @@ export const organizationsRouter = {
 
 			const debugInfo = isDev
 				? {
-						_debug: {
-							userId: context.user?.id ?? null,
-							activeOrganizationId: activeOrgId ?? null,
-							customerId,
-							websiteId: input?.websiteId ?? null,
-							sessionId: context.session?.id ?? null,
-						},
-					}
+					_debug: {
+						userId: context.user?.id ?? null,
+						activeOrganizationId: activeOrgId ?? null,
+						customerId,
+						websiteId: input?.websiteId ?? null,
+						sessionId: context.session?.id ?? null,
+					},
+				}
 				: {};
 
 			// No customer ID means we can't look up billing

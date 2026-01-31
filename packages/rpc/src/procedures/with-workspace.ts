@@ -169,12 +169,16 @@ async function getOrganizationRole(
 async function checkPermissions<R extends ResourceType>(
 	headers: Headers,
 	resource: R,
-	permissions: PermissionFor<R>[]
+	permissions: PermissionFor<R>[],
+	organizationId?: string
 ): Promise<boolean> {
 	try {
 		const { success } = await websitesApi.hasPermission({
 			headers,
-			body: { permissions: { [resource]: permissions } },
+			body: {
+				...(organizationId && { organizationId }),
+				permissions: { [resource]: permissions },
+			},
 		});
 		return success;
 	} catch (error) {
@@ -313,7 +317,8 @@ export async function withWorkspace<R extends ResourceType = "organization">(
 		const hasPermission = await checkPermissions(
 			context.headers,
 			resource,
-			permissions
+			permissions,
+			organizationId
 		);
 
 		if (!hasPermission) {
@@ -447,7 +452,8 @@ export async function withWebsite(
 	const hasPermission = await checkPermissions(
 		context.headers,
 		"website",
-		permissions
+		permissions,
+		website.organizationId
 	);
 
 	if (!hasPermission) {

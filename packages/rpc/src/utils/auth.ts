@@ -71,10 +71,6 @@ export async function authorizeWebsiteAccess(
 		});
 	}
 
-	if (ctx.user.role === "ADMIN") {
-		return website;
-	}
-
 	if (!website.organizationId) {
 		throw new ORPCError("FORBIDDEN", {
 			message: "Website must belong to a workspace",
@@ -83,7 +79,10 @@ export async function authorizeWebsiteAccess(
 
 	const { success } = await websitesApi.hasPermission({
 		headers: ctx.headers,
-		body: { permissions: { website: [permission] } },
+		body: {
+			organizationId: website.organizationId,
+			permissions: { website: [permission] },
+		},
 	});
 	if (!success) {
 		throw new ORPCError("FORBIDDEN", {
@@ -114,20 +113,18 @@ export async function isFullyAuthorized(
 			return false;
 		}
 
-		// Admin is always fully authorized
-		if (ctx.user.role === "ADMIN") {
-			return true;
-		}
-
 		// Website must belong to a workspace
 		if (!website.organizationId) {
 			return false;
 		}
 
-		// Check organization permissions
+		// Check organization permissions for the specific organization
 		const { success } = await websitesApi.hasPermission({
 			headers: ctx.headers,
-			body: { permissions: { website: ["read"] } },
+			body: {
+				organizationId: website.organizationId,
+				permissions: { website: ["read"] },
+			},
 		});
 		return success;
 	} catch {
@@ -144,7 +141,7 @@ export async function isFullyAuthorized(
  */
 export async function authorizeUptimeScheduleAccess(
 	ctx: Context,
-	_schedule: { organizationId: string }
+	schedule: { organizationId: string }
 ) {
 	if (!ctx.user) {
 		throw new ORPCError("UNAUTHORIZED", {
@@ -152,13 +149,12 @@ export async function authorizeUptimeScheduleAccess(
 		});
 	}
 
-	if (ctx.user.role === "ADMIN") {
-		return;
-	}
-
 	const { success } = await websitesApi.hasPermission({
 		headers: ctx.headers,
-		body: { permissions: { website: ["update"] } },
+		body: {
+			organizationId: schedule.organizationId,
+			permissions: { website: ["update"] },
+		},
 	});
 
 	if (!success) {

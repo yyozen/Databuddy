@@ -146,11 +146,14 @@ const aggregateUsageData = (
 
 const checkOrganizationPermission = async (
 	headers: Headers,
-	_organizationId: string
+	organizationId: string
 ): Promise<void> => {
 	const { success } = await websitesApi.hasPermission({
 		headers,
-		body: { permissions: { website: ["read"] } },
+		body: {
+			organizationId,
+			permissions: { website: ["read"] },
+		},
 	});
 
 	if (!success) {

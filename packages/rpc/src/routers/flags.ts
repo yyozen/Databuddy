@@ -53,7 +53,10 @@ const authorizeScope = async (
 		const perm = permission === "read" ? "read" : "create";
 		const { success } = await websitesApi.hasPermission({
 			headers: headersObj,
-			body: { permissions: { website: [perm] } },
+			body: {
+				organizationId,
+				permissions: { website: [perm] },
+			},
 		});
 		if (!success) {
 			throw new ORPCError("FORBIDDEN", {
@@ -229,7 +232,7 @@ function sanitizeFlagForDemo<T extends FlagWithTargetGroups>(flag: T): T {
 		...flag,
 		rules: Array.isArray(flag.rules) && flag.rules.length > 0 ? [] : flag.rules,
 		targetGroups: flag.targetGroups?.map(
-			(group: { rules?: unknown; [key: string]: unknown }) => ({
+			(group: { rules?: unknown;[key: string]: unknown }) => ({
 				...group,
 				rules:
 					Array.isArray(group.rules) && group.rules.length > 0
@@ -662,10 +665,16 @@ export const flagsRouter = {
 
 			if (flag.websiteId) {
 				await authorizeWebsiteAccess(context, flag.websiteId, "update");
+			} else if (flag.organizationId) {
+				await authorizeScope(
+					context,
+					undefined,
+					flag.organizationId,
+					"update"
+				);
 			} else if (
 				flag.userId &&
-				flag.userId !== context.user.id &&
-				context.user.role !== "ADMIN"
+				flag.userId !== context.user.id
 			) {
 				throw new ORPCError("FORBIDDEN", {
 					message: "Not authorized to update this flag",
@@ -824,10 +833,16 @@ export const flagsRouter = {
 
 			if (flag.websiteId) {
 				await authorizeWebsiteAccess(context, flag.websiteId, "delete");
+			} else if (flag.organizationId) {
+				await authorizeScope(
+					context,
+					undefined,
+					flag.organizationId,
+					"delete"
+				);
 			} else if (
 				flag.userId &&
-				flag.userId !== context.user.id &&
-				context.user.role !== "ADMIN"
+				flag.userId !== context.user.id
 			) {
 				throw new ORPCError("FORBIDDEN", {
 					message: "Not authorized to delete this flag",
