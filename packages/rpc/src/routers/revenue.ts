@@ -1,9 +1,11 @@
 import { websitesApi } from "@databuddy/auth";
 import { and, db, eq, isNull, revenueConfig, websites } from "@databuddy/db";
 import { createId } from "@databuddy/shared/utils/ids";
+import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import type { Context } from "../orpc";
 import { protectedProcedure } from "../orpc";
+import { authorizeWebsiteAccess } from "../utils/auth";
 
 function generateHash(): string {
 	const bytes = crypto.getRandomValues(new Uint8Array(24));
@@ -54,6 +56,14 @@ export const revenueRouter = {
 		.input(z.object({ websiteId: z.string().optional() }))
 		.handler(async ({ context, input }) => {
 			const ownerId = await getOwnerId(context, input.websiteId);
+
+			if (input.websiteId) {
+				await authorizeWebsiteAccess(context, input.websiteId, "read");
+			} else if (!(await hasManagePermission(context.headers, ownerId))) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "Missing permissions",
+				});
+			}
 
 			const config = await context.db.query.revenueConfig.findFirst({
 				where: input.websiteId
