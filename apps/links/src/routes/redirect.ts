@@ -56,7 +56,7 @@ async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
 	});
 
 	if (!dbLink) {
-		await setCachedLinkNotFound(slug).catch(() => {});
+		await setCachedLinkNotFound(slug).catch(() => { });
 		return null;
 	}
 
@@ -73,7 +73,7 @@ async function getLinkBySlug(slug: string): Promise<CachedLink | null> {
 		androidUrl: dbLink.androidUrl,
 	};
 
-	await setCachedLink(slug, link).catch(() => {});
+	await setCachedLink(slug, link).catch(() => { });
 	return link;
 }
 
@@ -90,7 +90,7 @@ async function recordClick(
 
 	const userAgent = request.headers.get("user-agent");
 	const [geo, ua] = await Promise.all([
-		getGeo(ip),
+		getGeo(ip, request),
 		Promise.resolve(parseUserAgent(userAgent)),
 	]);
 
